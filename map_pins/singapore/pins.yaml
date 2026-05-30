@@ -1,0 +1,14 @@
+country: Singapore
+pins:
+  - id: singapore
+    name: Singapore
+    coordinates: [1.3521, 103.8198]
+    enabled: true
+  - id: changi-airport
+    name: Changi Airport
+    coordinates: [1.3502, 103.9940]
+    enabled: true
+  - id: changi-exhibition-centre
+    name: Changi Exhibition Center
+    coordinates: [1.3631, 104.0229]
+    enabled: true

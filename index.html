@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title>SpotterDex</title>
+    <meta
+      name="description"
+      content="SpotterDex is an aircraft spotting logbook and aviation photography portfolio."
+    >
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    >
+    <link rel="stylesheet" href="styles.css">
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+      defer
+    ></script>
+    <script src="data/spotterdex-data.js" defer></script>
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <a class="brand" href="#" aria-label="SpotterDex home">
+        <span class="brand-mark" aria-hidden="true">SD</span>
+        <span>
+          <span class="brand-title">SpotterDex</span>
+          <span class="brand-subtitle">Aircraft field guide and photo archive</span>
+        </span>
+      </a>
+
+      <nav class="tab-nav" aria-label="Main views" role="tablist">
+        <button
+          class="tab-button is-active"
+          type="button"
+          role="tab"
+          aria-selected="true"
+          aria-controls="mapView"
+          data-tab-target="mapView"
+        >
+          World Map
+        </button>
+        <button
+          class="tab-button"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="dexView"
+          data-tab-target="dexView"
+        >
+          Aircraft Dex
+        </button>
+        <button
+          class="tab-button"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="squadronsView"
+          data-tab-target="squadronsView"
+        >
+          Squadrons
+        </button>
+        <button
+          class="tab-button"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="statsView"
+          data-tab-target="statsView"
+        >
+          Stats
+        </button>
+      </nav>
+
+      <select class="nav-select" id="viewSelect" aria-label="Main view">
+        <option value="mapView">World Map</option>
+        <option value="dexView">Aircraft Dex</option>
+        <option value="squadronsView">Squadrons</option>
+        <option value="statsView">Stats</option>
+      </select>
+
+      <button class="theme-toggle" type="button" id="themeToggle" aria-label="Toggle color theme"></button>
+    </header>
+
+    <main class="app-shell" id="main">
+      <section class="view is-active" id="mapView" data-view>
+        <div class="workspace map-workspace">
+          <aside class="control-panel" aria-label="Timothy Liu overview">
+            <p class="eyebrow">Spotting logbook</p>
+            <h1>Timothy Liu</h1>
+            <p class="lead">
+              Browse aircraft encounters by location, aircraft type, squadron, and frame.
+            </p>
+
+            <div class="stat-grid" aria-label="Collection summary">
+              <div>
+                <span class="stat-value" id="aircraftCount">0</span>
+                <span class="stat-label">Aircraft</span>
+              </div>
+              <div>
+                <span class="stat-value" id="photoCount">0</span>
+                <span class="stat-label">Photos</span>
+              </div>
+              <div>
+                <span class="stat-value" id="locationCount">0</span>
+                <span class="stat-label">Locations</span>
+              </div>
+            </div>
+
+            <label class="field-label" for="locationSearch">Find a location</label>
+            <input
+              class="search-input"
+              id="locationSearch"
+              type="search"
+              autocomplete="off"
+              placeholder="Search map pins"
+            >
+
+            <div class="panel-heading">
+              <h2>Recent Locations</h2>
+              <button class="plain-button" type="button" id="fitPinsButton">Fit All</button>
+            </div>
+            <div class="location-list" id="locationList" aria-live="polite"></div>
+          </aside>
+
+          <div class="map-column">
+            <section class="map-stage" aria-label="World map with aircraft spotting pins">
+              <div class="world-map" id="worldMap" role="img" aria-label="OpenStreetMap showing aircraft spotting locations"></div>
+              <p class="map-fallback" id="mapFallback" hidden>
+                Map tiles are unavailable. Recent locations can still be selected from the list.
+              </p>
+            </section>
+
+            <section class="results-panel" id="mapResults" aria-live="polite"></section>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="dexView" data-view hidden>
+        <div class="workspace dex-workspace">
+          <aside class="control-panel" aria-label="Aircraft Dex filters">
+            <p class="eyebrow">Collected aircraft</p>
+            <h1>Aircraft Dex</h1>
+            <p class="lead">
+              Alphabetical entries for every aircraft type in the collection.
+            </p>
+
+            <label class="field-label" for="aircraftSearch">Find an aircraft</label>
+            <input
+              class="search-input"
+              id="aircraftSearch"
+              type="search"
+              autocomplete="off"
+              placeholder="Search type, squadron, country"
+            >
+
+            <p class="muted dex-count" id="dexCount">0 entries</p>
+
+            <section class="recent-photos-panel sidebar-recent-photos" aria-label="Recent photos">
+              <div class="browser-heading">
+                <div>
+                  <p class="eyebrow">Latest frames</p>
+                  <h2>Recent Photos</h2>
+                </div>
+                <p class="muted" id="recentPhotosCount">0 photos</p>
+              </div>
+              <div class="recent-photo-strip" id="recentPhotosStrip"></div>
+            </section>
+          </aside>
+
+          <div class="dex-column">
+            <section class="dex-browser" aria-label="Aircraft entries">
+              <div class="browser-heading">
+                <div>
+                  <p class="eyebrow">Alphabetical index</p>
+                  <h2>Entries</h2>
+                </div>
+              </div>
+              <div class="aircraft-grid" id="aircraftGrid"></div>
+            </section>
+
+            <section class="results-panel" id="dexDetail" aria-live="polite"></section>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="squadronsView" data-view hidden>
+        <div class="squadrons-page">
+          <section class="results-panel squadrons-hero" aria-label="Squadron logo gallery">
+            <div class="browser-heading">
+              <div>
+                <p class="eyebrow">Unit markings</p>
+                <h1>Squadrons</h1>
+              </div>
+              <p class="muted" id="squadronPageCount">0 squadrons</p>
+            </div>
+            <p class="lead">
+              Browse operators and squadrons by insignia, aircraft types, countries, and archived photos.
+            </p>
+            <div class="squadron-logo-grid" id="squadronLogoGrid"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" id="statsView" data-view hidden>
+        <div class="stats-page">
+          <section class="results-panel stats-hero" aria-label="Collection statistics">
+            <p class="eyebrow">Collection telemetry</p>
+            <h1>Stats Dashboard</h1>
+            <p class="lead">
+              Overview metrics for the aircraft archive, spotting locations, countries, and camera metadata.
+            </p>
+            <div class="stats-dashboard-grid" id="statsDashboard"></div>
+          </section>
+
+          <section class="results-panel exif-dashboard" id="exifDashboard" aria-live="polite"></section>
+        </div>
+      </section>
+    </main>
+
+    <div class="photo-viewer" id="photoViewer" role="dialog" aria-modal="true" aria-label="Photo viewer" hidden>
+      <div class="viewer-stage">
+        <button class="viewer-button close" type="button" id="closeViewerButton" aria-label="Close viewer">x</button>
+        <button class="viewer-button previous" type="button" id="previousPhotoButton" aria-label="Previous photo">&lt;</button>
+        <img id="viewerImage" alt="" draggable="false">
+        <button class="viewer-button next" type="button" id="nextPhotoButton" aria-label="Next photo">&gt;</button>
+      </div>
+      <aside class="viewer-info">
+        <p class="eyebrow" id="viewerKicker">Photo</p>
+        <h2 id="viewerTitle">Photo details</h2>
+        <p class="viewer-caption" id="viewerCaption"></p>
+        <div class="metadata-panel" id="viewerMetadata"></div>
+      </aside>
+    </div>
+  </body>
+</html>

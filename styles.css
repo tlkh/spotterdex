@@ -1,0 +1,1638 @@
+:root {
+  color-scheme: light;
+  --bg: #f5f4f1;
+  --surface: #fffefa;
+  --surface-strong: #eeece6;
+  --text: #181816;
+  --muted: #6f6a62;
+  --line: #dbd7cf;
+  --line-strong: #bbb5aa;
+  --blue: #4f4b43;
+  --blue-strong: #26231f;
+  --blue-soft: #e7e3db;
+  --cyan: #7c725f;
+  --pin: #2f2d29;
+  --pin-active: #86785f;
+  --shadow: 0 20px 60px rgba(38, 35, 31, 0.13);
+  --radius: 8px;
+  --font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #11100f;
+  --surface: #1a1816;
+  --surface-strong: #24211e;
+  --text: #f3f0ea;
+  --muted: #aaa39a;
+  --line: #37322d;
+  --line-strong: #514a42;
+  --blue: #c7c0b4;
+  --blue-strong: #efe9dd;
+  --blue-soft: #2f2b27;
+  --cyan: #b6aa95;
+  --pin: #ded6c8;
+  --pin-active: #b39d75;
+  --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #11100f;
+    --surface: #1a1816;
+    --surface-strong: #24211e;
+    --text: #f3f0ea;
+    --muted: #aaa39a;
+    --line: #37322d;
+    --line-strong: #514a42;
+    --blue: #c7c0b4;
+    --blue-strong: #efe9dd;
+    --blue-soft: #2f2b27;
+    --cyan: #b6aa95;
+    --pin: #ded6c8;
+    --pin-active: #b39d75;
+    --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  line-height: 1.5;
+  letter-spacing: 0;
+  animation: page-in 420ms ease-out both;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 20;
+  padding: 8px 12px;
+  transform: translateY(-140%);
+  border-radius: var(--radius);
+  background: var(--text);
+  color: var(--bg);
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto auto;
+  gap: 16px;
+  align-items: center;
+  padding: 14px clamp(16px, 4vw, 40px);
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(18px);
+}
+
+.brand {
+  display: inline-flex;
+  min-width: 0;
+  gap: 12px;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand-mark {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--text);
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.brand-title,
+.brand-subtitle {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.brand-title {
+  font-weight: 800;
+}
+
+.brand-subtitle {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.tab-nav {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-strong);
+}
+
+.nav-select {
+  display: none;
+  min-width: 0;
+  min-height: 38px;
+  padding: 8px 34px 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 800;
+}
+
+.tab-button,
+.theme-toggle,
+.plain-button,
+.icon-button,
+.segment-button {
+  min-height: 38px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  cursor: pointer;
+}
+
+.tab-button {
+  padding: 8px 14px;
+  overflow: hidden;
+  color: var(--muted);
+  font-weight: 700;
+  text-overflow: ellipsis;
+}
+
+.tab-button.is-active {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.theme-toggle,
+.plain-button {
+  padding: 8px 12px;
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.theme-toggle {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  min-height: 38px;
+  padding: 0;
+  place-items: center;
+}
+
+.theme-icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.theme-toggle:hover,
+.plain-button:hover,
+.icon-button:hover,
+.segment-button:hover,
+.tab-button:hover {
+  border-color: var(--line-strong);
+}
+
+.app-shell {
+  width: min(1480px, 100%);
+  margin: 0 auto;
+  padding: 22px clamp(14px, 3vw, 34px) 34px;
+}
+
+.view[hidden] {
+  display: none;
+}
+
+.workspace {
+  display: grid;
+  gap: 20px;
+  align-items: start;
+}
+
+.map-workspace,
+.dex-workspace {
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+}
+
+.dex-column {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.stats-page {
+  display: grid;
+  gap: 20px;
+}
+
+.squadrons-page {
+  display: grid;
+}
+
+.stats-hero {
+  display: grid;
+  gap: 16px;
+}
+
+.stats-hero .lead {
+  max-width: 760px;
+  margin-bottom: 0;
+}
+
+.dex-count {
+  margin: 14px 0 0;
+}
+
+.control-panel,
+.map-stage,
+.recent-photos-panel,
+.results-panel,
+.dex-browser {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+}
+
+.control-panel {
+  position: sticky;
+  top: 92px;
+  padding: 20px;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  color: var(--blue);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 8px;
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+h2 {
+  margin-bottom: 0;
+  font-size: 1.2rem;
+}
+
+h3 {
+  margin-bottom: 8px;
+  font-size: 1rem;
+}
+
+.lead,
+.muted,
+.viewer-caption {
+  color: var(--muted);
+}
+
+.lead {
+  margin-bottom: 18px;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 18px 0;
+}
+
+.stat-grid div {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-strong);
+}
+
+.stat-value,
+.stat-label {
+  display: block;
+}
+
+.stat-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.stat-label {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.field-label {
+  display: block;
+  margin: 16px 0 6px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.search-input {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  outline: none;
+  background: var(--surface-strong);
+  color: var(--text);
+}
+
+.search-input:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cyan) 20%, transparent);
+}
+
+.panel-heading,
+.browser-heading,
+.group-header,
+.result-header,
+.entry-meta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-heading {
+  margin: 18px 0 10px;
+}
+
+.location-list {
+  display: grid;
+  max-height: 330px;
+  gap: 8px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.location-row,
+.aircraft-card,
+.photo-card {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease, background 180ms ease;
+}
+
+.location-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+}
+
+.location-row strong,
+.aircraft-card strong,
+.photo-card strong {
+  display: block;
+}
+
+.location-row span,
+.aircraft-card span,
+.photo-card span {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.location-row.is-active,
+.aircraft-card.is-active {
+  border-color: var(--cyan);
+  box-shadow: inset 0 0 0 1px var(--cyan), 0 10px 24px rgba(38, 35, 31, 0.08);
+}
+
+.count-pill {
+  min-width: 34px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--blue-soft);
+  color: var(--blue-strong);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.map-column {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.map-stage {
+  position: relative;
+  min-height: 520px;
+  overflow: hidden;
+  background: var(--surface-strong);
+}
+
+.map-toolbar {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  display: inline-flex;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: var(--shadow);
+}
+
+.icon-button {
+  display: grid;
+  min-width: 38px;
+  padding: 0 10px;
+  place-items: center;
+  border-color: var(--line);
+  background: var(--surface);
+  font-weight: 800;
+}
+
+.icon-button.wide {
+  min-width: 58px;
+}
+
+.world-map {
+  width: 100%;
+  height: 100%;
+  min-height: 520px;
+}
+
+.map-fallback {
+  position: absolute;
+  inset: auto 16px 16px;
+  z-index: 2;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  color: var(--muted);
+  box-shadow: var(--shadow);
+}
+
+.leaflet-container {
+  background: var(--surface-strong);
+  color: var(--text);
+  font-family: var(--font);
+}
+
+.leaflet-tile {
+  transition: filter 180ms ease;
+}
+
+:root[data-theme="dark"] .leaflet-tile {
+  filter: brightness(0.62) invert(1) contrast(0.9) hue-rotate(180deg) saturate(0.75);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .leaflet-tile {
+    filter: brightness(0.62) invert(1) contrast(0.9) hue-rotate(180deg) saturate(0.75);
+  }
+}
+
+.leaflet-control-attribution,
+.leaflet-control-zoom a {
+  color: #34312c !important;
+}
+
+.leaflet-control-zoom a {
+  background: #f5f4f1 !important;
+  border-bottom-color: #d5d0c7 !important;
+  font-weight: 900;
+}
+
+.leaflet-control-zoom a:hover {
+  background: #ebe8e1 !important;
+}
+
+.spotterdex-marker {
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--surface);
+  border-radius: 999px;
+  background: var(--pin);
+  box-shadow: 0 10px 28px rgba(38, 35, 31, 0.26);
+  color: var(--surface);
+  font-size: 0.86rem;
+  font-weight: 900;
+  transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.spotterdex-marker::after {
+  position: absolute;
+  inset: -5px;
+  border: 1px solid color-mix(in srgb, var(--pin) 34%, transparent);
+  border-radius: inherit;
+  content: "";
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.spotterdex-marker.is-active {
+  background: var(--pin-active);
+  color: #ffffff;
+  transform: scale(1.16);
+}
+
+.spotterdex-marker.is-active::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.spotterdex-cluster {
+  display: grid;
+  min-width: 42px;
+  min-height: 36px;
+  place-items: center;
+  border: 2px solid var(--surface);
+  border-radius: 999px;
+  background: var(--blue-strong);
+  box-shadow: 0 12px 30px rgba(38, 35, 31, 0.26);
+  color: var(--surface);
+  font-weight: 900;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.spotterdex-cluster:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(38, 35, 31, 0.32);
+}
+
+.cluster-count,
+.cluster-flags {
+  display: block;
+  line-height: 1;
+}
+
+.cluster-count {
+  font-size: 0.86rem;
+}
+
+.cluster-flags {
+  margin-top: 1px;
+  font-size: 0.68rem;
+}
+
+.recent-photos-panel,
+.results-panel,
+.dex-browser {
+  padding: 18px;
+}
+
+.recent-photos-panel {
+  min-width: 0;
+  overflow: hidden;
+  padding-bottom: 12px;
+}
+
+.recent-photos-panel .browser-heading {
+  margin-bottom: 10px;
+}
+
+.sidebar-recent-photos {
+  margin-top: 18px;
+  padding: 18px 0 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.sidebar-recent-photos .browser-heading {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.recent-photo-strip {
+  display: grid;
+  width: 100%;
+  max-width: 100%;
+  grid-auto-columns: clamp(132px, 16vw, 170px);
+  grid-auto-flow: column;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  padding-bottom: 8px;
+  scroll-snap-type: inline proximity;
+}
+
+.recent-photo-card {
+  display: grid;
+  grid-template-rows: auto minmax(44px, auto);
+  min-width: 0;
+  max-height: 190px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: inherit;
+  cursor: pointer;
+  scroll-snap-align: start;
+  text-align: left;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.recent-photo-card:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(38, 35, 31, 0.1);
+}
+
+.recent-photo-card img {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  background: var(--surface-strong);
+}
+
+.recent-photo-card span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px;
+}
+
+.recent-photo-card strong,
+.recent-photo-card small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-photo-card small {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.result-header {
+  margin-bottom: 14px;
+}
+
+.segmented {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-strong);
+}
+
+.segment-button {
+  padding: 6px 10px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.segment-button.is-active {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.photo-groups {
+  display: grid;
+  gap: 18px;
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.photo-groups-map .photo-grid,
+.photo-groups-dex .photo-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.photo-card {
+  overflow: hidden;
+}
+
+.photo-card:hover,
+.aircraft-card:hover,
+.location-row:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(38, 35, 31, 0.1);
+}
+
+.photo-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: var(--surface-strong);
+}
+
+.photo-card .photo-body {
+  padding: 10px;
+}
+
+.dex-browser {
+  min-width: 0;
+}
+
+.browser-heading {
+  margin-bottom: 14px;
+}
+
+.stats-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.stats-pair-card {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-strong);
+}
+
+.stats-pair-card div {
+  min-width: 0;
+  text-align: center;
+}
+
+.stats-pair-card strong,
+.stats-pair-card span,
+.stats-pair-card p {
+  display: block;
+  min-width: 0;
+}
+
+.stats-pair-card strong {
+  color: var(--text);
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.stats-pair-card span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.stats-pair-card p {
+  grid-column: 1 / -1;
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.exif-dashboard {
+  display: grid;
+  gap: 16px;
+}
+
+.exif-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.exif-summary-grid div,
+.exif-stat-card {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-strong);
+}
+
+.exif-summary-grid div {
+  padding: 12px;
+}
+
+.exif-summary-grid strong,
+.exif-summary-grid span,
+.exif-summary-grid small {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exif-summary-grid strong {
+  color: var(--text);
+  font-size: 1.15rem;
+}
+
+.exif-summary-grid span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.exif-summary-grid small {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.exif-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.exif-stat-card {
+  padding: 12px;
+}
+
+.exif-stat-card h3 {
+  margin-bottom: 10px;
+}
+
+.exif-bar-list {
+  display: grid;
+  gap: 10px;
+}
+
+.exif-bar-row {
+  display: grid;
+  grid-template-columns: minmax(72px, 0.9fr) minmax(70px, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.exif-bar-label,
+.exif-bar-count {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.exif-bar-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exif-bar-count {
+  color: var(--text);
+  text-align: right;
+}
+
+.exif-bar-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.exif-bar-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--cyan);
+}
+
+.squadrons-hero {
+  display: grid;
+  gap: 18px;
+}
+
+.squadrons-hero .lead {
+  max-width: 760px;
+  margin-bottom: 0;
+}
+
+.squadron-logo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 16px;
+}
+
+.squadron-logo-card {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.squadron-logo-card:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(38, 35, 31, 0.1);
+}
+
+.squadron-logo-media {
+  display: grid;
+  min-height: 190px;
+  place-items: center;
+  padding: 22px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-strong);
+}
+
+.squadron-logo-media img,
+.squadron-logo-fallback {
+  width: min(168px, 100%);
+  height: 168px;
+}
+
+.squadron-logo-media img {
+  object-fit: contain;
+}
+
+.squadron-logo-fallback {
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--blue);
+  font-size: 2.4rem;
+  font-weight: 900;
+}
+
+.squadron-logo-body {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+
+.squadron-logo-body h2,
+.squadron-logo-body p {
+  margin: 0;
+}
+
+.squadron-logo-body p,
+.squadron-logo-body span {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.squadron-logo-body span {
+  font-weight: 800;
+}
+
+.aircraft-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px;
+}
+
+.aircraft-card {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 270px;
+  overflow: hidden;
+}
+
+.aircraft-cover {
+  position: relative;
+  background: var(--surface-strong);
+}
+
+.aircraft-cover img {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+
+.empty-cover {
+  display: grid;
+  aspect-ratio: 16 / 10;
+  place-items: center;
+  background: var(--surface-strong);
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.aircraft-body {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.aircraft-title {
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.aircraft-stat-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.aircraft-stat-row span {
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-strong);
+}
+
+.aircraft-stat-row strong {
+  color: var(--text);
+  font-size: 0.8rem;
+}
+
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.badge {
+  max-width: 100%;
+  padding: 4px 8px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entry-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.entry-stat-grid div {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-strong);
+}
+
+.entry-stat-grid strong,
+.entry-stat-grid span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.entry-stat-grid strong {
+  font-size: 1rem;
+}
+
+.entry-stat-grid span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.squadron-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.squadron-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-strong);
+}
+
+.squadron-logo,
+.logo-fallback {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-strong);
+}
+
+.squadron-logo {
+  object-fit: contain;
+  padding: 5px;
+}
+
+.logo-fallback {
+  display: grid;
+  place-items: center;
+  color: var(--blue);
+  font-weight: 800;
+}
+
+.empty-state {
+  display: grid;
+  min-height: 220px;
+  place-items: center;
+  padding: 24px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+  color: var(--muted);
+  text-align: center;
+}
+
+.empty-state.compact {
+  min-height: 140px;
+}
+
+.photo-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 390px);
+  background: rgba(2, 6, 23, 0.94);
+  color: #f8fafc;
+}
+
+.photo-viewer[hidden] {
+  display: none;
+}
+
+.viewer-stage {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 100vh;
+  place-items: center;
+  padding: 48px 58px;
+}
+
+.viewer-stage img {
+  max-width: 100%;
+  max-height: calc(100vh - 96px);
+  border-radius: var(--radius);
+  object-fit: contain;
+  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.5);
+  user-select: none;
+}
+
+.viewer-button {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius);
+  background: rgba(15, 23, 42, 0.72);
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.viewer-button:hover {
+  background: rgba(30, 41, 59, 0.9);
+}
+
+.viewer-button.close {
+  top: 18px;
+  right: 18px;
+}
+
+.viewer-button.previous {
+  left: 18px;
+}
+
+.viewer-button.next {
+  right: 18px;
+}
+
+.viewer-info {
+  min-width: 0;
+  max-height: 100vh;
+  overflow: auto;
+  padding: 32px;
+  border-left: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(15, 23, 42, 0.86);
+}
+
+.viewer-info .eyebrow {
+  color: #9fc5ff;
+}
+
+.metadata-panel {
+  display: grid;
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.metadata-section {
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.metadata-section h3 {
+  margin: 0 0 10px;
+  color: #f8fafc;
+}
+
+.metadata-section p {
+  margin: 0;
+  color: #a8b4c7;
+}
+
+.metadata-list {
+  display: grid;
+  grid-template-columns: minmax(110px, auto) minmax(0, 1fr);
+  gap: 10px 14px;
+  margin: 0;
+}
+
+.metadata-list dt {
+  color: #a8b4c7;
+  font-weight: 800;
+}
+
+.metadata-list dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.viewer-squadron-logo {
+  width: 68px;
+  height: 68px;
+  margin-top: 10px;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.08);
+  object-fit: contain;
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes drawer-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.view.is-active .control-panel,
+.view.is-active .map-stage,
+.view.is-active .recent-photos-panel,
+.view.is-active .results-panel,
+.view.is-active .dex-browser,
+.view.is-active .stats-hero,
+.view.is-active .squadrons-hero {
+  animation: drawer-in 360ms ease-out both;
+}
+
+@media (min-width: 1041px) {
+  .map-workspace > .control-panel,
+  .dex-workspace > .control-panel {
+    display: flex;
+    height: calc(100vh - 116px);
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .map-workspace .location-list {
+    flex: 1 1 auto;
+    max-height: none;
+    min-height: 0;
+  }
+
+  .dex-workspace .sidebar-recent-photos {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    flex-direction: column;
+  }
+
+  .sidebar-recent-photos .recent-photo-strip {
+    flex: 1 1 auto;
+    grid-auto-columns: initial;
+    grid-auto-flow: row;
+    grid-template-columns: 1fr;
+    max-height: none;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-right: 2px;
+  }
+
+  .sidebar-recent-photos .recent-photo-card {
+    grid-template-columns: 82px minmax(0, 1fr);
+    grid-template-rows: auto;
+    max-height: none;
+  }
+
+  .sidebar-recent-photos .recent-photo-card img {
+    width: 82px;
+    height: 58px;
+    aspect-ratio: auto;
+  }
+}
+
+@media (max-width: 1040px) {
+  .site-header {
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+
+  .tab-nav {
+    min-width: 0;
+    width: auto;
+    justify-self: stretch;
+  }
+
+  .tab-button {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  .map-workspace,
+  .dex-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .control-panel {
+    position: static;
+  }
+}
+
+@media (max-width: 760px) {
+  .site-header {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .tab-nav {
+    display: none;
+  }
+
+  .nav-select {
+    display: block;
+  }
+
+  .brand-subtitle {
+    display: none;
+  }
+
+  .app-shell {
+    padding: 14px 10px 24px;
+  }
+
+  .control-panel,
+  .recent-photos-panel,
+  .results-panel,
+  .dex-browser {
+    padding: 14px;
+  }
+
+  .sidebar-recent-photos {
+    padding: 18px 0 0;
+  }
+
+  .map-stage,
+  .world-map {
+    min-height: 390px;
+  }
+
+  .photo-groups-map .photo-grid,
+  .photo-groups-dex .photo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .squadron-logo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .squadron-logo-media {
+    min-height: 150px;
+    padding: 16px;
+  }
+
+  .squadron-logo-media img,
+  .squadron-logo-fallback {
+    height: 124px;
+  }
+
+  .entry-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stats-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .exif-summary-grid,
+  .exif-dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .result-header,
+  .browser-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .photo-viewer {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .viewer-stage {
+    min-height: 58vh;
+    padding: 48px 48px 22px;
+  }
+
+  .viewer-stage img {
+    max-height: calc(58vh - 70px);
+  }
+
+  .viewer-info {
+    max-height: 42vh;
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+    border-left: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .brand-mark {
+    width: 36px;
+    height: 36px;
+  }
+
+  .brand {
+    gap: 0;
+  }
+
+  .brand-title {
+    display: none;
+  }
+
+  .theme-toggle {
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+  }
+
+  .tab-button {
+    padding: 7px 4px;
+    font-size: 0.72rem;
+  }
+
+  .nav-select {
+    min-height: 36px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    font-size: 0.82rem;
+  }
+
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .photo-grid,
+  .aircraft-grid,
+  .squadron-logo-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .exif-summary-grid,
+  .exif-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-pair-card {
+    grid-template-columns: 1fr;
+  }
+
+  .exif-bar-row {
+    grid-template-columns: minmax(0, 1fr) 48px;
+  }
+
+  .exif-bar-track {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .recent-photo-strip {
+    grid-auto-columns: minmax(136px, 46vw);
+  }
+
+  .photo-groups-map .photo-grid,
+  .photo-groups-dex .photo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .metadata-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

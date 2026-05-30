@@ -1,0 +1,58 @@
+country: Japan
+pins:
+  - id: naha-air-base
+    name: Naha Air Base
+    coordinates: [26.1958, 127.6458]
+    enabled: true
+  - id: kadena-air-base
+    name: Kadena Air Base
+    coordinates: [26.3556, 127.7680]
+    enabled: true
+  - id: mcas-futenma
+    name: MCAS Futenma
+    coordinates: [26.2743, 127.7560]
+    enabled: true
+  - id: tsuiki-air-base
+    name: Tsuiki Air Base
+    coordinates: [33.6850, 131.0400]
+    enabled: true
+  - id: kitakyushu-airport
+    name: Kitakyushu Airport
+    coordinates: [33.8459, 131.0350]
+    enabled: true
+  - id: komaki-air-base
+    name: Komaki Air Base
+    coordinates: [35.2550, 136.9244]
+    enabled: true
+  - id: gifu-air-base
+    name: Gifu Air Base
+    coordinates: [35.3939, 136.8700]
+    enabled: true
+  - id: komatsu-air-base
+    name: Komatsu Air Base
+    coordinates: [36.3933, 136.4067]
+    enabled: true
+  - id: yokota-air-base
+    name: Yokota Air Base
+    coordinates: [35.7485, 139.3480]
+    enabled: true
+  - id: iruma-air-base
+    name: Iruma Air Base
+    coordinates: [35.8419, 139.4110]
+    enabled: true
+  - id: chofu-airport
+    name: Chofu Airport
+    coordinates: [35.6717, 139.5280]
+    enabled: true
+  - id: haneda-airport
+    name: Haneda Airport
+    coordinates: [35.5523, 139.7800]
+    enabled: true
+  - id: kisarazu-airfield
+    name: Kisarazu Airfield
+    coordinates: [35.3983, 139.9100]
+    enabled: true
+  - id: chitose-air-base
+    name: Chitose Air Base
+    coordinates: [42.7945, 141.6664]
+    enabled: true

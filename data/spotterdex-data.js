@@ -1,0 +1,1296 @@
+window.SPOTTERDEX_DATA = {
+  "generatedAt": "2026-05-30T14:25:37+00:00",
+  "pins": [
+    {
+      "id": "hong-kong-international-airport",
+      "name": "Hong Kong International Airport",
+      "country": "Hong Kong",
+      "lat": 22.3089,
+      "lon": 113.92,
+      "enabled": true
+    },
+    {
+      "id": "chitose-air-base",
+      "name": "Chitose Air Base",
+      "country": "Japan",
+      "lat": 42.7945,
+      "lon": 141.6664,
+      "enabled": true
+    },
+    {
+      "id": "chofu-airport",
+      "name": "Chofu Airport",
+      "country": "Japan",
+      "lat": 35.6717,
+      "lon": 139.528,
+      "enabled": true
+    },
+    {
+      "id": "gifu-air-base",
+      "name": "Gifu Air Base",
+      "country": "Japan",
+      "lat": 35.3939,
+      "lon": 136.87,
+      "enabled": true
+    },
+    {
+      "id": "haneda-airport",
+      "name": "Haneda Airport",
+      "country": "Japan",
+      "lat": 35.5523,
+      "lon": 139.78,
+      "enabled": true
+    },
+    {
+      "id": "iruma-air-base",
+      "name": "Iruma Air Base",
+      "country": "Japan",
+      "lat": 35.8419,
+      "lon": 139.411,
+      "enabled": true
+    },
+    {
+      "id": "kadena-air-base",
+      "name": "Kadena Air Base",
+      "country": "Japan",
+      "lat": 26.3556,
+      "lon": 127.768,
+      "enabled": true
+    },
+    {
+      "id": "kisarazu-airfield",
+      "name": "Kisarazu Airfield",
+      "country": "Japan",
+      "lat": 35.3983,
+      "lon": 139.91,
+      "enabled": true
+    },
+    {
+      "id": "kitakyushu-airport",
+      "name": "Kitakyushu Airport",
+      "country": "Japan",
+      "lat": 33.8459,
+      "lon": 131.035,
+      "enabled": true
+    },
+    {
+      "id": "komaki-air-base",
+      "name": "Komaki Air Base",
+      "country": "Japan",
+      "lat": 35.255,
+      "lon": 136.9244,
+      "enabled": true
+    },
+    {
+      "id": "komatsu-air-base",
+      "name": "Komatsu Air Base",
+      "country": "Japan",
+      "lat": 36.3933,
+      "lon": 136.4067,
+      "enabled": true
+    },
+    {
+      "id": "mcas-futenma",
+      "name": "MCAS Futenma",
+      "country": "Japan",
+      "lat": 26.2743,
+      "lon": 127.756,
+      "enabled": true
+    },
+    {
+      "id": "naha-air-base",
+      "name": "Naha Air Base",
+      "country": "Japan",
+      "lat": 26.1958,
+      "lon": 127.6458,
+      "enabled": true
+    },
+    {
+      "id": "tsuiki-air-base",
+      "name": "Tsuiki Air Base",
+      "country": "Japan",
+      "lat": 33.685,
+      "lon": 131.04,
+      "enabled": true
+    },
+    {
+      "id": "yokota-air-base",
+      "name": "Yokota Air Base",
+      "country": "Japan",
+      "lat": 35.7485,
+      "lon": 139.348,
+      "enabled": true
+    },
+    {
+      "id": "kuala-lumpur-international-airport",
+      "name": "Kuala Lumpur International Airport",
+      "country": "Malaysia",
+      "lat": 2.7456,
+      "lon": 101.71,
+      "enabled": true
+    },
+    {
+      "id": "penang-international-airport",
+      "name": "Penang International Airport",
+      "country": "Malaysia",
+      "lat": 5.2963,
+      "lon": 100.2762,
+      "enabled": true
+    },
+    {
+      "id": "changi-airport",
+      "name": "Changi Airport",
+      "country": "Singapore",
+      "lat": 1.3502,
+      "lon": 103.994,
+      "enabled": true
+    },
+    {
+      "id": "changi-exhibition-centre",
+      "name": "Changi Exhibition Center",
+      "country": "Singapore",
+      "lat": 1.3631,
+      "lon": 104.0229,
+      "enabled": true
+    },
+    {
+      "id": "singapore",
+      "name": "Singapore",
+      "country": "Singapore",
+      "lat": 1.3521,
+      "lon": 103.8198,
+      "enabled": true
+    },
+    {
+      "id": "don-muang-royal-thai-air-force-base",
+      "name": "Don Muang Royal Thai Air Force Base",
+      "country": "Thailand",
+      "lat": 13.9126,
+      "lon": 100.607,
+      "enabled": true
+    }
+  ],
+  "aircraft": [
+    {
+      "id": "boeing-747-400-f",
+      "typeName": "Boeing 747-400(F)",
+      "countries": [
+        "United States"
+      ],
+      "squadrons": [
+        {
+          "id": "boeing-747-400-f-kalitta-air",
+          "name": "Kalitta Air",
+          "country": "United States",
+          "logo": "assets/logos/boeing-747-400-f-kalitta-air.png",
+          "photoIds": [
+            "boeing-747-400-f-kalitta-air-n742ck-da9e13c4"
+          ],
+          "photoCount": 1
+        }
+      ],
+      "photoIds": [
+        "boeing-747-400-f-kalitta-air-n742ck-da9e13c4"
+      ],
+      "coverPhoto": "boeing-747-400-f-kalitta-air-n742ck-da9e13c4",
+      "stats": {
+        "photoCount": 1,
+        "squadronCount": 1,
+        "locationCount": 1,
+        "locations": [
+          "Hong Kong International Airport"
+        ],
+        "firstDate": "2025-04-17",
+        "latestDate": "2025-04-17",
+        "countries": [
+          "United States"
+        ]
+      }
+    },
+    {
+      "id": "boeing-ah-64d-apache-longbow",
+      "typeName": "Boeing AH-64D Apache Longbow",
+      "countries": [
+        "Singapore"
+      ],
+      "squadrons": [
+        {
+          "id": "boeing-ah-64d-apache-longbow-120-squadron",
+          "name": "120 Squadron",
+          "country": "Singapore",
+          "logo": "assets/logos/boeing-ah-64d-apache-longbow-120-squadron.png",
+          "photoIds": [
+            "boeing-ah-64d-apache-longbow-120-squadron-rsaf-apache-flare-09597220"
+          ],
+          "photoCount": 1
+        }
+      ],
+      "photoIds": [
+        "boeing-ah-64d-apache-longbow-120-squadron-rsaf-apache-flare-09597220"
+      ],
+      "coverPhoto": "boeing-ah-64d-apache-longbow-120-squadron-rsaf-apache-flare-09597220",
+      "stats": {
+        "photoCount": 1,
+        "squadronCount": 1,
+        "locationCount": 1,
+        "locations": [
+          "Changi Exhibition Center"
+        ],
+        "firstDate": "2026-02-03",
+        "latestDate": "2026-02-03",
+        "countries": [
+          "Singapore"
+        ]
+      }
+    },
+    {
+      "id": "boeing-e-3g-sentry",
+      "typeName": "Boeing E-3G Sentry",
+      "countries": [
+        "United States"
+      ],
+      "squadrons": [
+        {
+          "id": "boeing-e-3g-sentry-961st-airborne-air-control-squadron",
+          "name": "961st Airborne Air Control Squadron",
+          "country": "United States",
+          "logo": "assets/logos/boeing-e-3g-sentry-961st-airborne-air-control-squadron.png",
+          "photoIds": [
+            "boeing-e-3g-sentry-961st-airborne-air-control-squadron-zz-0007-1c7a84e1"
+          ],
+          "photoCount": 1
+        }
+      ],
+      "photoIds": [
+        "boeing-e-3g-sentry-961st-airborne-air-control-squadron-zz-0007-1c7a84e1"
+      ],
+      "coverPhoto": "boeing-e-3g-sentry-961st-airborne-air-control-squadron-zz-0007-1c7a84e1",
+      "stats": {
+        "photoCount": 1,
+        "squadronCount": 1,
+        "locationCount": 1,
+        "locations": [
+          "Kadena Air Base"
+        ],
+        "firstDate": "2025-12-10",
+        "latestDate": "2025-12-10",
+        "countries": [
+          "United States"
+        ]
+      }
+    },
+    {
+      "id": "hawker-u-125a",
+      "typeName": "Hawker U-125A",
+      "countries": [
+        "Japan"
+      ],
+      "squadrons": [
+        {
+          "id": "hawker-u-125a-jasdf-air-rescue-wing",
+          "name": "JASDF Air Rescue Wing",
+          "country": "Japan",
+          "logo": "assets/logos/hawker-u-125a-jasdf-air-rescue-wing.png",
+          "photoIds": [
+            "hawker-u-125a-jasdf-air-rescue-wing-423022-af81ec09"
+          ],
+          "photoCount": 1
+        }
+      ],
+      "photoIds": [
+        "hawker-u-125a-jasdf-air-rescue-wing-423022-af81ec09"
+      ],
+      "coverPhoto": "hawker-u-125a-jasdf-air-rescue-wing-423022-af81ec09",
+      "stats": {
+        "photoCount": 1,
+        "squadronCount": 1,
+        "locationCount": 1,
+        "locations": [
+          "Tsuiki Air Base"
+        ],
+        "firstDate": "2025-11-30",
+        "latestDate": "2025-11-30",
+        "countries": [
+          "Japan"
+        ]
+      }
+    },
+    {
+      "id": "kawasaki-c-2",
+      "typeName": "Kawasaki C-2",
+      "countries": [
+        "Japan"
+      ],
+      "squadrons": [
+        {
+          "id": "kawasaki-c-2-402nd-tactical-airlift-squadron",
+          "name": "402nd Tactical Airlift Squadron",
+          "country": "Japan",
+          "logo": "",
+          "photoIds": [],
+          "photoCount": 0
+        },
+        {
+          "id": "kawasaki-c-2-air-development-and-test-wing",
+          "name": "Air Development and Test Wing",
+          "country": "Japan",
+          "logo": "assets/logos/kawasaki-c-2-air-development-and-test-wing.png",
+          "photoIds": [
+            "kawasaki-c-2-air-development-and-test-wing-081201-7b5b5b44"
+          ],
+          "photoCount": 1
+        }
+      ],
+      "photoIds": [
+        "kawasaki-c-2-air-development-and-test-wing-081201-7b5b5b44"
+      ],
+      "coverPhoto": "kawasaki-c-2-air-development-and-test-wing-081201-7b5b5b44",
+      "stats": {
+        "photoCount": 1,
+        "squadronCount": 2,
+        "locationCount": 1,
+        "locations": [
+          "Gifu Air Base"
+        ],
+        "firstDate": "2026-04-08",
+        "latestDate": "2026-04-08",
+        "countries": [
+          "Japan"
+        ]
+      }
+    },
+    {
+      "id": "kawasaki-ec-2",
+      "typeName": "Kawasaki EC-2",
+      "countries": [
+        "Japan"
+      ],
+      "squadrons": [
+        {
+          "id": "kawasaki-ec-2-jasdf-electronic-warfare-squadron",
+          "name": "JASDF Electronic Warfare Squadron",
+          "country": "Japan",
+          "logo": "assets/logos/kawasaki-ec-2-jasdf-electronic-warfare-squadron.png",
+          "photoIds": [
+            "kawasaki-ec-2-jasdf-electronic-warfare-squadron-681203-c50451ad"
+          ],
+          "photoCount": 1
+        }
+      ],
+      "photoIds": [
+        "kawasaki-ec-2-jasdf-electronic-warfare-squadron-681203-c50451ad"
+      ],
+      "coverPhoto": "kawasaki-ec-2-jasdf-electronic-warfare-squadron-681203-c50451ad",
+      "stats": {
+        "photoCount": 1,
+        "squadronCount": 1,
+        "locationCount": 1,
+        "locations": [
+          "Gifu Air Base"
+        ],
+        "firstDate": "2026-04-08",
+        "latestDate": "2026-04-08",
+        "countries": [
+          "Japan"
+        ]
+      }
+    },
+    {
+      "id": "kawasaki-rc-2",
+      "typeName": "Kawasaki RC-2",
+      "countries": [
+        "Japan"
+      ],
+      "squadrons": [
+        {
+          "id": "kawasaki-rc-2-jasdf-electronic-warfare-squadron",
+          "name": "JASDF Electronic Warfare Squadron",
+          "country": "Japan",
+          "logo": "assets/logos/kawasaki-rc-2-jasdf-electronic-warfare-squadron.png",
+          "photoIds": [
+            "kawasaki-rc-2-jasdf-electronic-warfare-squadron-181202-e7fed8a9"
+          ],
+          "photoCount": 1
+        }
+      ],
+      "photoIds": [
+        "kawasaki-rc-2-jasdf-electronic-warfare-squadron-181202-e7fed8a9"
+      ],
+      "coverPhoto": "kawasaki-rc-2-jasdf-electronic-warfare-squadron-181202-e7fed8a9",
+      "stats": {
+        "photoCount": 1,
+        "squadronCount": 1,
+        "locationCount": 1,
+        "locations": [
+          "Naha Air Base"
+        ],
+        "firstDate": "2025-12-10",
+        "latestDate": "2025-12-10",
+        "countries": [
+          "Japan"
+        ]
+      }
+    },
+    {
+      "id": "kawasaki-t-4",
+      "typeName": "Kawasaki T-4",
+      "countries": [
+        "Japan"
+      ],
+      "squadrons": [
+        {
+          "id": "kawasaki-t-4-air-development-and-test-wing",
+          "name": "Air Development and Test Wing",
+          "country": "Japan",
+          "logo": "assets/logos/kawasaki-t-4-air-development-and-test-wing.png",
+          "photoIds": [
+            "kawasaki-t-4-air-development-and-test-wing-xx5606-ce22a52f"
+          ],
+          "photoCount": 1
+        }
+      ],
+      "photoIds": [
+        "kawasaki-t-4-air-development-and-test-wing-xx5606-ce22a52f"
+      ],
+      "coverPhoto": "kawasaki-t-4-air-development-and-test-wing-xx5606-ce22a52f",
+      "stats": {
+        "photoCount": 1,
+        "squadronCount": 1,
+        "locationCount": 1,
+        "locations": [
+          "Gifu Air Base"
+        ],
+        "firstDate": "2026-04-08",
+        "latestDate": "2026-04-08",
+        "countries": [
+          "Japan"
+        ]
+      }
+    },
+    {
+      "id": "mitsubishi-f-15j-eagle",
+      "typeName": "Mitsubishi F-15J Eagle",
+      "countries": [
+        "Japan"
+      ],
+      "squadrons": [
+        {
+          "id": "mitsubishi-f-15j-eagle-201st-tactical-fighter-squadron",
+          "name": "201st Tactical Fighter Squadron",
+          "country": "Japan",
+          "logo": "",
+          "photoIds": [],
+          "photoCount": 0
+        },
+        {
+          "id": "mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron",
+          "name": "203rd Tactical Fighter Squadron",
+          "country": "Japan",
+          "logo": "",
+          "photoIds": [],
+          "photoCount": 0
+        },
+        {
+          "id": "mitsubishi-f-15j-eagle-204th-tactical-fighter-squadron",
+          "name": "204th Tactical Fighter Squadron",
+          "country": "Japan",
+          "logo": "assets/logos/mitsubishi-f-15j-eagle-204th-tactical-fighter-squadron.png",
+          "photoIds": [
+            "mitsubishi-f-15j-eagle-204th-tactical-fighter-squadron-204-sunset-a6f80a0f"
+          ],
+          "photoCount": 1
+        },
+        {
+          "id": "mitsubishi-f-15j-eagle-303rd-tactical-fighter-squadron",
+          "name": "303rd Tactical Fighter Squadron",
+          "country": "Japan",
+          "logo": "assets/logos/mitsubishi-f-15j-eagle-303rd-tactical-fighter-squadron.png",
+          "photoIds": [
+            "mitsubishi-f-15j-eagle-303rd-tactical-fighter-squadron-728893-53b9fc1f"
+          ],
+          "photoCount": 1
+        },
+        {
+          "id": "mitsubishi-f-15j-eagle-304th-tactical-fighter-squadron",
+          "name": "304th Tactical Fighter Squadron",
+          "country": "Japan",
+          "logo": "assets/logos/mitsubishi-f-15j-eagle-304th-tactical-fighter-squadron.png",
+          "photoIds": [
+            "mitsubishi-f-15j-eagle-304th-tactical-fighter-squadron-128925-21302f6e"
+          ],
+          "photoCount": 1
+        },
+        {
+          "id": "mitsubishi-f-15j-eagle-306th-tactical-fighter-squadron",
+          "name": "306th Tactical Fighter Squadron",
+          "country": "Japan",
+          "logo": "assets/logos/mitsubishi-f-15j-eagle-306th-tactical-fighter-squadron.png",
+          "photoIds": [
+            "mitsubishi-f-15j-eagle-306th-tactical-fighter-squadron-928907-4b79cf4f"
+          ],
+          "photoCount": 1
+        },
+        {
+          "id": "mitsubishi-f-15j-eagle-air-development-and-test-wing",
+          "name": "Air Development and Test Wing",
+          "country": "Japan",
+          "logo": "assets/logos/mitsubishi-f-15j-eagle-air-development-and-test-wing.png",
+          "photoIds": [
+            "mitsubishi-f-15j-eagle-air-development-and-test-wing-128928-9db378f9"
+          ],
+          "photoCount": 1
+        }
+      ],
+      "photoIds": [
+        "mitsubishi-f-15j-eagle-204th-tactical-fighter-squadron-204-sunset-a6f80a0f",
+        "mitsubishi-f-15j-eagle-303rd-tactical-fighter-squadron-728893-53b9fc1f",
+        "mitsubishi-f-15j-eagle-304th-tactical-fighter-squadron-128925-21302f6e",
+        "mitsubishi-f-15j-eagle-306th-tactical-fighter-squadron-928907-4b79cf4f",
+        "mitsubishi-f-15j-eagle-air-development-and-test-wing-128928-9db378f9"
+      ],
+      "coverPhoto": "mitsubishi-f-15j-eagle-204th-tactical-fighter-squadron-204-sunset-a6f80a0f",
+      "stats": {
+        "photoCount": 5,
+        "squadronCount": 7,
+        "locationCount": 3,
+        "locations": [
+          "Gifu Air Base",
+          "Komatsu Air Base",
+          "Naha Air Base"
+        ],
+        "firstDate": "2025-12-03",
+        "latestDate": "2026-04-08",
+        "countries": [
+          "Japan"
+        ]
+      }
+    },
+    {
+      "id": "mitsubishi-f-2a",
+      "typeName": "Mitsubishi F-2A",
+      "countries": [
+        "Japan"
+      ],
+      "squadrons": [
+        {
+          "id": "mitsubishi-f-2a-6th-tactical-fighter-squadron",
+          "name": "6th Tactical Fighter Squadron",
+          "country": "Japan",
+          "logo": "assets/logos/mitsubishi-f-2a-6th-tactical-fighter-squadron.png",
+          "photoIds": [
+            "mitsubishi-f-2a-6th-tactical-fighter-squadron-trio-jasdf-6tfs-984ad7be"
+          ],
+          "photoCount": 1
+        },
+        {
+          "id": "mitsubishi-f-2a-8th-tactical-fighter-squadron",
+          "name": "8th Tactical Fighter Squadron",
+          "country": "Japan",
+          "logo": "assets/logos/mitsubishi-f-2a-8th-tactical-fighter-squadron.png",
+          "photoIds": [
+            "mitsubishi-f-2a-8th-tactical-fighter-squadron-trio-jasdf-8tfs-4813e2c2"
+          ],
+          "photoCount": 1
+        },
+        {
+          "id": "mitsubishi-f-2a-air-development-and-test-wing",
+          "name": "Air Development and Test Wing",
+          "country": "Japan",
+          "logo": "assets/logos/mitsubishi-f-2a-air-development-and-test-wing.png",
+          "photoIds": [
+            "mitsubishi-f-2a-air-development-and-test-wing-xx8523-5bbc20e2"
+          ],
+          "photoCount": 1
+        }
+      ],
+      "photoIds": [
+        "mitsubishi-f-2a-6th-tactical-fighter-squadron-trio-jasdf-6tfs-984ad7be",
+        "mitsubishi-f-2a-8th-tactical-fighter-squadron-trio-jasdf-8tfs-4813e2c2",
+        "mitsubishi-f-2a-air-development-and-test-wing-xx8523-5bbc20e2"
+      ],
+      "coverPhoto": "mitsubishi-f-2a-6th-tactical-fighter-squadron-trio-jasdf-6tfs-984ad7be",
+      "stats": {
+        "photoCount": 3,
+        "squadronCount": 3,
+        "locationCount": 2,
+        "locations": [
+          "Gifu Air Base",
+          "Tsuiki Air Base"
+        ],
+        "firstDate": "2025-11-29",
+        "latestDate": "2026-04-08",
+        "countries": [
+          "Japan"
+        ]
+      }
+    },
+    {
+      "id": "mitsubishi-f-2b",
+      "typeName": "Mitsubishi F-2B",
+      "countries": [
+        "Japan"
+      ],
+      "squadrons": [
+        {
+          "id": "mitsubishi-f-2b-air-development-and-test-wing",
+          "name": "Air Development and Test Wing",
+          "country": "Japan",
+          "logo": "assets/logos/mitsubishi-f-2b-air-development-and-test-wing.png",
+          "photoIds": [
+            "mitsubishi-f-2b-air-development-and-test-wing-638101-f95b8c4f"
+          ],
+          "photoCount": 1
+        }
+      ],
+      "photoIds": [
+        "mitsubishi-f-2b-air-development-and-test-wing-638101-f95b8c4f"
+      ],
+      "coverPhoto": "mitsubishi-f-2b-air-development-and-test-wing-638101-f95b8c4f",
+      "stats": {
+        "photoCount": 1,
+        "squadronCount": 1,
+        "locationCount": 1,
+        "locations": [
+          "Gifu Air Base"
+        ],
+        "firstDate": "2026-04-08",
+        "latestDate": "2026-04-08",
+        "countries": [
+          "Japan"
+        ]
+      }
+    },
+    {
+      "id": "mitsubishi-uh-60j",
+      "typeName": "Mitsubishi UH-60J",
+      "countries": [
+        "Japan"
+      ],
+      "squadrons": [
+        {
+          "id": "mitsubishi-uh-60j-jasdf-air-rescue-wing",
+          "name": "JASDF Air Rescue Wing",
+          "country": "Japan",
+          "logo": "assets/logos/mitsubishi-uh-60j-jasdf-air-rescue-wing.png",
+          "photoIds": [
+            "mitsubishi-uh-60j-jasdf-air-rescue-wing-584621-de3e4b80"
+          ],
+          "photoCount": 1
+        }
+      ],
+      "photoIds": [
+        "mitsubishi-uh-60j-jasdf-air-rescue-wing-584621-de3e4b80"
+      ],
+      "coverPhoto": "mitsubishi-uh-60j-jasdf-air-rescue-wing-584621-de3e4b80",
+      "stats": {
+        "photoCount": 1,
+        "squadronCount": 1,
+        "locationCount": 1,
+        "locations": [
+          "Tsuiki Air Base"
+        ],
+        "firstDate": "2025-11-30",
+        "latestDate": "2025-11-30",
+        "countries": [
+          "Japan"
+        ]
+      }
+    }
+  ],
+  "photos": [
+    {
+      "id": "mitsubishi-f-2b-air-development-and-test-wing-638101-f95b8c4f",
+      "aircraftId": "mitsubishi-f-2b",
+      "aircraftType": "Mitsubishi F-2B",
+      "squadronId": "mitsubishi-f-2b-air-development-and-test-wing",
+      "squadronName": "Air Development and Test Wing",
+      "country": "Japan",
+      "year": "2026",
+      "date": "2026-04-08",
+      "sortDate": "2026-04-08",
+      "locationName": "Gifu Air Base",
+      "pinId": "gifu-air-base",
+      "title": "",
+      "caption": "Mitsubishi F-2B 63-8101 landing at Gifu Air Base.",
+      "image": "assets/generated/photos/mitsubishi-f-2b-air-development-and-test-wing-638101-f95b8c4f.jpg",
+      "thumbnail": "assets/generated/thumbs/mitsubishi-f-2b-air-development-and-test-wing-638101-f95b8c4f.jpg",
+      "source": "raw_assets/638101.jpg",
+      "originalSize": "7073 x 5305",
+      "processedSize": "2048 x 1536",
+      "thumbnailSize": "640 x 480",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "289mm",
+        "FNumber": "f/8.0",
+        "ExposureTime": "1/2000s",
+        "ISO": "400",
+        "DateTimeOriginal": "2026:04:08 10:58:43",
+        "DateTimeDigitized": "2026:04:08 10:58:43",
+        "DateTime": "2026:05:30 21:02:17"
+      }
+    },
+    {
+      "id": "mitsubishi-f-2a-air-development-and-test-wing-xx8523-5bbc20e2",
+      "aircraftId": "mitsubishi-f-2a",
+      "aircraftType": "Mitsubishi F-2A",
+      "squadronId": "mitsubishi-f-2a-air-development-and-test-wing",
+      "squadronName": "Air Development and Test Wing",
+      "country": "Japan",
+      "year": "2026",
+      "date": "2026-04-08",
+      "sortDate": "2026-04-08",
+      "locationName": "Gifu Air Base",
+      "pinId": "gifu-air-base",
+      "title": "",
+      "caption": "Mitsubishi F-2A from ADTW landing at Gifu Air Base.",
+      "image": "assets/generated/photos/mitsubishi-f-2a-air-development-and-test-wing-xx8523-5bbc20e2.jpg",
+      "thumbnail": "assets/generated/thumbs/mitsubishi-f-2a-air-development-and-test-wing-xx8523-5bbc20e2.jpg",
+      "source": "raw_assets/xx8523.jpg",
+      "originalSize": "6256 x 4692",
+      "processedSize": "2048 x 1536",
+      "thumbnailSize": "640 x 480",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "205mm",
+        "FNumber": "f/8.0",
+        "ExposureTime": "1/2000s",
+        "ISO": "400",
+        "DateTimeOriginal": "2026:04:08 12:16:55",
+        "DateTimeDigitized": "2026:04:08 12:16:55",
+        "DateTime": "2026:05:30 21:02:42"
+      }
+    },
+    {
+      "id": "mitsubishi-f-15j-eagle-air-development-and-test-wing-128928-9db378f9",
+      "aircraftId": "mitsubishi-f-15j-eagle",
+      "aircraftType": "Mitsubishi F-15J Eagle",
+      "squadronId": "mitsubishi-f-15j-eagle-air-development-and-test-wing",
+      "squadronName": "Air Development and Test Wing",
+      "country": "Japan",
+      "year": "2026",
+      "date": "2026-04-08",
+      "sortDate": "2026-04-08",
+      "locationName": "Gifu Air Base",
+      "pinId": "gifu-air-base",
+      "title": "",
+      "caption": "Mitsubishi F-15J 12-8928 from ADTW landing at Gifu Air Base.",
+      "image": "assets/generated/photos/mitsubishi-f-15j-eagle-air-development-and-test-wing-128928-9db378f9.jpg",
+      "thumbnail": "assets/generated/thumbs/mitsubishi-f-15j-eagle-air-development-and-test-wing-128928-9db378f9.jpg",
+      "source": "raw_assets/128928.jpg",
+      "originalSize": "6582 x 4937",
+      "processedSize": "2048 x 1536",
+      "thumbnailSize": "640 x 480",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "245mm",
+        "FNumber": "f/8.0",
+        "ExposureTime": "1/2000s",
+        "ISO": "400",
+        "DateTimeOriginal": "2026:04:08 12:14:05",
+        "DateTimeDigitized": "2026:04:08 12:14:05",
+        "DateTime": "2026:05:30 21:02:45"
+      }
+    },
+    {
+      "id": "kawasaki-t-4-air-development-and-test-wing-xx5606-ce22a52f",
+      "aircraftId": "kawasaki-t-4",
+      "aircraftType": "Kawasaki T-4",
+      "squadronId": "kawasaki-t-4-air-development-and-test-wing",
+      "squadronName": "Air Development and Test Wing",
+      "country": "Japan",
+      "year": "2026",
+      "date": "2026-04-08",
+      "sortDate": "2026-04-08",
+      "locationName": "Gifu Air Base",
+      "pinId": "gifu-air-base",
+      "title": "",
+      "caption": "Kawasaki T-4 from ADTW landing at Gifu Air Base.",
+      "image": "assets/generated/photos/kawasaki-t-4-air-development-and-test-wing-xx5606-ce22a52f.jpg",
+      "thumbnail": "assets/generated/thumbs/kawasaki-t-4-air-development-and-test-wing-xx5606-ce22a52f.jpg",
+      "source": "raw_assets/xx5606.jpg",
+      "originalSize": "6731 x 5048",
+      "processedSize": "2048 x 1536",
+      "thumbnailSize": "640 x 480",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "298mm",
+        "FNumber": "f/8.0",
+        "ExposureTime": "1/2000s",
+        "ISO": "400",
+        "DateTimeOriginal": "2026:04:08 12:10:54",
+        "DateTimeDigitized": "2026:04:08 12:10:54",
+        "DateTime": "2026:05:30 21:02:32"
+      }
+    },
+    {
+      "id": "kawasaki-ec-2-jasdf-electronic-warfare-squadron-681203-c50451ad",
+      "aircraftId": "kawasaki-ec-2",
+      "aircraftType": "Kawasaki EC-2",
+      "squadronId": "kawasaki-ec-2-jasdf-electronic-warfare-squadron",
+      "squadronName": "JASDF Electronic Warfare Squadron",
+      "country": "Japan",
+      "year": "2026",
+      "date": "2026-04-08",
+      "sortDate": "2026-04-08",
+      "locationName": "Gifu Air Base",
+      "pinId": "gifu-air-base",
+      "title": "",
+      "caption": "Kawasaki EC-2 (68-1203) landing at Gifu Air Base after a test flight.",
+      "image": "assets/generated/photos/kawasaki-ec-2-jasdf-electronic-warfare-squadron-681203-c50451ad.jpg",
+      "thumbnail": "assets/generated/thumbs/kawasaki-ec-2-jasdf-electronic-warfare-squadron-681203-c50451ad.jpg",
+      "source": "raw_assets/681203.jpg",
+      "originalSize": "4096 x 3072",
+      "processedSize": "2048 x 1536",
+      "thumbnailSize": "640 x 480",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "200mm",
+        "FNumber": "f/8.0",
+        "ExposureTime": "1/2000s",
+        "ISO": "400",
+        "DateTimeOriginal": "2026:04:08 14:50:27",
+        "DateTimeDigitized": "2026:04:08 14:50:27",
+        "DateTime": "2026:05:30 21:36:19"
+      }
+    },
+    {
+      "id": "kawasaki-c-2-air-development-and-test-wing-081201-7b5b5b44",
+      "aircraftId": "kawasaki-c-2",
+      "aircraftType": "Kawasaki C-2",
+      "squadronId": "kawasaki-c-2-air-development-and-test-wing",
+      "squadronName": "Air Development and Test Wing",
+      "country": "Japan",
+      "year": "2026",
+      "date": "2026-04-08",
+      "sortDate": "2026-04-08",
+      "locationName": "Gifu Air Base",
+      "pinId": "gifu-air-base",
+      "title": "",
+      "caption": "Kawasaki C-2 08-1201 from ADTW landing at Gifu Air Base.",
+      "image": "assets/generated/photos/kawasaki-c-2-air-development-and-test-wing-081201-7b5b5b44.jpg",
+      "thumbnail": "assets/generated/thumbs/kawasaki-c-2-air-development-and-test-wing-081201-7b5b5b44.jpg",
+      "source": "raw_assets/081201.jpg",
+      "originalSize": "7680 x 5760",
+      "processedSize": "2048 x 1536",
+      "thumbnailSize": "640 x 480",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "200mm",
+        "FNumber": "f/8.0",
+        "ExposureTime": "1/2000s",
+        "ISO": "400",
+        "DateTimeOriginal": "2026:04:08 15:06:38",
+        "DateTimeDigitized": "2026:04:08 15:06:38",
+        "DateTime": "2026:05:30 21:02:46"
+      }
+    },
+    {
+      "id": "boeing-ah-64d-apache-longbow-120-squadron-rsaf-apache-flare-09597220",
+      "aircraftId": "boeing-ah-64d-apache-longbow",
+      "aircraftType": "Boeing AH-64D Apache Longbow",
+      "squadronId": "boeing-ah-64d-apache-longbow-120-squadron",
+      "squadronName": "120 Squadron",
+      "country": "Singapore",
+      "year": "2026",
+      "date": "2026-02-03",
+      "sortDate": "2026-02-03",
+      "locationName": "Changi Exhibition Center",
+      "pinId": "changi-exhibition-centre",
+      "title": "",
+      "caption": "RSAF Apache from 120 SQN deploying flares at Singapore Airshow 2026.",
+      "image": "assets/generated/photos/boeing-ah-64d-apache-longbow-120-squadron-rsaf-apache-flare-09597220.jpg",
+      "thumbnail": "assets/generated/thumbs/boeing-ah-64d-apache-longbow-120-squadron-rsaf-apache-flare-09597220.jpg",
+      "source": "raw_assets/rsaf_apache_flare.jpg",
+      "originalSize": "3312 x 2484",
+      "processedSize": "2048 x 1536",
+      "thumbnailSize": "640 x 480",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "200mm",
+        "FNumber": "f/8.0",
+        "ExposureTime": "1/320s",
+        "ISO": "100",
+        "DateTimeOriginal": "2026:02:03 12:12:32",
+        "DateTimeDigitized": "2026:02:03 12:12:32",
+        "DateTime": "2026:05:30 21:15:29"
+      }
+    },
+    {
+      "id": "mitsubishi-f-15j-eagle-304th-tactical-fighter-squadron-128925-21302f6e",
+      "aircraftId": "mitsubishi-f-15j-eagle",
+      "aircraftType": "Mitsubishi F-15J Eagle",
+      "squadronId": "mitsubishi-f-15j-eagle-304th-tactical-fighter-squadron",
+      "squadronName": "304th Tactical Fighter Squadron",
+      "country": "Japan",
+      "year": "2025",
+      "date": "2025-12-12",
+      "sortDate": "2025-12-12",
+      "locationName": "Naha Air Base",
+      "pinId": "naha-air-base",
+      "title": "",
+      "caption": "Mitsubishi F-15J Eagle 12-8925 landing at Naha Air Base in Okinawa, Japan.",
+      "image": "assets/generated/photos/mitsubishi-f-15j-eagle-304th-tactical-fighter-squadron-128925-21302f6e.jpg",
+      "thumbnail": "assets/generated/thumbs/mitsubishi-f-15j-eagle-304th-tactical-fighter-squadron-128925-21302f6e.jpg",
+      "source": "raw_assets/128925.jpg",
+      "originalSize": "6410 x 4808",
+      "processedSize": "2048 x 1536",
+      "thumbnailSize": "640 x 480",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+        "FocalLength": "643mm",
+        "FNumber": "f/9.0",
+        "ExposureTime": "1/2000s",
+        "ISO": "400",
+        "DateTimeOriginal": "2025:12:12 08:52:41",
+        "DateTimeDigitized": "2025:12:12 08:52:41",
+        "DateTime": "2026:05:30 19:58:14"
+      }
+    },
+    {
+      "id": "kawasaki-rc-2-jasdf-electronic-warfare-squadron-181202-e7fed8a9",
+      "aircraftId": "kawasaki-rc-2",
+      "aircraftType": "Kawasaki RC-2",
+      "squadronId": "kawasaki-rc-2-jasdf-electronic-warfare-squadron",
+      "squadronName": "JASDF Electronic Warfare Squadron",
+      "country": "Japan",
+      "year": "2025",
+      "date": "2025-12-10",
+      "sortDate": "2025-12-10",
+      "locationName": "Naha Air Base",
+      "pinId": "naha-air-base",
+      "title": "",
+      "caption": "Kawasaki RC-2 18-1202 landing at Naha Air Base.",
+      "image": "assets/generated/photos/kawasaki-rc-2-jasdf-electronic-warfare-squadron-181202-e7fed8a9.jpg",
+      "thumbnail": "assets/generated/thumbs/kawasaki-rc-2-jasdf-electronic-warfare-squadron-181202-e7fed8a9.jpg",
+      "source": "raw_assets/181202.jpg",
+      "originalSize": "6842 x 5132",
+      "processedSize": "2048 x 1536",
+      "thumbnailSize": "640 x 480",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "391mm",
+        "FNumber": "f/8.0",
+        "ExposureTime": "1/1000s",
+        "ISO": "125",
+        "DateTimeOriginal": "2025:12:10 09:41:43",
+        "DateTimeDigitized": "2025:12:10 09:41:43",
+        "DateTime": "2026:05:30 20:50:17"
+      }
+    },
+    {
+      "id": "boeing-e-3g-sentry-961st-airborne-air-control-squadron-zz-0007-1c7a84e1",
+      "aircraftId": "boeing-e-3g-sentry",
+      "aircraftType": "Boeing E-3G Sentry",
+      "squadronId": "boeing-e-3g-sentry-961st-airborne-air-control-squadron",
+      "squadronName": "961st Airborne Air Control Squadron",
+      "country": "United States",
+      "year": "2025",
+      "date": "2025-12-10",
+      "sortDate": "2025-12-10",
+      "locationName": "Kadena Air Base",
+      "pinId": "kadena-air-base",
+      "title": "",
+      "caption": "Boeing E-3G Sentry from the 961st Airborne Air Control Squadron, 18th Wing, at Kadena Air Base.",
+      "image": "assets/generated/photos/boeing-e-3g-sentry-961st-airborne-air-control-squadron-zz-0007-1c7a84e1.jpg",
+      "thumbnail": "assets/generated/thumbs/boeing-e-3g-sentry-961st-airborne-air-control-squadron-zz-0007-1c7a84e1.jpg",
+      "source": "raw_assets/zz_0007.jpg",
+      "originalSize": "3854 x 2890",
+      "processedSize": "2048 x 1536",
+      "thumbnailSize": "640 x 480",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+        "FocalLength": "840mm",
+        "FNumber": "f/9.0",
+        "ExposureTime": "1/1000s",
+        "ISO": "500",
+        "DateTimeOriginal": "2025:12:10 15:37:35",
+        "DateTimeDigitized": "2025:12:10 15:37:35",
+        "DateTime": "2026:05:30 20:43:29"
+      }
+    },
+    {
+      "id": "mitsubishi-f-15j-eagle-204th-tactical-fighter-squadron-204-sunset-a6f80a0f",
+      "aircraftId": "mitsubishi-f-15j-eagle",
+      "aircraftType": "Mitsubishi F-15J Eagle",
+      "squadronId": "mitsubishi-f-15j-eagle-204th-tactical-fighter-squadron",
+      "squadronName": "204th Tactical Fighter Squadron",
+      "country": "Japan",
+      "year": "2025",
+      "date": "2025-12-09",
+      "sortDate": "2025-12-09",
+      "locationName": "Naha Air Base",
+      "pinId": "naha-air-base",
+      "title": "",
+      "caption": "Mitsubishi F-15J Eagle from 204 TFS landing at Naha Air Base in Okinawa, Japan.",
+      "image": "assets/generated/photos/mitsubishi-f-15j-eagle-204th-tactical-fighter-squadron-204-sunset-a6f80a0f.jpg",
+      "thumbnail": "assets/generated/thumbs/mitsubishi-f-15j-eagle-204th-tactical-fighter-squadron-204-sunset-a6f80a0f.jpg",
+      "source": "raw_assets/204_sunset.jpg",
+      "originalSize": "7438 x 5579",
+      "processedSize": "2048 x 1536",
+      "thumbnailSize": "640 x 480",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+        "FocalLength": "840mm",
+        "FNumber": "f/9.0",
+        "ExposureTime": "1/2000s",
+        "ISO": "125",
+        "DateTimeOriginal": "2025:12:09 16:26:19",
+        "DateTimeDigitized": "2025:12:09 16:26:19",
+        "DateTime": "2026:05:30 20:15:30"
+      }
+    },
+    {
+      "id": "mitsubishi-f-15j-eagle-306th-tactical-fighter-squadron-928907-4b79cf4f",
+      "aircraftId": "mitsubishi-f-15j-eagle",
+      "aircraftType": "Mitsubishi F-15J Eagle",
+      "squadronId": "mitsubishi-f-15j-eagle-306th-tactical-fighter-squadron",
+      "squadronName": "306th Tactical Fighter Squadron",
+      "country": "Japan",
+      "year": "2025",
+      "date": "2025-12-04",
+      "sortDate": "2025-12-04",
+      "locationName": "Komatsu Air Base",
+      "pinId": "komatsu-air-base",
+      "title": "",
+      "caption": "Mitsubishi F-15J Eagle from 306 TFS taking off from Komatsu Air Base in Japan.",
+      "image": "assets/generated/photos/mitsubishi-f-15j-eagle-306th-tactical-fighter-squadron-928907-4b79cf4f.jpg",
+      "thumbnail": "assets/generated/thumbs/mitsubishi-f-15j-eagle-306th-tactical-fighter-squadron-928907-4b79cf4f.jpg",
+      "source": "raw_assets/928907.jpg",
+      "originalSize": "4053 x 3040",
+      "processedSize": "2048 x 1536",
+      "thumbnailSize": "640 x 480",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "400mm",
+        "FNumber": "f/18.0",
+        "ExposureTime": "1/80s",
+        "ISO": "100",
+        "DateTimeOriginal": "2025:12:04 12:02:10",
+        "DateTimeDigitized": "2025:12:04 12:02:10",
+        "DateTime": "2026:05:30 20:21:46"
+      }
+    },
+    {
+      "id": "mitsubishi-f-15j-eagle-303rd-tactical-fighter-squadron-728893-53b9fc1f",
+      "aircraftId": "mitsubishi-f-15j-eagle",
+      "aircraftType": "Mitsubishi F-15J Eagle",
+      "squadronId": "mitsubishi-f-15j-eagle-303rd-tactical-fighter-squadron",
+      "squadronName": "303rd Tactical Fighter Squadron",
+      "country": "Japan",
+      "year": "2025",
+      "date": "2025-12-03",
+      "sortDate": "2025-12-03",
+      "locationName": "Komatsu Air Base",
+      "pinId": "komatsu-air-base",
+      "title": "",
+      "caption": "Mitsubishi F-15J Eagle from 303 TFS taking off from Komatsu Air Base in Japan.",
+      "image": "assets/generated/photos/mitsubishi-f-15j-eagle-303rd-tactical-fighter-squadron-728893-53b9fc1f.jpg",
+      "thumbnail": "assets/generated/thumbs/mitsubishi-f-15j-eagle-303rd-tactical-fighter-squadron-728893-53b9fc1f.jpg",
+      "source": "raw_assets/728893.jpg",
+      "originalSize": "4952 x 3714",
+      "processedSize": "2048 x 1536",
+      "thumbnailSize": "640 x 480",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "600mm",
+        "FNumber": "f/6.3",
+        "ExposureTime": "1/640s",
+        "ISO": "500",
+        "DateTimeOriginal": "2025:12:03 10:33:19",
+        "DateTimeDigitized": "2025:12:03 10:33:19",
+        "DateTime": "2026:05:30 20:20:46"
+      }
+    },
+    {
+      "id": "mitsubishi-uh-60j-jasdf-air-rescue-wing-584621-de3e4b80",
+      "aircraftId": "mitsubishi-uh-60j",
+      "aircraftType": "Mitsubishi UH-60J",
+      "squadronId": "mitsubishi-uh-60j-jasdf-air-rescue-wing",
+      "squadronName": "JASDF Air Rescue Wing",
+      "country": "Japan",
+      "year": "2025",
+      "date": "2025-11-30",
+      "sortDate": "2025-11-30",
+      "locationName": "Tsuiki Air Base",
+      "pinId": "tsuiki-air-base",
+      "title": "",
+      "caption": "Mitsubishi UH-60J 58-4621 from JASDF Air Rescue Wing performing a SAR demonstration at Tsuiki Air Base.",
+      "image": "assets/generated/photos/mitsubishi-uh-60j-jasdf-air-rescue-wing-584621-de3e4b80.jpg",
+      "thumbnail": "assets/generated/thumbs/mitsubishi-uh-60j-jasdf-air-rescue-wing-584621-de3e4b80.jpg",
+      "source": "raw_assets/584621.jpg",
+      "originalSize": "6493 x 4870",
+      "processedSize": "2048 x 1536",
+      "thumbnailSize": "640 x 480",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "576mm",
+        "FNumber": "f/13.0",
+        "ExposureTime": "1/80s",
+        "ISO": "100",
+        "DateTimeOriginal": "2025:11:30 08:04:15",
+        "DateTimeDigitized": "2025:11:30 08:04:15",
+        "DateTime": "2026:05:30 20:36:18"
+      }
+    },
+    {
+      "id": "mitsubishi-f-2a-8th-tactical-fighter-squadron-trio-jasdf-8tfs-4813e2c2",
+      "aircraftId": "mitsubishi-f-2a",
+      "aircraftType": "Mitsubishi F-2A",
+      "squadronId": "mitsubishi-f-2a-8th-tactical-fighter-squadron",
+      "squadronName": "8th Tactical Fighter Squadron",
+      "country": "Japan",
+      "year": "2025",
+      "date": "2025-11-30",
+      "sortDate": "2025-11-30",
+      "locationName": "Tsuiki Air Base",
+      "pinId": "tsuiki-air-base",
+      "title": "",
+      "caption": "A trio of Mitsubishi F-2A from 8th Tactical Fighter Squadron conducting fly-by at Tsuiki Air Base.",
+      "image": "assets/generated/photos/mitsubishi-f-2a-8th-tactical-fighter-squadron-trio-jasdf-8tfs-4813e2c2.jpg",
+      "thumbnail": "assets/generated/thumbs/mitsubishi-f-2a-8th-tactical-fighter-squadron-trio-jasdf-8tfs-4813e2c2.jpg",
+      "source": "raw_assets/trio_jasdf_8tfs.jpg",
+      "originalSize": "4349 x 3262",
+      "processedSize": "2048 x 1536",
+      "thumbnailSize": "640 x 480",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "600mm",
+        "FNumber": "f/8.0",
+        "ExposureTime": "1/1250s",
+        "ISO": "400",
+        "DateTimeOriginal": "2025:11:30 07:37:16",
+        "DateTimeDigitized": "2025:11:30 07:37:16",
+        "DateTime": "2026:05:30 21:00:11"
+      }
+    },
+    {
+      "id": "hawker-u-125a-jasdf-air-rescue-wing-423022-af81ec09",
+      "aircraftId": "hawker-u-125a",
+      "aircraftType": "Hawker U-125A",
+      "squadronId": "hawker-u-125a-jasdf-air-rescue-wing",
+      "squadronName": "JASDF Air Rescue Wing",
+      "country": "Japan",
+      "year": "2025",
+      "date": "2025-11-30",
+      "sortDate": "2025-11-30",
+      "locationName": "Tsuiki Air Base",
+      "pinId": "tsuiki-air-base",
+      "title": "",
+      "caption": "Hawker U-125A 42-3022 from JASDF Air Rescue Wing during a SAR demonstration at Tsuiki Air Base.",
+      "image": "assets/generated/photos/hawker-u-125a-jasdf-air-rescue-wing-423022-af81ec09.jpg",
+      "thumbnail": "assets/generated/thumbs/hawker-u-125a-jasdf-air-rescue-wing-423022-af81ec09.jpg",
+      "source": "raw_assets/423022.jpg",
+      "originalSize": "2986 x 2240",
+      "processedSize": "2048 x 1536",
+      "thumbnailSize": "640 x 480",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "600mm",
+        "FNumber": "f/8.0",
+        "ExposureTime": "1/1000s",
+        "ISO": "160",
+        "DateTimeOriginal": "2025:11:30 08:09:25",
+        "DateTimeDigitized": "2025:11:30 08:09:25",
+        "DateTime": "2026:05:30 20:40:19"
+      }
+    },
+    {
+      "id": "mitsubishi-f-2a-6th-tactical-fighter-squadron-trio-jasdf-6tfs-984ad7be",
+      "aircraftId": "mitsubishi-f-2a",
+      "aircraftType": "Mitsubishi F-2A",
+      "squadronId": "mitsubishi-f-2a-6th-tactical-fighter-squadron",
+      "squadronName": "6th Tactical Fighter Squadron",
+      "country": "Japan",
+      "year": "2025",
+      "date": "2025-11-29",
+      "sortDate": "2025-11-29",
+      "locationName": "Tsuiki Air Base",
+      "pinId": "tsuiki-air-base",
+      "title": "",
+      "caption": "A trio of Mitsubishi F-2A from 6th Tactical Fighter Squadron conducting fly-by at Tsuiki Air Base.",
+      "image": "assets/generated/photos/mitsubishi-f-2a-6th-tactical-fighter-squadron-trio-jasdf-6tfs-984ad7be.jpg",
+      "thumbnail": "assets/generated/thumbs/mitsubishi-f-2a-6th-tactical-fighter-squadron-trio-jasdf-6tfs-984ad7be.jpg",
+      "source": "raw_assets/trio_jasdf_6tfs.jpg",
+      "originalSize": "6768 x 5076",
+      "processedSize": "2048 x 1536",
+      "thumbnailSize": "640 x 480",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "426mm",
+        "FNumber": "f/8.0",
+        "ExposureTime": "1/2500s",
+        "ISO": "800",
+        "DateTimeOriginal": "2025:11:29 08:36:41",
+        "DateTimeDigitized": "2025:11:29 08:36:41",
+        "DateTime": "2026:05:30 20:55:58"
+      }
+    },
+    {
+      "id": "boeing-747-400-f-kalitta-air-n742ck-da9e13c4",
+      "aircraftId": "boeing-747-400-f",
+      "aircraftType": "Boeing 747-400(F)",
+      "squadronId": "boeing-747-400-f-kalitta-air",
+      "squadronName": "Kalitta Air",
+      "country": "United States",
+      "year": "2025",
+      "date": "2025-04-17",
+      "sortDate": "2025-04-17",
+      "locationName": "Hong Kong International Airport",
+      "pinId": "hong-kong-international-airport",
+      "title": "",
+      "caption": "Kalitta Air Boeing 747-400F N742CK taking off from Hong Kong International Airport.",
+      "image": "assets/generated/photos/boeing-747-400-f-kalitta-air-n742ck-da9e13c4.jpg",
+      "thumbnail": "assets/generated/thumbs/boeing-747-400-f-kalitta-air-n742ck-da9e13c4.jpg",
+      "source": "raw_assets/N742CK.jpg",
+      "originalSize": "5203 x 3902",
+      "processedSize": "2048 x 1536",
+      "thumbnailSize": "640 x 480",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-6700",
+        "LensModel": "E 18-300mm F3.5-6.3 B061",
+        "FocalLength": "300mm",
+        "FNumber": "f/9.0",
+        "ExposureTime": "1/2000s",
+        "ISO": "320",
+        "DateTimeOriginal": "2025:04:17 08:51:12",
+        "DateTimeDigitized": "2025:04:17 08:51:12",
+        "DateTime": "2026:05:30 19:50:08"
+      }
+    }
+  ]
+};

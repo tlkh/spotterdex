@@ -1,0 +1,9 @@
+aircraft_type: Mitsubishi F-2A
+squadron_name: Air Development and Test Wing
+squadron_logo: jasdf_adtw.png
+country: Japan
+photos:
+  - path: xx8523.jpg
+    year: 2026
+    location: Gifu Air Base
+    caption: Mitsubishi F-2A from ADTW landing at Gifu Air Base.
