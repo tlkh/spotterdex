@@ -32,6 +32,7 @@ pins:
 ```yaml
 aircraft_type: Boeing F-15SG Strike Eagle
 squadron_name: 149 Squadron
+unit_type: squadron
 country: Singapore
 squadron_logo: ../../../assets/logos/149-squadron.svg
 photos:
@@ -41,7 +42,7 @@ photos:
     location: Changi Exhibition Centre
 ```
 
-Photo paths in entry YAML are relative to the matching entry folder. The build script reads them from `raw_assets/` first, mirroring the entry path. For example, `photos/f-15sg-changi.jpg` in `aircraft/boeing-f-15sg-strike-eagle/149-squadron/entry.yaml` is loaded from `raw_assets/aircraft/boeing-f-15sg-strike-eagle/149-squadron/photos/f-15sg-changi.jpg`. The `location` value links photos to map pins by matching the pin name, or you can add `pin_id`. Use `date` in `YYYY-MM-DD` format when known; the recent locations list is ordered by the newest photo at each location. If `date` is omitted, the build script falls back to EXIF capture date, then `year`.
+Photo paths in entry YAML are relative to the matching entry folder. The build script reads them from `raw_assets/` first, mirroring the entry path. For example, `photos/f-15sg-changi.jpg` in `aircraft/boeing-f-15sg-strike-eagle/149-squadron/entry.yaml` is loaded from `raw_assets/aircraft/boeing-f-15sg-strike-eagle/149-squadron/photos/f-15sg-changi.jpg`. The `location` value links photos to map pins by matching the pin name, or you can add `pin_id`. Use `unit_type: organisation` for airline/operator entries that should be labelled Organisation instead of Squadron; those entries remain visible in the Dex and photo viewer but are hidden from the Squadrons page. Use `date` in `YYYY-MM-DD` format when known; the recent locations list is ordered by the newest photo at each location. If `date` is omitted, the build script falls back to EXIF capture date, then `year`.
 
 ## Build
 
@@ -75,7 +76,7 @@ python3 -m http.server 8000
 
 Open `http://127.0.0.1:8000/`.
 
-Avoid adding map-tile prefetching or offline tile downloads. Keep OpenStreetMap attribution visible on the map.
+Avoid adding map-tile prefetching or offline tile downloads. Keep OpenStreetMap attribution visible on the map. On the Squadrons page, click a squadron logo to show the squadron's aircraft photos in the detail grid.
 
 Useful deep links:
 

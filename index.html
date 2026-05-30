@@ -33,7 +33,7 @@
         <span class="brand-mark" aria-hidden="true">SD</span>
         <span>
           <span class="brand-title">SpotterDex</span>
-          <span class="brand-subtitle">Aircraft field guide and photo archive</span>
+          <span class="brand-subtitle">Timothy's Aircraft Spotting Logbook</span>
         </span>
       </a>
 
@@ -97,7 +97,7 @@
             <p class="eyebrow">Spotting logbook</p>
             <h1>Timothy Liu</h1>
             <p class="lead">
-              Browse aircraft encounters by location, aircraft type, squadron, and frame.
+              Browse aircraft encounters by location, aircraft type, squadron or organisation, and frame.
             </p>
 
             <div class="stat-grid" aria-label="Collection summary">
@@ -159,7 +159,7 @@
               id="aircraftSearch"
               type="search"
               autocomplete="off"
-              placeholder="Search type, squadron, country"
+              placeholder="Search type, unit, country"
             >
 
             <p class="muted dex-count" id="dexCount">0 entries</p>
@@ -203,10 +203,12 @@
               <p class="muted" id="squadronPageCount">0 squadrons</p>
             </div>
             <p class="lead">
-              Browse operators and squadrons by insignia, aircraft types, countries, and archived photos.
+              Browse squadrons by insignia, aircraft types, countries, and archived photos.
             </p>
             <div class="squadron-logo-grid" id="squadronLogoGrid"></div>
           </section>
+
+          <section class="results-panel squadron-detail" id="squadronDetail" aria-live="polite"></section>
         </div>
       </section>
 

@@ -278,6 +278,7 @@ img {
 
 .squadrons-page {
   display: grid;
+  gap: 20px;
 }
 
 .stats-hero {
@@ -777,7 +778,8 @@ h3 {
 }
 
 .photo-groups-map .photo-grid,
-.photo-groups-dex .photo-grid {
+.photo-groups-dex .photo-grid,
+.photo-grid-squadron {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
@@ -988,17 +990,32 @@ h3 {
 
 .squadron-logo-card {
   display: grid;
+  width: 100%;
+  padding: 0;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
   transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
-.squadron-logo-card:hover {
+.squadron-logo-card:hover,
+.squadron-logo-card.is-active {
   border-color: var(--line-strong);
   transform: translateY(-2px);
   box-shadow: 0 14px 28px rgba(38, 35, 31, 0.1);
+}
+
+.squadron-logo-card.is-active {
+  background: var(--blue-soft);
+}
+
+.squadron-logo-card:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
 }
 
 .squadron-logo-media {
@@ -1050,6 +1067,15 @@ h3 {
 
 .squadron-logo-body span {
   font-weight: 800;
+}
+
+.squadron-detail {
+  display: grid;
+  gap: 14px;
+}
+
+.squadron-type-list {
+  margin: 0;
 }
 
 .aircraft-grid {
@@ -1490,7 +1516,8 @@ h3 {
   }
 
   .photo-groups-map .photo-grid,
-  .photo-groups-dex .photo-grid {
+  .photo-groups-dex .photo-grid,
+  .photo-grid-squadron {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1616,7 +1643,8 @@ h3 {
   }
 
   .photo-groups-map .photo-grid,
-  .photo-groups-dex .photo-grid {
+  .photo-groups-dex .photo-grid,
+  .photo-grid-squadron {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }

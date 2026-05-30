@@ -14,6 +14,7 @@ Read this section first before making changes.
 - **Photo resolution order:** mirrored `raw_assets/aircraft/<type>/<squadron>/<path>`, then beside the YAML entry, then flat `raw_assets/<path>`.
 - **Map pin matching:** `location` must match a pin `name` in `map_pins/` exactly. Check the pin YAML before adding photos. Use `pin_id` when names are ambiguous.
 - **Squadron logos:** optional `squadron_logo: filename.png` resolves from `raw_assets/` the same way as photos. Raster logos are resized to max 512 px and copied to `assets/logos/`. SVG logos can live directly in `assets/logos/` and be referenced with a relative path such as `../../../assets/logos/149-squadron.svg`.
+- **Organisation override:** use `unit_type: organisation` for airline/operator entries that should be labelled Organisation instead of Squadron. These records remain in the Dex and viewer but are excluded from the Squadrons page.
 - **Dex grouping:** the UI groups by `aircraft_type`, not folder name. Multiple squadrons of the same type appear under one Dex card.
 - **Do not add** frontend frameworks, bundlers, map tile prefetching, or hidden attribution.
 
@@ -64,6 +65,7 @@ Aircraft YAML should look like:
 ```yaml
 aircraft_type: Boeing F-15SG Strike Eagle
 squadron_name: 149 Squadron
+unit_type: squadron
 country: Singapore
 squadron_logo: ../../../assets/logos/149-squadron.svg
 photos:
@@ -78,6 +80,7 @@ Common aircraft YAML fields:
 
 - `aircraft_type` - display name and Dex card key
 - `squadron_name` - operator or unit name
+- `unit_type` - optional; defaults to `squadron`. Set to `organisation` for airline/operator entries that should use Organisation labels and stay off the Squadrons page.
 - `country` - country shown in the UI
 - `squadron_logo` - optional logo filename or relative path
 - `photos` - list of photo objects
@@ -91,6 +94,8 @@ Photo paths in entry YAML are relative to the matching entry folder. The build s
 The generated manifest includes per-photo `image`, `thumbnail`, `originalSize`, `processedSize`, `thumbnailSize`, and `exif` fields, plus per-aircraft `stats`. Generated JPEGs should retain source EXIF metadata, with Orientation normalized to `1` after pixel rotation. Keep those fields in sync with `script.js` when changing generator output.
 
 The `exif` object may include `Make`, `Model`, `LensModel`, `FocalLength`, `FNumber`, `ExposureTime`, `ISO`, `DateTimeOriginal`, `DateTimeDigitized`, and `DateTime`. The build script reads both the main EXIF IFD and the Exif sub-IFD from source images.
+
+The generated manifest keeps compatibility fields such as `squadronName` and `squadronId`, and also emits `unitType`/`unitLabel` on photos and nested squadron records. `unitType: organisation` records have `showOnSquadronsPage: false`; the browser filters them out of the Squadrons tab while still showing them in Aircraft Dex, map grouping, search, stats, and the photo viewer.
 
 ## Build And Verification
 
@@ -157,7 +162,7 @@ Open `http://127.0.0.1:8000/`.
 - The browser app first reads `window.SPOTTERDEX_DATA` from `data/spotterdex-data.js`, then falls back to fetching `data/spotterdex.json`.
 - Location and aircraft deep links use hash params: `#location=<pin-id>` and `#aircraft=<aircraft-id>`.
 - The Aircraft Dex view uses the same two-column workspace pattern as the World Map: filters and the Latest frames sidebar live in the left panel, while entry cards and the selected-entry results panel live in the right column. Expanded aircraft entries show stats, squadron logos, and photo groups in a grid layout similar to map location results.
-- The Squadrons view is a separate top-level tab that aggregates squadron/operator records by country and name, then displays prominent logo cards using existing nested aircraft squadron data.
+- The Squadrons view is a separate top-level tab that aggregates records with `unitType: squadron` by country and name, then displays prominent logo cards. Organisation records are intentionally hidden from this page. Clicking a squadron logo selects it and renders all viewable photos for that squadron in the detail grid below the logo gallery.
 - The Stats Dashboard is the final top-level tab. It shows collection summary pairs plus the EXIF dashboard. Squadron totals should use the same country/name aggregation as the Squadrons view, not per-aircraft folder IDs.
 - Desktop navigation uses tab buttons. Mobile navigation uses the `#viewSelect` dropdown; keep it synchronized with `data-tab-target` buttons in `setActiveTab`.
 - The stats and EXIF dashboards are computed client-side from generated `pins`, `aircraft`, `squadrons`, `photos`, and `photos[].exif` in `script.js`; the Python build script only needs changes if generated field names or normalization rules change.

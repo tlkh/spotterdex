@@ -209,7 +209,7 @@ def load_aircraft(
         return [], []
 
     aircraft_by_id: Dict[str, Dict[str, Any]] = {}
-    squadron_by_key: Dict[Tuple[str, str], Dict[str, Any]] = {}
+    squadron_by_key: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
     photos: List[Dict[str, Any]] = []
     used_photo_ids: set[str] = set()
 
@@ -221,6 +221,7 @@ def load_aircraft(
 
         aircraft_data = data.get("aircraft") if isinstance(data.get("aircraft"), dict) else {}
         squadron_data = data.get("squadron") if isinstance(data.get("squadron"), dict) else {}
+        squadron_scalar = data.get("squadron") if not isinstance(data.get("squadron"), dict) else None
 
         type_name = str(
             data.get("aircraft_type")
@@ -232,10 +233,11 @@ def load_aircraft(
         squadron_name = str(
             data.get("squadron_name")
             or data.get("squadron_full_name")
-            or data.get("squadron")
             or squadron_data.get("name")
+            or squadron_scalar
             or display_name(yaml_path.parent.name)
         ).strip()
+        unit_type = read_unit_type(data, squadron_data)
         country = str(data.get("country") or squadron_data.get("country") or "").strip()
         aircraft_id = slugify(type_name)
         squadron_id = slugify(f"{aircraft_id}-{squadron_name}")
@@ -266,7 +268,7 @@ def load_aircraft(
         if country and country not in aircraft_entry["countries"]:
             aircraft_entry["countries"].append(country)
 
-        squadron_key = (aircraft_id, squadron_id)
+        squadron_key = (aircraft_id, squadron_id, unit_type)
         squadron_entry = squadron_by_key.get(squadron_key)
         if not squadron_entry:
             squadron_entry = {
@@ -274,6 +276,9 @@ def load_aircraft(
                 "name": squadron_name,
                 "country": country,
                 "logo": logo,
+                "unitType": unit_type,
+                "unitLabel": unit_display_label(unit_type),
+                "showOnSquadronsPage": unit_type == "squadron",
                 "photoIds": [],
             }
             squadron_by_key[squadron_key] = squadron_entry
@@ -301,6 +306,7 @@ def load_aircraft(
                 aircraft_id=aircraft_id,
                 squadron_name=squadron_name,
                 squadron_id=squadron_id,
+                unit_type=unit_type,
                 country=country,
                 photo_output_dir=photo_output_dir,
                 thumb_output_dir=thumb_output_dir,
@@ -350,9 +356,14 @@ def apply_aircraft_stats(aircraft_entries: List[Dict[str, Any]], photos: List[Di
             squadron["photoIds"] = squadron_ids
             squadron["photoCount"] = sum(1 for photo_id in squadron_ids if photo_id in photos_by_id)
 
+        unit_count = len(entry.get("squadrons", []))
+        squadron_count = sum(1 for squadron in entry.get("squadrons", []) if squadron.get("unitType", "squadron") == "squadron")
+        organisation_count = sum(1 for squadron in entry.get("squadrons", []) if squadron.get("unitType") == "organisation")
         entry["stats"] = {
             "photoCount": len(entry_photos),
-            "squadronCount": len(entry.get("squadrons", [])),
+            "unitCount": unit_count,
+            "squadronCount": squadron_count,
+            "organisationCount": organisation_count,
             "locationCount": len(locations),
             "locations": locations,
             "firstDate": sort_dates[0] if sort_dates else "",
@@ -444,6 +455,7 @@ def process_photo(
     aircraft_id: str,
     squadron_name: str,
     squadron_id: str,
+    unit_type: str,
     country: str,
     photo_output_dir: Path,
     thumb_output_dir: Path,
@@ -508,6 +520,8 @@ def process_photo(
         "aircraftType": type_name,
         "squadronId": squadron_id,
         "squadronName": squadron_name,
+        "unitType": unit_type,
+        "unitLabel": unit_display_label(unit_type),
         "country": country,
         "year": year,
         "date": photo_date,
@@ -560,6 +574,38 @@ def read_coordinates(item: Dict[str, Any]) -> Tuple[Optional[float], Optional[fl
     except (TypeError, ValueError):
         return None, None
     return lat, lon
+
+
+def read_unit_type(data: Dict[str, Any], squadron_data: Dict[str, Any]) -> str:
+    values = [
+        data.get("unit_type"),
+        data.get("unitType"),
+        data.get("squadron_type"),
+        data.get("squadronType"),
+        data.get("operator_type"),
+        data.get("operatorType"),
+        data.get("entry_type"),
+        data.get("entryType"),
+        squadron_data.get("unit_type"),
+        squadron_data.get("unitType"),
+        squadron_data.get("type"),
+        squadron_data.get("kind"),
+    ]
+
+    if data.get("organisation") is True or data.get("organization") is True:
+        return "organisation"
+    if squadron_data.get("organisation") is True or squadron_data.get("organization") is True:
+        return "organisation"
+
+    for value in values:
+        key = normalize_key(str(value or ""))
+        if key in {"organisation", "organization", "org"}:
+            return "organisation"
+    return "squadron"
+
+
+def unit_display_label(unit_type: str) -> str:
+    return "Organisation" if unit_type == "organisation" else "Squadron"
 
 
 def read_photo_date(photo_item: Dict[str, Any], exif: Dict[str, str]) -> str:

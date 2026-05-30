@@ -9,6 +9,7 @@
     aircraftById: new Map(),
     selectedPinId: null,
     selectedAircraftId: null,
+    selectedSquadronId: null,
     mapGroupMode: "squadron",
     dexGroupMode: "squadron",
     map: null,
@@ -55,6 +56,7 @@
     els.statsDashboard = document.getElementById("statsDashboard");
     els.exifDashboard = document.getElementById("exifDashboard");
     els.squadronLogoGrid = document.getElementById("squadronLogoGrid");
+    els.squadronDetail = document.getElementById("squadronDetail");
     els.squadronPageCount = document.getElementById("squadronPageCount");
     els.photoViewer = document.getElementById("photoViewer");
     els.viewerImage = document.getElementById("viewerImage");
@@ -101,18 +103,23 @@
       }))
       .filter((pin) => Number.isFinite(pin.lat) && Number.isFinite(pin.lon));
 
-    data.photos = data.photos.map((photo, index) => ({
-      ...photo,
-      id: String(photo.id || `photo-${index + 1}`),
-      year: photo.year ? String(photo.year) : "",
-      date: photo.date ? String(photo.date) : "",
-      sortDate: photo.sortDate ? String(photo.sortDate) : deriveSortDate(photo),
-      locationName: photo.locationName || photo.location || "Unknown location",
-      aircraftType: photo.aircraftType || "Unknown aircraft",
-      squadronName: photo.squadronName || "Unknown squadron",
-      thumbnail: photo.thumbnail || photo.image || "",
-      exif: photo.exif && typeof photo.exif === "object" ? photo.exif : {}
-    }));
+    data.photos = data.photos.map((photo, index) => {
+      const unitType = normalizeUnitType(photo.unitType || photo.unit_type || photo.squadronType);
+      return {
+        ...photo,
+        id: String(photo.id || `photo-${index + 1}`),
+        year: photo.year ? String(photo.year) : "",
+        date: photo.date ? String(photo.date) : "",
+        sortDate: photo.sortDate ? String(photo.sortDate) : deriveSortDate(photo),
+        locationName: photo.locationName || photo.location || "Unknown location",
+        aircraftType: photo.aircraftType || "Unknown aircraft",
+        squadronName: photo.squadronName || photo.unitName || unknownUnitName(unitType),
+        unitType,
+        unitLabel: photo.unitLabel || unitDisplayLabel(unitType),
+        thumbnail: photo.thumbnail || photo.image || "",
+        exif: photo.exif && typeof photo.exif === "object" ? photo.exif : {}
+      };
+    });
 
     data.photos.forEach((photo) => {
       photo.sortTime = Date.parse(photo.sortDate || photo.date || `${photo.year || "0000"}-01-01`);
@@ -127,7 +134,7 @@
         id: String(entry.id || slugify(entry.typeName || "aircraft")),
         typeName: entry.typeName || entry.aircraftType || "Unknown aircraft",
         countries: Array.isArray(entry.countries) ? entry.countries : [],
-        squadrons: Array.isArray(entry.squadrons) ? entry.squadrons : [],
+        squadrons: Array.isArray(entry.squadrons) ? entry.squadrons.map(normalizeUnitRecord) : [],
         photoIds: Array.isArray(entry.photoIds) ? entry.photoIds : [],
         stats: entry.stats && typeof entry.stats === "object" ? entry.stats : {}
       }))
@@ -147,6 +154,21 @@
     });
 
     return data;
+  }
+
+  function normalizeUnitRecord(squadron) {
+    const unitType = normalizeUnitType(squadron.unitType || squadron.unit_type || squadron.squadronType);
+    return {
+      ...squadron,
+      id: String(squadron.id || slugify(squadron.name || "unit")),
+      name: squadron.name || unknownUnitName(unitType),
+      country: squadron.country || "",
+      logo: squadron.logo || "",
+      photoIds: Array.isArray(squadron.photoIds) ? squadron.photoIds : [],
+      unitType,
+      unitLabel: squadron.unitLabel || unitDisplayLabel(unitType),
+      showOnSquadronsPage: squadron.showOnSquadronsPage !== false && unitType === "squadron"
+    };
   }
 
   function chooseInitialSelections() {
@@ -217,6 +239,12 @@
     const aircraftButton = event.target.closest("[data-aircraft-id]");
     if (aircraftButton) {
       selectAircraft(aircraftButton.dataset.aircraftId);
+      return;
+    }
+
+    const squadronButton = event.target.closest("[data-squadron-id]");
+    if (squadronButton) {
+      selectSquadron(squadronButton.dataset.squadronId);
       return;
     }
 
@@ -509,6 +537,7 @@
     }
 
     const photos = photosForPin(pin);
+    const unitGroupLabel = photoUnitGroupLabel(photos);
     els.mapResults.innerHTML = `
       <div class="result-header">
         <div>
@@ -518,7 +547,7 @@
         </div>
         <div class="segmented" aria-label="Organize map photos">
           ${segmentButton("Aircraft Type", "type", state.mapGroupMode, "data-map-group")}
-          ${segmentButton("Squadron", "squadron", state.mapGroupMode, "data-map-group")}
+          ${segmentButton(unitGroupLabel, "squadron", state.mapGroupMode, "data-map-group")}
         </div>
       </div>
       ${renderPhotoGroups(photos, state.mapGroupMode, "map")}
@@ -655,7 +684,7 @@
   }
 
   function renderSquadronsPage() {
-    if (!els.squadronLogoGrid || !els.squadronPageCount) {
+    if (!els.squadronLogoGrid || !els.squadronPageCount || !els.squadronDetail) {
       return;
     }
 
@@ -664,16 +693,21 @@
 
     if (!squadrons.length) {
       els.squadronLogoGrid.innerHTML = '<div class="empty-state compact">Add squadron entries to populate this page.</div>';
+      els.squadronDetail.innerHTML = '<div class="empty-state">Squadron photos will appear here once entries are added.</div>';
       return;
     }
 
     els.squadronLogoGrid.innerHTML = squadrons.map(renderSquadronLogoCard).join("");
+    renderSquadronDetail(squadrons);
   }
 
   function collectSquadrons() {
     const byKey = new Map();
     state.data.aircraft.forEach((entry) => {
       (entry.squadrons || []).forEach((squadron) => {
+        if (!isSquadronUnit(squadron)) {
+          return;
+        }
         const key = normalizeKey(`${squadron.country || ""}-${squadron.name || ""}`);
         if (!byKey.has(key)) {
           byKey.set(key, {
@@ -716,9 +750,10 @@
       : `<span class="squadron-logo-fallback">${escapeHtml(initials(squadron.name))}</span>`;
     const typePreview = squadron.aircraftTypes.slice(0, 3).join(", ");
     const extraTypes = Math.max(0, squadron.aircraftTypes.length - 3);
+    const activeClass = squadron.id === state.selectedSquadronId ? " is-active" : "";
 
     return `
-      <article class="squadron-logo-card">
+      <button class="squadron-logo-card${activeClass}" type="button" data-squadron-id="${escapeAttr(squadron.id)}">
         <div class="squadron-logo-media">
           ${logo}
         </div>
@@ -728,7 +763,49 @@
           <p>${escapeHtml(typePreview || "No aircraft types linked yet")}${extraTypes ? ` + ${extraTypes} more` : ""}</p>
           <span>${squadron.photoIds.length} photo${squadron.photoIds.length === 1 ? "" : "s"} - ${squadron.aircraftTypes.length} type${squadron.aircraftTypes.length === 1 ? "" : "s"}</span>
         </div>
-      </article>
+      </button>
+    `;
+  }
+
+  function renderSquadronDetail(squadrons = collectSquadrons()) {
+    if (!els.squadronDetail) {
+      return;
+    }
+
+    if (state.selectedSquadronId && !squadrons.some((squadron) => squadron.id === state.selectedSquadronId)) {
+      state.selectedSquadronId = null;
+    }
+
+    const squadron = squadrons.find((item) => item.id === state.selectedSquadronId);
+    if (!squadron) {
+      els.squadronDetail.innerHTML = '<div class="empty-state">Select a squadron emblem to view its aircraft photos.</div>';
+      return;
+    }
+
+    const photos = photosForSquadronRecord(squadron);
+    const typePreview = squadron.aircraftTypes.join(", ");
+    els.squadronDetail.innerHTML = `
+      <div class="result-header">
+        <div>
+          <p class="eyebrow">${escapeHtml(squadron.country || "Squadron")}</p>
+          <h2>${escapeHtml(squadron.name)}</h2>
+          <p class="muted">${photos.length} viewable photo${photos.length === 1 ? "" : "s"} across ${squadron.aircraftTypes.length} aircraft type${squadron.aircraftTypes.length === 1 ? "" : "s"}</p>
+        </div>
+      </div>
+      ${typePreview ? `<p class="muted squadron-type-list">${escapeHtml(typePreview)}</p>` : ""}
+      ${renderSquadronPhotoGrid(photos)}
+    `;
+  }
+
+  function renderSquadronPhotoGrid(photos) {
+    if (!photos.length) {
+      return '<div class="empty-state">No viewable photos found for this squadron yet.</div>';
+    }
+
+    return `
+      <div class="photo-grid photo-grid-squadron">
+        ${photos.map((photo) => renderPhotoCard(photo, "squadron")).join("")}
+      </div>
     `;
   }
 
@@ -781,7 +858,7 @@
       if (!query) {
         return true;
       }
-      const squadronText = entry.squadrons.map((squadron) => squadron.name).join(" ");
+      const squadronText = entry.squadrons.map((squadron) => `${squadron.name} ${squadron.unitLabel}`).join(" ");
       return normalizeText(`${entry.typeName} ${entry.countries.join(" ")} ${squadronText}`).includes(query);
     });
 
@@ -807,6 +884,8 @@
         const countries = unique(entry.countries).slice(0, 3);
         const activeClass = entry.id === state.selectedAircraftId ? " is-active" : "";
         const coverImage = cover ? cover.thumbnail || cover.image : "";
+        const unitCount = stats.unitCount;
+        const unitLabel = entryUnitNoun(entry, unitCount);
 
         return `
           <button class="aircraft-card${activeClass}" type="button" data-aircraft-id="${escapeAttr(entry.id)}">
@@ -819,7 +898,7 @@
             </div>
             <div class="aircraft-body">
               <strong class="aircraft-title">${escapeHtml(entry.typeName)}</strong>
-              <span>${stats.squadronCount} squadron${stats.squadronCount === 1 ? "" : "s"} - ${stats.photoCount} photo${stats.photoCount === 1 ? "" : "s"}</span>
+              <span>${unitCount} ${unitLabel} - ${stats.photoCount} photo${stats.photoCount === 1 ? "" : "s"}</span>
               <span class="aircraft-stat-row">
                 <span><strong>${stats.locationCount}</strong> Locations</span>
                 <span><strong>${escapeHtml(stats.latestDate ? formatDisplayDate(stats.latestDate) : "None")}</strong> Latest</span>
@@ -843,22 +922,25 @@
 
     const photos = photosForAircraft(entry);
     const stats = aircraftStats(entry);
+    const unitCount = stats.unitCount;
+    const unitLabel = entryUnitNoun(entry, unitCount);
+    const unitGroupLabel = photos.length ? photoUnitGroupLabel(photos) : entryUnitNoun(entry, 1, true);
     els.dexDetail.innerHTML = `
       <div class="result-header">
         <div>
           <p class="eyebrow">Selected entry</p>
           <h2>${escapeHtml(entry.typeName)}</h2>
-          <p class="muted">${stats.photoCount} photo${stats.photoCount === 1 ? "" : "s"} across ${stats.squadronCount} squadron${stats.squadronCount === 1 ? "" : "s"}</p>
+          <p class="muted">${stats.photoCount} photo${stats.photoCount === 1 ? "" : "s"} across ${unitCount} ${unitLabel}</p>
         </div>
         <div class="segmented" aria-label="Organize aircraft photos">
-          ${segmentButton("Squadron", "squadron", state.dexGroupMode, "data-dex-group")}
+          ${segmentButton(unitGroupLabel, "squadron", state.dexGroupMode, "data-dex-group")}
           ${segmentButton("Location", "location", state.dexGroupMode, "data-dex-group")}
         </div>
       </div>
 
       <div class="entry-stat-grid" aria-label="Aircraft statistics">
         ${statTile("Photos", stats.photoCount)}
-        ${statTile("Squadrons", stats.squadronCount)}
+        ${statTile(entryUnitNoun(entry, 2, true), unitCount)}
         ${statTile("Locations", stats.locationCount)}
         ${statTile("Latest", stats.latestDate ? formatDisplayDate(stats.latestDate) : "No photos")}
       </div>
@@ -876,13 +958,14 @@
       ? `<img class="squadron-logo" src="${escapeAttr(squadron.logo)}" alt="${escapeAttr(squadron.name)} logo">`
       : `<span class="logo-fallback" aria-hidden="true">${escapeHtml(initials(squadron.name))}</span>`;
     const photoCount = Number(squadron.photoCount || 0);
+    const unitLabel = squadron.unitLabel || unitDisplayLabel(squadron.unitType);
 
     return `
       <div class="squadron-row">
         ${logo}
         <span>
           <strong>${escapeHtml(squadron.name)}</strong>
-          <span>${escapeHtml(squadron.country || "Country not set")} - ${photoCount} photo${photoCount === 1 ? "" : "s"}</span>
+          <span>${escapeHtml(unitLabel)} - ${escapeHtml(squadron.country || "Country not set")} - ${photoCount} photo${photoCount === 1 ? "" : "s"}</span>
         </span>
       </div>
     `;
@@ -965,6 +1048,14 @@
     els.dexDetail.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
+  function selectSquadron(squadronId) {
+    state.selectedSquadronId = squadronId;
+    renderSquadronsPage();
+    if (els.squadronDetail) {
+      els.squadronDetail.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }
+
   function photosForPin(pin) {
     const pinKey = normalizeKey(pin.name);
     return state.data.photos
@@ -976,6 +1067,13 @@
     const ids = new Set(entry.photoIds || []);
     return state.data.photos
       .filter((photo) => photo.aircraftId === entry.id || ids.has(photo.id))
+      .sort(sortPhotos);
+  }
+
+  function photosForSquadronRecord(squadron) {
+    const ids = new Set(squadron.photoIds || []);
+    return state.data.photos
+      .filter((photo) => ids.has(photo.id) && (photo.image || photo.thumbnail))
       .sort(sortPhotos);
   }
 
@@ -1080,7 +1178,7 @@
     photos.forEach((photo) => {
       let name = "Unsorted";
       if (mode === "squadron") {
-        name = photo.squadronName || "Unknown squadron";
+        name = photo.squadronName || unknownUnitName(photo.unitType);
       } else if (mode === "location") {
         name = photo.locationName || "Unknown location";
       } else {
@@ -1138,7 +1236,13 @@
       return;
     }
 
-    const collection = context === "dex" ? currentDexPhotoIds() : context === "recent" ? currentRecentPhotoIds() : currentMapPhotoIds();
+    const collection = context === "dex"
+      ? currentDexPhotoIds()
+      : context === "recent"
+        ? currentRecentPhotoIds()
+        : context === "squadron"
+          ? currentSquadronPhotoIds()
+          : currentMapPhotoIds();
     state.activePhotoIds = collection.includes(photoId) ? collection : [photoId];
     state.activePhotoIndex = Math.max(0, state.activePhotoIds.indexOf(photoId));
 
@@ -1202,7 +1306,7 @@
         title: "Frame",
         rows: [
           ["Aircraft", photo.aircraftType],
-          ["Squadron", photo.squadronName, squadronLogo],
+          [photo.unitLabel || unitDisplayLabel(photo.unitType), photo.squadronName, squadronLogo],
           ["Country", photo.country],
           ["Location", photo.locationName],
           ["Date", exif.DateTimeOriginal ? displayPhotoDate(photo) : photo.year]
@@ -1329,6 +1433,11 @@
     return recentPhotos(RECENT_PHOTO_LIMIT).map((photo) => photo.id);
   }
 
+  function currentSquadronPhotoIds() {
+    const squadron = collectSquadrons().find((item) => item.id === state.selectedSquadronId);
+    return squadron ? photosForSquadronRecord(squadron).map((photo) => photo.id) : [];
+  }
+
   function applyDeepLinkFromHash(options = {}) {
     const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
     const locationId = params.get("location");
@@ -1400,12 +1509,20 @@
     ])
       .filter(Boolean)
       .sort();
+    const units = entry.squadrons || [];
+    const unitCount = Number.isFinite(Number(manifestStats.unitCount)) ? Number(manifestStats.unitCount) : units.length;
+    const squadronCount = Number.isFinite(Number(manifestStats.squadronCount))
+      ? Number(manifestStats.squadronCount)
+      : units.filter(isSquadronUnit).length;
+    const organisationCount = Number.isFinite(Number(manifestStats.organisationCount))
+      ? Number(manifestStats.organisationCount)
+      : units.filter((squadron) => normalizeUnitType(squadron.unitType) === "organisation").length;
 
     return {
       photoCount: Number.isFinite(Number(manifestStats.photoCount)) ? Number(manifestStats.photoCount) : photos.length,
-      squadronCount: Number.isFinite(Number(manifestStats.squadronCount))
-        ? Number(manifestStats.squadronCount)
-        : (entry.squadrons || []).length,
+      unitCount,
+      squadronCount,
+      organisationCount,
       locationCount: Number.isFinite(Number(manifestStats.locationCount)) ? Number(manifestStats.locationCount) : locations.length,
       locations,
       firstDate: manifestStats.firstDate || dates[0] || "",
@@ -1415,6 +1532,48 @@
 
   function normalizeText(value) {
     return String(value || "").trim().toLowerCase();
+  }
+
+  function normalizeUnitType(value) {
+    const key = normalizeKey(value || "squadron");
+    return ["organisation", "organization", "org"].includes(key) ? "organisation" : "squadron";
+  }
+
+  function unitDisplayLabel(unitType) {
+    return normalizeUnitType(unitType) === "organisation" ? "Organisation" : "Squadron";
+  }
+
+  function unitNoun(unitType, count, titleCase = false) {
+    const normalized = normalizeUnitType(unitType);
+    const word = normalized === "organisation"
+      ? count === 1 ? "organisation" : "organisations"
+      : count === 1 ? "squadron" : "squadrons";
+    return titleCase ? word.charAt(0).toUpperCase() + word.slice(1) : word;
+  }
+
+  function unknownUnitName(unitType) {
+    return `Unknown ${unitNoun(unitType, 1)}`;
+  }
+
+  function isSquadronUnit(squadron) {
+    return normalizeUnitType(squadron.unitType) === "squadron" && squadron.showOnSquadronsPage !== false;
+  }
+
+  function entryUnitNoun(entry, count, titleCase = false) {
+    const unitTypes = unique((entry.squadrons || []).map((squadron) => normalizeUnitType(squadron.unitType)));
+    if (unitTypes.length === 1) {
+      return unitNoun(unitTypes[0], count, titleCase);
+    }
+    const word = count === 1 ? "unit" : "units";
+    return titleCase ? word.charAt(0).toUpperCase() + word.slice(1) : word;
+  }
+
+  function photoUnitGroupLabel(photos) {
+    const unitTypes = unique(photos.map((photo) => normalizeUnitType(photo.unitType)));
+    if (unitTypes.length === 1) {
+      return unitNoun(unitTypes[0], 1, true);
+    }
+    return "Unit";
   }
 
   function countryFlag(country) {

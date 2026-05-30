@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-30T14:25:37+00:00",
+  "generatedAt": "2026-05-30T14:51:02+00:00",
   "pins": [
     {
       "id": "hong-kong-international-airport",
@@ -183,6 +183,9 @@
           "name": "Kalitta Air",
           "country": "United States",
           "logo": "assets/logos/boeing-747-400-f-kalitta-air.png",
+          "unitType": "organisation",
+          "unitLabel": "Organisation",
+          "showOnSquadronsPage": false,
           "photoIds": [
             "boeing-747-400-f-kalitta-air-n742ck-da9e13c4"
           ],
@@ -195,7 +198,9 @@
       "coverPhoto": "boeing-747-400-f-kalitta-air-n742ck-da9e13c4",
       "stats": {
         "photoCount": 1,
-        "squadronCount": 1,
+        "unitCount": 1,
+        "squadronCount": 0,
+        "organisationCount": 1,
         "locationCount": 1,
         "locations": [
           "Hong Kong International Airport"
@@ -219,6 +224,9 @@
           "name": "120 Squadron",
           "country": "Singapore",
           "logo": "assets/logos/boeing-ah-64d-apache-longbow-120-squadron.png",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
           "photoIds": [
             "boeing-ah-64d-apache-longbow-120-squadron-rsaf-apache-flare-09597220"
           ],
@@ -231,7 +239,9 @@
       "coverPhoto": "boeing-ah-64d-apache-longbow-120-squadron-rsaf-apache-flare-09597220",
       "stats": {
         "photoCount": 1,
+        "unitCount": 1,
         "squadronCount": 1,
+        "organisationCount": 0,
         "locationCount": 1,
         "locations": [
           "Changi Exhibition Center"
@@ -255,6 +265,9 @@
           "name": "961st Airborne Air Control Squadron",
           "country": "United States",
           "logo": "assets/logos/boeing-e-3g-sentry-961st-airborne-air-control-squadron.png",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
           "photoIds": [
             "boeing-e-3g-sentry-961st-airborne-air-control-squadron-zz-0007-1c7a84e1"
           ],
@@ -267,7 +280,9 @@
       "coverPhoto": "boeing-e-3g-sentry-961st-airborne-air-control-squadron-zz-0007-1c7a84e1",
       "stats": {
         "photoCount": 1,
+        "unitCount": 1,
         "squadronCount": 1,
+        "organisationCount": 0,
         "locationCount": 1,
         "locations": [
           "Kadena Air Base"
@@ -291,6 +306,9 @@
           "name": "JASDF Air Rescue Wing",
           "country": "Japan",
           "logo": "assets/logos/hawker-u-125a-jasdf-air-rescue-wing.png",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
           "photoIds": [
             "hawker-u-125a-jasdf-air-rescue-wing-423022-af81ec09"
           ],
@@ -303,7 +321,9 @@
       "coverPhoto": "hawker-u-125a-jasdf-air-rescue-wing-423022-af81ec09",
       "stats": {
         "photoCount": 1,
+        "unitCount": 1,
         "squadronCount": 1,
+        "organisationCount": 0,
         "locationCount": 1,
         "locations": [
           "Tsuiki Air Base"
@@ -327,6 +347,9 @@
           "name": "402nd Tactical Airlift Squadron",
           "country": "Japan",
           "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
           "photoIds": [],
           "photoCount": 0
         },
@@ -335,6 +358,9 @@
           "name": "Air Development and Test Wing",
           "country": "Japan",
           "logo": "assets/logos/kawasaki-c-2-air-development-and-test-wing.png",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
           "photoIds": [
             "kawasaki-c-2-air-development-and-test-wing-081201-7b5b5b44"
           ],
@@ -347,7 +373,9 @@
       "coverPhoto": "kawasaki-c-2-air-development-and-test-wing-081201-7b5b5b44",
       "stats": {
         "photoCount": 1,
+        "unitCount": 2,
         "squadronCount": 2,
+        "organisationCount": 0,
         "locationCount": 1,
         "locations": [
           "Gifu Air Base"
@@ -371,6 +399,9 @@
           "name": "JASDF Electronic Warfare Squadron",
           "country": "Japan",
           "logo": "assets/logos/kawasaki-ec-2-jasdf-electronic-warfare-squadron.png",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
           "photoIds": [
             "kawasaki-ec-2-jasdf-electronic-warfare-squadron-681203-c50451ad"
           ],
@@ -383,7 +414,9 @@
       "coverPhoto": "kawasaki-ec-2-jasdf-electronic-warfare-squadron-681203-c50451ad",
       "stats": {
         "photoCount": 1,
+        "unitCount": 1,
         "squadronCount": 1,
+        "organisationCount": 0,
         "locationCount": 1,
         "locations": [
           "Gifu Air Base"
@@ -407,6 +440,9 @@
           "name": "JASDF Electronic Warfare Squadron",
           "country": "Japan",
           "logo": "assets/logos/kawasaki-rc-2-jasdf-electronic-warfare-squadron.png",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
           "photoIds": [
             "kawasaki-rc-2-jasdf-electronic-warfare-squadron-181202-e7fed8a9"
           ],
@@ -419,7 +455,9 @@
       "coverPhoto": "kawasaki-rc-2-jasdf-electronic-warfare-squadron-181202-e7fed8a9",
       "stats": {
         "photoCount": 1,
+        "unitCount": 1,
         "squadronCount": 1,
+        "organisationCount": 0,
         "locationCount": 1,
         "locations": [
           "Naha Air Base"
@@ -443,6 +481,9 @@
           "name": "Air Development and Test Wing",
           "country": "Japan",
           "logo": "assets/logos/kawasaki-t-4-air-development-and-test-wing.png",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
           "photoIds": [
             "kawasaki-t-4-air-development-and-test-wing-xx5606-ce22a52f"
           ],
@@ -455,7 +496,9 @@
       "coverPhoto": "kawasaki-t-4-air-development-and-test-wing-xx5606-ce22a52f",
       "stats": {
         "photoCount": 1,
+        "unitCount": 1,
         "squadronCount": 1,
+        "organisationCount": 0,
         "locationCount": 1,
         "locations": [
           "Gifu Air Base"
@@ -464,6 +507,53 @@
         "latestDate": "2026-04-08",
         "countries": [
           "Japan"
+        ]
+      }
+    },
+    {
+      "id": "lockheed-martin-f-35a-lightning-ii",
+      "typeName": "Lockheed Martin F-35A Lightning II",
+      "countries": [
+        "Australia"
+      ],
+      "squadrons": [
+        {
+          "id": "lockheed-martin-f-35a-lightning-ii-75-squadron",
+          "name": "75 Squadron",
+          "country": "Australia",
+          "logo": "assets/logos/lockheed-martin-f-35a-lightning-ii-75-squadron.png",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-1-cae8cfc2",
+            "lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-2-ef2bc9ee",
+            "lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-3-9daa5b98",
+            "lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-4-9fe7adc7"
+          ],
+          "photoCount": 4
+        }
+      ],
+      "photoIds": [
+        "lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-1-cae8cfc2",
+        "lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-2-ef2bc9ee",
+        "lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-3-9daa5b98",
+        "lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-4-9fe7adc7"
+      ],
+      "coverPhoto": "lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-1-cae8cfc2",
+      "stats": {
+        "photoCount": 4,
+        "unitCount": 1,
+        "squadronCount": 1,
+        "organisationCount": 0,
+        "locationCount": 1,
+        "locations": [
+          "Changi Exhibition Center"
+        ],
+        "firstDate": "2026-01-31",
+        "latestDate": "2026-02-03",
+        "countries": [
+          "Australia"
         ]
       }
     },
@@ -479,6 +569,9 @@
           "name": "201st Tactical Fighter Squadron",
           "country": "Japan",
           "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
           "photoIds": [],
           "photoCount": 0
         },
@@ -487,6 +580,9 @@
           "name": "203rd Tactical Fighter Squadron",
           "country": "Japan",
           "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
           "photoIds": [],
           "photoCount": 0
         },
@@ -495,6 +591,9 @@
           "name": "204th Tactical Fighter Squadron",
           "country": "Japan",
           "logo": "assets/logos/mitsubishi-f-15j-eagle-204th-tactical-fighter-squadron.png",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
           "photoIds": [
             "mitsubishi-f-15j-eagle-204th-tactical-fighter-squadron-204-sunset-a6f80a0f"
           ],
@@ -505,6 +604,9 @@
           "name": "303rd Tactical Fighter Squadron",
           "country": "Japan",
           "logo": "assets/logos/mitsubishi-f-15j-eagle-303rd-tactical-fighter-squadron.png",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
           "photoIds": [
             "mitsubishi-f-15j-eagle-303rd-tactical-fighter-squadron-728893-53b9fc1f"
           ],
@@ -515,6 +617,9 @@
           "name": "304th Tactical Fighter Squadron",
           "country": "Japan",
           "logo": "assets/logos/mitsubishi-f-15j-eagle-304th-tactical-fighter-squadron.png",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
           "photoIds": [
             "mitsubishi-f-15j-eagle-304th-tactical-fighter-squadron-128925-21302f6e"
           ],
@@ -525,6 +630,9 @@
           "name": "306th Tactical Fighter Squadron",
           "country": "Japan",
           "logo": "assets/logos/mitsubishi-f-15j-eagle-306th-tactical-fighter-squadron.png",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
           "photoIds": [
             "mitsubishi-f-15j-eagle-306th-tactical-fighter-squadron-928907-4b79cf4f"
           ],
@@ -535,6 +643,9 @@
           "name": "Air Development and Test Wing",
           "country": "Japan",
           "logo": "assets/logos/mitsubishi-f-15j-eagle-air-development-and-test-wing.png",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
           "photoIds": [
             "mitsubishi-f-15j-eagle-air-development-and-test-wing-128928-9db378f9"
           ],
@@ -551,7 +662,9 @@
       "coverPhoto": "mitsubishi-f-15j-eagle-204th-tactical-fighter-squadron-204-sunset-a6f80a0f",
       "stats": {
         "photoCount": 5,
+        "unitCount": 7,
         "squadronCount": 7,
+        "organisationCount": 0,
         "locationCount": 3,
         "locations": [
           "Gifu Air Base",
@@ -577,6 +690,9 @@
           "name": "6th Tactical Fighter Squadron",
           "country": "Japan",
           "logo": "assets/logos/mitsubishi-f-2a-6th-tactical-fighter-squadron.png",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
           "photoIds": [
             "mitsubishi-f-2a-6th-tactical-fighter-squadron-trio-jasdf-6tfs-984ad7be"
           ],
@@ -587,6 +703,9 @@
           "name": "8th Tactical Fighter Squadron",
           "country": "Japan",
           "logo": "assets/logos/mitsubishi-f-2a-8th-tactical-fighter-squadron.png",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
           "photoIds": [
             "mitsubishi-f-2a-8th-tactical-fighter-squadron-trio-jasdf-8tfs-4813e2c2"
           ],
@@ -597,6 +716,9 @@
           "name": "Air Development and Test Wing",
           "country": "Japan",
           "logo": "assets/logos/mitsubishi-f-2a-air-development-and-test-wing.png",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
           "photoIds": [
             "mitsubishi-f-2a-air-development-and-test-wing-xx8523-5bbc20e2"
           ],
@@ -611,7 +733,9 @@
       "coverPhoto": "mitsubishi-f-2a-6th-tactical-fighter-squadron-trio-jasdf-6tfs-984ad7be",
       "stats": {
         "photoCount": 3,
+        "unitCount": 3,
         "squadronCount": 3,
+        "organisationCount": 0,
         "locationCount": 2,
         "locations": [
           "Gifu Air Base",
@@ -636,6 +760,9 @@
           "name": "Air Development and Test Wing",
           "country": "Japan",
           "logo": "assets/logos/mitsubishi-f-2b-air-development-and-test-wing.png",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
           "photoIds": [
             "mitsubishi-f-2b-air-development-and-test-wing-638101-f95b8c4f"
           ],
@@ -648,7 +775,9 @@
       "coverPhoto": "mitsubishi-f-2b-air-development-and-test-wing-638101-f95b8c4f",
       "stats": {
         "photoCount": 1,
+        "unitCount": 1,
         "squadronCount": 1,
+        "organisationCount": 0,
         "locationCount": 1,
         "locations": [
           "Gifu Air Base"
@@ -672,6 +801,9 @@
           "name": "JASDF Air Rescue Wing",
           "country": "Japan",
           "logo": "assets/logos/mitsubishi-uh-60j-jasdf-air-rescue-wing.png",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
           "photoIds": [
             "mitsubishi-uh-60j-jasdf-air-rescue-wing-584621-de3e4b80"
           ],
@@ -684,7 +816,9 @@
       "coverPhoto": "mitsubishi-uh-60j-jasdf-air-rescue-wing-584621-de3e4b80",
       "stats": {
         "photoCount": 1,
+        "unitCount": 1,
         "squadronCount": 1,
+        "organisationCount": 0,
         "locationCount": 1,
         "locations": [
           "Tsuiki Air Base"
@@ -704,6 +838,8 @@
       "aircraftType": "Mitsubishi F-2B",
       "squadronId": "mitsubishi-f-2b-air-development-and-test-wing",
       "squadronName": "Air Development and Test Wing",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
       "country": "Japan",
       "year": "2026",
       "date": "2026-04-08",
@@ -737,6 +873,8 @@
       "aircraftType": "Mitsubishi F-2A",
       "squadronId": "mitsubishi-f-2a-air-development-and-test-wing",
       "squadronName": "Air Development and Test Wing",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
       "country": "Japan",
       "year": "2026",
       "date": "2026-04-08",
@@ -770,6 +908,8 @@
       "aircraftType": "Mitsubishi F-15J Eagle",
       "squadronId": "mitsubishi-f-15j-eagle-air-development-and-test-wing",
       "squadronName": "Air Development and Test Wing",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
       "country": "Japan",
       "year": "2026",
       "date": "2026-04-08",
@@ -803,6 +943,8 @@
       "aircraftType": "Kawasaki T-4",
       "squadronId": "kawasaki-t-4-air-development-and-test-wing",
       "squadronName": "Air Development and Test Wing",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
       "country": "Japan",
       "year": "2026",
       "date": "2026-04-08",
@@ -836,6 +978,8 @@
       "aircraftType": "Kawasaki EC-2",
       "squadronId": "kawasaki-ec-2-jasdf-electronic-warfare-squadron",
       "squadronName": "JASDF Electronic Warfare Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
       "country": "Japan",
       "year": "2026",
       "date": "2026-04-08",
@@ -869,6 +1013,8 @@
       "aircraftType": "Kawasaki C-2",
       "squadronId": "kawasaki-c-2-air-development-and-test-wing",
       "squadronName": "Air Development and Test Wing",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
       "country": "Japan",
       "year": "2026",
       "date": "2026-04-08",
@@ -897,11 +1043,83 @@
       }
     },
     {
+      "id": "lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-1-cae8cfc2",
+      "aircraftId": "lockheed-martin-f-35a-lightning-ii",
+      "aircraftType": "Lockheed Martin F-35A Lightning II",
+      "squadronId": "lockheed-martin-f-35a-lightning-ii-75-squadron",
+      "squadronName": "75 Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Australia",
+      "year": "2026",
+      "date": "2026-02-03",
+      "sortDate": "2026-02-03",
+      "locationName": "Changi Exhibition Center",
+      "pinId": "changi-exhibition-centre",
+      "title": "",
+      "caption": "RAAF F-35A at Singapore Airshow 2026",
+      "image": "assets/generated/photos/lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-1-cae8cfc2.jpg",
+      "thumbnail": "assets/generated/thumbs/lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-1-cae8cfc2.jpg",
+      "source": "raw_assets/raaf_f35a_1.jpg",
+      "originalSize": "5030 x 3773",
+      "processedSize": "2048 x 1536",
+      "thumbnailSize": "640 x 480",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "600mm",
+        "FNumber": "f/8.0",
+        "ExposureTime": "1/2500s",
+        "ISO": "320",
+        "DateTimeOriginal": "2026:02:03 12:39:38",
+        "DateTimeDigitized": "2026:02:03 12:39:38",
+        "DateTime": "2026:05:30 22:43:13"
+      }
+    },
+    {
+      "id": "lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-2-ef2bc9ee",
+      "aircraftId": "lockheed-martin-f-35a-lightning-ii",
+      "aircraftType": "Lockheed Martin F-35A Lightning II",
+      "squadronId": "lockheed-martin-f-35a-lightning-ii-75-squadron",
+      "squadronName": "75 Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Australia",
+      "year": "2026",
+      "date": "2026-02-03",
+      "sortDate": "2026-02-03",
+      "locationName": "Changi Exhibition Center",
+      "pinId": "changi-exhibition-centre",
+      "title": "",
+      "caption": "RAAF F-35A at Singapore Airshow 2026",
+      "image": "assets/generated/photos/lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-2-ef2bc9ee.jpg",
+      "thumbnail": "assets/generated/thumbs/lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-2-ef2bc9ee.jpg",
+      "source": "raw_assets/raaf_f35a_2.jpg",
+      "originalSize": "2781 x 2086",
+      "processedSize": "2048 x 1536",
+      "thumbnailSize": "640 x 480",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "600mm",
+        "FNumber": "f/8.0",
+        "ExposureTime": "1/2500s",
+        "ISO": "320",
+        "DateTimeOriginal": "2026:02:03 12:41:29",
+        "DateTimeDigitized": "2026:02:03 12:41:29",
+        "DateTime": "2026:05:30 22:42:31"
+      }
+    },
+    {
       "id": "boeing-ah-64d-apache-longbow-120-squadron-rsaf-apache-flare-09597220",
       "aircraftId": "boeing-ah-64d-apache-longbow",
       "aircraftType": "Boeing AH-64D Apache Longbow",
       "squadronId": "boeing-ah-64d-apache-longbow-120-squadron",
       "squadronName": "120 Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
       "country": "Singapore",
       "year": "2026",
       "date": "2026-02-03",
@@ -930,11 +1148,83 @@
       }
     },
     {
+      "id": "lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-3-9daa5b98",
+      "aircraftId": "lockheed-martin-f-35a-lightning-ii",
+      "aircraftType": "Lockheed Martin F-35A Lightning II",
+      "squadronId": "lockheed-martin-f-35a-lightning-ii-75-squadron",
+      "squadronName": "75 Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Australia",
+      "year": "2026",
+      "date": "2026-01-31",
+      "sortDate": "2026-01-31",
+      "locationName": "Changi Exhibition Center",
+      "pinId": "changi-exhibition-centre",
+      "title": "",
+      "caption": "RAAF F-35A at Singapore Airshow 2026",
+      "image": "assets/generated/photos/lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-3-9daa5b98.jpg",
+      "thumbnail": "assets/generated/thumbs/lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-3-9daa5b98.jpg",
+      "source": "raw_assets/raaf_f35a_3.jpg",
+      "originalSize": "1761 x 1321",
+      "processedSize": "2048 x 1536",
+      "thumbnailSize": "640 x 480",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "600mm",
+        "FNumber": "f/8.0",
+        "ExposureTime": "1/2000s",
+        "ISO": "250",
+        "DateTimeOriginal": "2026:01:31 10:52:39",
+        "DateTimeDigitized": "2026:01:31 10:52:39",
+        "DateTime": "2026:05:30 22:41:43"
+      }
+    },
+    {
+      "id": "lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-4-9fe7adc7",
+      "aircraftId": "lockheed-martin-f-35a-lightning-ii",
+      "aircraftType": "Lockheed Martin F-35A Lightning II",
+      "squadronId": "lockheed-martin-f-35a-lightning-ii-75-squadron",
+      "squadronName": "75 Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Australia",
+      "year": "2026",
+      "date": "2026-01-31",
+      "sortDate": "2026-01-31",
+      "locationName": "Changi Exhibition Center",
+      "pinId": "changi-exhibition-centre",
+      "title": "",
+      "caption": "RAAF F-35A at Singapore Airshow 2026",
+      "image": "assets/generated/photos/lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-4-9fe7adc7.jpg",
+      "thumbnail": "assets/generated/thumbs/lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-4-9fe7adc7.jpg",
+      "source": "raw_assets/raaf_f35a_4.jpg",
+      "originalSize": "2407 x 1805",
+      "processedSize": "2048 x 1536",
+      "thumbnailSize": "640 x 480",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "600mm",
+        "FNumber": "f/8.0",
+        "ExposureTime": "1/2000s",
+        "ISO": "320",
+        "DateTimeOriginal": "2026:01:31 10:58:19",
+        "DateTimeDigitized": "2026:01:31 10:58:19",
+        "DateTime": "2026:05:30 22:41:48"
+      }
+    },
+    {
       "id": "mitsubishi-f-15j-eagle-304th-tactical-fighter-squadron-128925-21302f6e",
       "aircraftId": "mitsubishi-f-15j-eagle",
       "aircraftType": "Mitsubishi F-15J Eagle",
       "squadronId": "mitsubishi-f-15j-eagle-304th-tactical-fighter-squadron",
       "squadronName": "304th Tactical Fighter Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
       "country": "Japan",
       "year": "2025",
       "date": "2025-12-12",
@@ -968,6 +1258,8 @@
       "aircraftType": "Kawasaki RC-2",
       "squadronId": "kawasaki-rc-2-jasdf-electronic-warfare-squadron",
       "squadronName": "JASDF Electronic Warfare Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
       "country": "Japan",
       "year": "2025",
       "date": "2025-12-10",
@@ -1001,6 +1293,8 @@
       "aircraftType": "Boeing E-3G Sentry",
       "squadronId": "boeing-e-3g-sentry-961st-airborne-air-control-squadron",
       "squadronName": "961st Airborne Air Control Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
       "country": "United States",
       "year": "2025",
       "date": "2025-12-10",
@@ -1034,6 +1328,8 @@
       "aircraftType": "Mitsubishi F-15J Eagle",
       "squadronId": "mitsubishi-f-15j-eagle-204th-tactical-fighter-squadron",
       "squadronName": "204th Tactical Fighter Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
       "country": "Japan",
       "year": "2025",
       "date": "2025-12-09",
@@ -1067,6 +1363,8 @@
       "aircraftType": "Mitsubishi F-15J Eagle",
       "squadronId": "mitsubishi-f-15j-eagle-306th-tactical-fighter-squadron",
       "squadronName": "306th Tactical Fighter Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
       "country": "Japan",
       "year": "2025",
       "date": "2025-12-04",
@@ -1100,6 +1398,8 @@
       "aircraftType": "Mitsubishi F-15J Eagle",
       "squadronId": "mitsubishi-f-15j-eagle-303rd-tactical-fighter-squadron",
       "squadronName": "303rd Tactical Fighter Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
       "country": "Japan",
       "year": "2025",
       "date": "2025-12-03",
@@ -1133,6 +1433,8 @@
       "aircraftType": "Mitsubishi UH-60J",
       "squadronId": "mitsubishi-uh-60j-jasdf-air-rescue-wing",
       "squadronName": "JASDF Air Rescue Wing",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
       "country": "Japan",
       "year": "2025",
       "date": "2025-11-30",
@@ -1166,6 +1468,8 @@
       "aircraftType": "Mitsubishi F-2A",
       "squadronId": "mitsubishi-f-2a-8th-tactical-fighter-squadron",
       "squadronName": "8th Tactical Fighter Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
       "country": "Japan",
       "year": "2025",
       "date": "2025-11-30",
@@ -1199,6 +1503,8 @@
       "aircraftType": "Hawker U-125A",
       "squadronId": "hawker-u-125a-jasdf-air-rescue-wing",
       "squadronName": "JASDF Air Rescue Wing",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
       "country": "Japan",
       "year": "2025",
       "date": "2025-11-30",
@@ -1232,6 +1538,8 @@
       "aircraftType": "Mitsubishi F-2A",
       "squadronId": "mitsubishi-f-2a-6th-tactical-fighter-squadron",
       "squadronName": "6th Tactical Fighter Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
       "country": "Japan",
       "year": "2025",
       "date": "2025-11-29",
@@ -1265,6 +1573,8 @@
       "aircraftType": "Boeing 747-400(F)",
       "squadronId": "boeing-747-400-f-kalitta-air",
       "squadronName": "Kalitta Air",
+      "unitType": "organisation",
+      "unitLabel": "Organisation",
       "country": "United States",
       "year": "2025",
       "date": "2025-04-17",
