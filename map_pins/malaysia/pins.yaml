@@ -2,10 +2,11 @@ country: Malaysia
 pins:
   - id: penang-international-airport
     name: Penang International Airport
+    icao: WMKP
     coordinates: [5.2963, 100.2762]
     enabled: true
   - id: kuala-lumpur-international-airport
     name: Kuala Lumpur International Airport
+    icao: WMKK
     coordinates: [2.7456, 101.7100]
     enabled: true
-

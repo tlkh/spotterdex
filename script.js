@@ -17,6 +17,7 @@
     markersByPinId: new Map(),
     activePhotoIds: [],
     activePhotoIndex: 0,
+    mobileMapPanel: null,
     isApplyingHash: false
   };
 
@@ -45,6 +46,8 @@
     els.locationSearch = document.getElementById("locationSearch");
     els.aircraftSearch = document.getElementById("aircraftSearch");
     els.locationList = document.getElementById("locationList");
+    els.mapWorkspace = document.querySelector("#mapView .map-workspace");
+    els.mapPanelToggles = document.querySelectorAll("[data-map-panel-toggle]");
     els.worldMap = document.getElementById("worldMap");
     els.mapFallback = document.getElementById("mapFallback");
     els.mapResults = document.getElementById("mapResults");
@@ -97,6 +100,7 @@
         id: String(pin.id || slugify(pin.name || "pin")),
         name: pin.name || "Unnamed location",
         country: pin.country || "",
+        icao: normalizeIcao(pin.icao || pin.icaoCode || pin.icao_code),
         lat: Number(pin.lat),
         lon: Number(pin.lon),
         enabled: pin.enabled !== false
@@ -208,6 +212,7 @@
     document.addEventListener("keydown", handleKeydown);
     window.addEventListener("hashchange", () => applyDeepLinkFromHash());
     window.addEventListener("resize", debounce(() => {
+      updateMapPanelState();
       if (state.map) {
         state.map.invalidateSize();
         renderPins();
@@ -216,6 +221,12 @@
   }
 
   function handleDocumentClick(event) {
+    const mapPanelButton = event.target.closest("[data-map-panel-toggle]");
+    if (mapPanelButton) {
+      toggleMapPanel(mapPanelButton.dataset.mapPanelToggle);
+      return;
+    }
+
     const mapGroupButton = event.target.closest("[data-map-group]");
     if (mapGroupButton) {
       state.mapGroupMode = mapGroupButton.dataset.mapGroup;
@@ -263,7 +274,42 @@
       } else if (event.key === "ArrowRight") {
         stepPhoto(1);
       }
+    } else if (event.key === "Escape" && state.mobileMapPanel && isMobileMapLayout()) {
+      setMapPanel(null);
     }
+  }
+
+  function toggleMapPanel(panel) {
+    setMapPanel(state.mobileMapPanel === panel ? null : panel);
+  }
+
+  function setMapPanel(panel) {
+    state.mobileMapPanel = panel === "locations" || panel === "results" ? panel : null;
+    updateMapPanelState();
+
+    if (state.map) {
+      window.requestAnimationFrame(() => state.map.invalidateSize());
+    }
+  }
+
+  function updateMapPanelState() {
+    if (!els.mapWorkspace) {
+      return;
+    }
+
+    const activePanel = state.mobileMapPanel;
+    els.mapWorkspace.classList.toggle("is-locations-open", activePanel === "locations");
+    els.mapWorkspace.classList.toggle("is-results-open", activePanel === "results");
+
+    els.mapPanelToggles.forEach((button) => {
+      const isExpanded = button.dataset.mapPanelToggle === activePanel;
+      button.classList.toggle("is-active", isExpanded);
+      button.setAttribute("aria-expanded", String(isExpanded));
+    });
+  }
+
+  function isMobileMapLayout() {
+    return window.matchMedia("(max-width: 1040px)").matches;
   }
 
   function setActiveTab(viewId) {
@@ -351,6 +397,7 @@
     renderPins();
     renderRecentPhotos();
     renderMapResults();
+    updateMapPanelState();
     renderDex();
     renderStatsDashboard();
     renderExifDashboard();
@@ -402,7 +449,7 @@
     }
 
     state.map = window.L.map(els.worldMap, {
-      scrollWheelZoom: false,
+      scrollWheelZoom: true,
       zoomControl: true
     });
 
@@ -422,7 +469,6 @@
 
     state.markerLayer.clearLayers();
     state.markersByPinId = new Map();
-    const counts = countPhotosByPin();
     const clusters = clusterPins(state.data.pins.filter((pin) => pin.enabled));
 
     clusters.forEach((cluster) => {
@@ -432,11 +478,6 @@
           icon: mapMarkerIcon(pin, pin.id === state.selectedPinId),
           title: pin.name
         })
-          .bindTooltip(pin.name, {
-            direction: "top",
-            offset: [0, -16],
-            opacity: 0.95
-          })
           .on("click", () => selectPin(pin.id, { pan: false }));
 
         marker.addTo(state.markerLayer);
@@ -444,30 +485,21 @@
         return;
       }
 
-      const photoCount = cluster.pins.reduce((total, pin) => total + (counts.get(pin.id) || 0), 0);
+      const clusterLabel = mapClusterLabel(cluster.pins);
       const marker = window.L.marker([cluster.lat, cluster.lon], {
-        icon: clusterMarkerIcon(cluster),
+        icon: clusterMarkerIcon(cluster, clusterLabel),
         title: `${cluster.pins.length} locations`
       })
-        .bindTooltip(`${cluster.pins.length} locations - ${photoCount} photo${photoCount === 1 ? "" : "s"}`, {
-          direction: "top",
-          offset: [0, -18],
-          opacity: 0.95
-        })
         .on("click", () => zoomToCluster(cluster.pins));
 
       marker.addTo(state.markerLayer);
     });
 
-    const selectedMarker = state.markersByPinId.get(state.selectedPinId);
-    if (selectedMarker) {
-      selectedMarker.openTooltip();
-    }
   }
 
   function clusterPins(pins) {
     const zoom = state.map ? state.map.getZoom() : NaN;
-    if (!state.map || !Number.isFinite(zoom) || zoom >= 11) {
+    if (!state.map || !Number.isFinite(zoom) || zoom >= 13) {
       return pins.map((pin) => ({
         pins: [pin],
         lat: pin.lat,
@@ -476,7 +508,15 @@
       }));
     }
 
-    const threshold = zoom <= 5 ? 46 : 36;
+    const threshold = zoom <= 4
+      ? 118
+      : zoom <= 6
+        ? 98
+        : zoom <= 8
+          ? 78
+          : zoom <= 10
+            ? 62
+            : 48;
     const clusters = [];
     pins.forEach((pin) => {
       const point = state.map.latLngToLayerPoint([pin.lat, pin.lon]);
@@ -1037,6 +1077,10 @@
     if (options.pan !== false) {
       focusMapPin(pinId);
     }
+
+    if (isMobileMapLayout()) {
+      setMapPanel("results");
+    }
   }
 
   function selectAircraft(aircraftId, options = {}) {
@@ -1077,18 +1121,6 @@
       .sort(sortPhotos);
   }
 
-  function countPhotosByPin() {
-    const counts = new Map();
-    state.data.pins.forEach((pin) => counts.set(pin.id, 0));
-    state.data.photos.forEach((photo) => {
-      const id = photo.pinId || pinIdFromLocation(photo.locationName);
-      if (id) {
-        counts.set(id, (counts.get(id) || 0) + 1);
-      }
-    });
-    return counts;
-  }
-
   function recentLocations() {
     return state.data.pins
       .filter((pin) => pin.enabled)
@@ -1120,25 +1152,134 @@
   }
 
   function mapMarkerIcon(pin, isActive) {
+    const preview = mapLocationPreview([pin]);
     return window.L.divIcon({
-      className: `spotterdex-marker${isActive ? " is-active" : ""}`,
-      html: `<span>${escapeHtml(countryFlag(pin.country))}</span>`,
-      iconSize: [26, 26],
-      iconAnchor: [13, 13]
+      className: `spotterdex-marker-shell${isActive ? " is-active" : ""}`,
+      html: `
+        <span class="spotterdex-marker-dot">${escapeHtml(countryFlag(pin.country))}</span>
+        ${renderMapMarkerLabel(mapPinLabel(pin), preview)}
+      `,
+      iconSize: [340, 54],
+      iconAnchor: [15, 27]
     });
   }
 
-  function clusterMarkerIcon(cluster) {
+  function mapPinLabel(pin) {
+    return isMobileMapLayout() && pin.icao ? pin.icao : pin.name;
+  }
+
+  function mapClusterLabel(pins) {
+    const labels = unique(pins.map(mapPinLabel));
+    return labels.length <= 3
+      ? labels.join(" / ")
+      : `${labels.slice(0, 2).join(" / ")} / +${labels.length - 2}`;
+  }
+
+  function clusterMarkerIcon(cluster, clusterLabel) {
     const flags = unique(cluster.pins.map((pin) => countryFlag(pin.country))).slice(0, 3).join("");
+    const preview = mapLocationPreview(cluster.pins);
     return window.L.divIcon({
-      className: "spotterdex-cluster",
+      className: "spotterdex-marker-shell spotterdex-cluster-shell",
       html: `
-        <span class="cluster-count">${cluster.pins.length}</span>
-        <span class="cluster-flags">${escapeHtml(flags)}</span>
+        <span class="spotterdex-marker-dot cluster-dot">
+          <span class="cluster-count">${cluster.pins.length}</span>
+          <span class="cluster-flags">${escapeHtml(flags)}</span>
+        </span>
+        ${renderMapMarkerLabel(clusterLabel, preview)}
       `,
-      iconSize: [42, 36],
-      iconAnchor: [21, 18]
+      iconSize: [380, 58],
+      iconAnchor: [18, 29]
     });
+  }
+
+  function renderMapMarkerLabel(title, preview) {
+    return `
+      <span class="spotterdex-marker-label">
+        <span class="spotterdex-marker-title">${escapeHtml(title)}</span>
+        ${renderMapMarkerLogos(preview.logos)}
+        ${renderMapMarkerFamilies(preview.families)}
+      </span>
+    `;
+  }
+
+  function renderMapMarkerLogos(logos) {
+    if (!logos.length) {
+      return "";
+    }
+
+    return `
+      <span class="map-logo-row" aria-label="Units photographed here">
+        ${logos
+          .map((logo) => `<img src="${escapeAttr(logo.src)}" alt="${escapeAttr(logo.alt)}">`)
+          .join("")}
+      </span>
+    `;
+  }
+
+  function renderMapMarkerFamilies(families) {
+    if (!families.length) {
+      return "";
+    }
+
+    return `
+      <span class="map-family-row" aria-label="Aircraft families photographed here">
+        ${families
+          .map(
+            (family) => `
+              <img
+                class="map-family-icon"
+                src="${escapeAttr(family.icon)}"
+                alt="${escapeAttr(family.label)}"
+                title="${escapeAttr(family.label)}"
+              >
+            `
+          )
+          .join("")}
+      </span>
+    `;
+  }
+
+  function mapLocationPreview(pins) {
+    const photos = pins.flatMap((pin) => photosForPin(pin));
+    const logos = [];
+    const seenUnits = new Set();
+    const familyById = new Map();
+
+    photos.forEach((photo) => {
+      const squadron = squadronForPhoto(photo);
+      const unitKey = squadron ? normalizeKey(`${squadron.country || photo.country || ""}-${squadron.name || ""}`) : "";
+      if (squadron && squadron.logo && unitKey && !seenUnits.has(unitKey)) {
+        seenUnits.add(unitKey);
+        logos.push({
+          src: squadron.logo,
+          alt: `${squadron.name} logo`
+        });
+      }
+
+      const family = aircraftFamilyForPhoto(photo);
+      if (family && !familyById.has(family.id)) {
+        familyById.set(family.id, family);
+      }
+    });
+
+    return {
+      logos: logos.slice(0, 4),
+      families: Array.from(familyById.values()).slice(0, 3)
+    };
+  }
+
+  function aircraftFamilyForPhoto(photo) {
+    const type = normalizeText(photo.aircraftType);
+    if (/\b(ah|uh|ch|mh|sh)-?\d|apache|helicopter|rotor|uh-60|ah-64/.test(type)) {
+      return { id: "helicopter", label: "Helicopter", icon: "assets/icons/aircraft-family-helicopter.svg" };
+    }
+    if (/\bf-?\d|fighter|eagle|falcon|hornet|raptor|typhoon|rafale|mirage/.test(type)) {
+      return { id: "fighter", label: "Fighter", icon: "assets/icons/aircraft-family-fighter.svg" };
+    }
+    if (/747|sentry|airlift|cargo|transport|tanker|freighter|heavy|c-2|ec-2|rc-2|u-125/.test(type)) {
+      return { id: "heavy", label: "Heavy", icon: "assets/icons/aircraft-family-heavy.svg" };
+    }
+    return null;
   }
 
   function focusMapPin(pinId) {
@@ -1147,7 +1288,6 @@
     }
 
     const pin = state.pinById.get(pinId);
-    const marker = state.markersByPinId.get(pinId);
     if (!pin) {
       return;
     }
@@ -1156,15 +1296,6 @@
       animate: true,
       duration: 0.7
     });
-    if (marker) {
-      marker.openTooltip();
-    }
-    window.setTimeout(() => {
-      const refreshedMarker = state.markersByPinId.get(pinId);
-      if (refreshedMarker) {
-        refreshedMarker.openTooltip();
-      }
-    }, 760);
   }
 
   function pinIdFromLocation(locationName) {
@@ -1224,10 +1355,6 @@
       animate: true
     });
 
-    const selectedMarker = state.markersByPinId.get(state.selectedPinId);
-    if (selectedMarker) {
-      selectedMarker.openTooltip();
-    }
   }
 
   function openViewer(photoId, context) {
@@ -1532,6 +1659,11 @@
 
   function normalizeText(value) {
     return String(value || "").trim().toLowerCase();
+  }
+
+  function normalizeIcao(value) {
+    const code = String(value || "").trim().toUpperCase();
+    return /^[A-Z0-9]{4}$/.test(code) ? code : "";
   }
 
   function normalizeUnitType(value) {

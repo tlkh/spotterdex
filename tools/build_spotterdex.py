@@ -50,6 +50,45 @@ class BuildWarningLog:
             print(f"note: {message}", file=sys.stderr)
 
 
+class ProgressBar:
+    def __init__(self, label: str, total: int, enabled: bool = True, width: int = 28) -> None:
+        self.label = label
+        self.total = max(0, total)
+        self.enabled = bool(enabled and self.total and sys.stderr.isatty())
+        self.width = max(10, width)
+        self.current = 0
+        self.last_line_length = 0
+        if self.enabled:
+            self.render()
+
+    def advance(self, detail: str = "") -> None:
+        self.current = min(self.total, self.current + 1)
+        self.render(detail)
+
+    def finish(self) -> None:
+        if not self.enabled:
+            return
+        self.current = self.total
+        self.render()
+        sys.stderr.write("\n")
+        sys.stderr.flush()
+        self.last_line_length = 0
+
+    def render(self, detail: str = "") -> None:
+        if not self.enabled:
+            return
+        ratio = self.current / self.total if self.total else 1
+        filled = min(self.width, round(self.width * ratio))
+        bar = "#" * filled + "-" * (self.width - filled)
+        detail_text = truncate_progress_detail(detail)
+        suffix = f" {detail_text}" if detail_text else ""
+        line = f"\r{self.label} [{bar}] {self.current}/{self.total}{suffix}"
+        padding = " " * max(0, self.last_line_length - len(line))
+        sys.stderr.write(line + padding)
+        sys.stderr.flush()
+        self.last_line_length = len(line)
+
+
 def parse_args() -> argparse.Namespace:
     root = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(description="Build SpotterDex static data and resized JPEG photos.")
@@ -67,9 +106,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--json-output", default="data/spotterdex.json", help="Generated JSON manifest path.")
     parser.add_argument("--js-output", default="data/spotterdex-data.js", help="Generated JS manifest path.")
     parser.add_argument("--width", type=int, default=2048, help="Processed JPEG width in pixels.")
-    parser.add_argument("--thumb-width", type=int, default=640, help="Generated thumbnail width in pixels.")
+    parser.add_argument("--thumb-width", type=int, default=1024, help="Generated thumbnail width in pixels.")
     parser.add_argument("--logo-max-size", type=int, default=512, help="Maximum squadron logo width or height in pixels.")
     parser.add_argument("--strict", action="store_true", help="Return a non-zero exit code if validation warnings are found.")
+    parser.add_argument("--no-progress", action="store_true", help="Disable terminal progress bars during the build.")
     parser.add_argument(
         "--make-demo-images",
         action="store_true",
@@ -91,8 +131,9 @@ def main() -> int:
     logo_output_dir = root / args.logo_output
     json_output = root / args.json_output
     js_output = root / args.js_output
+    show_progress = not args.no_progress
 
-    pins = load_pins(root, map_dir, warnings)
+    pins = load_pins(root, map_dir, warnings, show_progress=show_progress)
     pin_lookup = {normalize_key(pin["name"]): pin["id"] for pin in pins}
     aircraft_entries, photos = load_aircraft(
         root=root,
@@ -107,6 +148,7 @@ def main() -> int:
         pin_lookup=pin_lookup,
         make_demo_images=args.make_demo_images,
         warnings=warnings,
+        show_progress=show_progress,
     )
 
     manifest = {
@@ -134,58 +176,66 @@ def main() -> int:
     return 0
 
 
-def load_pins(root: Path, map_dir: Path, warnings: BuildWarningLog) -> List[Dict[str, Any]]:
+def load_pins(root: Path, map_dir: Path, warnings: BuildWarningLog, show_progress: bool = True) -> List[Dict[str, Any]]:
     if not map_dir.exists():
         warnings.add(f"map pin directory not found: {relative_posix(map_dir, root)}")
         return []
 
     pins: List[Dict[str, Any]] = []
     used_ids: set[str] = set()
+    yaml_paths: List[Tuple[Path, Path]] = []
 
     for country_dir in sorted(path for path in map_dir.iterdir() if path.is_dir()):
         yaml_files = sorted(list(country_dir.glob("*.yaml")) + list(country_dir.glob("*.yml")))
         if not yaml_files:
             warnings.add(f"no YAML file found in {relative_posix(country_dir, root)}")
             continue
+        yaml_paths.extend((country_dir, yaml_path) for yaml_path in yaml_files)
 
-        for yaml_path in yaml_files:
-            data = read_yaml_mapping(yaml_path, warnings)
-            if not data:
+    progress = ProgressBar("Loading map pins", len(yaml_paths), enabled=show_progress)
+    for country_dir, yaml_path in yaml_paths:
+        data = read_yaml_mapping(yaml_path, warnings)
+        progress.advance(relative_posix(yaml_path, root))
+        if not data:
+            continue
+
+        country = str(data.get("country") or display_name(country_dir.name))
+        pin_items = data.get("pins") or data.get("locations") or []
+        if isinstance(pin_items, dict):
+            pin_items = [pin_items]
+        if not isinstance(pin_items, list):
+            warnings.add(f"pins must be a list in {relative_posix(yaml_path, root)}")
+            continue
+
+        for index, pin_item in enumerate(pin_items, start=1):
+            if not isinstance(pin_item, dict):
+                warnings.add(f"skipping invalid pin #{index} in {relative_posix(yaml_path, root)}")
                 continue
 
-            country = str(data.get("country") or display_name(country_dir.name))
-            pin_items = data.get("pins") or data.get("locations") or []
-            if isinstance(pin_items, dict):
-                pin_items = [pin_items]
-            if not isinstance(pin_items, list):
-                warnings.add(f"pins must be a list in {relative_posix(yaml_path, root)}")
+            name = str(pin_item.get("name") or pin_item.get("full_name") or "").strip()
+            icao = normalize_icao(pin_item.get("icao") or pin_item.get("icao_code") or pin_item.get("icaoCode"))
+            lat, lon = read_coordinates(pin_item)
+            if not name or lat is None or lon is None:
+                warnings.add(f"skipping pin #{index} with missing name or coordinates in {relative_posix(yaml_path, root)}")
+                continue
+            if not -90 <= lat <= 90 or not -180 <= lon <= 180:
+                warnings.add(f"skipping pin #{index} with invalid coordinates in {relative_posix(yaml_path, root)}")
                 continue
 
-            for index, pin_item in enumerate(pin_items, start=1):
-                if not isinstance(pin_item, dict):
-                    warnings.add(f"skipping invalid pin #{index} in {relative_posix(yaml_path, root)}")
-                    continue
+            pin_id = unique_id(str(pin_item.get("id") or f"{country}-{name}"), used_ids)
+            pins.append(
+                {
+                    "id": pin_id,
+                    "name": name,
+                    "country": country,
+                    "icao": icao,
+                    "lat": lat,
+                    "lon": lon,
+                    "enabled": pin_item.get("enabled", True) is not False,
+                }
+            )
 
-                name = str(pin_item.get("name") or pin_item.get("full_name") or "").strip()
-                lat, lon = read_coordinates(pin_item)
-                if not name or lat is None or lon is None:
-                    warnings.add(f"skipping pin #{index} with missing name or coordinates in {relative_posix(yaml_path, root)}")
-                    continue
-                if not -90 <= lat <= 90 or not -180 <= lon <= 180:
-                    warnings.add(f"skipping pin #{index} with invalid coordinates in {relative_posix(yaml_path, root)}")
-                    continue
-
-                pin_id = unique_id(str(pin_item.get("id") or f"{country}-{name}"), used_ids)
-                pins.append(
-                    {
-                        "id": pin_id,
-                        "name": name,
-                        "country": country,
-                        "lat": lat,
-                        "lon": lon,
-                        "enabled": pin_item.get("enabled", True) is not False,
-                    }
-                )
+    progress.finish()
 
     return sorted(pins, key=lambda item: (item["country"], item["name"]))
 
@@ -203,6 +253,7 @@ def load_aircraft(
     pin_lookup: Dict[str, str],
     make_demo_images: bool,
     warnings: BuildWarningLog,
+    show_progress: bool = True,
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     if not aircraft_dir.exists():
         warnings.add(f"aircraft directory not found: {relative_posix(aircraft_dir, root)}")
@@ -214,11 +265,19 @@ def load_aircraft(
     used_photo_ids: set[str] = set()
 
     yaml_files = sorted(list(aircraft_dir.glob("*/*/*.yaml")) + list(aircraft_dir.glob("*/*/*.yml")))
+    entry_sources: List[Tuple[Path, Dict[str, Any]]] = []
+    read_progress = ProgressBar("Reading aircraft YAML", len(yaml_files), enabled=show_progress)
     for yaml_path in yaml_files:
         data = read_yaml_mapping(yaml_path, warnings)
+        read_progress.advance(relative_posix(yaml_path, root))
         if not data:
             continue
+        entry_sources.append((yaml_path, data))
+    read_progress.finish()
 
+    photo_total = sum(count_photo_items(data) for _, data in entry_sources)
+    photo_progress = ProgressBar("Processing photos", photo_total, enabled=show_progress)
+    for yaml_path, data in entry_sources:
         aircraft_data = data.get("aircraft") if isinstance(data.get("aircraft"), dict) else {}
         squadron_data = data.get("squadron") if isinstance(data.get("squadron"), dict) else {}
         squadron_scalar = data.get("squadron") if not isinstance(data.get("squadron"), dict) else None
@@ -292,8 +351,12 @@ def load_aircraft(
             continue
 
         for index, photo_item in enumerate(photo_items, start=1):
+            photo_label = str(
+                photo_item.get("path") or photo_item.get("file") or photo_item.get("filepath") or f"photo #{index}"
+            ) if isinstance(photo_item, dict) else f"photo #{index}"
             if not isinstance(photo_item, dict):
                 warnings.add(f"skipping invalid photo #{index} in {relative_posix(yaml_path, root)}")
+                photo_progress.advance(photo_label)
                 continue
 
             photo_record = process_photo(
@@ -317,6 +380,7 @@ def load_aircraft(
                 used_photo_ids=used_photo_ids,
                 warnings=warnings,
             )
+            photo_progress.advance(photo_label)
             if not photo_record:
                 continue
 
@@ -325,6 +389,7 @@ def load_aircraft(
             squadron_entry["photoIds"].append(photo_record["id"])
             if not aircraft_entry["coverPhoto"]:
                 aircraft_entry["coverPhoto"] = photo_record["id"]
+    photo_progress.finish()
 
     aircraft_entries = sorted(aircraft_by_id.values(), key=lambda item: item["typeName"])
     for entry in aircraft_entries:
@@ -385,6 +450,7 @@ def validate_manifest(manifest: Dict[str, Any], root: Path, warnings: BuildWarni
         pin_key = normalize_key(f"{pin.get('country', '')}-{pin.get('name', '')}")
         lat = pin.get("lat")
         lon = pin.get("lon")
+        icao = str(pin.get("icao") or "")
 
         if pin_id in pin_ids:
             warnings.add(f"duplicate pin id in generated manifest: {pin_id}")
@@ -398,6 +464,9 @@ def validate_manifest(manifest: Dict[str, Any], root: Path, warnings: BuildWarni
             warnings.add(f"pin has non-numeric coordinates: {pin.get('name')}")
         elif not -90 <= lat <= 90 or not -180 <= lon <= 180:
             warnings.add(f"pin has out-of-range coordinates: {pin.get('name')}")
+
+        if icao and not re.fullmatch(r"[A-Z0-9]{4}", icao):
+            warnings.add(f"pin has invalid ICAO code: {pin.get('name')} -> {icao}")
 
         if pin.get("enabled") is not False:
             enabled_pin_ids.add(pin_id)
@@ -981,6 +1050,29 @@ def resolve_pin_id(explicit_pin: Any, location_name: str, pin_lookup: Dict[str, 
 
 def display_name(value: str) -> str:
     return value.replace("_", " ").replace("-", " ").title()
+
+
+def normalize_icao(value: Any) -> str:
+    code = str(value or "").strip().upper()
+    return code
+
+
+def count_photo_items(data: Dict[str, Any]) -> int:
+    photo_items = data.get("photos") or []
+    if isinstance(photo_items, dict):
+        return 1
+    if isinstance(photo_items, list):
+        return len(photo_items)
+    return 0
+
+
+def truncate_progress_detail(value: str, max_length: int = 48) -> str:
+    text = re.sub(r"\s+", " ", str(value or "").strip())
+    if len(text) <= max_length:
+        return text
+    if max_length <= 3:
+        return "." * max_length
+    return text[: max_length - 3] + "..."
 
 
 def unique_values(values: Iterable[str]) -> List[str]:

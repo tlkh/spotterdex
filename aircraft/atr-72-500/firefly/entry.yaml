@@ -1,0 +1,11 @@
+aircraft_type: ATR 72-500
+squadron_name: Firefly
+unit_type: organisation
+country: Malaysia
+photos:
+  - path: firefly_1.jpg
+    location: Seletar Airport
+    caption: Firefly ATR 72-500 landing at Singapore Seletar Airport
+  - path: firefly_2.jpg
+    location: Seletar Airport
+    caption: Firefly ATR 72-500 landing at Singapore Seletar Airport

@@ -23,9 +23,12 @@ country: Singapore
 pins:
   - id: changi-exhibition-centre
     name: Changi Exhibition Centre
+    icao: WSSS
     coordinates: [1.3631, 104.0229]
     enabled: true
 ```
+
+Use `icao: XXXX` for airport and air base pins when a code exists. Broad region pins or non-aerodrome locations can leave `icao` empty; the generated manifest preserves the field, and mobile map labels prefer ICAO codes when available.
 
 `aircraft/<type>/<squadron>/entry.yaml` contains the aircraft entry, squadron metadata, and photos:
 
@@ -52,7 +55,7 @@ Install the script dependencies once:
 python3 -m pip install -r requirements.txt
 ```
 
-Build the static data, resize photos to 2048 px wide JPEGs, and generate 640 px wide thumbnails:
+Build the static data, resize photos to 2048 px wide JPEGs, and generate 1024 px wide thumbnails:
 
 ```bash
 python3 tools/build_spotterdex.py

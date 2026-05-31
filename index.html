@@ -93,12 +93,28 @@
     <main class="app-shell" id="main">
       <section class="view is-active" id="mapView" data-view>
         <div class="workspace map-workspace">
-          <aside class="control-panel" aria-label="Timothy Liu overview">
+          <button
+            class="map-panel-toggle map-panel-toggle-locations"
+            type="button"
+            data-map-panel-toggle="locations"
+            aria-controls="mapControlPanel"
+            aria-expanded="false"
+          >
+            Locations
+          </button>
+          <button
+            class="map-panel-toggle map-panel-toggle-results"
+            type="button"
+            data-map-panel-toggle="results"
+            aria-controls="mapResults"
+            aria-expanded="false"
+          >
+            Photos
+          </button>
+
+          <aside class="control-panel" id="mapControlPanel" aria-label="Timothy Liu overview">
             <p class="eyebrow">Spotting logbook</p>
             <h1>Timothy Liu</h1>
-            <p class="lead">
-              Browse aircraft encounters by location, aircraft type, squadron or organisation, and frame.
-            </p>
 
             <div class="stat-grid" aria-label="Collection summary">
               <div>

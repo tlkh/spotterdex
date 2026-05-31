@@ -1,0 +1,8 @@
+aircraft_type: Dassault Rafale B
+squadron_name: Escadron de Chasse 01.004
+unit_type: squadron
+country: France
+photos:
+  - path: rafale_b_1.jpg
+    location: Singapore
+    caption: French Rafale B landing in Singapore

@@ -1,10 +1,11 @@
 window.SPOTTERDEX_DATA = {
-  "generatedAt": "2026-05-30T14:51:02+00:00",
+  "generatedAt": "2026-05-31T04:40:42+00:00",
   "pins": [
     {
       "id": "hong-kong-international-airport",
       "name": "Hong Kong International Airport",
       "country": "Hong Kong",
+      "icao": "VHHH",
       "lat": 22.3089,
       "lon": 113.92,
       "enabled": true
@@ -13,6 +14,7 @@ window.SPOTTERDEX_DATA = {
       "id": "chitose-air-base",
       "name": "Chitose Air Base",
       "country": "Japan",
+      "icao": "RJCJ",
       "lat": 42.7945,
       "lon": 141.6664,
       "enabled": true
@@ -21,6 +23,7 @@ window.SPOTTERDEX_DATA = {
       "id": "chofu-airport",
       "name": "Chofu Airport",
       "country": "Japan",
+      "icao": "RJTF",
       "lat": 35.6717,
       "lon": 139.528,
       "enabled": true
@@ -29,6 +32,7 @@ window.SPOTTERDEX_DATA = {
       "id": "gifu-air-base",
       "name": "Gifu Air Base",
       "country": "Japan",
+      "icao": "RJNG",
       "lat": 35.3939,
       "lon": 136.87,
       "enabled": true
@@ -37,6 +41,7 @@ window.SPOTTERDEX_DATA = {
       "id": "haneda-airport",
       "name": "Haneda Airport",
       "country": "Japan",
+      "icao": "RJTT",
       "lat": 35.5523,
       "lon": 139.78,
       "enabled": true
@@ -45,6 +50,7 @@ window.SPOTTERDEX_DATA = {
       "id": "iruma-air-base",
       "name": "Iruma Air Base",
       "country": "Japan",
+      "icao": "RJTJ",
       "lat": 35.8419,
       "lon": 139.411,
       "enabled": true
@@ -53,6 +59,7 @@ window.SPOTTERDEX_DATA = {
       "id": "kadena-air-base",
       "name": "Kadena Air Base",
       "country": "Japan",
+      "icao": "RODN",
       "lat": 26.3556,
       "lon": 127.768,
       "enabled": true
@@ -61,6 +68,7 @@ window.SPOTTERDEX_DATA = {
       "id": "kisarazu-airfield",
       "name": "Kisarazu Airfield",
       "country": "Japan",
+      "icao": "RJTK",
       "lat": 35.3983,
       "lon": 139.91,
       "enabled": true
@@ -69,6 +77,7 @@ window.SPOTTERDEX_DATA = {
       "id": "kitakyushu-airport",
       "name": "Kitakyushu Airport",
       "country": "Japan",
+      "icao": "RJFR",
       "lat": 33.8459,
       "lon": 131.035,
       "enabled": true
@@ -77,6 +86,7 @@ window.SPOTTERDEX_DATA = {
       "id": "komaki-air-base",
       "name": "Komaki Air Base",
       "country": "Japan",
+      "icao": "RJNA",
       "lat": 35.255,
       "lon": 136.9244,
       "enabled": true
@@ -85,6 +95,7 @@ window.SPOTTERDEX_DATA = {
       "id": "komatsu-air-base",
       "name": "Komatsu Air Base",
       "country": "Japan",
+      "icao": "RJNK",
       "lat": 36.3933,
       "lon": 136.4067,
       "enabled": true
@@ -93,6 +104,7 @@ window.SPOTTERDEX_DATA = {
       "id": "mcas-futenma",
       "name": "MCAS Futenma",
       "country": "Japan",
+      "icao": "ROTM",
       "lat": 26.2743,
       "lon": 127.756,
       "enabled": true
@@ -101,6 +113,7 @@ window.SPOTTERDEX_DATA = {
       "id": "naha-air-base",
       "name": "Naha Air Base",
       "country": "Japan",
+      "icao": "ROAH",
       "lat": 26.1958,
       "lon": 127.6458,
       "enabled": true
@@ -109,6 +122,7 @@ window.SPOTTERDEX_DATA = {
       "id": "tsuiki-air-base",
       "name": "Tsuiki Air Base",
       "country": "Japan",
+      "icao": "RJFZ",
       "lat": 33.685,
       "lon": 131.04,
       "enabled": true
@@ -117,6 +131,7 @@ window.SPOTTERDEX_DATA = {
       "id": "yokota-air-base",
       "name": "Yokota Air Base",
       "country": "Japan",
+      "icao": "RJTY",
       "lat": 35.7485,
       "lon": 139.348,
       "enabled": true
@@ -125,6 +140,7 @@ window.SPOTTERDEX_DATA = {
       "id": "kuala-lumpur-international-airport",
       "name": "Kuala Lumpur International Airport",
       "country": "Malaysia",
+      "icao": "WMKK",
       "lat": 2.7456,
       "lon": 101.71,
       "enabled": true
@@ -133,6 +149,7 @@ window.SPOTTERDEX_DATA = {
       "id": "penang-international-airport",
       "name": "Penang International Airport",
       "country": "Malaysia",
+      "icao": "WMKP",
       "lat": 5.2963,
       "lon": 100.2762,
       "enabled": true
@@ -141,6 +158,7 @@ window.SPOTTERDEX_DATA = {
       "id": "changi-airport",
       "name": "Changi Airport",
       "country": "Singapore",
+      "icao": "WSSS",
       "lat": 1.3502,
       "lon": 103.994,
       "enabled": true
@@ -149,14 +167,25 @@ window.SPOTTERDEX_DATA = {
       "id": "changi-exhibition-centre",
       "name": "Changi Exhibition Center",
       "country": "Singapore",
+      "icao": "WSSS",
       "lat": 1.3631,
       "lon": 104.0229,
+      "enabled": true
+    },
+    {
+      "id": "seletar-airport",
+      "name": "Seletar Airport",
+      "country": "Singapore",
+      "icao": "WSSL",
+      "lat": 1.4172,
+      "lon": 103.8678,
       "enabled": true
     },
     {
       "id": "singapore",
       "name": "Singapore",
       "country": "Singapore",
+      "icao": "",
       "lat": 1.3521,
       "lon": 103.8198,
       "enabled": true
@@ -165,12 +194,99 @@ window.SPOTTERDEX_DATA = {
       "id": "don-muang-royal-thai-air-force-base",
       "name": "Don Muang Royal Thai Air Force Base",
       "country": "Thailand",
+      "icao": "VTBD",
       "lat": 13.9126,
       "lon": 100.607,
       "enabled": true
     }
   ],
   "aircraft": [
+    {
+      "id": "atr-72-500",
+      "typeName": "ATR 72-500",
+      "countries": [
+        "Malaysia"
+      ],
+      "squadrons": [
+        {
+          "id": "atr-72-500-firefly",
+          "name": "Firefly",
+          "country": "Malaysia",
+          "logo": "",
+          "unitType": "organisation",
+          "unitLabel": "Organisation",
+          "showOnSquadronsPage": false,
+          "photoIds": [
+            "atr-72-500-firefly-firefly-1-ef4097cc",
+            "atr-72-500-firefly-firefly-2-22ded383"
+          ],
+          "photoCount": 2
+        }
+      ],
+      "photoIds": [
+        "atr-72-500-firefly-firefly-1-ef4097cc",
+        "atr-72-500-firefly-firefly-2-22ded383"
+      ],
+      "coverPhoto": "atr-72-500-firefly-firefly-1-ef4097cc",
+      "stats": {
+        "photoCount": 2,
+        "unitCount": 1,
+        "squadronCount": 0,
+        "organisationCount": 1,
+        "locationCount": 1,
+        "locations": [
+          "Seletar Airport"
+        ],
+        "firstDate": "2023-04-29",
+        "latestDate": "2023-04-29",
+        "countries": [
+          "Malaysia"
+        ]
+      }
+    },
+    {
+      "id": "airbus-a300-600st-super-transporter",
+      "typeName": "Airbus A300-600ST (Super Transporter)",
+      "countries": [
+        "France"
+      ],
+      "squadrons": [
+        {
+          "id": "airbus-a300-600st-super-transporter-airbus",
+          "name": "Airbus",
+          "country": "France",
+          "logo": "",
+          "unitType": "organisation",
+          "unitLabel": "Organisation",
+          "showOnSquadronsPage": false,
+          "photoIds": [
+            "airbus-a300-600st-super-transporter-airbus-beluga-1-fba0bd70",
+            "airbus-a300-600st-super-transporter-airbus-beluga-2-82dc08fa"
+          ],
+          "photoCount": 2
+        }
+      ],
+      "photoIds": [
+        "airbus-a300-600st-super-transporter-airbus-beluga-1-fba0bd70",
+        "airbus-a300-600st-super-transporter-airbus-beluga-2-82dc08fa"
+      ],
+      "coverPhoto": "airbus-a300-600st-super-transporter-airbus-beluga-1-fba0bd70",
+      "stats": {
+        "photoCount": 2,
+        "unitCount": 1,
+        "squadronCount": 0,
+        "organisationCount": 1,
+        "locationCount": 1,
+        "locations": [
+          "Singapore"
+        ],
+        "firstDate": "2023-01-17",
+        "latestDate": "2023-01-17",
+        "countries": [
+          "France"
+        ]
+      }
+    },
     {
       "id": "boeing-747-400-f",
       "typeName": "Boeing 747-400(F)",
@@ -207,6 +323,49 @@ window.SPOTTERDEX_DATA = {
         ],
         "firstDate": "2025-04-17",
         "latestDate": "2025-04-17",
+        "countries": [
+          "United States"
+        ]
+      }
+    },
+    {
+      "id": "boeing-757",
+      "typeName": "Boeing 757",
+      "countries": [
+        "United States"
+      ],
+      "squadrons": [
+        {
+          "id": "boeing-757-honeywell",
+          "name": "Honeywell",
+          "country": "United States",
+          "logo": "",
+          "unitType": "organisation",
+          "unitLabel": "Organisation",
+          "showOnSquadronsPage": false,
+          "photoIds": [
+            "boeing-757-honeywell-honeywell-1-6aa1816d",
+            "boeing-757-honeywell-honeywell-2-2e05aa2c"
+          ],
+          "photoCount": 2
+        }
+      ],
+      "photoIds": [
+        "boeing-757-honeywell-honeywell-1-6aa1816d",
+        "boeing-757-honeywell-honeywell-2-2e05aa2c"
+      ],
+      "coverPhoto": "boeing-757-honeywell-honeywell-1-6aa1816d",
+      "stats": {
+        "photoCount": 2,
+        "unitCount": 1,
+        "squadronCount": 0,
+        "organisationCount": 1,
+        "locationCount": 1,
+        "locations": [
+          "Changi Airport"
+        ],
+        "firstDate": "2023-02-23",
+        "latestDate": "2023-02-23",
         "countries": [
           "United States"
         ]
@@ -254,6 +413,47 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
+      "id": "boeing-c-17-globemaster-iii",
+      "typeName": "Boeing C-17 Globemaster III",
+      "countries": [
+        "Australia"
+      ],
+      "squadrons": [
+        {
+          "id": "boeing-c-17-globemaster-iii-no-36-squadron",
+          "name": "No. 36 Squadron",
+          "country": "Australia",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "boeing-c-17-globemaster-iii-no-36-squadron-raaf-c17-20e2d7e3"
+          ],
+          "photoCount": 1
+        }
+      ],
+      "photoIds": [
+        "boeing-c-17-globemaster-iii-no-36-squadron-raaf-c17-20e2d7e3"
+      ],
+      "coverPhoto": "boeing-c-17-globemaster-iii-no-36-squadron-raaf-c17-20e2d7e3",
+      "stats": {
+        "photoCount": 1,
+        "unitCount": 1,
+        "squadronCount": 1,
+        "organisationCount": 0,
+        "locationCount": 1,
+        "locations": [
+          "Singapore"
+        ],
+        "firstDate": "2023-06-27",
+        "latestDate": "2023-06-27",
+        "countries": [
+          "Australia"
+        ]
+      }
+    },
+    {
       "id": "boeing-e-3g-sentry",
       "typeName": "Boeing E-3G Sentry",
       "countries": [
@@ -289,6 +489,225 @@ window.SPOTTERDEX_DATA = {
         ],
         "firstDate": "2025-12-10",
         "latestDate": "2025-12-10",
+        "countries": [
+          "United States"
+        ]
+      }
+    },
+    {
+      "id": "boeing-e-4b-nightwatch",
+      "typeName": "Boeing E-4B Nightwatch",
+      "countries": [
+        "United States"
+      ],
+      "squadrons": [
+        {
+          "id": "boeing-e-4b-nightwatch-1st-airborne-command-control-squadron",
+          "name": "1st Airborne Command Control Squadron",
+          "country": "United States",
+          "logo": "assets/logos/boeing-e-4b-nightwatch-1st-airborne-command-control-squadron.png",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "boeing-e-4b-nightwatch-1st-airborne-command-control-squadron-e4b-1-a64019d9"
+          ],
+          "photoCount": 1
+        }
+      ],
+      "photoIds": [
+        "boeing-e-4b-nightwatch-1st-airborne-command-control-squadron-e4b-1-a64019d9"
+      ],
+      "coverPhoto": "boeing-e-4b-nightwatch-1st-airborne-command-control-squadron-e4b-1-a64019d9",
+      "stats": {
+        "photoCount": 1,
+        "unitCount": 1,
+        "squadronCount": 1,
+        "organisationCount": 0,
+        "locationCount": 1,
+        "locations": [
+          "Singapore"
+        ],
+        "firstDate": "2023-06-04",
+        "latestDate": "2023-06-04",
+        "countries": [
+          "United States"
+        ]
+      }
+    },
+    {
+      "id": "c-146a-wolfhound",
+      "typeName": "C-146A Wolfhound",
+      "countries": [
+        "United States"
+      ],
+      "squadrons": [
+        {
+          "id": "c-146a-wolfhound-usaf-special-operations-command",
+          "name": "USAF Special Operations Command",
+          "country": "United States",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "c-146a-wolfhound-usaf-special-operations-command-wolfhound-1-2dfc334b"
+          ],
+          "photoCount": 1
+        }
+      ],
+      "photoIds": [
+        "c-146a-wolfhound-usaf-special-operations-command-wolfhound-1-2dfc334b"
+      ],
+      "coverPhoto": "c-146a-wolfhound-usaf-special-operations-command-wolfhound-1-2dfc334b",
+      "stats": {
+        "photoCount": 1,
+        "unitCount": 1,
+        "squadronCount": 1,
+        "organisationCount": 0,
+        "locationCount": 1,
+        "locations": [
+          "Singapore"
+        ],
+        "firstDate": "2023-05-16",
+        "latestDate": "2023-05-16",
+        "countries": [
+          "United States"
+        ]
+      }
+    },
+    {
+      "id": "dassault-rafale-b",
+      "typeName": "Dassault Rafale B",
+      "countries": [
+        "France"
+      ],
+      "squadrons": [
+        {
+          "id": "dassault-rafale-b-escadron-de-chasse-01-004",
+          "name": "Escadron de Chasse 01.004",
+          "country": "France",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "dassault-rafale-b-escadron-de-chasse-01-004-rafale-b-1-36c5178b"
+          ],
+          "photoCount": 1
+        },
+        {
+          "id": "dassault-rafale-b-escadron-de-chasse-1-4",
+          "name": "Escadron de Chasse 1/4",
+          "country": "France",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "dassault-rafale-b-escadron-de-chasse-1-4-rafale-b-2-f2aa037c"
+          ],
+          "photoCount": 1
+        }
+      ],
+      "photoIds": [
+        "dassault-rafale-b-escadron-de-chasse-01-004-rafale-b-1-36c5178b",
+        "dassault-rafale-b-escadron-de-chasse-1-4-rafale-b-2-f2aa037c"
+      ],
+      "coverPhoto": "dassault-rafale-b-escadron-de-chasse-01-004-rafale-b-1-36c5178b",
+      "stats": {
+        "photoCount": 2,
+        "unitCount": 2,
+        "squadronCount": 2,
+        "organisationCount": 0,
+        "locationCount": 1,
+        "locations": [
+          "Singapore"
+        ],
+        "firstDate": "2023-06-26",
+        "latestDate": "2023-06-27",
+        "countries": [
+          "France"
+        ]
+      }
+    },
+    {
+      "id": "dassault-rafale-c",
+      "typeName": "Dassault Rafale C",
+      "countries": [
+        "France"
+      ],
+      "squadrons": [
+        {
+          "id": "dassault-rafale-c-escadron-de-chasse-3-30-lorraine",
+          "name": "Escadron de Chasse 3/30 \"Lorraine\"",
+          "country": "France",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "dassault-rafale-c-escadron-de-chasse-3-30-lorraine-rafale-c-1-94395c0c"
+          ],
+          "photoCount": 1
+        }
+      ],
+      "photoIds": [
+        "dassault-rafale-c-escadron-de-chasse-3-30-lorraine-rafale-c-1-94395c0c"
+      ],
+      "coverPhoto": "dassault-rafale-c-escadron-de-chasse-3-30-lorraine-rafale-c-1-94395c0c",
+      "stats": {
+        "photoCount": 1,
+        "unitCount": 1,
+        "squadronCount": 1,
+        "organisationCount": 0,
+        "locationCount": 1,
+        "locations": [
+          "Singapore"
+        ],
+        "firstDate": "2023-06-26",
+        "latestDate": "2023-06-26",
+        "countries": [
+          "France"
+        ]
+      }
+    },
+    {
+      "id": "grumman-c-2a-greyhound",
+      "typeName": "Grumman C-2A Greyhound",
+      "countries": [
+        "United States"
+      ],
+      "squadrons": [
+        {
+          "id": "grumman-c-2a-greyhound-fleet-logistics-support-squadron-30-vrc-30",
+          "name": "Fleet Logistics Support Squadron 30 (VRC-30)",
+          "country": "United States",
+          "logo": "assets/logos/grumman-c-2a-greyhound-fleet-logistics-support-squadron-30-vrc-30.png",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "grumman-c-2a-greyhound-fleet-logistics-support-squadron-30-vrc-30-c2-vrc30-8e2f3dd6"
+          ],
+          "photoCount": 1
+        }
+      ],
+      "photoIds": [
+        "grumman-c-2a-greyhound-fleet-logistics-support-squadron-30-vrc-30-c2-vrc30-8e2f3dd6"
+      ],
+      "coverPhoto": "grumman-c-2a-greyhound-fleet-logistics-support-squadron-30-vrc-30-c2-vrc30-8e2f3dd6",
+      "stats": {
+        "photoCount": 1,
+        "unitCount": 1,
+        "squadronCount": 1,
+        "organisationCount": 0,
+        "locationCount": 1,
+        "locations": [
+          "Singapore"
+        ],
+        "firstDate": "2023-02-07",
+        "latestDate": "2023-02-07",
         "countries": [
           "United States"
         ]
@@ -853,7 +1272,7 @@ window.SPOTTERDEX_DATA = {
       "source": "raw_assets/638101.jpg",
       "originalSize": "7073 x 5305",
       "processedSize": "2048 x 1536",
-      "thumbnailSize": "640 x 480",
+      "thumbnailSize": "1024 x 768",
       "exif": {
         "Make": "SONY",
         "Model": "ILCE-1M2",
@@ -888,7 +1307,7 @@ window.SPOTTERDEX_DATA = {
       "source": "raw_assets/xx8523.jpg",
       "originalSize": "6256 x 4692",
       "processedSize": "2048 x 1536",
-      "thumbnailSize": "640 x 480",
+      "thumbnailSize": "1024 x 768",
       "exif": {
         "Make": "SONY",
         "Model": "ILCE-1M2",
@@ -923,7 +1342,7 @@ window.SPOTTERDEX_DATA = {
       "source": "raw_assets/128928.jpg",
       "originalSize": "6582 x 4937",
       "processedSize": "2048 x 1536",
-      "thumbnailSize": "640 x 480",
+      "thumbnailSize": "1024 x 768",
       "exif": {
         "Make": "SONY",
         "Model": "ILCE-1M2",
@@ -958,7 +1377,7 @@ window.SPOTTERDEX_DATA = {
       "source": "raw_assets/xx5606.jpg",
       "originalSize": "6731 x 5048",
       "processedSize": "2048 x 1536",
-      "thumbnailSize": "640 x 480",
+      "thumbnailSize": "1024 x 768",
       "exif": {
         "Make": "SONY",
         "Model": "ILCE-1M2",
@@ -993,7 +1412,7 @@ window.SPOTTERDEX_DATA = {
       "source": "raw_assets/681203.jpg",
       "originalSize": "4096 x 3072",
       "processedSize": "2048 x 1536",
-      "thumbnailSize": "640 x 480",
+      "thumbnailSize": "1024 x 768",
       "exif": {
         "Make": "SONY",
         "Model": "ILCE-1M2",
@@ -1028,7 +1447,7 @@ window.SPOTTERDEX_DATA = {
       "source": "raw_assets/081201.jpg",
       "originalSize": "7680 x 5760",
       "processedSize": "2048 x 1536",
-      "thumbnailSize": "640 x 480",
+      "thumbnailSize": "1024 x 768",
       "exif": {
         "Make": "SONY",
         "Model": "ILCE-1M2",
@@ -1063,7 +1482,7 @@ window.SPOTTERDEX_DATA = {
       "source": "raw_assets/raaf_f35a_1.jpg",
       "originalSize": "5030 x 3773",
       "processedSize": "2048 x 1536",
-      "thumbnailSize": "640 x 480",
+      "thumbnailSize": "1024 x 768",
       "exif": {
         "Make": "SONY",
         "Model": "ILCE-1M2",
@@ -1098,7 +1517,7 @@ window.SPOTTERDEX_DATA = {
       "source": "raw_assets/raaf_f35a_2.jpg",
       "originalSize": "2781 x 2086",
       "processedSize": "2048 x 1536",
-      "thumbnailSize": "640 x 480",
+      "thumbnailSize": "1024 x 768",
       "exif": {
         "Make": "SONY",
         "Model": "ILCE-1M2",
@@ -1133,7 +1552,7 @@ window.SPOTTERDEX_DATA = {
       "source": "raw_assets/rsaf_apache_flare.jpg",
       "originalSize": "3312 x 2484",
       "processedSize": "2048 x 1536",
-      "thumbnailSize": "640 x 480",
+      "thumbnailSize": "1024 x 768",
       "exif": {
         "Make": "SONY",
         "Model": "ILCE-1M2",
@@ -1168,7 +1587,7 @@ window.SPOTTERDEX_DATA = {
       "source": "raw_assets/raaf_f35a_3.jpg",
       "originalSize": "1761 x 1321",
       "processedSize": "2048 x 1536",
-      "thumbnailSize": "640 x 480",
+      "thumbnailSize": "1024 x 768",
       "exif": {
         "Make": "SONY",
         "Model": "ILCE-1M2",
@@ -1203,7 +1622,7 @@ window.SPOTTERDEX_DATA = {
       "source": "raw_assets/raaf_f35a_4.jpg",
       "originalSize": "2407 x 1805",
       "processedSize": "2048 x 1536",
-      "thumbnailSize": "640 x 480",
+      "thumbnailSize": "1024 x 768",
       "exif": {
         "Make": "SONY",
         "Model": "ILCE-1M2",
@@ -1238,7 +1657,7 @@ window.SPOTTERDEX_DATA = {
       "source": "raw_assets/128925.jpg",
       "originalSize": "6410 x 4808",
       "processedSize": "2048 x 1536",
-      "thumbnailSize": "640 x 480",
+      "thumbnailSize": "1024 x 768",
       "exif": {
         "Make": "SONY",
         "Model": "ILCE-1M2",
@@ -1273,7 +1692,7 @@ window.SPOTTERDEX_DATA = {
       "source": "raw_assets/181202.jpg",
       "originalSize": "6842 x 5132",
       "processedSize": "2048 x 1536",
-      "thumbnailSize": "640 x 480",
+      "thumbnailSize": "1024 x 768",
       "exif": {
         "Make": "SONY",
         "Model": "ILCE-1M2",
@@ -1308,7 +1727,7 @@ window.SPOTTERDEX_DATA = {
       "source": "raw_assets/zz_0007.jpg",
       "originalSize": "3854 x 2890",
       "processedSize": "2048 x 1536",
-      "thumbnailSize": "640 x 480",
+      "thumbnailSize": "1024 x 768",
       "exif": {
         "Make": "SONY",
         "Model": "ILCE-1M2",
@@ -1343,7 +1762,7 @@ window.SPOTTERDEX_DATA = {
       "source": "raw_assets/204_sunset.jpg",
       "originalSize": "7438 x 5579",
       "processedSize": "2048 x 1536",
-      "thumbnailSize": "640 x 480",
+      "thumbnailSize": "1024 x 768",
       "exif": {
         "Make": "SONY",
         "Model": "ILCE-1M2",
@@ -1378,7 +1797,7 @@ window.SPOTTERDEX_DATA = {
       "source": "raw_assets/928907.jpg",
       "originalSize": "4053 x 3040",
       "processedSize": "2048 x 1536",
-      "thumbnailSize": "640 x 480",
+      "thumbnailSize": "1024 x 768",
       "exif": {
         "Make": "SONY",
         "Model": "ILCE-1M2",
@@ -1413,7 +1832,7 @@ window.SPOTTERDEX_DATA = {
       "source": "raw_assets/728893.jpg",
       "originalSize": "4952 x 3714",
       "processedSize": "2048 x 1536",
-      "thumbnailSize": "640 x 480",
+      "thumbnailSize": "1024 x 768",
       "exif": {
         "Make": "SONY",
         "Model": "ILCE-1M2",
@@ -1448,7 +1867,7 @@ window.SPOTTERDEX_DATA = {
       "source": "raw_assets/584621.jpg",
       "originalSize": "6493 x 4870",
       "processedSize": "2048 x 1536",
-      "thumbnailSize": "640 x 480",
+      "thumbnailSize": "1024 x 768",
       "exif": {
         "Make": "SONY",
         "Model": "ILCE-1M2",
@@ -1483,7 +1902,7 @@ window.SPOTTERDEX_DATA = {
       "source": "raw_assets/trio_jasdf_8tfs.jpg",
       "originalSize": "4349 x 3262",
       "processedSize": "2048 x 1536",
-      "thumbnailSize": "640 x 480",
+      "thumbnailSize": "1024 x 768",
       "exif": {
         "Make": "SONY",
         "Model": "ILCE-1M2",
@@ -1518,7 +1937,7 @@ window.SPOTTERDEX_DATA = {
       "source": "raw_assets/423022.jpg",
       "originalSize": "2986 x 2240",
       "processedSize": "2048 x 1536",
-      "thumbnailSize": "640 x 480",
+      "thumbnailSize": "1024 x 768",
       "exif": {
         "Make": "SONY",
         "Model": "ILCE-1M2",
@@ -1553,7 +1972,7 @@ window.SPOTTERDEX_DATA = {
       "source": "raw_assets/trio_jasdf_6tfs.jpg",
       "originalSize": "6768 x 5076",
       "processedSize": "2048 x 1536",
-      "thumbnailSize": "640 x 480",
+      "thumbnailSize": "1024 x 768",
       "exif": {
         "Make": "SONY",
         "Model": "ILCE-1M2",
@@ -1588,7 +2007,7 @@ window.SPOTTERDEX_DATA = {
       "source": "raw_assets/N742CK.jpg",
       "originalSize": "5203 x 3902",
       "processedSize": "2048 x 1536",
-      "thumbnailSize": "640 x 480",
+      "thumbnailSize": "1024 x 768",
       "exif": {
         "Make": "SONY",
         "Model": "ILCE-6700",
@@ -1600,6 +2019,461 @@ window.SPOTTERDEX_DATA = {
         "DateTimeOriginal": "2025:04:17 08:51:12",
         "DateTimeDigitized": "2025:04:17 08:51:12",
         "DateTime": "2026:05:30 19:50:08"
+      }
+    },
+    {
+      "id": "dassault-rafale-b-escadron-de-chasse-1-4-rafale-b-2-f2aa037c",
+      "aircraftId": "dassault-rafale-b",
+      "aircraftType": "Dassault Rafale B",
+      "squadronId": "dassault-rafale-b-escadron-de-chasse-1-4",
+      "squadronName": "Escadron de Chasse 1/4",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "France",
+      "year": "2023",
+      "date": "2023-06-27",
+      "sortDate": "2023-06-27",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "French Rafale B taking off from Singapore",
+      "image": "assets/generated/photos/dassault-rafale-b-escadron-de-chasse-1-4-rafale-b-2-f2aa037c.jpg",
+      "thumbnail": "assets/generated/thumbs/dassault-rafale-b-escadron-de-chasse-1-4-rafale-b-2-f2aa037c.jpg",
+      "source": "raw_assets/rafale_b_2.jpg",
+      "originalSize": "3334 x 2223",
+      "processedSize": "2048 x 1366",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/640s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:06:27 15:14:57",
+        "DateTimeDigitized": "2023:06:27 15:14:57",
+        "DateTime": "2023:07:10 18:02:41"
+      }
+    },
+    {
+      "id": "boeing-c-17-globemaster-iii-no-36-squadron-raaf-c17-20e2d7e3",
+      "aircraftId": "boeing-c-17-globemaster-iii",
+      "aircraftType": "Boeing C-17 Globemaster III",
+      "squadronId": "boeing-c-17-globemaster-iii-no-36-squadron",
+      "squadronName": "No. 36 Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Australia",
+      "year": "2023",
+      "date": "2023-06-27",
+      "sortDate": "2023-06-27",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "RAAF C-17 from No. 36 Squadron landing in Singapore",
+      "image": "assets/generated/photos/boeing-c-17-globemaster-iii-no-36-squadron-raaf-c17-20e2d7e3.jpg",
+      "thumbnail": "assets/generated/thumbs/boeing-c-17-globemaster-iii-no-36-squadron-raaf-c17-20e2d7e3.jpg",
+      "source": "raw_assets/raaf_c17.jpg",
+      "originalSize": "5246 x 3497",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "120.9mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/640s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:06:27 14:42:20",
+        "DateTimeDigitized": "2023:06:27 14:42:20",
+        "DateTime": "2023:06:29 19:01:52"
+      }
+    },
+    {
+      "id": "dassault-rafale-c-escadron-de-chasse-3-30-lorraine-rafale-c-1-94395c0c",
+      "aircraftId": "dassault-rafale-c",
+      "aircraftType": "Dassault Rafale C",
+      "squadronId": "dassault-rafale-c-escadron-de-chasse-3-30-lorraine",
+      "squadronName": "Escadron de Chasse 3/30 \"Lorraine\"",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "France",
+      "year": "2023",
+      "date": "2023-06-26",
+      "sortDate": "2023-06-26",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "French Rafale C landing in Singapore",
+      "image": "assets/generated/photos/dassault-rafale-c-escadron-de-chasse-3-30-lorraine-rafale-c-1-94395c0c.jpg",
+      "thumbnail": "assets/generated/thumbs/dassault-rafale-c-escadron-de-chasse-3-30-lorraine-rafale-c-1-94395c0c.jpg",
+      "source": "raw_assets/rafale_c_1.jpg",
+      "originalSize": "3844 x 2563",
+      "processedSize": "2048 x 1366",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "219.8mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/640s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:06:26 16:31:49",
+        "DateTimeDigitized": "2023:06:26 16:31:49",
+        "DateTime": "2023:07:06 21:37:17"
+      }
+    },
+    {
+      "id": "dassault-rafale-b-escadron-de-chasse-01-004-rafale-b-1-36c5178b",
+      "aircraftId": "dassault-rafale-b",
+      "aircraftType": "Dassault Rafale B",
+      "squadronId": "dassault-rafale-b-escadron-de-chasse-01-004",
+      "squadronName": "Escadron de Chasse 01.004",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "France",
+      "year": "2023",
+      "date": "2023-06-26",
+      "sortDate": "2023-06-26",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "French Rafale B landing in Singapore",
+      "image": "assets/generated/photos/dassault-rafale-b-escadron-de-chasse-01-004-rafale-b-1-36c5178b.jpg",
+      "thumbnail": "assets/generated/thumbs/dassault-rafale-b-escadron-de-chasse-01-004-rafale-b-1-36c5178b.jpg",
+      "source": "raw_assets/rafale_b_1.jpg",
+      "originalSize": "3520 x 2347",
+      "processedSize": "2048 x 1366",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/640s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:06:26 16:14:23",
+        "DateTimeDigitized": "2023:06:26 16:14:23",
+        "DateTime": "2023:07:06 21:37:14"
+      }
+    },
+    {
+      "id": "boeing-e-4b-nightwatch-1st-airborne-command-control-squadron-e4b-1-a64019d9",
+      "aircraftId": "boeing-e-4b-nightwatch",
+      "aircraftType": "Boeing E-4B Nightwatch",
+      "squadronId": "boeing-e-4b-nightwatch-1st-airborne-command-control-squadron",
+      "squadronName": "1st Airborne Command Control Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "United States",
+      "year": "2023",
+      "date": "2023-06-04",
+      "sortDate": "2023-06-04",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "Doomsday plane (E-4B Nightwatch) taking off from Singapore after annual IISS Shangri-La Dialogue",
+      "image": "assets/generated/photos/boeing-e-4b-nightwatch-1st-airborne-command-control-squadron-e4b-1-a64019d9.jpg",
+      "thumbnail": "assets/generated/thumbs/boeing-e-4b-nightwatch-1st-airborne-command-control-squadron-e4b-1-a64019d9.jpg",
+      "source": "raw_assets/e4b_1.jpg",
+      "originalSize": "5286 x 3524",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "110.1mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/320s",
+        "ISO": "125",
+        "DateTimeOriginal": "2023:06:04 13:42:54",
+        "DateTimeDigitized": "2023:06:04 13:42:54",
+        "DateTime": "2023:06:10 13:48:01"
+      }
+    },
+    {
+      "id": "c-146a-wolfhound-usaf-special-operations-command-wolfhound-1-2dfc334b",
+      "aircraftId": "c-146a-wolfhound",
+      "aircraftType": "C-146A Wolfhound",
+      "squadronId": "c-146a-wolfhound-usaf-special-operations-command",
+      "squadronName": "USAF Special Operations Command",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "United States",
+      "year": "2023",
+      "date": "2023-05-16",
+      "sortDate": "2023-05-16",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "U.S. Special Operations Command (AFSOC) C-146A Wolfhound (Dornier 328) landing in Singapore",
+      "image": "assets/generated/photos/c-146a-wolfhound-usaf-special-operations-command-wolfhound-1-2dfc334b.jpg",
+      "thumbnail": "assets/generated/thumbs/c-146a-wolfhound-usaf-special-operations-command-wolfhound-1-2dfc334b.jpg",
+      "source": "raw_assets/wolfhound_1.jpg",
+      "originalSize": "4447 x 2965",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "198.2mm",
+        "FNumber": "f/8.0",
+        "ExposureTime": "1/125s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:05:16 15:16:26",
+        "DateTimeDigitized": "2023:05:16 15:16:26",
+        "DateTime": "2023:05:16 22:05:47"
+      }
+    },
+    {
+      "id": "atr-72-500-firefly-firefly-1-ef4097cc",
+      "aircraftId": "atr-72-500",
+      "aircraftType": "ATR 72-500",
+      "squadronId": "atr-72-500-firefly",
+      "squadronName": "Firefly",
+      "unitType": "organisation",
+      "unitLabel": "Organisation",
+      "country": "Malaysia",
+      "year": "2023",
+      "date": "2023-04-29",
+      "sortDate": "2023-04-29",
+      "locationName": "Seletar Airport",
+      "pinId": "seletar-airport",
+      "title": "",
+      "caption": "Firefly ATR 72-500 landing at Singapore Seletar Airport",
+      "image": "assets/generated/photos/atr-72-500-firefly-firefly-1-ef4097cc.jpg",
+      "thumbnail": "assets/generated/thumbs/atr-72-500-firefly-firefly-1-ef4097cc.jpg",
+      "source": "raw_assets/firefly_1.jpg",
+      "originalSize": "5229 x 3486",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "159.7mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/640s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:04:29 10:36:34",
+        "DateTimeDigitized": "2023:04:29 10:36:34",
+        "DateTime": "2023:04:29 21:02:16"
+      }
+    },
+    {
+      "id": "atr-72-500-firefly-firefly-2-22ded383",
+      "aircraftId": "atr-72-500",
+      "aircraftType": "ATR 72-500",
+      "squadronId": "atr-72-500-firefly",
+      "squadronName": "Firefly",
+      "unitType": "organisation",
+      "unitLabel": "Organisation",
+      "country": "Malaysia",
+      "year": "2023",
+      "date": "2023-04-29",
+      "sortDate": "2023-04-29",
+      "locationName": "Seletar Airport",
+      "pinId": "seletar-airport",
+      "title": "",
+      "caption": "Firefly ATR 72-500 landing at Singapore Seletar Airport",
+      "image": "assets/generated/photos/atr-72-500-firefly-firefly-2-22ded383.jpg",
+      "thumbnail": "assets/generated/thumbs/atr-72-500-firefly-firefly-2-22ded383.jpg",
+      "source": "raw_assets/firefly_2.jpg",
+      "originalSize": "4881 x 3254",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "146.8mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/640s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:04:29 11:21:13",
+        "DateTimeDigitized": "2023:04:29 11:21:13",
+        "DateTime": "2023:04:29 20:58:31"
+      }
+    },
+    {
+      "id": "boeing-757-honeywell-honeywell-1-6aa1816d",
+      "aircraftId": "boeing-757",
+      "aircraftType": "Boeing 757",
+      "squadronId": "boeing-757-honeywell",
+      "squadronName": "Honeywell",
+      "unitType": "organisation",
+      "unitLabel": "Organisation",
+      "country": "United States",
+      "year": "2023",
+      "date": "2023-02-23",
+      "sortDate": "2023-02-23",
+      "locationName": "Changi Airport",
+      "pinId": "changi-airport",
+      "title": "",
+      "caption": "Honeywell Flying Testbed (Boeing 757) landing in Singapore Changi Airport",
+      "image": "assets/generated/photos/boeing-757-honeywell-honeywell-1-6aa1816d.jpg",
+      "thumbnail": "assets/generated/thumbs/boeing-757-honeywell-honeywell-1-6aa1816d.jpg",
+      "source": "raw_assets/honeywell_1.jpg",
+      "originalSize": "5316 x 3544",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:02:23 13:56:11",
+        "DateTimeDigitized": "2023:02:23 13:56:11",
+        "DateTime": "2023:02:23 21:17:53"
+      }
+    },
+    {
+      "id": "boeing-757-honeywell-honeywell-2-2e05aa2c",
+      "aircraftId": "boeing-757",
+      "aircraftType": "Boeing 757",
+      "squadronId": "boeing-757-honeywell",
+      "squadronName": "Honeywell",
+      "unitType": "organisation",
+      "unitLabel": "Organisation",
+      "country": "United States",
+      "year": "2023",
+      "date": "2023-02-23",
+      "sortDate": "2023-02-23",
+      "locationName": "Changi Airport",
+      "pinId": "changi-airport",
+      "title": "",
+      "caption": "Honeywell Flying Testbed (Boeing 757) landing in Singapore Changi Airport",
+      "image": "assets/generated/photos/boeing-757-honeywell-honeywell-2-2e05aa2c.jpg",
+      "thumbnail": "assets/generated/thumbs/boeing-757-honeywell-honeywell-2-2e05aa2c.jpg",
+      "source": "raw_assets/honeywell_2.jpg",
+      "originalSize": "5072 x 3381",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:02:23 13:56:30",
+        "DateTimeDigitized": "2023:02:23 13:56:30",
+        "DateTime": "2023:02:23 21:17:58"
+      }
+    },
+    {
+      "id": "grumman-c-2a-greyhound-fleet-logistics-support-squadron-30-vrc-30-c2-vrc30-8e2f3dd6",
+      "aircraftId": "grumman-c-2a-greyhound",
+      "aircraftType": "Grumman C-2A Greyhound",
+      "squadronId": "grumman-c-2a-greyhound-fleet-logistics-support-squadron-30-vrc-30",
+      "squadronName": "Fleet Logistics Support Squadron 30 (VRC-30)",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "United States",
+      "year": "2023",
+      "date": "2023-02-07",
+      "sortDate": "2023-02-07",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "Grumman C-2A Greyhound from VRC-30 \"Providers\" landing in Singapore",
+      "image": "assets/generated/photos/grumman-c-2a-greyhound-fleet-logistics-support-squadron-30-vrc-30-c2-vrc30-8e2f3dd6.jpg",
+      "thumbnail": "assets/generated/thumbs/grumman-c-2a-greyhound-fleet-logistics-support-squadron-30-vrc-30-c2-vrc30-8e2f3dd6.jpg",
+      "source": "raw_assets/c2_vrc30.jpg",
+      "originalSize": "4097 x 2731",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/1000s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:02:07 14:30:44",
+        "DateTimeDigitized": "2023:02:07 14:30:44",
+        "DateTime": "2023:02:08 12:15:52"
+      }
+    },
+    {
+      "id": "airbus-a300-600st-super-transporter-airbus-beluga-1-fba0bd70",
+      "aircraftId": "airbus-a300-600st-super-transporter",
+      "aircraftType": "Airbus A300-600ST (Super Transporter)",
+      "squadronId": "airbus-a300-600st-super-transporter-airbus",
+      "squadronName": "Airbus",
+      "unitType": "organisation",
+      "unitLabel": "Organisation",
+      "country": "France",
+      "year": "2023",
+      "date": "2023-01-17",
+      "sortDate": "2023-01-17",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "Airbus A300-600ST (Super Transporter) or Beluga landing in Singapore",
+      "image": "assets/generated/photos/airbus-a300-600st-super-transporter-airbus-beluga-1-fba0bd70.jpg",
+      "thumbnail": "assets/generated/thumbs/airbus-a300-600st-super-transporter-airbus-beluga-1-fba0bd70.jpg",
+      "source": "raw_assets/beluga_1.jpg",
+      "originalSize": "4477 x 2985",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "135.9mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/125s",
+        "ISO": "160",
+        "DateTimeOriginal": "2023:01:17 07:09:30",
+        "DateTimeDigitized": "2023:01:17 07:09:30",
+        "DateTime": "2023:01:17 10:38:46"
+      }
+    },
+    {
+      "id": "airbus-a300-600st-super-transporter-airbus-beluga-2-82dc08fa",
+      "aircraftId": "airbus-a300-600st-super-transporter",
+      "aircraftType": "Airbus A300-600ST (Super Transporter)",
+      "squadronId": "airbus-a300-600st-super-transporter-airbus",
+      "squadronName": "Airbus",
+      "unitType": "organisation",
+      "unitLabel": "Organisation",
+      "country": "France",
+      "year": "2023",
+      "date": "2023-01-17",
+      "sortDate": "2023-01-17",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "Airbus A300-600ST (Super Transporter) or Beluga landing in Singapore",
+      "image": "assets/generated/photos/airbus-a300-600st-super-transporter-airbus-beluga-2-82dc08fa.jpg",
+      "thumbnail": "assets/generated/thumbs/airbus-a300-600st-super-transporter-airbus-beluga-2-82dc08fa.jpg",
+      "source": "raw_assets/beluga_2.jpg",
+      "originalSize": "3659 x 2439",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "78.4mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/125s",
+        "ISO": "200",
+        "DateTimeOriginal": "2023:01:17 07:09:36",
+        "DateTimeDigitized": "2023:01:17 07:09:36",
+        "DateTime": "2023:01:17 10:38:47"
       }
     }
   ]
