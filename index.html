@@ -236,7 +236,16 @@
         <div class="stats-page">
           <section class="results-panel stats-hero" aria-label="Collection statistics">
             <p class="eyebrow">Collection telemetry</p>
-            <h1>Stats Dashboard</h1>
+            <h1 class="heading-with-icon">
+              <svg class="heading-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 19V5"></path>
+                <path d="M4 19h16"></path>
+                <path d="M8 16v-5"></path>
+                <path d="M12 16V8"></path>
+                <path d="M16 16v-9"></path>
+              </svg>
+              <span>Stats Dashboard</span>
+            </h1>
             <p class="lead">
               Overview metrics for the aircraft archive, spotting locations, countries, and camera metadata.
             </p>
@@ -251,11 +260,21 @@
     <div class="photo-viewer" id="photoViewer" role="dialog" aria-modal="true" aria-label="Photo viewer" hidden>
       <div class="viewer-stage">
         <button class="viewer-button close" type="button" id="closeViewerButton" aria-label="Close viewer">x</button>
-        <button class="viewer-button previous" type="button" id="previousPhotoButton" aria-label="Previous photo">&lt;</button>
-        <img id="viewerImage" alt="" draggable="false">
-        <button class="viewer-button next" type="button" id="nextPhotoButton" aria-label="Next photo">&gt;</button>
+        <button
+          class="viewer-button info-toggle"
+          type="button"
+          id="viewerInfoButton"
+          aria-label="Show photo info"
+          aria-controls="viewerInfo"
+          aria-expanded="false"
+        >i</button>
+        <div class="viewer-image-frame">
+          <button class="viewer-button previous" type="button" id="previousPhotoButton" aria-label="Previous photo">◀</button>
+          <img id="viewerImage" alt="" draggable="false">
+          <button class="viewer-button next" type="button" id="nextPhotoButton" aria-label="Next photo">▶</button>
+        </div>
       </div>
-      <aside class="viewer-info">
+      <aside class="viewer-info" id="viewerInfo">
         <p class="eyebrow" id="viewerKicker">Photo</p>
         <h2 id="viewerTitle">Photo details</h2>
         <p class="viewer-caption" id="viewerCaption"></p>

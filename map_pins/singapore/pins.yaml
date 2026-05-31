@@ -12,7 +12,7 @@ pins:
     enabled: true
   - id: changi-exhibition-centre
     name: Changi Exhibition Center
-    icao: WSSS
+    icao:
     coordinates: [1.3631, 104.0229]
     enabled: true
   - id: seletar-airport

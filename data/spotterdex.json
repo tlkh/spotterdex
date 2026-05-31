@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-31T05:55:50+00:00",
+  "generatedAt": "2026-05-31T07:45:36+00:00",
   "pins": [
     {
       "id": "hong-kong-international-airport",
@@ -167,7 +167,7 @@
       "id": "changi-exhibition-centre",
       "name": "Changi Exhibition Center",
       "country": "Singapore",
-      "icao": "WSSS",
+      "icao": "",
       "lat": 1.3631,
       "lon": 104.0229,
       "enabled": true

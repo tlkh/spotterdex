@@ -17,6 +17,8 @@
     markersByPinId: new Map(),
     activePhotoIds: [],
     activePhotoIndex: 0,
+    activePhotoContext: "map",
+    viewerInfoOpen: false,
     mobileMapPanel: null,
     isApplyingHash: false
   };
@@ -67,6 +69,8 @@
     els.viewerTitle = document.getElementById("viewerTitle");
     els.viewerCaption = document.getElementById("viewerCaption");
     els.viewerMetadata = document.getElementById("viewerMetadata");
+    els.viewerInfo = document.getElementById("viewerInfo");
+    els.viewerInfoButton = document.getElementById("viewerInfoButton");
   }
 
   async function loadData() {
@@ -202,6 +206,7 @@
     document.getElementById("closeViewerButton").addEventListener("click", closeViewer);
     document.getElementById("previousPhotoButton").addEventListener("click", () => stepPhoto(-1));
     document.getElementById("nextPhotoButton").addEventListener("click", () => stepPhoto(1));
+    els.viewerInfoButton.addEventListener("click", () => setViewerInfoOpen(!state.viewerInfoOpen));
     els.viewerImage.addEventListener("contextmenu", (event) => event.preventDefault());
     els.viewerImage.setAttribute("draggable", "false");
 
@@ -213,6 +218,7 @@
     window.addEventListener("hashchange", () => applyDeepLinkFromHash());
     window.addEventListener("resize", debounce(() => {
       updateMapPanelState();
+      updateViewerInfoState();
       if (state.map) {
         state.map.invalidateSize();
         renderPins();
@@ -221,6 +227,14 @@
   }
 
   function handleDocumentClick(event) {
+    if (event.target.closest("#viewerInfoButton")) {
+      return;
+    }
+
+    if (!els.photoViewer.hidden && state.viewerInfoOpen && isMobileViewerLayout() && !event.target.closest("#viewerInfo")) {
+      setViewerInfoOpen(false);
+    }
+
     const mapPanelButton = event.target.closest("[data-map-panel-toggle]");
     if (mapPanelButton) {
       toggleMapPanel(mapPanelButton.dataset.mapPanelToggle);
@@ -268,7 +282,11 @@
   function handleKeydown(event) {
     if (!els.photoViewer.hidden) {
       if (event.key === "Escape") {
-        closeViewer();
+        if (state.viewerInfoOpen && isMobileViewerLayout()) {
+          setViewerInfoOpen(false);
+        } else {
+          closeViewer();
+        }
       } else if (event.key === "ArrowLeft") {
         stepPhoto(-1);
       } else if (event.key === "ArrowRight") {
@@ -312,7 +330,11 @@
     return window.matchMedia("(max-width: 1040px)").matches;
   }
 
-  function setActiveTab(viewId) {
+  function isMobileViewerLayout() {
+    return window.matchMedia("(max-width: 1040px)").matches;
+  }
+
+  function setActiveTab(viewId, options = {}) {
     const activeBefore = document.querySelector("[data-view].is-active");
     document.querySelectorAll("[data-view]").forEach((view) => {
       const isActive = view.id === viewId;
@@ -329,6 +351,10 @@
       els.viewSelect.value = viewId;
     }
 
+    if (options.updateHash !== false && !state.isApplyingHash) {
+      updateDeepLinkForView(viewId);
+    }
+
     if (viewId === "mapView") {
       window.requestAnimationFrame(() => {
         if (state.map) {
@@ -339,6 +365,18 @@
           }
         }
       });
+    }
+  }
+
+  function updateDeepLinkForView(viewId) {
+    if (viewId === "mapView" && state.selectedPinId) {
+      updateDeepLink("location", state.selectedPinId);
+    } else if (viewId === "dexView" && state.selectedAircraftId) {
+      updateDeepLink("aircraft", state.selectedAircraftId);
+    } else if (viewId === "squadronsView" && state.selectedSquadronId) {
+      updateDeepLink("squadron", state.selectedSquadronId);
+    } else if (viewId === "statsView") {
+      updateDeepLink("stats", "summary");
     }
   }
 
@@ -387,6 +425,71 @@
         <path d="M20.99 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.78 9.79Z"></path>
       </svg>
     `;
+  }
+
+  function statsIcon(name) {
+    const icons = {
+      aperture: `
+        <svg class="heading-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="m14 3-4 9"></path>
+          <path d="m21 10-9 2"></path>
+          <path d="m18 19-6-7"></path>
+          <path d="m7 21 5-9"></path>
+          <path d="m3 14 9-2"></path>
+          <path d="m6 5 6 7"></path>
+        </svg>
+      `,
+      camera: `
+        <svg class="heading-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 8h4l2-3h4l2 3h4v11H4Z"></path>
+          <circle cx="12" cy="13" r="4"></circle>
+        </svg>
+      `,
+      lens: `
+        <svg class="heading-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="8"></circle>
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M12 4v3"></path>
+          <path d="M20 12h-3"></path>
+          <path d="M12 20v-3"></path>
+          <path d="M4 12h3"></path>
+        </svg>
+      `,
+      focal: `
+        <svg class="heading-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 12h16"></path>
+          <path d="M12 4v16"></path>
+          <circle cx="12" cy="12" r="5"></circle>
+        </svg>
+      `,
+      shutter: `
+        <svg class="heading-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="8"></circle>
+          <path d="M12 4v8l5 5"></path>
+        </svg>
+      `,
+      iso: `
+        <svg class="heading-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 19a7 7 0 0 1 14 0"></path>
+          <path d="M12 12l4-4"></path>
+          <path d="M7 19h10"></path>
+          <path d="M6 15l2 1"></path>
+          <path d="M18 15l-2 1"></path>
+        </svg>
+      `,
+      stats: `
+        <svg class="heading-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 19V5"></path>
+          <path d="M4 19h16"></path>
+          <path d="M8 16v-5"></path>
+          <path d="M12 16V8"></path>
+          <path d="M16 16v-9"></path>
+        </svg>
+      `
+    };
+
+    return icons[name] || icons.stats;
   }
 
   function renderAll() {
@@ -577,12 +680,15 @@
     }
 
     const photos = photosForPin(pin);
+    const profile = locationProfile(pin, photos);
     const unitGroupLabel = photoUnitGroupLabel(photos);
     els.mapResults.innerHTML = `
-      <div class="result-header">
+      ${renderLocationDetail(profile)}
+
+      <div class="result-header location-photo-browser">
         <div>
-          <p class="eyebrow">${escapeHtml(pin.country || "Location")}</p>
-          <h2>${escapeHtml(pin.name)}</h2>
+          <p class="eyebrow">Photo archive</p>
+          <h2>All frames</h2>
           <p class="muted">${photos.length} photo${photos.length === 1 ? "" : "s"} at this location</p>
         </div>
         <div class="segmented" aria-label="Organize map photos">
@@ -592,6 +698,193 @@
       </div>
       ${renderPhotoGroups(photos, state.mapGroupMode, "map")}
     `;
+  }
+
+  function locationProfile(pin, photos) {
+    const heroPhoto = photos.find((photo) => photo.image || photo.thumbnail) || null;
+    const familiesById = new Map();
+
+    photos.forEach((photo) => {
+      const family = aircraftFamilyForPhoto(photo);
+      if (family && !familiesById.has(family.id)) {
+        familiesById.set(family.id, family);
+      }
+    });
+
+    const units = locationUnitPreviews(photos);
+
+    return {
+      pin,
+      photos,
+      heroPhoto,
+      families: Array.from(familiesById.values()),
+      units,
+      recentPhotos: photos
+        .filter((photo) => (photo.thumbnail || photo.image) && (!heroPhoto || photo.id !== heroPhoto.id))
+        .slice(0, 4)
+    };
+  }
+
+  function renderLocationDetail(profile) {
+    const { pin, heroPhoto, families, units, recentPhotos } = profile;
+    const heroImage = heroPhoto ? heroPhoto.image || heroPhoto.thumbnail : "";
+    const heroStyle = heroImage ? "" : " is-empty";
+    const heroTag = heroPhoto ? "button" : "div";
+    const heroAttrs = heroPhoto
+      ? `type="button" data-photo-id="${escapeAttr(heroPhoto.id)}" data-photo-context="map"`
+      : "";
+
+    return `
+      <section class="location-detail-page" aria-label="${escapeAttr(pin.name)} location details">
+        <${heroTag} class="location-hero${heroStyle}" ${heroAttrs}>
+          ${
+            heroImage
+              ? `<img src="${escapeAttr(heroImage)}" alt="${escapeAttr(heroPhoto.aircraftType)} at ${escapeAttr(pin.name)}">`
+              : '<span class="empty-cover">No location photo</span>'
+          }
+          <span class="location-hero-overlay">
+            <span class="eyebrow">${escapeHtml(pin.country || "Location")}</span>
+            <strong>${escapeHtml(pin.name)}</strong>
+            <span>${escapeHtml(locationMetaLine(pin))}</span>
+          </span>
+        </${heroTag}>
+
+        <div class="location-detail-grid">
+          <section class="location-detail-block">
+            <div class="compact-heading">
+              <h3>Aircraft families</h3>
+              <span class="count-pill">${families.length}</span>
+            </div>
+            ${renderLocationFamilies(families)}
+          </section>
+
+          <section class="location-detail-block">
+            <div class="compact-heading">
+              <h3>Units observed</h3>
+              <span class="count-pill">${units.length}</span>
+            </div>
+            ${renderLocationUnits(units)}
+          </section>
+        </div>
+
+        <section class="location-detail-block">
+          <div class="compact-heading">
+            <h3>Recent photos</h3>
+            <span class="count-pill">${recentPhotos.length}</span>
+          </div>
+          ${renderLocationRecentPhotos(recentPhotos)}
+        </section>
+      </section>
+    `;
+  }
+
+  function locationMetaLine(pin) {
+    return [pin.icao ? `ICAO ${pin.icao}` : "", pin.country || ""]
+      .filter(Boolean)
+      .join(" - ");
+  }
+
+  function renderLocationFamilies(families) {
+    if (!families.length) {
+      return '<div class="empty-state compact">No aircraft families detected yet.</div>';
+    }
+
+    return `
+      <div class="location-family-list">
+        ${families
+          .map(
+            (family) => `
+              <span class="location-family-chip" title="${escapeAttr(family.label)}" aria-label="${escapeAttr(family.label)}">
+                <img src="${escapeAttr(family.icon)}" alt="">
+              </span>
+            `
+          )
+          .join("")}
+      </div>
+    `;
+  }
+
+  function renderLocationUnits(units) {
+    if (!units.length) {
+      return '<div class="empty-state compact">No squadrons or organisations linked yet.</div>';
+    }
+
+    return `
+      <div class="location-unit-list">
+        ${units
+          .map(
+            (unit) => `
+              <span class="location-unit-chip" title="${escapeAttr(unit.name)}" aria-label="${escapeAttr(`${unit.name} ${unit.unitLabel}`)}">
+                ${
+                  unit.logo
+                    ? `<img src="${escapeAttr(unit.logo)}" alt="${escapeAttr(unit.name)} logo">`
+                    : `<span class="location-unit-fallback" aria-hidden="true">${escapeHtml(initials(unit.name))}</span>`
+                }
+              </span>
+            `
+          )
+          .join("")}
+      </div>
+    `;
+  }
+
+  function renderLocationRecentPhotos(photos) {
+    if (!photos.length) {
+      return '<div class="empty-state compact">No recent photos found for this location.</div>';
+    }
+
+    return `
+      <div class="location-recent-grid">
+        ${photos
+          .map((photo) => {
+            const image = photo.thumbnail || photo.image || "";
+            return `
+              <button class="location-recent-card" type="button" data-photo-id="${escapeAttr(photo.id)}" data-photo-context="map">
+                <img src="${escapeAttr(image)}" alt="${escapeAttr(photo.aircraftType)} at ${escapeAttr(photo.locationName)}">
+                <span>
+                  <strong>${escapeHtml(photo.aircraftType)}</strong>
+                  <small>${escapeHtml(displayPhotoDate(photo))}</small>
+                </span>
+              </button>
+            `;
+          })
+          .join("")}
+      </div>
+    `;
+  }
+
+  function locationUnitPreviews(photos) {
+    const byUnit = new Map();
+    photos.forEach((photo) => {
+      const squadron = squadronForPhoto(photo);
+      const name = squadron ? squadron.name : photo.squadronName;
+      const unitType = squadron ? squadron.unitType : photo.unitType;
+      const unitLabel = squadron ? squadron.unitLabel : photo.unitLabel || unitDisplayLabel(unitType);
+      const key = normalizeKey(`${photo.country || ""}-${name || ""}-${unitType || ""}`);
+      if (!key) {
+        return;
+      }
+
+      if (!byUnit.has(key)) {
+        byUnit.set(key, {
+          name: name || unknownUnitName(unitType),
+          unitLabel,
+          logo: squadron ? squadron.logo || "" : "",
+          count: 0
+        });
+      }
+      byUnit.get(key).count += 1;
+    });
+
+    return Array.from(byUnit.values())
+      .sort((a, b) => {
+        const countDiff = b.count - a.count;
+        if (countDiff) {
+          return countDiff;
+        }
+        return a.name.localeCompare(b.name);
+      })
+      .slice(0, 8);
   }
 
   function renderRecentPhotos() {
@@ -700,7 +993,7 @@
       <div class="browser-heading">
         <div>
           <p class="eyebrow">Photography stats</p>
-          <h2>EXIF Dashboard</h2>
+          <h2 class="heading-with-icon">${statsIcon("aperture")}<span>EXIF Dashboard</span></h2>
         </div>
         <p class="muted">${exifPhotos.length} of ${totalPhotos} photo${totalPhotos === 1 ? "" : "s"} with camera data</p>
       </div>
@@ -905,11 +1198,12 @@
   }
 
   function renderExifCountList(title, counts) {
+    const icon = statsIcon(exifIconForTitle(title));
     const items = topCounts(counts, 5);
     if (!items.length) {
       return `
         <section class="exif-stat-card">
-          <h3>${escapeHtml(title)}</h3>
+          <h3 class="heading-with-icon">${icon}<span>${escapeHtml(title)}</span></h3>
           <p class="muted">No data found.</p>
         </section>
       `;
@@ -918,7 +1212,7 @@
     const max = Math.max(...items.map((item) => item.count));
     return `
       <section class="exif-stat-card">
-        <h3>${escapeHtml(title)}</h3>
+        <h3 class="heading-with-icon">${icon}<span>${escapeHtml(title)}</span></h3>
         <div class="exif-bar-list">
           ${items
             .map((item) => {
@@ -935,6 +1229,29 @@
         </div>
       </section>
     `;
+  }
+
+  function exifIconForTitle(title) {
+    const key = normalizeText(title);
+    if (key.includes("camera")) {
+      return "camera";
+    }
+    if (key.includes("lens")) {
+      return "lens";
+    }
+    if (key.includes("focal")) {
+      return "focal";
+    }
+    if (key.includes("shutter")) {
+      return "shutter";
+    }
+    if (key.includes("aperture")) {
+      return "aperture";
+    }
+    if (key.includes("iso")) {
+      return "iso";
+    }
+    return "stats";
   }
 
   function renderDex() {
@@ -1134,15 +1451,50 @@
     if (options.updateHash !== false) {
       updateDeepLink("aircraft", aircraftId);
     }
-    els.dexDetail.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    if (options.scroll !== false) {
+      els.dexDetail.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
   }
 
-  function selectSquadron(squadronId) {
+  function selectSquadron(squadronId, options = {}) {
     state.selectedSquadronId = squadronId;
+    setActiveTab("squadronsView", { updateHash: false });
     renderSquadronsPage();
-    if (els.squadronDetail) {
+    if (options.updateHash !== false) {
+      updateDeepLink("squadron", squadronId);
+    }
+    if (els.squadronDetail && options.scroll !== false) {
       els.squadronDetail.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
+  }
+
+  function selectStatsSection(section, options = {}) {
+    const statsSection = normalizeStatsSection(section);
+    setActiveTab("statsView", { updateHash: false });
+
+    if (options.updateHash !== false) {
+      updateDeepLink("stats", statsSection);
+    }
+
+    if (options.scroll !== false) {
+      scrollStatsSection(statsSection, options);
+    }
+  }
+
+  function normalizeStatsSection(section) {
+    const key = normalizeKey(section || "summary");
+    return key === "exif" || key === "camera" || key === "photography" ? "exif" : "summary";
+  }
+
+  function scrollStatsSection(section, options = {}) {
+    const target = section === "exif" ? els.exifDashboard : els.statsDashboard;
+    if (!target) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      target.scrollIntoView({ behavior: options.initial ? "auto" : "smooth", block: "start" });
+    });
   }
 
   function photosForPin(pin) {
@@ -1402,30 +1754,45 @@
 
   }
 
-  function openViewer(photoId, context) {
+  function openViewer(photoId, context, options = {}) {
     const photo = state.photoById.get(photoId);
     if (!photo) {
       return;
     }
 
-    const collection = context === "dex"
+    const viewerContext = context || "map";
+    const collection = viewerContext === "dex"
       ? currentDexPhotoIds()
-      : context === "recent"
+      : viewerContext === "recent"
         ? currentRecentPhotoIds()
-        : context === "squadron"
+        : viewerContext === "squadron"
           ? currentSquadronPhotoIds()
-          : currentMapPhotoIds();
+          : viewerContext === "photo"
+            ? [photoId]
+            : currentMapPhotoIds();
     state.activePhotoIds = collection.includes(photoId) ? collection : [photoId];
     state.activePhotoIndex = Math.max(0, state.activePhotoIds.indexOf(photoId));
+    state.activePhotoContext = viewerContext;
+    state.viewerInfoOpen = false;
 
     els.photoViewer.hidden = false;
     document.body.style.overflow = "hidden";
+    updateViewerInfoState();
     renderViewerPhoto();
+
+    if (options.updateHash !== false) {
+      updateDeepLink("photo", photoId);
+    }
   }
 
-  function closeViewer() {
+  function closeViewer(options = {}) {
     els.photoViewer.hidden = true;
     document.body.style.overflow = "";
+    setViewerInfoOpen(false);
+
+    if (options.updateHash !== false) {
+      updateDeepLinkForViewerContext();
+    }
   }
 
   function stepPhoto(offset) {
@@ -1434,6 +1801,7 @@
     }
     state.activePhotoIndex = (state.activePhotoIndex + offset + state.activePhotoIds.length) % state.activePhotoIds.length;
     renderViewerPhoto();
+    updateDeepLink("photo", state.activePhotoIds[state.activePhotoIndex]);
   }
 
   function renderViewerPhoto() {
@@ -1457,6 +1825,44 @@
     els.viewerMetadata.innerHTML = metadataSections(photo)
       .map(renderMetadataSection)
       .join("");
+    updateViewerInfoState();
+  }
+
+  function updateDeepLinkForViewerContext() {
+    const photoId = state.activePhotoIds[state.activePhotoIndex];
+    const photo = state.photoById.get(photoId);
+
+    if (state.activePhotoContext === "dex" && state.selectedAircraftId) {
+      updateDeepLink("aircraft", state.selectedAircraftId);
+    } else if (state.activePhotoContext === "squadron" && state.selectedSquadronId) {
+      updateDeepLink("squadron", state.selectedSquadronId);
+    } else if (photo) {
+      const pinId = photo.pinId || pinIdFromLocation(photo.locationName);
+      if (pinId) {
+        updateDeepLink("location", pinId);
+      }
+    } else if (state.selectedPinId) {
+      updateDeepLink("location", state.selectedPinId);
+    }
+  }
+
+  function setViewerInfoOpen(isOpen) {
+    state.viewerInfoOpen = Boolean(isOpen);
+    updateViewerInfoState();
+  }
+
+  function updateViewerInfoState() {
+    if (!els.photoViewer || !els.viewerInfoButton || !els.viewerInfo) {
+      return;
+    }
+
+    const isOpen = Boolean(state.viewerInfoOpen);
+    const isMobile = isMobileViewerLayout();
+    els.photoViewer.classList.toggle("is-info-open", isOpen);
+    els.viewerInfoButton.classList.toggle("is-active", isOpen);
+    els.viewerInfoButton.setAttribute("aria-expanded", String(isOpen));
+    els.viewerInfoButton.setAttribute("aria-label", isOpen ? "Hide photo info" : "Show photo info");
+    els.viewerInfo.setAttribute("aria-hidden", String(isMobile && !isOpen));
   }
 
   function metadataSections(photo) {
@@ -1612,15 +2018,34 @@
 
   function applyDeepLinkFromHash(options = {}) {
     const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const photoId = params.get("photo");
+    const squadronId = params.get("squadron");
     const locationId = params.get("location");
     const aircraftId = params.get("aircraft");
+    const statsSection = params.get("stats");
 
     state.isApplyingHash = true;
     try {
+      if (photoId) {
+        const photo = findPhoto(photoId);
+        if (photo) {
+          openPhotoDeepLink(photo, options);
+          return;
+        }
+      }
+
+      if (squadronId) {
+        const squadron = findSquadron(squadronId);
+        if (squadron) {
+          selectSquadron(squadron.id, { updateHash: false });
+          return;
+        }
+      }
+
       if (locationId) {
         const pin = findPin(locationId);
         if (pin) {
-          setActiveTab("mapView");
+          setActiveTab("mapView", { updateHash: false });
           selectPin(pin.id, { updateHash: false, pan: !options.initial });
           if (options.initial) {
             focusMapPin(pin.id);
@@ -1632,13 +2057,40 @@
       if (aircraftId) {
         const entry = findAircraft(aircraftId);
         if (entry) {
-          setActiveTab("dexView");
-          selectAircraft(entry.id, { updateHash: false });
+          setActiveTab("dexView", { updateHash: false });
+          selectAircraft(entry.id, { updateHash: false, scroll: !options.initial });
+          return;
         }
+      }
+
+      if (statsSection) {
+        selectStatsSection(statsSection, { updateHash: false, initial: options.initial });
       }
     } finally {
       state.isApplyingHash = false;
     }
+  }
+
+  function openPhotoDeepLink(photo, options = {}) {
+    const pinId = photo.pinId || pinIdFromLocation(photo.locationName);
+    if (pinId && state.pinById.has(pinId)) {
+      setActiveTab("mapView", { updateHash: false });
+      selectPin(pinId, { updateHash: false, pan: !options.initial });
+      if (options.initial) {
+        focusMapPin(pinId);
+      }
+      openViewer(photo.id, "map", { updateHash: false });
+      return;
+    }
+
+    if (photo.aircraftId && state.aircraftById.has(photo.aircraftId)) {
+      setActiveTab("dexView", { updateHash: false });
+      selectAircraft(photo.aircraftId, { updateHash: false, scroll: false });
+      openViewer(photo.id, "dex", { updateHash: false });
+      return;
+    }
+
+    openViewer(photo.id, "photo", { updateHash: false });
   }
 
   function updateDeepLink(kind, id) {
@@ -1659,6 +2111,24 @@
   function findAircraft(value) {
     const text = String(value || "");
     return state.aircraftById.get(text) || state.data.aircraft.find((entry) => normalizeKey(entry.typeName) === normalizeKey(text));
+  }
+
+  function findPhoto(value) {
+    const text = String(value || "");
+    return state.photoById.get(text) || state.data.photos.find((photo) => normalizeKey(photo.title || photo.id) === normalizeKey(text));
+  }
+
+  function findSquadron(value) {
+    const text = String(value || "");
+    const key = normalizeKey(text);
+    return collectSquadrons().find((squadron) => {
+      return (
+        squadron.id === text ||
+        normalizeKey(squadron.id) === key ||
+        normalizeKey(squadron.name) === key ||
+        normalizeKey(`${squadron.country} ${squadron.name}`) === key
+      );
+    });
   }
 
   function aircraftStats(entry) {
