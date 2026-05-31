@@ -1316,13 +1316,13 @@
   function aircraftFamilyForPhoto(photo) {
     const type = normalizeText(photo.aircraftType);
     if (/\b(ah|uh|ch|mh|sh)-?\d|apache|helicopter|rotor|uh-60|ah-64/.test(type)) {
-      return { id: "helicopter", label: "Helicopter", icon: "assets/icons/aircraft-family-helicopter.svg" };
+      return { id: "helicopter", label: "Helicopter", icon: "assets/icons/aircraft-family-helicopter.png" };
     }
     if (/\bf-?\d|fighter|eagle|falcon|hornet|raptor|typhoon|rafale|mirage/.test(type)) {
-      return { id: "fighter", label: "Fighter", icon: "assets/icons/aircraft-family-fighter.svg" };
+      return { id: "fighter", label: "Fighter", icon: "assets/icons/aircraft-family-fighter.png" };
     }
     if (/747|sentry|airlift|cargo|transport|tanker|freighter|heavy|c-2|ec-2|rc-2|u-125/.test(type)) {
-      return { id: "heavy", label: "Heavy", icon: "assets/icons/aircraft-family-heavy.svg" };
+      return { id: "heavy", label: "Heavy", icon: "assets/icons/aircraft-family-heavy.png" };
     }
     return null;
   }
