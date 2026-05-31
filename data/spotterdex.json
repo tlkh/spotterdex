@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-31T04:40:42+00:00",
+  "generatedAt": "2026-05-31T05:55:50+00:00",
   "pins": [
     {
       "id": "hong-kong-international-airport",
@@ -288,6 +288,65 @@
       }
     },
     {
+      "id": "airbus-a330-mrtt",
+      "typeName": "Airbus A330 MRTT",
+      "countries": [
+        "France",
+        "Singapore"
+      ],
+      "squadrons": [
+        {
+          "id": "airbus-a330-mrtt-112-squadron",
+          "name": "112 Squadron",
+          "country": "Singapore",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "airbus-a330-mrtt-112-squadron-rsaf-mrtt-760-1-aff89409"
+          ],
+          "photoCount": 1
+        },
+        {
+          "id": "airbus-a330-mrtt-31st-strategic-air-refueling-and-transport-wing",
+          "name": "31st Strategic Air Refueling and Transport Wing",
+          "country": "France",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "airbus-a330-mrtt-31st-strategic-air-refueling-and-transport-wing-french-mrtt-1-6c3efe40",
+            "airbus-a330-mrtt-31st-strategic-air-refueling-and-transport-wing-french-mrtt-2-9ac996d0"
+          ],
+          "photoCount": 2
+        }
+      ],
+      "photoIds": [
+        "airbus-a330-mrtt-112-squadron-rsaf-mrtt-760-1-aff89409",
+        "airbus-a330-mrtt-31st-strategic-air-refueling-and-transport-wing-french-mrtt-1-6c3efe40",
+        "airbus-a330-mrtt-31st-strategic-air-refueling-and-transport-wing-french-mrtt-2-9ac996d0"
+      ],
+      "coverPhoto": "airbus-a330-mrtt-112-squadron-rsaf-mrtt-760-1-aff89409",
+      "stats": {
+        "photoCount": 3,
+        "unitCount": 2,
+        "squadronCount": 2,
+        "organisationCount": 0,
+        "locationCount": 1,
+        "locations": [
+          "Singapore"
+        ],
+        "firstDate": "2023-06-27",
+        "latestDate": "2023-08-04",
+        "countries": [
+          "France",
+          "Singapore"
+        ]
+      }
+    },
+    {
       "id": "boeing-747-400-f",
       "typeName": "Boeing 747-400(F)",
       "countries": [
@@ -454,6 +513,47 @@
       }
     },
     {
+      "id": "boeing-c-40a-clipper",
+      "typeName": "Boeing C-40A Clipper",
+      "countries": [
+        "United States"
+      ],
+      "squadrons": [
+        {
+          "id": "boeing-c-40a-clipper-fleet-logistics-support-squadron-57-vr-57",
+          "name": "Fleet Logistics Support Squadron 57 (VR-57)",
+          "country": "United States",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "boeing-c-40a-clipper-fleet-logistics-support-squadron-57-vr-57-wsss-clipper-1-3f782975"
+          ],
+          "photoCount": 1
+        }
+      ],
+      "photoIds": [
+        "boeing-c-40a-clipper-fleet-logistics-support-squadron-57-vr-57-wsss-clipper-1-3f782975"
+      ],
+      "coverPhoto": "boeing-c-40a-clipper-fleet-logistics-support-squadron-57-vr-57-wsss-clipper-1-3f782975",
+      "stats": {
+        "photoCount": 1,
+        "unitCount": 1,
+        "squadronCount": 1,
+        "organisationCount": 0,
+        "locationCount": 1,
+        "locations": [
+          "Changi Airport"
+        ],
+        "firstDate": "2023-06-30",
+        "latestDate": "2023-06-30",
+        "countries": [
+          "United States"
+        ]
+      }
+    },
+    {
       "id": "boeing-e-3g-sentry",
       "typeName": "Boeing E-3G Sentry",
       "countries": [
@@ -532,6 +632,96 @@
         "latestDate": "2023-06-04",
         "countries": [
           "United States"
+        ]
+      }
+    },
+    {
+      "id": "boeing-kc-135-stratotanker",
+      "typeName": "Boeing KC-135 Stratotanker",
+      "countries": [
+        "United States"
+      ],
+      "squadrons": [
+        {
+          "id": "boeing-kc-135-stratotanker-metrea",
+          "name": "Metrea",
+          "country": "United States",
+          "logo": "",
+          "unitType": "organisation",
+          "unitLabel": "Organisation",
+          "showOnSquadronsPage": false,
+          "photoIds": [
+            "boeing-kc-135-stratotanker-metrea-metrea-kc135-1-3c7726a9",
+            "boeing-kc-135-stratotanker-metrea-metrea-kc135-2-51ad4a01",
+            "boeing-kc-135-stratotanker-metrea-metrea-kc135-3-abf2b82e"
+          ],
+          "photoCount": 3
+        }
+      ],
+      "photoIds": [
+        "boeing-kc-135-stratotanker-metrea-metrea-kc135-1-3c7726a9",
+        "boeing-kc-135-stratotanker-metrea-metrea-kc135-2-51ad4a01",
+        "boeing-kc-135-stratotanker-metrea-metrea-kc135-3-abf2b82e"
+      ],
+      "coverPhoto": "boeing-kc-135-stratotanker-metrea-metrea-kc135-1-3c7726a9",
+      "stats": {
+        "photoCount": 3,
+        "unitCount": 1,
+        "squadronCount": 0,
+        "organisationCount": 1,
+        "locationCount": 1,
+        "locations": [
+          "Singapore"
+        ],
+        "firstDate": "2024-01-11",
+        "latestDate": "2024-01-11",
+        "countries": [
+          "United States"
+        ]
+      }
+    },
+    {
+      "id": "boeing-kc-767",
+      "typeName": "Boeing KC-767",
+      "countries": [
+        "Italy"
+      ],
+      "squadrons": [
+        {
+          "id": "boeing-kc-767-8-gruppo",
+          "name": "8\u00b0 Gruppo",
+          "country": "Italy",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "boeing-kc-767-8-gruppo-italy-kc767-1-a78ee92e",
+            "boeing-kc-767-8-gruppo-italy-kc767-2-9781d6e8",
+            "boeing-kc-767-8-gruppo-italy-kc767-3-11507628"
+          ],
+          "photoCount": 3
+        }
+      ],
+      "photoIds": [
+        "boeing-kc-767-8-gruppo-italy-kc767-1-a78ee92e",
+        "boeing-kc-767-8-gruppo-italy-kc767-2-9781d6e8",
+        "boeing-kc-767-8-gruppo-italy-kc767-3-11507628"
+      ],
+      "coverPhoto": "boeing-kc-767-8-gruppo-italy-kc767-1-a78ee92e",
+      "stats": {
+        "photoCount": 3,
+        "unitCount": 1,
+        "squadronCount": 1,
+        "organisationCount": 0,
+        "locationCount": 1,
+        "locations": [
+          "Singapore"
+        ],
+        "firstDate": "2023-08-04",
+        "latestDate": "2023-08-04",
+        "countries": [
+          "Italy"
         ]
       }
     },
@@ -673,6 +863,47 @@
       }
     },
     {
+      "id": "g550-caew",
+      "typeName": "G550 CAEW",
+      "countries": [
+        "Italy"
+      ],
+      "squadrons": [
+        {
+          "id": "g550-caew-14-stormo",
+          "name": "14\u00b0 Stormo",
+          "country": "Italy",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "g550-caew-14-stormo-italy-g550-010e857a"
+          ],
+          "photoCount": 1
+        }
+      ],
+      "photoIds": [
+        "g550-caew-14-stormo-italy-g550-010e857a"
+      ],
+      "coverPhoto": "g550-caew-14-stormo-italy-g550-010e857a",
+      "stats": {
+        "photoCount": 1,
+        "unitCount": 1,
+        "squadronCount": 1,
+        "organisationCount": 0,
+        "locationCount": 1,
+        "locations": [
+          "Singapore"
+        ],
+        "firstDate": "2023-08-04",
+        "latestDate": "2023-08-04",
+        "countries": [
+          "Italy"
+        ]
+      }
+    },
+    {
       "id": "grumman-c-2a-greyhound",
       "typeName": "Grumman C-2A Greyhound",
       "countries": [
@@ -691,23 +922,38 @@
             "grumman-c-2a-greyhound-fleet-logistics-support-squadron-30-vrc-30-c2-vrc30-8e2f3dd6"
           ],
           "photoCount": 1
+        },
+        {
+          "id": "grumman-c-2a-greyhound-fleet-logistics-support-squadron-40-vrc-40",
+          "name": "Fleet Logistics Support Squadron 40 (VRC-40)",
+          "country": "United States",
+          "logo": "assets/logos/grumman-c-2a-greyhound-fleet-logistics-support-squadron-40-vrc-40.png",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "grumman-c-2a-greyhound-fleet-logistics-support-squadron-40-vrc-40-c2-vrc40-399ac570"
+          ],
+          "photoCount": 1
         }
       ],
       "photoIds": [
-        "grumman-c-2a-greyhound-fleet-logistics-support-squadron-30-vrc-30-c2-vrc30-8e2f3dd6"
+        "grumman-c-2a-greyhound-fleet-logistics-support-squadron-30-vrc-30-c2-vrc30-8e2f3dd6",
+        "grumman-c-2a-greyhound-fleet-logistics-support-squadron-40-vrc-40-c2-vrc40-399ac570"
       ],
       "coverPhoto": "grumman-c-2a-greyhound-fleet-logistics-support-squadron-30-vrc-30-c2-vrc30-8e2f3dd6",
       "stats": {
-        "photoCount": 1,
-        "unitCount": 1,
-        "squadronCount": 1,
+        "photoCount": 2,
+        "unitCount": 2,
+        "squadronCount": 2,
         "organisationCount": 0,
-        "locationCount": 1,
+        "locationCount": 2,
         "locations": [
+          "Changi Airport",
           "Singapore"
         ],
         "firstDate": "2023-02-07",
-        "latestDate": "2023-02-07",
+        "latestDate": "2023-12-20",
         "countries": [
           "United States"
         ]
@@ -930,12 +1176,111 @@
       }
     },
     {
+      "id": "lockheed-kc-130j-hercules",
+      "typeName": "Lockheed KC-130J Hercules",
+      "countries": [
+        "Italy"
+      ],
+      "squadrons": [
+        {
+          "id": "lockheed-kc-130j-hercules-46-brigata-aerea",
+          "name": "46^ Brigata Aerea",
+          "country": "Italy",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "lockheed-kc-130j-hercules-46-brigata-aerea-italy-c130-90ba910b"
+          ],
+          "photoCount": 1
+        }
+      ],
+      "photoIds": [
+        "lockheed-kc-130j-hercules-46-brigata-aerea-italy-c130-90ba910b"
+      ],
+      "coverPhoto": "lockheed-kc-130j-hercules-46-brigata-aerea-italy-c130-90ba910b",
+      "stats": {
+        "photoCount": 1,
+        "unitCount": 1,
+        "squadronCount": 1,
+        "organisationCount": 0,
+        "locationCount": 1,
+        "locations": [
+          "Singapore"
+        ],
+        "firstDate": "2023-08-04",
+        "latestDate": "2023-08-04",
+        "countries": [
+          "Italy"
+        ]
+      }
+    },
+    {
       "id": "lockheed-martin-f-35a-lightning-ii",
       "typeName": "Lockheed Martin F-35A Lightning II",
       "countries": [
-        "Australia"
+        "Australia",
+        "Italy",
+        "United States"
       ],
       "squadrons": [
+        {
+          "id": "lockheed-martin-f-35a-lightning-ii-32-stormo",
+          "name": "32\u00b0 Stormo",
+          "country": "Italy",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-2-eab2c429",
+            "lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-3-26545845",
+            "lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-4-56b1a0ac",
+            "lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-5-9775f11f"
+          ],
+          "photoCount": 4
+        },
+        {
+          "id": "lockheed-martin-f-35a-lightning-ii-355th-fighter-squadron",
+          "name": "355th Fighter Squadron",
+          "country": "United States",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "lockheed-martin-f-35a-lightning-ii-355th-fighter-squadron-usaf-ak-f35a-1-01e1599b"
+          ],
+          "photoCount": 1
+        },
+        {
+          "id": "lockheed-martin-f-35a-lightning-ii-356th-fighter-squadron",
+          "name": "356th Fighter Squadron",
+          "country": "United States",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "lockheed-martin-f-35a-lightning-ii-356th-fighter-squadron-usaf-ak-f35a-2-54f76677"
+          ],
+          "photoCount": 1
+        },
+        {
+          "id": "lockheed-martin-f-35a-lightning-ii-6-stormo",
+          "name": "6\u00b0 Stormo",
+          "country": "Italy",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "lockheed-martin-f-35a-lightning-ii-6-stormo-italy-f35-1-b8301f41",
+            "lockheed-martin-f-35a-lightning-ii-6-stormo-italy-f35-6-c33fcc25"
+          ],
+          "photoCount": 2
+        },
         {
           "id": "lockheed-martin-f-35a-lightning-ii-75-squadron",
           "name": "75 Squadron",
@@ -954,25 +1299,36 @@
         }
       ],
       "photoIds": [
+        "lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-2-eab2c429",
+        "lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-3-26545845",
+        "lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-4-56b1a0ac",
+        "lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-5-9775f11f",
+        "lockheed-martin-f-35a-lightning-ii-355th-fighter-squadron-usaf-ak-f35a-1-01e1599b",
+        "lockheed-martin-f-35a-lightning-ii-356th-fighter-squadron-usaf-ak-f35a-2-54f76677",
+        "lockheed-martin-f-35a-lightning-ii-6-stormo-italy-f35-1-b8301f41",
+        "lockheed-martin-f-35a-lightning-ii-6-stormo-italy-f35-6-c33fcc25",
         "lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-1-cae8cfc2",
         "lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-2-ef2bc9ee",
         "lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-3-9daa5b98",
         "lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-4-9fe7adc7"
       ],
-      "coverPhoto": "lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-1-cae8cfc2",
+      "coverPhoto": "lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-2-eab2c429",
       "stats": {
-        "photoCount": 4,
-        "unitCount": 1,
-        "squadronCount": 1,
+        "photoCount": 12,
+        "unitCount": 5,
+        "squadronCount": 5,
         "organisationCount": 0,
-        "locationCount": 1,
+        "locationCount": 2,
         "locations": [
-          "Changi Exhibition Center"
+          "Changi Exhibition Center",
+          "Singapore"
         ],
-        "firstDate": "2026-01-31",
+        "firstDate": "2023-08-04",
         "latestDate": "2026-02-03",
         "countries": [
-          "Australia"
+          "Australia",
+          "Italy",
+          "United States"
         ]
       }
     },
@@ -2022,6 +2378,671 @@
       }
     },
     {
+      "id": "lockheed-martin-f-35a-lightning-ii-355th-fighter-squadron-usaf-ak-f35a-1-01e1599b",
+      "aircraftId": "lockheed-martin-f-35a-lightning-ii",
+      "aircraftType": "Lockheed Martin F-35A Lightning II",
+      "squadronId": "lockheed-martin-f-35a-lightning-ii-355th-fighter-squadron",
+      "squadronName": "355th Fighter Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "United States",
+      "year": "2024",
+      "date": "2024-03-04",
+      "sortDate": "2024-03-04",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "USAF F-35A from 355th Fighter Squadron (\"Fighting Falcons\") landing in Singapore",
+      "image": "assets/generated/photos/lockheed-martin-f-35a-lightning-ii-355th-fighter-squadron-usaf-ak-f35a-1-01e1599b.jpg",
+      "thumbnail": "assets/generated/thumbs/lockheed-martin-f-35a-lightning-ii-355th-fighter-squadron-usaf-ak-f35a-1-01e1599b.jpg",
+      "source": "raw_assets/usaf_ak_f35a_1.JPG",
+      "originalSize": "6000 x 4500",
+      "processedSize": "2048 x 1536",
+      "thumbnailSize": "1024 x 768",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/11.0",
+        "ExposureTime": "1/60s",
+        "ISO": "100",
+        "DateTimeOriginal": "2024:03:04 10:57:34",
+        "DateTimeDigitized": "2024:03:04 10:57:34",
+        "DateTime": "2024:04:27 10:17:16"
+      }
+    },
+    {
+      "id": "lockheed-martin-f-35a-lightning-ii-356th-fighter-squadron-usaf-ak-f35a-2-54f76677",
+      "aircraftId": "lockheed-martin-f-35a-lightning-ii",
+      "aircraftType": "Lockheed Martin F-35A Lightning II",
+      "squadronId": "lockheed-martin-f-35a-lightning-ii-356th-fighter-squadron",
+      "squadronName": "356th Fighter Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "United States",
+      "year": "2024",
+      "date": "2024-03-04",
+      "sortDate": "2024-03-04",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "USAF F-35A from 356th Fighter Squadron (\"Green Devils\") landing in Singapore",
+      "image": "assets/generated/photos/lockheed-martin-f-35a-lightning-ii-356th-fighter-squadron-usaf-ak-f35a-2-54f76677.jpg",
+      "thumbnail": "assets/generated/thumbs/lockheed-martin-f-35a-lightning-ii-356th-fighter-squadron-usaf-ak-f35a-2-54f76677.jpg",
+      "source": "raw_assets/usaf_ak_f35a_2.JPG",
+      "originalSize": "5457 x 3638",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "216.7mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "100",
+        "DateTimeOriginal": "2024:03:04 11:05:09",
+        "DateTimeDigitized": "2024:03:04 11:05:09",
+        "DateTime": "2024:04:30 19:10:33"
+      }
+    },
+    {
+      "id": "boeing-kc-135-stratotanker-metrea-metrea-kc135-1-3c7726a9",
+      "aircraftId": "boeing-kc-135-stratotanker",
+      "aircraftType": "Boeing KC-135 Stratotanker",
+      "squadronId": "boeing-kc-135-stratotanker-metrea",
+      "squadronName": "Metrea",
+      "unitType": "organisation",
+      "unitLabel": "Organisation",
+      "country": "United States",
+      "year": "2024",
+      "date": "2024-01-11",
+      "sortDate": "2024-01-11",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "Metrea KC-135R (ex-RSAF) landing in Singapore",
+      "image": "assets/generated/photos/boeing-kc-135-stratotanker-metrea-metrea-kc135-1-3c7726a9.jpg",
+      "thumbnail": "assets/generated/thumbs/boeing-kc-135-stratotanker-metrea-metrea-kc135-1-3c7726a9.jpg",
+      "source": "raw_assets/metrea_kc135_1.jpg",
+      "originalSize": "3939 x 2626",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "100",
+        "DateTimeOriginal": "2024:01:11 12:50:32",
+        "DateTimeDigitized": "2024:01:11 12:50:32",
+        "DateTime": "2024:01:11 21:20:44"
+      }
+    },
+    {
+      "id": "boeing-kc-135-stratotanker-metrea-metrea-kc135-2-51ad4a01",
+      "aircraftId": "boeing-kc-135-stratotanker",
+      "aircraftType": "Boeing KC-135 Stratotanker",
+      "squadronId": "boeing-kc-135-stratotanker-metrea",
+      "squadronName": "Metrea",
+      "unitType": "organisation",
+      "unitLabel": "Organisation",
+      "country": "United States",
+      "year": "2024",
+      "date": "2024-01-11",
+      "sortDate": "2024-01-11",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "Metrea KC-135R (ex-RSAF) landing in Singapore",
+      "image": "assets/generated/photos/boeing-kc-135-stratotanker-metrea-metrea-kc135-2-51ad4a01.jpg",
+      "thumbnail": "assets/generated/thumbs/boeing-kc-135-stratotanker-metrea-metrea-kc135-2-51ad4a01.jpg",
+      "source": "raw_assets/metrea_kc135_2.jpg",
+      "originalSize": "4560 x 3040",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "120.9mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "100",
+        "DateTimeOriginal": "2024:01:11 12:50:44",
+        "DateTimeDigitized": "2024:01:11 12:50:44",
+        "DateTime": "2024:01:11 21:17:46"
+      }
+    },
+    {
+      "id": "boeing-kc-135-stratotanker-metrea-metrea-kc135-3-abf2b82e",
+      "aircraftId": "boeing-kc-135-stratotanker",
+      "aircraftType": "Boeing KC-135 Stratotanker",
+      "squadronId": "boeing-kc-135-stratotanker-metrea",
+      "squadronName": "Metrea",
+      "unitType": "organisation",
+      "unitLabel": "Organisation",
+      "country": "United States",
+      "year": "2024",
+      "date": "2024-01-11",
+      "sortDate": "2024-01-11",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "Metrea KC-135R (ex-RSAF) landing in Singapore",
+      "image": "assets/generated/photos/boeing-kc-135-stratotanker-metrea-metrea-kc135-3-abf2b82e.jpg",
+      "thumbnail": "assets/generated/thumbs/boeing-kc-135-stratotanker-metrea-metrea-kc135-3-abf2b82e.jpg",
+      "source": "raw_assets/metrea_kc135_3.jpg",
+      "originalSize": "5214 x 3476",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "120.9mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "100",
+        "DateTimeOriginal": "2024:01:11 12:50:46",
+        "DateTimeDigitized": "2024:01:11 12:50:46",
+        "DateTime": "2024:01:11 21:22:11"
+      }
+    },
+    {
+      "id": "grumman-c-2a-greyhound-fleet-logistics-support-squadron-40-vrc-40-c2-vrc40-399ac570",
+      "aircraftId": "grumman-c-2a-greyhound",
+      "aircraftType": "Grumman C-2A Greyhound",
+      "squadronId": "grumman-c-2a-greyhound-fleet-logistics-support-squadron-40-vrc-40",
+      "squadronName": "Fleet Logistics Support Squadron 40 (VRC-40)",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "United States",
+      "year": "2023",
+      "date": "2023-12-20",
+      "sortDate": "2023-12-20",
+      "locationName": "Changi Airport",
+      "pinId": "changi-airport",
+      "title": "",
+      "caption": "Grumman C-2A Greyhound from VRC-40 \"Rawhides\" landing in Singapore",
+      "image": "assets/generated/photos/grumman-c-2a-greyhound-fleet-logistics-support-squadron-40-vrc-40-c2-vrc40-399ac570.jpg",
+      "thumbnail": "assets/generated/thumbs/grumman-c-2a-greyhound-fleet-logistics-support-squadron-40-vrc-40-c2-vrc40-399ac570.jpg",
+      "source": "raw_assets/c2_vrc40.jpg",
+      "originalSize": "3932 x 2621",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/10.0",
+        "ExposureTime": "1/60s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:12:20 18:34:16",
+        "DateTimeDigitized": "2023:12:20 18:34:16",
+        "DateTime": "2023:12:20 22:58:44"
+      }
+    },
+    {
+      "id": "lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-2-eab2c429",
+      "aircraftId": "lockheed-martin-f-35a-lightning-ii",
+      "aircraftType": "Lockheed Martin F-35A Lightning II",
+      "squadronId": "lockheed-martin-f-35a-lightning-ii-32-stormo",
+      "squadronName": "32\u00b0 Stormo",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Italy",
+      "year": "2023",
+      "date": "2023-08-10",
+      "sortDate": "2023-08-10",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "Italian Air Force F-35A in Singapore",
+      "image": "assets/generated/photos/lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-2-eab2c429.jpg",
+      "thumbnail": "assets/generated/thumbs/lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-2-eab2c429.jpg",
+      "source": "raw_assets/italy_f35_2.jpg",
+      "originalSize": "5472 x 3648",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "146.8mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "160",
+        "DateTimeOriginal": "2023:08:10 15:12:51",
+        "DateTimeDigitized": "2023:08:10 15:12:51",
+        "DateTime": "2023:08:31 15:36:43"
+      }
+    },
+    {
+      "id": "lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-3-26545845",
+      "aircraftId": "lockheed-martin-f-35a-lightning-ii",
+      "aircraftType": "Lockheed Martin F-35A Lightning II",
+      "squadronId": "lockheed-martin-f-35a-lightning-ii-32-stormo",
+      "squadronName": "32\u00b0 Stormo",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Italy",
+      "year": "2023",
+      "date": "2023-08-10",
+      "sortDate": "2023-08-10",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "Italian Air Force F-35A in Singapore",
+      "image": "assets/generated/photos/lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-3-26545845.jpg",
+      "thumbnail": "assets/generated/thumbs/lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-3-26545845.jpg",
+      "source": "raw_assets/italy_f35_3.jpg",
+      "originalSize": "3987 x 2658",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "110.1mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "125",
+        "DateTimeOriginal": "2023:08:10 15:13:25",
+        "DateTimeDigitized": "2023:08:10 15:13:25",
+        "DateTime": "2023:08:31 15:36:48"
+      }
+    },
+    {
+      "id": "lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-4-56b1a0ac",
+      "aircraftId": "lockheed-martin-f-35a-lightning-ii",
+      "aircraftType": "Lockheed Martin F-35A Lightning II",
+      "squadronId": "lockheed-martin-f-35a-lightning-ii-32-stormo",
+      "squadronName": "32\u00b0 Stormo",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Italy",
+      "year": "2023",
+      "date": "2023-08-10",
+      "sortDate": "2023-08-10",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "Italian Air Force F-35A in Singapore",
+      "image": "assets/generated/photos/lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-4-56b1a0ac.jpg",
+      "thumbnail": "assets/generated/thumbs/lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-4-56b1a0ac.jpg",
+      "source": "raw_assets/italy_f35_4.jpg",
+      "originalSize": "5136 x 3424",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "135.9mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "125",
+        "DateTimeOriginal": "2023:08:10 15:14:06",
+        "DateTimeDigitized": "2023:08:10 15:14:06",
+        "DateTime": "2023:08:31 15:36:55"
+      }
+    },
+    {
+      "id": "lockheed-martin-f-35a-lightning-ii-6-stormo-italy-f35-1-b8301f41",
+      "aircraftId": "lockheed-martin-f-35a-lightning-ii",
+      "aircraftType": "Lockheed Martin F-35A Lightning II",
+      "squadronId": "lockheed-martin-f-35a-lightning-ii-6-stormo",
+      "squadronName": "6\u00b0 Stormo",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Italy",
+      "year": "2023",
+      "date": "2023-08-10",
+      "sortDate": "2023-08-10",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "Italian Air Force F-35A in Singapore",
+      "image": "assets/generated/photos/lockheed-martin-f-35a-lightning-ii-6-stormo-italy-f35-1-b8301f41.jpg",
+      "thumbnail": "assets/generated/thumbs/lockheed-martin-f-35a-lightning-ii-6-stormo-italy-f35-1-b8301f41.jpg",
+      "source": "raw_assets/italy_f35_1.jpg",
+      "originalSize": "5068 x 3379",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "171.9mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "125",
+        "DateTimeOriginal": "2023:08:10 15:12:03",
+        "DateTimeDigitized": "2023:08:10 15:12:03",
+        "DateTime": "2023:08:31 15:36:41"
+      }
+    },
+    {
+      "id": "lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-5-9775f11f",
+      "aircraftId": "lockheed-martin-f-35a-lightning-ii",
+      "aircraftType": "Lockheed Martin F-35A Lightning II",
+      "squadronId": "lockheed-martin-f-35a-lightning-ii-32-stormo",
+      "squadronName": "32\u00b0 Stormo",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Italy",
+      "year": "2023",
+      "date": "2023-08-04",
+      "sortDate": "2023-08-04",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "Italian Air Force F-35A in Singapore",
+      "image": "assets/generated/photos/lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-5-9775f11f.jpg",
+      "thumbnail": "assets/generated/thumbs/lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-5-9775f11f.jpg",
+      "source": "raw_assets/italy_f35_5.jpg",
+      "originalSize": "4131 x 2754",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:08:04 13:16:17",
+        "DateTimeDigitized": "2023:08:04 13:16:17",
+        "DateTime": "2023:08:16 19:48:13"
+      }
+    },
+    {
+      "id": "lockheed-martin-f-35a-lightning-ii-6-stormo-italy-f35-6-c33fcc25",
+      "aircraftId": "lockheed-martin-f-35a-lightning-ii",
+      "aircraftType": "Lockheed Martin F-35A Lightning II",
+      "squadronId": "lockheed-martin-f-35a-lightning-ii-6-stormo",
+      "squadronName": "6\u00b0 Stormo",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Italy",
+      "year": "2023",
+      "date": "2023-08-04",
+      "sortDate": "2023-08-04",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "Italian Air Force F-35A in Singapore",
+      "image": "assets/generated/photos/lockheed-martin-f-35a-lightning-ii-6-stormo-italy-f35-6-c33fcc25.jpg",
+      "thumbnail": "assets/generated/thumbs/lockheed-martin-f-35a-lightning-ii-6-stormo-italy-f35-6-c33fcc25.jpg",
+      "source": "raw_assets/italy_f35_6.jpg",
+      "originalSize": "3881 x 2587",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:08:04 13:15:53",
+        "DateTimeDigitized": "2023:08:04 13:15:53",
+        "DateTime": "2023:08:16 19:48:11"
+      }
+    },
+    {
+      "id": "lockheed-kc-130j-hercules-46-brigata-aerea-italy-c130-90ba910b",
+      "aircraftId": "lockheed-kc-130j-hercules",
+      "aircraftType": "Lockheed KC-130J Hercules",
+      "squadronId": "lockheed-kc-130j-hercules-46-brigata-aerea",
+      "squadronName": "46^ Brigata Aerea",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Italy",
+      "year": "2023",
+      "date": "2023-08-04",
+      "sortDate": "2023-08-04",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "Italian Air Force KC-130J taking off from Singapore",
+      "image": "assets/generated/photos/lockheed-kc-130j-hercules-46-brigata-aerea-italy-c130-90ba910b.jpg",
+      "thumbnail": "assets/generated/thumbs/lockheed-kc-130j-hercules-46-brigata-aerea-italy-c130-90ba910b.jpg",
+      "source": "raw_assets/italy_c130.jpg",
+      "originalSize": "4824 x 3216",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "160",
+        "DateTimeOriginal": "2023:08:04 11:49:16",
+        "DateTimeDigitized": "2023:08:04 11:49:16",
+        "DateTime": "2023:08:10 22:08:45"
+      }
+    },
+    {
+      "id": "g550-caew-14-stormo-italy-g550-010e857a",
+      "aircraftId": "g550-caew",
+      "aircraftType": "G550 CAEW",
+      "squadronId": "g550-caew-14-stormo",
+      "squadronName": "14\u00b0 Stormo",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Italy",
+      "year": "2023",
+      "date": "2023-08-04",
+      "sortDate": "2023-08-04",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "Italian Air Force (Aeronautica Militare) G550 Conformal Airborne Early Warning (CAEW) taking off from Singapore",
+      "image": "assets/generated/photos/g550-caew-14-stormo-italy-g550-010e857a.jpg",
+      "thumbnail": "assets/generated/thumbs/g550-caew-14-stormo-italy-g550-010e857a.jpg",
+      "source": "raw_assets/italy_g550.jpg",
+      "originalSize": "4082 x 2721",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "125",
+        "DateTimeOriginal": "2023:08:04 12:46:43",
+        "DateTimeDigitized": "2023:08:04 12:46:43",
+        "DateTime": "2023:08:10 22:15:07"
+      }
+    },
+    {
+      "id": "boeing-kc-767-8-gruppo-italy-kc767-1-a78ee92e",
+      "aircraftId": "boeing-kc-767",
+      "aircraftType": "Boeing KC-767",
+      "squadronId": "boeing-kc-767-8-gruppo",
+      "squadronName": "8\u00b0 Gruppo",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Italy",
+      "year": "2023",
+      "date": "2023-08-04",
+      "sortDate": "2023-08-04",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "Italian Air Force KC-767 tanker taking off from Singapore",
+      "image": "assets/generated/photos/boeing-kc-767-8-gruppo-italy-kc767-1-a78ee92e.jpg",
+      "thumbnail": "assets/generated/thumbs/boeing-kc-767-8-gruppo-italy-kc767-1-a78ee92e.jpg",
+      "source": "raw_assets/italy_kc767_1.jpg",
+      "originalSize": "4987 x 3325",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "160",
+        "DateTimeOriginal": "2023:08:04 13:48:39",
+        "DateTimeDigitized": "2023:08:04 13:48:39",
+        "DateTime": "2023:08:10 22:34:26"
+      }
+    },
+    {
+      "id": "boeing-kc-767-8-gruppo-italy-kc767-2-9781d6e8",
+      "aircraftId": "boeing-kc-767",
+      "aircraftType": "Boeing KC-767",
+      "squadronId": "boeing-kc-767-8-gruppo",
+      "squadronName": "8\u00b0 Gruppo",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Italy",
+      "year": "2023",
+      "date": "2023-08-04",
+      "sortDate": "2023-08-04",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "Italian Air Force KC-767 tanker taking off from Singapore",
+      "image": "assets/generated/photos/boeing-kc-767-8-gruppo-italy-kc767-2-9781d6e8.jpg",
+      "thumbnail": "assets/generated/thumbs/boeing-kc-767-8-gruppo-italy-kc767-2-9781d6e8.jpg",
+      "source": "raw_assets/italy_kc767_2.jpg",
+      "originalSize": "5439 x 3626",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:08:04 13:34:37",
+        "DateTimeDigitized": "2023:08:04 13:34:37",
+        "DateTime": "2024:04:25 12:25:07"
+      }
+    },
+    {
+      "id": "boeing-kc-767-8-gruppo-italy-kc767-3-11507628",
+      "aircraftId": "boeing-kc-767",
+      "aircraftType": "Boeing KC-767",
+      "squadronId": "boeing-kc-767-8-gruppo",
+      "squadronName": "8\u00b0 Gruppo",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Italy",
+      "year": "2023",
+      "date": "2023-08-04",
+      "sortDate": "2023-08-04",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "Italian Air Force KC-767 tanker taking off from Singapore",
+      "image": "assets/generated/photos/boeing-kc-767-8-gruppo-italy-kc767-3-11507628.jpg",
+      "thumbnail": "assets/generated/thumbs/boeing-kc-767-8-gruppo-italy-kc767-3-11507628.jpg",
+      "source": "raw_assets/italy_kc767_3.jpg",
+      "originalSize": "4950 x 3300",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "139.5mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "125",
+        "DateTimeOriginal": "2023:08:04 13:35:02",
+        "DateTimeDigitized": "2023:08:04 13:35:02",
+        "DateTime": "2023:08:10 22:34:22"
+      }
+    },
+    {
+      "id": "airbus-a330-mrtt-112-squadron-rsaf-mrtt-760-1-aff89409",
+      "aircraftId": "airbus-a330-mrtt",
+      "aircraftType": "Airbus A330 MRTT",
+      "squadronId": "airbus-a330-mrtt-112-squadron",
+      "squadronName": "112 Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Singapore",
+      "year": "2023",
+      "date": "2023-08-04",
+      "sortDate": "2023-08-04",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "Republic of Singapore Air Force MRTT (760) from 112 SQN taking off from Singapore",
+      "image": "assets/generated/photos/airbus-a330-mrtt-112-squadron-rsaf-mrtt-760-1-aff89409.jpg",
+      "thumbnail": "assets/generated/thumbs/airbus-a330-mrtt-112-squadron-rsaf-mrtt-760-1-aff89409.jpg",
+      "source": "raw_assets/rsaf_mrtt_760_1.jpg",
+      "originalSize": "4164 x 2776",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "125",
+        "DateTimeOriginal": "2023:08:04 11:57:56",
+        "DateTimeDigitized": "2023:08:04 11:57:56",
+        "DateTime": "2023:08:15 15:26:44"
+      }
+    },
+    {
+      "id": "boeing-c-40a-clipper-fleet-logistics-support-squadron-57-vr-57-wsss-clipper-1-3f782975",
+      "aircraftId": "boeing-c-40a-clipper",
+      "aircraftType": "Boeing C-40A Clipper",
+      "squadronId": "boeing-c-40a-clipper-fleet-logistics-support-squadron-57-vr-57",
+      "squadronName": "Fleet Logistics Support Squadron 57 (VR-57)",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "United States",
+      "year": "2023",
+      "date": "2023-06-30",
+      "sortDate": "2023-06-30",
+      "locationName": "Changi Airport",
+      "pinId": "changi-airport",
+      "title": "",
+      "caption": "United States Navy C-40A Clipper from VR-57 landing at Singapore Changi Airport",
+      "image": "assets/generated/photos/boeing-c-40a-clipper-fleet-logistics-support-squadron-57-vr-57-wsss-clipper-1-3f782975.jpg",
+      "thumbnail": "assets/generated/thumbs/boeing-c-40a-clipper-fleet-logistics-support-squadron-57-vr-57-wsss-clipper-1-3f782975.jpg",
+      "source": "raw_assets/wsss_clipper_1.jpg",
+      "originalSize": "4914 x 3276",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/500s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:06:30 18:12:30",
+        "DateTimeDigitized": "2023:06:30 18:12:30",
+        "DateTime": "2023:07:05 20:00:28"
+      }
+    },
+    {
       "id": "dassault-rafale-b-escadron-de-chasse-1-4-rafale-b-2-f2aa037c",
       "aircraftId": "dassault-rafale-b",
       "aircraftType": "Dassault Rafale B",
@@ -2089,6 +3110,76 @@
         "DateTimeOriginal": "2023:06:27 14:42:20",
         "DateTimeDigitized": "2023:06:27 14:42:20",
         "DateTime": "2023:06:29 19:01:52"
+      }
+    },
+    {
+      "id": "airbus-a330-mrtt-31st-strategic-air-refueling-and-transport-wing-french-mrtt-1-6c3efe40",
+      "aircraftId": "airbus-a330-mrtt",
+      "aircraftType": "Airbus A330 MRTT",
+      "squadronId": "airbus-a330-mrtt-31st-strategic-air-refueling-and-transport-wing",
+      "squadronName": "31st Strategic Air Refueling and Transport Wing",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "France",
+      "year": "2023",
+      "date": "2023-06-27",
+      "sortDate": "2023-06-27",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "French A330 MRTT landing in Singapore",
+      "image": "assets/generated/photos/airbus-a330-mrtt-31st-strategic-air-refueling-and-transport-wing-french-mrtt-1-6c3efe40.jpg",
+      "thumbnail": "assets/generated/thumbs/airbus-a330-mrtt-31st-strategic-air-refueling-and-transport-wing-french-mrtt-1-6c3efe40.jpg",
+      "source": "raw_assets/french_mrtt_1.jpg",
+      "originalSize": "5117 x 3411",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "132.2mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/1000s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:06:27 16:15:23",
+        "DateTimeDigitized": "2023:06:27 16:15:23",
+        "DateTime": "2023:06:28 11:20:57"
+      }
+    },
+    {
+      "id": "airbus-a330-mrtt-31st-strategic-air-refueling-and-transport-wing-french-mrtt-2-9ac996d0",
+      "aircraftId": "airbus-a330-mrtt",
+      "aircraftType": "Airbus A330 MRTT",
+      "squadronId": "airbus-a330-mrtt-31st-strategic-air-refueling-and-transport-wing",
+      "squadronName": "31st Strategic Air Refueling and Transport Wing",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "France",
+      "year": "2023",
+      "date": "2023-06-27",
+      "sortDate": "2023-06-27",
+      "locationName": "Singapore",
+      "pinId": "singapore",
+      "title": "",
+      "caption": "French A330 MRTT landing in Singapore",
+      "image": "assets/generated/photos/airbus-a330-mrtt-31st-strategic-air-refueling-and-transport-wing-french-mrtt-2-9ac996d0.jpg",
+      "thumbnail": "assets/generated/thumbs/airbus-a330-mrtt-31st-strategic-air-refueling-and-transport-wing-french-mrtt-2-9ac996d0.jpg",
+      "source": "raw_assets/french_mrtt_2.jpg",
+      "originalSize": "5154 x 3436",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "180.7mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/1000s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:06:27 16:15:17",
+        "DateTimeDigitized": "2023:06:27 16:15:17",
+        "DateTime": "2023:06:28 11:20:56"
       }
     },
     {

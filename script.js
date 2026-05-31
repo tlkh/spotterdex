@@ -737,8 +737,53 @@
       return;
     }
 
-    els.squadronLogoGrid.innerHTML = squadrons.map(renderSquadronLogoCard).join("");
+    els.squadronLogoGrid.innerHTML = renderSquadronCountrySections(squadrons);
     renderSquadronDetail(squadrons);
+  }
+
+  function renderSquadronCountrySections(squadrons) {
+    return groupSquadronsByCountry(squadrons)
+      .map(
+        (group) => `
+          <section class="squadron-country-section">
+            <div class="group-header squadron-country-header">
+              <div>
+                <p class="eyebrow">Country</p>
+                <h2>${escapeHtml(group.country)}</h2>
+              </div>
+              <span class="count-pill">${group.squadrons.length}</span>
+            </div>
+            <div class="squadron-logo-grid">
+              ${group.squadrons.map(renderSquadronLogoCard).join("")}
+            </div>
+          </section>
+        `
+      )
+      .join("");
+  }
+
+  function groupSquadronsByCountry(squadrons) {
+    const byCountry = new Map();
+    squadrons.forEach((squadron) => {
+      const country = squadron.country || "Country not set";
+      if (!byCountry.has(country)) {
+        byCountry.set(country, []);
+      }
+      byCountry.get(country).push(squadron);
+    });
+
+    return Array.from(byCountry.entries())
+      .map(([country, countrySquadrons]) => ({
+        country,
+        squadrons: countrySquadrons.sort((a, b) => a.name.localeCompare(b.name))
+      }))
+      .sort((a, b) => {
+        const countDiff = b.squadrons.length - a.squadrons.length;
+        if (countDiff) {
+          return countDiff;
+        }
+        return a.country.localeCompare(b.country);
+      });
   }
 
   function collectSquadrons() {
@@ -793,7 +838,7 @@
     const activeClass = squadron.id === state.selectedSquadronId ? " is-active" : "";
 
     return `
-      <button class="squadron-logo-card${activeClass}" type="button" data-squadron-id="${escapeAttr(squadron.id)}">
+      <button class="squadron-logo-card${activeClass}" type="button" data-squadron-id="${escapeAttr(squadron.id)}" title="${escapeAttr(squadron.name)}">
         <div class="squadron-logo-media">
           ${logo}
         </div>
