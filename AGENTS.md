@@ -15,7 +15,7 @@ Read this section first before making changes.
 - **Photo resolution order:** mirrored `raw_assets/aircraft/<type>/<squadron>/<path>`, then beside the YAML entry, then flat `raw_assets/<path>`.
 - **Map pin matching:** `location` must match a pin `name` in `map_pins/` exactly. Check the pin YAML before adding photos. Use `pin_id` when names are ambiguous.
 - **Map pin ICAO codes:** add `icao: XXXX` to airport/air base pins when a code exists. Use an empty value for broad region pins or non-aerodrome locations without their own code. Mobile map labels prefer the ICAO code.
-- **Squadron logos:** optional `squadron_logo: filename.png` resolves from `raw_assets/` the same way as photos. Raster logos are resized to max 512 px and copied to `assets/logos/`. SVG logos can live directly in `assets/logos/` and be referenced with a relative path such as `../../../assets/logos/149-squadron.svg`.
+- **Squadron logos and heroes:** optional `squadron_logo: filename.png` resolves from `raw_assets/` the same way as photos. Raster logos are resized to max 512 px and copied to `assets/logos/`. SVG logos can live directly in `assets/logos/` and be referenced with a relative path such as `../../../assets/logos/149-squadron.svg`. Optional `squadron_hero`/`squadron_hero_image` is processed as a web JPEG and displayed on the Squadrons page.
 - **Organisation override:** use `unit_type: organisation` for airline/operator entries that should be labelled Organisation instead of Squadron. These records remain in the Dex and viewer but are excluded from the Squadrons page.
 - **Dex grouping:** the UI groups by `aircraft_type`, not folder name. Multiple squadrons of the same type appear under one Dex card.
 - **Do not add** frontend frameworks, bundlers, map tile prefetching, or hidden attribution.
@@ -61,6 +61,7 @@ pins:
     name: Changi Exhibition Center
     icao: WSSS
     coordinates: [1.3631, 104.0229]
+    hero_photo: photos/changi-showline-hero.jpg
     enabled: true
 ```
 
@@ -72,6 +73,7 @@ squadron_name: 149 Squadron
 unit_type: squadron
 country: Singapore
 squadron_logo: ../../../assets/logos/149-squadron.svg
+squadron_hero: photos/149-squadron-hero.jpg
 photos:
   - path: f-15sg-changi.jpg
     date: 2024-02-24
@@ -87,21 +89,26 @@ Common aircraft YAML fields:
 - `unit_type` - optional; defaults to `squadron`. Set to `organisation` for airline/operator entries that should use Organisation labels and stay off the Squadrons page.
 - `country` - country shown in the UI
 - `squadron_logo` - optional logo filename or relative path
+- `squadron_hero` - optional squadron-specific hero photograph shown on the Squadrons page
 - `photos` - list of photo objects
+
+Map pins can optionally define a custom location hero. Use `hero_photo`/`hero_image`/`hero.path` for a source image path, resolved first from mirrored `raw_assets/map_pins/<country>/`, then beside the pin YAML, then from the repo root and flat `raw_assets/`. The build script publishes it through the same JPEG/thumbnail pipeline as normal photos. Use `hero_photo_id` when the hero should be an existing generated photo record and remain clickable in the viewer.
 
 Each photo object supports at least `path`. Common optional fields: `date` (`YYYY-MM-DD`), `year`, `location`, `pin_id`, `caption`.
 
 `squadron_logo` paths are resolved like photo paths: first beside the entry YAML, then under mirrored `raw_assets/`, then flat under `raw_assets/`. Raster logos are resized during build and written to `assets/logos/`.
 
+`squadron_hero`/`squadron_hero_image` paths are resolved like photo paths and published to `assets/generated/photos/` plus `assets/generated/thumbs/` with a `squadron-hero-*` filename. Nested YAML can also use `squadron.hero.path`, `squadron.hero_image`, or `squadron.hero_photo`.
+
 Photo paths in entry YAML are relative to the matching entry folder. The build script resolves them from `raw_assets/` first, mirroring the entry path. For example, a photo listed as `photos/f-15sg-changi.jpg` in `aircraft/boeing-f-15sg-strike-eagle/149-squadron/entry.yaml` is read from `raw_assets/aircraft/boeing-f-15sg-strike-eagle/149-squadron/photos/f-15sg-changi.jpg`. A flat source file such as `N742CK.jpg` can also be referenced directly and resolved from `raw_assets/N742CK.jpg`. `location` is matched to a map pin by pin name. Use `pin_id` when names are ambiguous. The generated photo `date` prefers EXIF capture fields (`DateTimeOriginal`, then `DateTimeDigitized`) over YAML dates, then falls back to YAML `date`/`taken` fields. Do not use filesystem creation or modification dates for photo dates. Recent locations are ordered by the generated photo date.
 
 The generated manifest includes per-photo `image`, `thumbnail`, `originalSize`, `processedSize`, `thumbnailSize`, and `exif` fields, plus per-aircraft `stats`. Generated JPEGs should retain source EXIF metadata, with Orientation normalized to `1` after pixel rotation. Keep those fields in sync with `script.js` when changing generator output.
 
-Generated map pins include `icao` when present in `map_pins/**/pins.yaml`. The desktop map marker labels use full location names; the mobile map marker labels use `icao` when available, falling back to the full location name.
+Generated map pins include `icao` when present in `map_pins/**/pins.yaml`. They may also include `heroPhotoId` or `heroPhoto` when a custom location hero is configured. The desktop map marker labels use full location names; the mobile map marker labels use `icao` when available, falling back to the full location name.
 
 The `exif` object may include `Make`, `Model`, `LensModel`, `FocalLength`, `FNumber`, `ExposureTime`, `ISO`, `DateTimeOriginal`, `DateTimeDigitized`, and `DateTime`. The build script reads both the main EXIF IFD and the Exif sub-IFD from source images.
 
-The generated manifest keeps compatibility fields such as `squadronName` and `squadronId`, and also emits `unitType`/`unitLabel` on photos and nested squadron records. `unitType: organisation` records have `showOnSquadronsPage: false`; the browser filters them out of the Squadrons tab while still showing them in Aircraft Dex, map grouping, search, stats, and the photo viewer.
+The generated manifest keeps compatibility fields such as `squadronName` and `squadronId`, and also emits `unitType`/`unitLabel` on photos and nested squadron records. Squadron records may include `heroPhoto` when a squadron hero is configured. `unitType: organisation` records have `showOnSquadronsPage: false`; the browser filters them out of the Squadrons tab while still showing them in Aircraft Dex, map grouping, search, stats, and the photo viewer.
 
 ## Build And Verification
 
@@ -169,9 +176,11 @@ Open `http://127.0.0.1:8000/`.
 - The browser app first reads `window.SPOTTERDEX_DATA` from `data/spotterdex-data.js`, then falls back to fetching `data/spotterdex.json`.
 - Deep links use hash params: `#location=<pin-id>`, `#aircraft=<aircraft-id>`, `#photo=<photo-id>`, `#squadron=<squadron-id>`, and `#stats=summary|exif`. Photo deep links should open the viewer after selecting the best surrounding context.
 - The World Map selected-location panel acts as a location detail page, with a hero photo, ICAO/country/visit summary, observed aircraft-family icons, squadron/organisation previews, recent photos, and the full grouped photo archive.
+- Location detail heroes are custom when `hero_photo`, `hero_image`, `hero.path`, or `hero_photo_id` exists on the pin; otherwise the UI auto-selects the newest location photo and hides that same frame from the recent-photo strip. Custom heroes do not suppress the newest location photo from recent photos.
 - The World Map view is a full-bleed map-first presentation on desktop and mobile: the Leaflet map fills the viewport below the header, with the Timothy Liu overview, recent locations, and selected-location photo results floating over it as glass panels. Mobile uses side-collapsible floating panels and compact ICAO marker labels when available. Keep marker labels visible and preserve map attribution.
 - The Aircraft Dex view uses a two-column workspace: filters and the Latest frames sidebar live in the left panel, while entry cards and the selected-entry results panel live in the right column. Expanded aircraft entries show stats, squadron logos, and large image-first photo grids.
-- The Squadrons view is a separate top-level tab that aggregates records with `unitType: squadron` by country and name, then displays prominent logo cards grouped into one subsection per country. Organisation records are intentionally hidden from this page. Clicking a squadron logo selects it and renders all viewable photos for that squadron in the detail grid below the logo gallery.
+- The Squadrons view is a separate top-level tab that aggregates records with `unitType: squadron` by country and name, then displays prominent logo/hero cards grouped into one subsection per country. Organisation records are intentionally hidden from this page. Clicking a squadron logo selects it and renders all viewable photos for that squadron in the detail grid below the logo gallery.
+- Squadron logo links in the viewer, World Map location detail, and Aircraft Dex should deep link to the aggregate Squadrons-page ID, `normalizeKey(country + "-" + squadron name)`, not the aircraft-specific generated squadron ID.
 - The Stats Dashboard is the final top-level tab. It shows collection summary pairs plus the EXIF dashboard. Squadron totals should use the same country/name aggregation as the Squadrons view, not per-aircraft folder IDs.
 - Desktop navigation uses tab buttons. Mobile navigation uses the `#viewSelect` dropdown; keep it synchronized with `data-tab-target` buttons in `setActiveTab`.
 - The stats and EXIF dashboards are computed client-side from generated `pins`, `aircraft`, `squadrons`, `photos`, and `photos[].exif` in `script.js`; the Python build script only needs changes if generated field names or normalization rules change.
@@ -182,3 +191,4 @@ Open `http://127.0.0.1:8000/`.
 - If changing generated manifest shape, update `script.js`, sample YAML, and `README.md` together.
 - Empty `photos: []` entries and enabled pins without photos are acceptable while the collection grows.
 - Removing photos from YAML does not delete old generated JPEGs automatically; rebuild the manifest and delete orphaned files under `assets/generated/` if needed.
+- The current photo model treats each image as one primary aircraft/unit entry. For mixed-aircraft frames, choose the best primary aircraft in YAML and describe the other aircraft in `caption` until a future `subjects` array is added to the generator and UI.

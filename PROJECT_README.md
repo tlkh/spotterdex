@@ -25,10 +25,11 @@ pins:
     name: Changi Exhibition Centre
     icao: WSSS
     coordinates: [1.3631, 104.0229]
+    hero_photo: photos/changi-showline-hero.jpg
     enabled: true
 ```
 
-Use `icao: XXXX` for airport and air base pins when a code exists. Broad region pins or non-aerodrome locations can leave `icao` empty; the generated manifest preserves the field, and mobile map labels prefer ICAO codes when available.
+Use `icao: XXXX` for airport and air base pins when a code exists. Broad region pins or non-aerodrome locations can leave `icao` empty; the generated manifest preserves the field, and mobile map labels prefer ICAO codes when available. Use `hero_photo`/`hero_image`/`hero.path` to set a custom location hero image from `raw_assets/`; use `hero_photo_id` to point at an existing generated photo record instead. Custom heroes do not remove the newest location photo from the Recent photos strip.
 
 `aircraft/<type>/<squadron>/entry.yaml` contains the aircraft entry, squadron metadata, and photos:
 
@@ -38,6 +39,7 @@ squadron_name: 149 Squadron
 unit_type: squadron
 country: Singapore
 squadron_logo: ../../../assets/logos/149-squadron.svg
+squadron_hero: photos/149-squadron-hero.jpg
 photos:
   - path: photos/f-15sg-changi.jpg
     date: 2024-02-24
@@ -45,7 +47,7 @@ photos:
     location: Changi Exhibition Centre
 ```
 
-Photo paths in entry YAML are relative to the matching entry folder. The build script reads them from `raw_assets/` first, mirroring the entry path. For example, `photos/f-15sg-changi.jpg` in `aircraft/boeing-f-15sg-strike-eagle/149-squadron/entry.yaml` is loaded from `raw_assets/aircraft/boeing-f-15sg-strike-eagle/149-squadron/photos/f-15sg-changi.jpg`. The `location` value links photos to map pins by matching the pin name, or you can add `pin_id`. Use `unit_type: organisation` for airline/operator entries that should be labelled Organisation instead of Squadron; those entries remain visible in the Dex and photo viewer but are hidden from the Squadrons page. Use `date` in `YYYY-MM-DD` format when known; the recent locations list is ordered by the newest photo at each location. If `date` is omitted, the build script falls back to EXIF capture date, then `year`.
+Photo paths in entry YAML are relative to the matching entry folder. The build script reads them from `raw_assets/` first, mirroring the entry path. For example, `photos/f-15sg-changi.jpg` in `aircraft/boeing-f-15sg-strike-eagle/149-squadron/entry.yaml` is loaded from `raw_assets/aircraft/boeing-f-15sg-strike-eagle/149-squadron/photos/f-15sg-changi.jpg`. The `location` value links photos to map pins by matching the pin name, or you can add `pin_id`. Use `unit_type: organisation` for airline/operator entries that should be labelled Organisation instead of Squadron; those entries remain visible in the Dex and photo viewer but are hidden from the Squadrons page. Use `squadron_hero` or nested `squadron.hero.path` for an optional squadron-specific hero image on the Squadrons page. Use `date` in `YYYY-MM-DD` format when known; the recent locations list is ordered by the newest photo at each location. If `date` is omitted, the build script falls back to EXIF capture date, then `year`.
 
 ## Build
 

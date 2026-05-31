@@ -133,7 +133,17 @@ def main() -> int:
     js_output = root / args.js_output
     show_progress = not args.no_progress
 
-    pins = load_pins(root, map_dir, warnings, show_progress=show_progress)
+    pins = load_pins(
+        root=root,
+        map_dir=map_dir,
+        raw_assets_dir=raw_assets_dir,
+        photo_output_dir=photo_output_dir,
+        thumb_output_dir=thumb_output_dir,
+        target_width=args.width,
+        thumb_width=args.thumb_width,
+        warnings=warnings,
+        show_progress=show_progress,
+    )
     pin_lookup = {normalize_key(pin["name"]): pin["id"] for pin in pins}
     aircraft_entries, photos = load_aircraft(
         root=root,
@@ -176,7 +186,17 @@ def main() -> int:
     return 0
 
 
-def load_pins(root: Path, map_dir: Path, warnings: BuildWarningLog, show_progress: bool = True) -> List[Dict[str, Any]]:
+def load_pins(
+    root: Path,
+    map_dir: Path,
+    raw_assets_dir: Path,
+    photo_output_dir: Path,
+    thumb_output_dir: Path,
+    target_width: int,
+    thumb_width: int,
+    warnings: BuildWarningLog,
+    show_progress: bool = True,
+) -> List[Dict[str, Any]]:
     if not map_dir.exists():
         warnings.add(f"map pin directory not found: {relative_posix(map_dir, root)}")
         return []
@@ -223,17 +243,37 @@ def load_pins(root: Path, map_dir: Path, warnings: BuildWarningLog, show_progres
                 continue
 
             pin_id = unique_id(str(pin_item.get("id") or f"{country}-{name}"), used_ids)
-            pins.append(
-                {
-                    "id": pin_id,
-                    "name": name,
-                    "country": country,
-                    "icao": icao,
-                    "lat": lat,
-                    "lon": lon,
-                    "enabled": pin_item.get("enabled", True) is not False,
-                }
-            )
+            hero_photo_id, hero_source = read_pin_hero_fields(pin_item)
+            pin_record: Dict[str, Any] = {
+                "id": pin_id,
+                "name": name,
+                "country": country,
+                "icao": icao,
+                "lat": lat,
+                "lon": lon,
+                "enabled": pin_item.get("enabled", True) is not False,
+            }
+
+            if hero_photo_id:
+                pin_record["heroPhotoId"] = hero_photo_id
+            if hero_source:
+                hero_photo = process_location_hero(
+                    root=root,
+                    raw_assets_dir=raw_assets_dir,
+                    yaml_path=yaml_path,
+                    source_value=hero_source,
+                    pin_id=pin_id,
+                    location_name=name,
+                    photo_output_dir=photo_output_dir,
+                    thumb_output_dir=thumb_output_dir,
+                    target_width=target_width,
+                    thumb_width=thumb_width,
+                    warnings=warnings,
+                )
+                if hero_photo:
+                    pin_record["heroPhoto"] = hero_photo
+
+            pins.append(pin_record)
 
     progress.finish()
 
@@ -312,6 +352,20 @@ def load_aircraft(
             logo_max_size=logo_max_size,
             warnings=warnings,
         )
+        hero_value = read_squadron_hero_source(data, squadron_data)
+        squadron_hero = process_squadron_hero(
+            root=root,
+            raw_assets_dir=raw_assets_dir,
+            yaml_path=yaml_path,
+            source_value=hero_value,
+            squadron_id=squadron_id,
+            squadron_name=squadron_name,
+            photo_output_dir=photo_output_dir,
+            thumb_output_dir=thumb_output_dir,
+            target_width=target_width,
+            thumb_width=thumb_width,
+            warnings=warnings,
+        ) if hero_value else None
 
         aircraft_entry = aircraft_by_id.setdefault(
             aircraft_id,
@@ -340,8 +394,12 @@ def load_aircraft(
                 "showOnSquadronsPage": unit_type == "squadron",
                 "photoIds": [],
             }
+            if squadron_hero:
+                squadron_entry["heroPhoto"] = squadron_hero
             squadron_by_key[squadron_key] = squadron_entry
             aircraft_entry["squadrons"].append(squadron_entry)
+        elif not squadron_entry.get("heroPhoto") and squadron_hero:
+            squadron_entry["heroPhoto"] = squadron_hero
 
         photo_items = data.get("photos") or []
         if isinstance(photo_items, dict):
@@ -445,12 +503,14 @@ def validate_manifest(manifest: Dict[str, Any], root: Path, warnings: BuildWarni
     pin_ids: set[str] = set()
     pin_name_keys: set[str] = set()
     enabled_pin_ids: set[str] = set()
+    pin_hero_photo_ids: List[Tuple[str, str]] = []
     for pin in pins:
         pin_id = str(pin.get("id") or "")
         pin_key = normalize_key(f"{pin.get('country', '')}-{pin.get('name', '')}")
         lat = pin.get("lat")
         lon = pin.get("lon")
         icao = str(pin.get("icao") or "")
+        hero_photo_id = str(pin.get("heroPhotoId") or "")
 
         if pin_id in pin_ids:
             warnings.add(f"duplicate pin id in generated manifest: {pin_id}")
@@ -471,7 +531,24 @@ def validate_manifest(manifest: Dict[str, Any], root: Path, warnings: BuildWarni
         if pin.get("enabled") is not False:
             enabled_pin_ids.add(pin_id)
 
+        if hero_photo_id:
+            pin_hero_photo_ids.append((pin_id, hero_photo_id))
+
+        hero_photo = pin.get("heroPhoto")
+        if hero_photo:
+            if not isinstance(hero_photo, dict):
+                warnings.add(f"pin heroPhoto must be an object: {pin.get('name')}")
+            else:
+                for field_name in ("image", "thumbnail"):
+                    site_path = str(hero_photo.get(field_name) or "")
+                    if not site_path:
+                        warnings.add(f"pin heroPhoto is missing generated {field_name}: {pin.get('name')}")
+                        continue
+                    if not (root / site_path).exists():
+                        warnings.add(f"generated pin heroPhoto {field_name} is missing on disk: {site_path}")
+
     photo_ids: set[str] = set()
+    photos_by_id: Dict[str, Dict[str, Any]] = {}
     source_paths: set[str] = set()
     photo_pin_ids: set[str] = set()
     for photo in photos:
@@ -479,6 +556,7 @@ def validate_manifest(manifest: Dict[str, Any], root: Path, warnings: BuildWarni
         if photo_id in photo_ids:
             warnings.add(f"duplicate photo id in generated manifest: {photo_id}")
         photo_ids.add(photo_id)
+        photos_by_id[photo_id] = photo
 
         source = str(photo.get("source") or "")
         if source:
@@ -505,6 +583,30 @@ def validate_manifest(manifest: Dict[str, Any], root: Path, warnings: BuildWarni
                 continue
             if not (root / site_path).exists():
                 warnings.add(f"generated {field_name} is missing on disk: {site_path}")
+
+    for pin_id, hero_photo_id in pin_hero_photo_ids:
+        if hero_photo_id not in photo_ids:
+            warnings.add(f"pin references an unknown heroPhotoId: {pin_id} -> {hero_photo_id}")
+            continue
+        hero_photo_pin_id = str(photos_by_id[hero_photo_id].get("pinId") or "")
+        if hero_photo_pin_id and hero_photo_pin_id != pin_id:
+            warnings.add(f"pin heroPhotoId points to a photo from another location: {pin_id} -> {hero_photo_id}")
+
+    for entry in aircraft_entries:
+        for squadron in entry.get("squadrons", []):
+            hero_photo = squadron.get("heroPhoto")
+            if not hero_photo:
+                continue
+            if not isinstance(hero_photo, dict):
+                warnings.add(f"squadron heroPhoto must be an object: {squadron.get('name')}")
+                continue
+            for field_name in ("image", "thumbnail"):
+                site_path = str(hero_photo.get(field_name) or "")
+                if not site_path:
+                    warnings.add(f"squadron heroPhoto is missing generated {field_name}: {squadron.get('name')}")
+                    continue
+                if not (root / site_path).exists():
+                    warnings.add(f"generated squadron heroPhoto {field_name} is missing on disk: {site_path}")
 
     empty_entries = [entry for entry in aircraft_entries if not entry.get("photoIds")]
     empty_pins = enabled_pin_ids.difference(photo_pin_ids)
@@ -606,6 +708,179 @@ def process_photo(
         "processedSize": format_size(processed.size),
         "thumbnailSize": format_size(thumbnail.size),
         "exif": exif,
+    }
+
+
+def read_pin_hero_fields(pin_item: Dict[str, Any]) -> Tuple[str, Any]:
+    hero_photo_id = (
+        pin_item.get("hero_photo_id")
+        or pin_item.get("heroPhotoId")
+        or pin_item.get("heroPhotoID")
+        or pin_item.get("hero_id")
+        or pin_item.get("heroId")
+    )
+    hero_source: Any = (
+        pin_item.get("hero_photo")
+        or pin_item.get("hero_image")
+        or pin_item.get("hero_path")
+        or pin_item.get("heroPhoto")
+        or pin_item.get("heroImage")
+        or pin_item.get("heroPath")
+    )
+
+    hero_block = pin_item.get("hero")
+    if isinstance(hero_block, dict):
+        hero_photo_id = hero_photo_id or (
+            hero_block.get("photo_id")
+            or hero_block.get("photoId")
+            or hero_block.get("id")
+        )
+        hero_source = hero_source or (
+            hero_block.get("path")
+            or hero_block.get("file")
+            or hero_block.get("filepath")
+            or hero_block.get("image")
+            or hero_block.get("source")
+        )
+    elif hero_source is None and hero_block:
+        hero_source = hero_block
+
+    return str(hero_photo_id).strip() if hero_photo_id else "", hero_source_from_value(hero_source)
+
+
+def read_squadron_hero_source(data: Dict[str, Any], squadron_data: Dict[str, Any]) -> Any:
+    for value in (
+        data.get("squadron_hero"),
+        data.get("squadron_hero_image"),
+        data.get("squadronHero"),
+        data.get("squadronHeroImage"),
+        squadron_data.get("hero_image"),
+        squadron_data.get("heroImage"),
+        squadron_data.get("hero_photo"),
+        squadron_data.get("heroPhoto"),
+        squadron_data.get("hero"),
+    ):
+        source = hero_source_from_value(value)
+        if source:
+            return source
+    return None
+
+
+def hero_source_from_value(value: Any) -> Any:
+    if isinstance(value, dict):
+        return (
+            value.get("path")
+            or value.get("file")
+            or value.get("filepath")
+            or value.get("image")
+            or value.get("source")
+        )
+    return value
+
+
+def process_location_hero(
+    root: Path,
+    raw_assets_dir: Path,
+    yaml_path: Path,
+    source_value: Any,
+    pin_id: str,
+    location_name: str,
+    photo_output_dir: Path,
+    thumb_output_dir: Path,
+    target_width: int,
+    thumb_width: int,
+    warnings: BuildWarningLog,
+) -> Optional[Dict[str, Any]]:
+    source_path = resolve_pin_asset_source(root, raw_assets_dir, yaml_path, source_value)
+    return process_custom_hero(
+        root=root,
+        source_path=source_path,
+        source_value=source_value,
+        output_stem=slugify(f"location-hero-{pin_id}"),
+        display_label=f"location hero for {location_name}",
+        photo_output_dir=photo_output_dir,
+        thumb_output_dir=thumb_output_dir,
+        target_width=target_width,
+        thumb_width=thumb_width,
+        warnings=warnings,
+    )
+
+
+def process_squadron_hero(
+    root: Path,
+    raw_assets_dir: Path,
+    yaml_path: Path,
+    source_value: Any,
+    squadron_id: str,
+    squadron_name: str,
+    photo_output_dir: Path,
+    thumb_output_dir: Path,
+    target_width: int,
+    thumb_width: int,
+    warnings: BuildWarningLog,
+) -> Optional[Dict[str, Any]]:
+    source_path = resolve_photo_source(root, raw_assets_dir, yaml_path, source_value)
+    return process_custom_hero(
+        root=root,
+        source_path=source_path,
+        source_value=source_value,
+        output_stem=slugify(f"squadron-hero-{squadron_id}"),
+        display_label=f"squadron hero for {squadron_name}",
+        photo_output_dir=photo_output_dir,
+        thumb_output_dir=thumb_output_dir,
+        target_width=target_width,
+        thumb_width=thumb_width,
+        warnings=warnings,
+    )
+
+
+def process_custom_hero(
+    root: Path,
+    source_path: Path,
+    source_value: Any,
+    output_stem: str,
+    display_label: str,
+    photo_output_dir: Path,
+    thumb_output_dir: Path,
+    target_width: int,
+    thumb_width: int,
+    warnings: BuildWarningLog,
+) -> Optional[Dict[str, Any]]:
+    if not source_path.exists():
+        warnings.add(f"{display_label} source not found: {source_value}")
+        return None
+
+    if source_path.suffix.lower() not in IMAGE_EXTENSIONS:
+        warnings.add(f"unsupported {display_label} image type skipped: {relative_posix(source_path, root)}")
+        return None
+
+    output_path = photo_output_dir / f"{output_stem}.jpg"
+    thumb_path = thumb_output_dir / f"{output_stem}.jpg"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    thumb_path.parent.mkdir(parents=True, exist_ok=True)
+
+    try:
+        with Image.open(source_path) as opened:
+            output_exif = normalized_output_exif(opened)
+            original_size = f"{opened.width} x {opened.height}"
+            image = ImageOps.exif_transpose(opened)
+            image = image.convert("RGB")
+            processed = resize_to_width(image, target_width)
+            thumbnail = resize_to_width(image, thumb_width)
+            save_kwargs = {"exif": output_exif} if output_exif else {}
+            processed.save(output_path, "JPEG", quality=90, optimize=True, progressive=True, **save_kwargs)
+            thumbnail.save(thumb_path, "JPEG", quality=82, optimize=True, progressive=True, **save_kwargs)
+    except Exception as exc:  # pragma: no cover - depends on source image
+        warnings.add(f"could not process {display_label} {relative_posix(source_path, root)}: {exc}")
+        return None
+
+    return {
+        "image": site_path_for(output_path, root),
+        "thumbnail": site_path_for(thumb_path, root),
+        "source": site_path_for(source_path, root),
+        "originalSize": original_size,
+        "processedSize": format_size(processed.size),
+        "thumbnailSize": format_size(thumbnail.size),
     }
 
 
@@ -974,6 +1249,24 @@ def resolve_photo_source(root: Path, raw_assets_dir: Path, yaml_path: Path, sour
     flat = (raw_assets_dir / relative_source).resolve()
 
     for candidate in (primary, legacy, flat):
+        if candidate.exists():
+            return candidate
+    return primary
+
+
+def resolve_pin_asset_source(root: Path, raw_assets_dir: Path, yaml_path: Path, source_value: Any) -> Path:
+    relative_source = Path(str(source_value))
+    if relative_source.is_absolute():
+        return relative_source.resolve()
+
+    yaml_parent = yaml_path.parent.resolve()
+    yaml_parent_relative = relative_posix(yaml_parent, root)
+    primary = (raw_assets_dir / yaml_parent_relative / relative_source).resolve()
+    legacy = (yaml_parent / relative_source).resolve()
+    root_relative = (root / relative_source).resolve()
+    flat = (raw_assets_dir / relative_source).resolve()
+
+    for candidate in (primary, legacy, root_relative, flat):
         if candidate.exists():
             return candidate
     return primary

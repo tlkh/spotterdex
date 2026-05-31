@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-31T07:45:36+00:00",
+  "generatedAt": "2026-05-31T08:50:32+00:00",
   "pins": [
     {
       "id": "hong-kong-international-airport",
@@ -35,7 +35,15 @@
       "icao": "RJNG",
       "lat": 35.3939,
       "lon": 136.87,
-      "enabled": true
+      "enabled": true,
+      "heroPhoto": {
+        "image": "assets/generated/photos/location-hero-gifu-air-base.jpg",
+        "thumbnail": "assets/generated/thumbs/location-hero-gifu-air-base.jpg",
+        "source": "raw_assets/gifu_formation_2.jpeg",
+        "originalSize": "4624 x 3468",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "1024 x 768"
+      }
     },
     {
       "id": "haneda-airport",

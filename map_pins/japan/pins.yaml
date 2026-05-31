@@ -33,6 +33,7 @@ pins:
   - id: gifu-air-base
     name: Gifu Air Base
     icao: RJNG
+    hero_photo: gifu_formation_2.jpeg
     coordinates: [35.3939, 136.8700]
     enabled: true
   - id: komatsu-air-base

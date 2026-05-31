@@ -141,6 +141,12 @@ img {
   align-items: center;
   color: inherit;
   text-decoration: none;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.brand:hover {
+  opacity: 0.86;
+  transform: translateY(-1px);
 }
 
 .brand-mark {
@@ -1055,6 +1061,25 @@ h3 {
   width: 46px;
   height: 46px;
   padding: 6px;
+  color: inherit;
+}
+
+button.location-unit-chip {
+  cursor: pointer;
+  transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+
+button.location-unit-chip:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(38, 35, 31, 0.12);
+}
+
+button.location-unit-chip:focus-visible,
+.squadron-logo-link:focus-visible,
+.viewer-squadron-logo-link:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
 }
 
 .location-unit-chip img,
@@ -1467,26 +1492,73 @@ h3 {
 }
 
 .squadron-logo-media {
+  position: relative;
   display: grid;
   min-height: 0;
   place-items: center;
   padding: 22px;
+  overflow: hidden;
   border-bottom: 1px solid var(--line);
   background: var(--surface-strong);
 }
 
-.squadron-logo-media img,
-.squadron-logo-fallback {
-  width: min(168px, 100%);
-  height: 168px;
+.squadron-logo-media.has-hero {
+  padding: 0;
+  place-items: stretch;
 }
 
-.squadron-logo-media img {
+.squadron-card-hero {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  object-fit: cover;
+  transform: scale(1.01);
+  transition: transform 420ms ease, filter 420ms ease;
+}
+
+.squadron-logo-card:hover .squadron-card-hero,
+.squadron-logo-card.is-active .squadron-card-hero {
+  filter: saturate(1.04) contrast(1.03);
+  transform: scale(1.04);
+}
+
+.squadron-card-logo {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  display: grid;
+  width: 72px;
+  height: 72px;
+  place-items: center;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--line-strong) 72%, transparent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(12px);
+}
+
+.squadron-card-logo.is-standalone {
+  position: static;
+  width: min(168px, 100%);
+  height: 168px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.squadron-card-logo img {
+  width: 100%;
+  height: 100%;
   object-fit: contain;
 }
 
 .squadron-logo-fallback {
   display: grid;
+  width: 100%;
+  height: 100%;
   place-items: center;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -1543,6 +1615,41 @@ h3 {
   gap: 14px;
 }
 
+.squadron-detail-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--surface-strong);
+}
+
+.squadron-detail-hero img {
+  width: 100%;
+  aspect-ratio: 16 / 7;
+  object-fit: cover;
+}
+
+.squadron-detail-logo {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  display: grid;
+  width: 90px;
+  height: 90px;
+  place-items: center;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--line-strong) 72%, transparent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(14px);
+}
+
+.squadron-detail-logo img,
+.squadron-detail-logo .squadron-logo-fallback {
+  width: 100%;
+  height: 100%;
+}
+
 .squadron-type-list {
   margin: 0;
 }
@@ -1576,6 +1683,12 @@ h3 {
   aspect-ratio: 16 / 10;
   border-radius: inherit;
   object-fit: cover;
+  transition: transform 520ms ease, filter 520ms ease;
+}
+
+.aircraft-card:hover .aircraft-cover img {
+  filter: saturate(1.04) contrast(1.02);
+  transform: scale(1.025);
 }
 
 .empty-cover {
@@ -1695,9 +1808,29 @@ h3 {
   background: var(--surface-strong);
 }
 
+.squadron-logo-link {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  cursor: pointer;
+}
+
+.squadron-logo-link:hover .squadron-logo,
+.squadron-logo-link:hover .logo-fallback {
+  border-color: var(--line-strong);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(38, 35, 31, 0.12);
+}
+
 .squadron-logo {
   object-fit: contain;
   padding: 5px;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
 .logo-fallback {
@@ -1705,6 +1838,7 @@ h3 {
   place-items: center;
   color: var(--blue);
   font-weight: 800;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
 .empty-state {
@@ -1782,10 +1916,12 @@ h3 {
   cursor: pointer;
   font-weight: 900;
   backdrop-filter: blur(14px);
+  transition: background 180ms ease, transform 180ms ease, border-color 180ms ease;
 }
 
 .viewer-button:hover {
   background: rgba(40, 40, 40, 0.9);
+  transform: translateY(-1px);
 }
 
 .viewer-button.close {
@@ -1865,6 +2001,16 @@ h3 {
   overflow-wrap: anywhere;
 }
 
+.viewer-squadron-logo-link {
+  display: block;
+  width: max-content;
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
 .viewer-squadron-logo {
   width: 68px;
   height: 68px;
@@ -1874,6 +2020,17 @@ h3 {
   border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.08);
   object-fit: contain;
+  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+}
+
+.viewer-squadron-logo-link .viewer-squadron-logo {
+  margin-top: 0;
+}
+
+.viewer-squadron-logo-link:hover .viewer-squadron-logo {
+  border-color: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
 }
 
 @keyframes page-in {
@@ -1896,6 +2053,17 @@ h3 {
   }
 }
 
+@keyframes item-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .view.is-active .control-panel,
 .view.is-active .map-stage,
 .view.is-active .recent-photos-panel,
@@ -1904,6 +2072,47 @@ h3 {
 .view.is-active .stats-hero,
 .view.is-active .squadrons-hero {
   animation: drawer-in 360ms ease-out both;
+}
+
+.view.is-active .aircraft-card,
+.view.is-active .photo-card,
+.view.is-active .location-recent-card,
+.view.is-active .squadron-logo-card,
+.view.is-active .stats-pair-card,
+.view.is-active .exif-count-card {
+  animation: item-in 320ms ease-out both;
+}
+
+.view.is-active .photo-card:nth-child(2),
+.view.is-active .aircraft-card:nth-child(2),
+.view.is-active .squadron-logo-card:nth-child(2) {
+  animation-delay: 35ms;
+}
+
+.view.is-active .photo-card:nth-child(3),
+.view.is-active .aircraft-card:nth-child(3),
+.view.is-active .squadron-logo-card:nth-child(3) {
+  animation-delay: 70ms;
+}
+
+.view.is-active .photo-card:nth-child(4),
+.view.is-active .aircraft-card:nth-child(4),
+.view.is-active .squadron-logo-card:nth-child(4) {
+  animation-delay: 105ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @media (min-width: 1041px) {
@@ -2437,8 +2646,9 @@ h3 {
     padding: 16px;
   }
 
-  .squadron-logo-media img,
-  .squadron-logo-fallback {
+  .squadron-card-logo.is-standalone,
+  .squadron-card-logo.is-standalone .squadron-logo-fallback {
+    width: min(124px, 100%);
     height: 124px;
   }
 
@@ -2606,8 +2816,16 @@ h3 {
     padding: 10px;
   }
 
-  .squadron-logo-media img,
-  .squadron-logo-fallback {
+  .squadron-card-logo {
+    left: 10px;
+    bottom: 10px;
+    width: 56px;
+    height: 56px;
+    padding: 6px;
+  }
+
+  .squadron-card-logo.is-standalone,
+  .squadron-card-logo.is-standalone .squadron-logo-fallback {
     width: min(96px, 100%);
     height: 96px;
   }
