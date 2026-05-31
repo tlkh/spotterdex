@@ -1,8 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="149 Squadron logo">
-  <rect width="120" height="120" rx="14" fill="#0f172a"/>
-  <circle cx="60" cy="60" r="42" fill="#1d4ed8"/>
-  <path d="M28 65h64l-12 12H40z" fill="#e0f2fe"/>
-  <path d="M60 26l14 36H46z" fill="#f8fafc"/>
-  <text x="60" y="98" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#f8fafc">149</text>
-</svg>
-
+<svg xmlns="http://www.w3.org/2000/svg" aria-label="149 Squadron logo" role="img" viewBox="0 0 120 120"><rect width="120" height="120" fill="#0f172a" rx="14"/><circle cx="60" cy="60" r="42" fill="#1d4ed8"/><path fill="#e0f2fe" d="M28 65h64l-12 12H40z"/><path fill="#f8fafc" d="M60 26l14 36H46z"/><text x="60" y="98" fill="#f8fafc" font-family="Arial, sans-serif" font-size="18" font-weight="700" text-anchor="middle">149</text></svg>
