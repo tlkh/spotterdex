@@ -1039,11 +1039,8 @@
       const exif = photo.exif || {};
       return [exif.Make, exif.Model].filter(Boolean).join(" ");
     });
-    const lensCounts = countBy(exifPhotos, (photo) => {
-      const exif = photo.exif || {};
-      return exif.LensModel || exif.Lens || "";
-    });
-    const focalCounts = countBy(exifPhotos, (photo) => (photo.exif || {}).FocalLength);
+    const lensCounts = countByValues(exifPhotos, statsLensLabels);
+    const focalCounts = countBy(exifPhotos, statsFocalLength);
     const shutterCounts = countBy(exifPhotos, (photo) => (photo.exif || {}).ExposureTime);
     const apertureCounts = countBy(exifPhotos, (photo) => (photo.exif || {}).FNumber);
     const isoCounts = countBy(exifPhotos, (photo) => (photo.exif || {}).ISO);
@@ -2134,6 +2131,47 @@
     );
   }
 
+  const RX10M4_FOCAL_LENGTH_MULTIPLIER = 2.72727272727;
+
+  function isSonyRx10M4(exif) {
+    return String((exif || {}).Model || "").trim() === "DSC-RX10M4";
+  }
+
+  function parseFocalLengthMm(value) {
+    const match = String(value || "").match(/([\d.]+)/);
+    return match ? Number(match[1]) : null;
+  }
+
+  function statsFocalLength(photo) {
+    const exif = photo.exif || {};
+    const raw = exif.FocalLength;
+    if (!raw) {
+      return "";
+    }
+
+    const focalMm = parseFocalLengthMm(raw);
+    if (focalMm === null) {
+      return String(raw).trim();
+    }
+
+    if (isSonyRx10M4(exif)) {
+      return `${Math.round(focalMm * RX10M4_FOCAL_LENGTH_MULTIPLIER)}mm`;
+    }
+
+    return String(raw).trim();
+  }
+
+  function statsLensLabels(photo) {
+    const exif = photo.exif || {};
+    const lens = String(exif.LensModel || exif.Lens || "").trim();
+    if (!lens) {
+      return [];
+    }
+
+    const parts = lens.split(/\s+\+\s+/).map((part) => part.trim()).filter(Boolean);
+    return parts.length > 1 ? parts : [lens];
+  }
+
   function collectionStatsSummary() {
     const enabledPins = state.data.pins.filter((pin) => pin.enabled);
     const photographedLocations = unique(
@@ -2160,6 +2198,22 @@
         return;
       }
       counts.set(value, (counts.get(value) || 0) + 1);
+    });
+    return counts;
+  }
+
+  function countByValues(items, getValues) {
+    const counts = new Map();
+    items.forEach((item) => {
+      const values = getValues(item);
+      const list = Array.isArray(values) ? values : [values];
+      list.forEach((raw) => {
+        const value = String(raw || "").trim();
+        if (!value) {
+          return;
+        }
+        counts.set(value, (counts.get(value) || 0) + 1);
+      });
     });
     return counts;
   }

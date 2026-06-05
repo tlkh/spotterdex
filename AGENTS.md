@@ -11,14 +11,63 @@ Read this section first before making changes.
 - **Build progress:** `tools/build_spotterdex.py` shows dependency-free terminal progress bars for map pins, aircraft YAML, and photo processing when stderr is interactive. Use `--no-progress` for clean logs.
 - **What gets committed for GitHub Pages:** `data/`, `assets/generated/photos/`, `assets/generated/thumbs/`, and `assets/logos/`. `raw_assets/` is gitignored and stays local.
 - **Adding an aircraft entry:** create `aircraft/<aircraft-type-slug>/<squadron-slug>/entry.yaml`. Use slug-style folder names (`boeing-ah-64d-apache-longbow`, `120-squadron`, `air-development-and-test-wing`). The same squadron can appear under multiple aircraft types as separate folders.
+- **Slug conventions:** lowercase ASCII, hyphen-separated. Aircraft folder = manufacturer + model (`kawasaki-up-3c-orion`, `lockheed-c-130r`, `mitsubishi-f-15j-eagle`). Squadron folder = short code when the unit has one (`vx-51`, `vrc-40`, `vr-57`), otherwise a descriptive slug (`air-transport-squadron-61`, `jasdf-electronic-warfare-squadron`, `air-development-and-test-wing`). Copy an existing entry in the same country or operator family when unsure.
 - **Photos in YAML:** `photos` must be a list of objects with at least `path`. Never use `photos: ["file.jpg"]`. Put source images in `raw_assets/` and reference by filename (for example `path: 128925.jpg`) or by mirrored path (for example `path: photos/show-line.jpg`).
-- **Photo resolution order:** mirrored `raw_assets/aircraft/<type>/<squadron>/<path>`, then beside the YAML entry, then flat `raw_assets/<path>`.
-- **Map pin matching:** `location` must match a pin `name` in `map_pins/` exactly. Check the pin YAML before adding photos. Use `pin_id` when names are ambiguous.
+- **Photo resolution order:** mirrored `raw_assets/aircraft/<type>/<squadron>/<path>`, then beside the YAML entry, then flat `raw_assets/<path>`. Flat filenames in `raw_assets/` are fine for one-off imports; mirrored folders are better when many photos belong to one entry.
+- **`raw_assets/` is gitignored:** workspace search may not list it. Verify source files with shell `ls raw_assets/<filename>` or `find raw_assets -name '<pattern>'` before writing YAML. If photos are missing locally, tell the user to place them there; do not commit `raw_assets/`.
+- **Map pin matching:** `location` must match a pin `name` in `map_pins/` exactly. Grep `map_pins/**/pins.yaml` before adding entries. Use the short aerodrome name in both pin and photo (`Atsugi Air Base`), not a longer caption form (`JMSDF Atsugi Air Base`). Add a new pin when the location is missing; use `pin_id` when names are ambiguous.
 - **Map pin ICAO codes:** add `icao: XXXX` to airport/air base pins when a code exists. Use an empty value for broad region pins or non-aerodrome locations without their own code. Mobile map labels prefer the ICAO code.
 - **Squadron logos and heroes:** optional `squadron_logo: filename.png` resolves from `raw_assets/` the same way as photos. Raster logos are resized to max 512 px and copied to `assets/logos/`. SVG logos can live directly in `assets/logos/` and be referenced with a relative path such as `../../../assets/logos/149-squadron.svg`. Optional `squadron_hero`/`squadron_hero_image` is processed as a web JPEG and displayed on the Squadrons page.
 - **Organisation override:** use `unit_type: organisation` for airline/operator entries that should be labelled Organisation instead of Squadron. These records remain in the Dex and viewer but are excluded from the Squadrons page.
 - **Dex grouping:** the UI groups by `aircraft_type`, not folder name. Multiple squadrons of the same type appear under one Dex card.
+- **Commit scope for content work:** stage new/changed `aircraft/**/entry.yaml`, `map_pins/**/pins.yaml`, rebuilt `data/`, and new/changed files under `assets/generated/` and `assets/logos/`. Never stage `raw_assets/`.
 - **Do not add** frontend frameworks, bundlers, map tile prefetching, or hidden attribution.
+
+## Agent Workflows
+
+### Add an aircraft entry from a user brief
+
+Typical user input: aircraft type, squadron name, photo filenames, caption, and sometimes a location.
+
+1. **Find precedents.** Read one or two similar `aircraft/**/entry.yaml` files (same country, operator, or aircraft family) and match their field style.
+2. **Verify photos.** Confirm each filename exists under `raw_assets/` (flat or mirrored). Note the exact spelling and extension (`.jpg` vs `.jpeg`).
+3. **Resolve the location.** Grep `map_pins/**/pins.yaml` for the aerodrome. If absent, add a pin with `id`, `name`, `icao` (when known), `coordinates: [lat, lon]`, and `enabled: true` in the correct country file (`map_pins/japan/pins.yaml`, `map_pins/singapore/pins.yaml`, etc.).
+4. **Create the entry.** Write `aircraft/<aircraft-type-slug>/<squadron-slug>/entry.yaml` with `aircraft_type`, `squadron_name`, `country`, and one photo object per image. Set `location` to the pin `name` exactly. Repeat `caption` per photo unless the user gives per-frame captions.
+5. **Rebuild.** Run `python3 tools/build_spotterdex.py` and fix any warnings (`photo source not found`, `photo has no matching map pin`).
+6. **Sanity-check output.** Confirm new records appear in `data/spotterdex.json` and generated JPEGs exist under `assets/generated/photos/`.
+
+Minimal entry example (flat `raw_assets/` photos):
+
+```yaml
+aircraft_type: Lockheed C-130R
+squadron_name: Air Transport Squadron 61
+country: Japan
+photos:
+  - path: jmsdf_c130_1.jpeg
+    location: Atsugi Air Base
+    caption: JMSDF C-130R taking off from Atsugi Air Base
+  - path: jmsdf_c130_2.jpeg
+    location: Atsugi Air Base
+    caption: JMSDF C-130R taking off from Atsugi Air Base
+```
+
+### Add a map pin
+
+1. Pick the country YAML under `map_pins/<country_slug>/pins.yaml` (folder uses underscores: `hong_kong`, `japan`, `singapore`).
+2. Append a pin with a unique `id` slug, human-readable `name`, `coordinates`, and `icao` for airfields.
+3. Rebuild. The pin appears on the World Map even before photos reference it.
+
+### Japan / JMSDF content patterns
+
+- `country: Japan` on entries.
+- Pin names follow `<Place> Air Base` or `<Place> Airport` (for example `Gifu Air Base`, `Atsugi Air Base`, `Naha Air Base`).
+- JASDF wing/squadron logos often live in `raw_assets/` as `jasdf_*.png` (for example `jasdf_adtw.png`, `jasdf_ew_sqn.png`). Reference with `squadron_logo: jasdf_adtw.png` when applicable.
+- ADTW-related squadrons commonly use folder `air-development-and-test-wing` and `squadron_name: Air Development and Test Wing`.
+- US Navy-style JMSDF unit names with parenthetical codes map to short folder slugs: `Air Development Squadron 51 (VX-51)` -> `vx-51`.
+
+### When the user asks to populate the project
+
+Expect batches of aircraft entries, not one-off code changes. Work entry-by-entry: YAML + pin (if needed) + rebuild once at the end for a batch. Do not hand-edit `data/spotterdex-data.js` or generated JPEGs. If rebuild is skipped in the environment, still create correct source YAML and tell the user to run the build locally.
 
 ## Site Structure
 

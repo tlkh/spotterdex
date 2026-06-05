@@ -1,5 +1,5 @@
 window.SPOTTERDEX_DATA = {
-  "generatedAt": "2026-05-31T08:50:32+00:00",
+  "generatedAt": "2026-06-05T13:19:48+00:00",
   "pins": [
     {
       "id": "hong-kong-international-airport",
@@ -8,6 +8,15 @@ window.SPOTTERDEX_DATA = {
       "icao": "VHHH",
       "lat": 22.3089,
       "lon": 113.92,
+      "enabled": true
+    },
+    {
+      "id": "atsugi-air-base",
+      "name": "Atsugi Air Base",
+      "country": "Japan",
+      "icao": "RJTA",
+      "lat": 35.4547,
+      "lon": 139.45,
       "enabled": true
     },
     {
@@ -355,6 +364,51 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
+      "id": "bell-uh-1-iroquois",
+      "typeName": "Bell UH-1 Iroquois",
+      "countries": [
+        "United States"
+      ],
+      "squadrons": [
+        {
+          "id": "bell-uh-1-iroquois-459th-airlift-squadron",
+          "name": "459th Airlift Squadron",
+          "country": "United States",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "bell-uh-1-iroquois-459th-airlift-squadron-usaf-huey-1-327d184c",
+            "bell-uh-1-iroquois-459th-airlift-squadron-usaf-huey-2-a3454c8b",
+            "bell-uh-1-iroquois-459th-airlift-squadron-usaf-huey-3-dfb3f360"
+          ],
+          "photoCount": 3
+        }
+      ],
+      "photoIds": [
+        "bell-uh-1-iroquois-459th-airlift-squadron-usaf-huey-1-327d184c",
+        "bell-uh-1-iroquois-459th-airlift-squadron-usaf-huey-2-a3454c8b",
+        "bell-uh-1-iroquois-459th-airlift-squadron-usaf-huey-3-dfb3f360"
+      ],
+      "coverPhoto": "bell-uh-1-iroquois-459th-airlift-squadron-usaf-huey-1-327d184c",
+      "stats": {
+        "photoCount": 3,
+        "unitCount": 1,
+        "squadronCount": 1,
+        "organisationCount": 0,
+        "locationCount": 1,
+        "locations": [
+          "Yokota Air Base"
+        ],
+        "firstDate": "2023-09-18",
+        "latestDate": "2023-09-18",
+        "countries": [
+          "United States"
+        ]
+      }
+    },
+    {
       "id": "boeing-747-400-f",
       "typeName": "Boeing 747-400(F)",
       "countries": [
@@ -435,6 +489,49 @@ window.SPOTTERDEX_DATA = {
         "latestDate": "2023-02-23",
         "countries": [
           "United States"
+        ]
+      }
+    },
+    {
+      "id": "boeing-777-300er",
+      "typeName": "Boeing 777-300ER",
+      "countries": [
+        "Japan"
+      ],
+      "squadrons": [
+        {
+          "id": "boeing-777-300er-701st-squadron-special-airlift-group",
+          "name": "701st Squadron, Special Airlift Group",
+          "country": "Japan",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "boeing-777-300er-701st-squadron-special-airlift-group-cygnus-1-eefe1457",
+            "boeing-777-300er-701st-squadron-special-airlift-group-cygnus-2-7a2cefa2"
+          ],
+          "photoCount": 2
+        }
+      ],
+      "photoIds": [
+        "boeing-777-300er-701st-squadron-special-airlift-group-cygnus-1-eefe1457",
+        "boeing-777-300er-701st-squadron-special-airlift-group-cygnus-2-7a2cefa2"
+      ],
+      "coverPhoto": "boeing-777-300er-701st-squadron-special-airlift-group-cygnus-1-eefe1457",
+      "stats": {
+        "photoCount": 2,
+        "unitCount": 1,
+        "squadronCount": 1,
+        "organisationCount": 0,
+        "locationCount": 1,
+        "locations": [
+          "Haneda Airport"
+        ],
+        "firstDate": "2023-09-11",
+        "latestDate": "2023-09-11",
+        "countries": [
+          "Japan"
         ]
       }
     },
@@ -528,6 +625,20 @@ window.SPOTTERDEX_DATA = {
       ],
       "squadrons": [
         {
+          "id": "boeing-c-40a-clipper-fleet-logistics-support-squadron-51-vr-51",
+          "name": "Fleet Logistics Support Squadron 51 (VR-51)",
+          "country": "United States",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "boeing-c-40a-clipper-fleet-logistics-support-squadron-51-vr-51-usn-clipper-1-ba218d93",
+            "boeing-c-40a-clipper-fleet-logistics-support-squadron-51-vr-51-usn-clipper-2-9393a5c9"
+          ],
+          "photoCount": 2
+        },
+        {
           "id": "boeing-c-40a-clipper-fleet-logistics-support-squadron-57-vr-57",
           "name": "Fleet Logistics Support Squadron 57 (VR-57)",
           "country": "United States",
@@ -542,20 +653,23 @@ window.SPOTTERDEX_DATA = {
         }
       ],
       "photoIds": [
+        "boeing-c-40a-clipper-fleet-logistics-support-squadron-51-vr-51-usn-clipper-1-ba218d93",
+        "boeing-c-40a-clipper-fleet-logistics-support-squadron-51-vr-51-usn-clipper-2-9393a5c9",
         "boeing-c-40a-clipper-fleet-logistics-support-squadron-57-vr-57-wsss-clipper-1-3f782975"
       ],
-      "coverPhoto": "boeing-c-40a-clipper-fleet-logistics-support-squadron-57-vr-57-wsss-clipper-1-3f782975",
+      "coverPhoto": "boeing-c-40a-clipper-fleet-logistics-support-squadron-51-vr-51-usn-clipper-1-ba218d93",
       "stats": {
-        "photoCount": 1,
-        "unitCount": 1,
-        "squadronCount": 1,
+        "photoCount": 3,
+        "unitCount": 2,
+        "squadronCount": 2,
         "organisationCount": 0,
-        "locationCount": 1,
+        "locationCount": 2,
         "locations": [
+          "Atsugi Air Base",
           "Changi Airport"
         ],
         "firstDate": "2023-06-30",
-        "latestDate": "2023-06-30",
+        "latestDate": "2023-09-23",
         "countries": [
           "United States"
         ]
@@ -1102,6 +1216,51 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
+      "id": "kawasaki-p-1",
+      "typeName": "Kawasaki P-1",
+      "countries": [
+        "Japan"
+      ],
+      "squadrons": [
+        {
+          "id": "kawasaki-p-1-air-patrol-squadron-3",
+          "name": "Air Patrol Squadron 3",
+          "country": "Japan",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "kawasaki-p-1-air-patrol-squadron-3-p1-1-4d1b8850",
+            "kawasaki-p-1-air-patrol-squadron-3-p1-2-497454c5",
+            "kawasaki-p-1-air-patrol-squadron-3-p1-3-3e9a87ab"
+          ],
+          "photoCount": 3
+        }
+      ],
+      "photoIds": [
+        "kawasaki-p-1-air-patrol-squadron-3-p1-1-4d1b8850",
+        "kawasaki-p-1-air-patrol-squadron-3-p1-2-497454c5",
+        "kawasaki-p-1-air-patrol-squadron-3-p1-3-3e9a87ab"
+      ],
+      "coverPhoto": "kawasaki-p-1-air-patrol-squadron-3-p1-1-4d1b8850",
+      "stats": {
+        "photoCount": 3,
+        "unitCount": 1,
+        "squadronCount": 1,
+        "organisationCount": 0,
+        "locationCount": 1,
+        "locations": [
+          "Atsugi Air Base"
+        ],
+        "firstDate": "2023-09-09",
+        "latestDate": "2023-09-09",
+        "countries": [
+          "Japan"
+        ]
+      }
+    },
+    {
       "id": "kawasaki-rc-2",
       "typeName": "Kawasaki RC-2",
       "countries": [
@@ -1178,6 +1337,141 @@ window.SPOTTERDEX_DATA = {
         ],
         "firstDate": "2026-04-08",
         "latestDate": "2026-04-08",
+        "countries": [
+          "Japan"
+        ]
+      }
+    },
+    {
+      "id": "kawasaki-up-3c-orion",
+      "typeName": "Kawasaki UP-3C Orion",
+      "countries": [
+        "Japan"
+      ],
+      "squadrons": [
+        {
+          "id": "kawasaki-up-3c-orion-air-development-squadron-51-vx-51",
+          "name": "Air Development Squadron 51 (VX-51)",
+          "country": "Japan",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-1-fea3d7fc",
+            "kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-2-cbf75cd5",
+            "kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-3-ab0347f6",
+            "kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-4-2223327b"
+          ],
+          "photoCount": 4
+        }
+      ],
+      "photoIds": [
+        "kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-1-fea3d7fc",
+        "kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-2-cbf75cd5",
+        "kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-3-ab0347f6",
+        "kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-4-2223327b"
+      ],
+      "coverPhoto": "kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-1-fea3d7fc",
+      "stats": {
+        "photoCount": 4,
+        "unitCount": 1,
+        "squadronCount": 1,
+        "organisationCount": 0,
+        "locationCount": 1,
+        "locations": [
+          "Atsugi Air Base"
+        ],
+        "firstDate": "2023-09-09",
+        "latestDate": "2023-09-23",
+        "countries": [
+          "Japan"
+        ]
+      }
+    },
+    {
+      "id": "lockheed-c-130j-super-hercules",
+      "typeName": "Lockheed C-130J Super Hercules",
+      "countries": [
+        "United States"
+      ],
+      "squadrons": [
+        {
+          "id": "lockheed-c-130j-super-hercules-36th-airlift-squadron",
+          "name": "36th Airlift Squadron",
+          "country": "United States",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "lockheed-c-130j-super-hercules-36th-airlift-squadron-usaf-c130-1-fbe9c3d3",
+            "lockheed-c-130j-super-hercules-36th-airlift-squadron-usaf-c130-2-cff435b3",
+            "lockheed-c-130j-super-hercules-36th-airlift-squadron-usaf-c130-3-b7c079bd"
+          ],
+          "photoCount": 3
+        }
+      ],
+      "photoIds": [
+        "lockheed-c-130j-super-hercules-36th-airlift-squadron-usaf-c130-1-fbe9c3d3",
+        "lockheed-c-130j-super-hercules-36th-airlift-squadron-usaf-c130-2-cff435b3",
+        "lockheed-c-130j-super-hercules-36th-airlift-squadron-usaf-c130-3-b7c079bd"
+      ],
+      "coverPhoto": "lockheed-c-130j-super-hercules-36th-airlift-squadron-usaf-c130-1-fbe9c3d3",
+      "stats": {
+        "photoCount": 3,
+        "unitCount": 1,
+        "squadronCount": 1,
+        "organisationCount": 0,
+        "locationCount": 1,
+        "locations": [
+          "Yokota Air Base"
+        ],
+        "firstDate": "2023-09-18",
+        "latestDate": "2023-09-18",
+        "countries": [
+          "United States"
+        ]
+      }
+    },
+    {
+      "id": "lockheed-c-130r",
+      "typeName": "Lockheed C-130R",
+      "countries": [
+        "Japan"
+      ],
+      "squadrons": [
+        {
+          "id": "lockheed-c-130r-air-transport-squadron-61",
+          "name": "Air Transport Squadron 61",
+          "country": "Japan",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "lockheed-c-130r-air-transport-squadron-61-jmsdf-c130-1-6408913f",
+            "lockheed-c-130r-air-transport-squadron-61-jmsdf-c130-2-d35f4b0a"
+          ],
+          "photoCount": 2
+        }
+      ],
+      "photoIds": [
+        "lockheed-c-130r-air-transport-squadron-61-jmsdf-c130-1-6408913f",
+        "lockheed-c-130r-air-transport-squadron-61-jmsdf-c130-2-d35f4b0a"
+      ],
+      "coverPhoto": "lockheed-c-130r-air-transport-squadron-61-jmsdf-c130-1-6408913f",
+      "stats": {
+        "photoCount": 2,
+        "unitCount": 1,
+        "squadronCount": 1,
+        "organisationCount": 0,
+        "locationCount": 1,
+        "locations": [
+          "Atsugi Air Base"
+        ],
+        "firstDate": "2023-09-09",
+        "latestDate": "2023-09-09",
         "countries": [
           "Japan"
         ]
@@ -1610,6 +1904,49 @@ window.SPOTTERDEX_DATA = {
         "latestDate": "2025-11-30",
         "countries": [
           "Japan"
+        ]
+      }
+    },
+    {
+      "id": "sikorsky-mh-60r-seahawk",
+      "typeName": "Sikorsky MH-60R Seahawk",
+      "countries": [
+        "United States"
+      ],
+      "squadrons": [
+        {
+          "id": "sikorsky-mh-60r-seahawk-helicopter-maritime-strike-squadron-51-hsm-51",
+          "name": "Helicopter Maritime Strike Squadron 51 (HSM-51)",
+          "country": "United States",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "sikorsky-mh-60r-seahawk-helicopter-maritime-strike-squadron-51-hsm-51-usn-seahawk-1-0fcaee4d",
+            "sikorsky-mh-60r-seahawk-helicopter-maritime-strike-squadron-51-hsm-51-usn-seahawk-2-1fd7b473"
+          ],
+          "photoCount": 2
+        }
+      ],
+      "photoIds": [
+        "sikorsky-mh-60r-seahawk-helicopter-maritime-strike-squadron-51-hsm-51-usn-seahawk-1-0fcaee4d",
+        "sikorsky-mh-60r-seahawk-helicopter-maritime-strike-squadron-51-hsm-51-usn-seahawk-2-1fd7b473"
+      ],
+      "coverPhoto": "sikorsky-mh-60r-seahawk-helicopter-maritime-strike-squadron-51-hsm-51-usn-seahawk-1-0fcaee4d",
+      "stats": {
+        "photoCount": 2,
+        "unitCount": 1,
+        "squadronCount": 1,
+        "organisationCount": 0,
+        "locationCount": 1,
+        "locations": [
+          "Atsugi Air Base"
+        ],
+        "firstDate": "2023-09-23",
+        "latestDate": "2023-09-23",
+        "countries": [
+          "United States"
         ]
       }
     }
@@ -2593,6 +2930,741 @@ window.SPOTTERDEX_DATA = {
         "DateTimeOriginal": "2023:12:20 18:34:16",
         "DateTimeDigitized": "2023:12:20 18:34:16",
         "DateTime": "2023:12:20 22:58:44"
+      }
+    },
+    {
+      "id": "sikorsky-mh-60r-seahawk-helicopter-maritime-strike-squadron-51-hsm-51-usn-seahawk-1-0fcaee4d",
+      "aircraftId": "sikorsky-mh-60r-seahawk",
+      "aircraftType": "Sikorsky MH-60R Seahawk",
+      "squadronId": "sikorsky-mh-60r-seahawk-helicopter-maritime-strike-squadron-51-hsm-51",
+      "squadronName": "Helicopter Maritime Strike Squadron 51 (HSM-51)",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "United States",
+      "year": "2023",
+      "date": "2023-09-23",
+      "sortDate": "2023-09-23",
+      "locationName": "Atsugi Air Base",
+      "pinId": "atsugi-air-base",
+      "title": "",
+      "caption": "USN MH-60R Seahawk landing at Atsugi Air Base in rainy weather",
+      "image": "assets/generated/photos/sikorsky-mh-60r-seahawk-helicopter-maritime-strike-squadron-51-hsm-51-usn-seahawk-1-0fcaee4d.jpg",
+      "thumbnail": "assets/generated/thumbs/sikorsky-mh-60r-seahawk-helicopter-maritime-strike-squadron-51-hsm-51-usn-seahawk-1-0fcaee4d.jpg",
+      "source": "raw_assets/usn_seahawk_1.jpeg",
+      "originalSize": "3138 x 2092",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "192.7mm",
+        "FNumber": "f/5.0",
+        "ExposureTime": "1/1000s",
+        "ISO": "320",
+        "DateTimeOriginal": "2023:09:23 14:05:59",
+        "DateTimeDigitized": "2023:09:23 14:05:59",
+        "DateTime": "2023:09:23 14:05:59"
+      }
+    },
+    {
+      "id": "sikorsky-mh-60r-seahawk-helicopter-maritime-strike-squadron-51-hsm-51-usn-seahawk-2-1fd7b473",
+      "aircraftId": "sikorsky-mh-60r-seahawk",
+      "aircraftType": "Sikorsky MH-60R Seahawk",
+      "squadronId": "sikorsky-mh-60r-seahawk-helicopter-maritime-strike-squadron-51-hsm-51",
+      "squadronName": "Helicopter Maritime Strike Squadron 51 (HSM-51)",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "United States",
+      "year": "2023",
+      "date": "2023-09-23",
+      "sortDate": "2023-09-23",
+      "locationName": "Atsugi Air Base",
+      "pinId": "atsugi-air-base",
+      "title": "",
+      "caption": "USN MH-60R Seahawk landing at Atsugi Air Base in rainy weather",
+      "image": "assets/generated/photos/sikorsky-mh-60r-seahawk-helicopter-maritime-strike-squadron-51-hsm-51-usn-seahawk-2-1fd7b473.jpg",
+      "thumbnail": "assets/generated/thumbs/sikorsky-mh-60r-seahawk-helicopter-maritime-strike-squadron-51-hsm-51-usn-seahawk-2-1fd7b473.jpg",
+      "source": "raw_assets/usn_seahawk_2.jpeg",
+      "originalSize": "4021 x 2681",
+      "processedSize": "2048 x 1366",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "146.8mm",
+        "FNumber": "f/5.0",
+        "ExposureTime": "1/1000s",
+        "ISO": "320",
+        "DateTimeOriginal": "2023:09:23 14:06:03",
+        "DateTimeDigitized": "2023:09:23 14:06:03",
+        "DateTime": "2023:09:23 14:06:03"
+      }
+    },
+    {
+      "id": "kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-4-2223327b",
+      "aircraftId": "kawasaki-up-3c-orion",
+      "aircraftType": "Kawasaki UP-3C Orion",
+      "squadronId": "kawasaki-up-3c-orion-air-development-squadron-51-vx-51",
+      "squadronName": "Air Development Squadron 51 (VX-51)",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2023",
+      "date": "2023-09-23",
+      "sortDate": "2023-09-23",
+      "locationName": "Atsugi Air Base",
+      "pinId": "atsugi-air-base",
+      "title": "",
+      "caption": "UP-3C Equipment testing plane at JMSDF Atsugi Air Base",
+      "image": "assets/generated/photos/kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-4-2223327b.jpg",
+      "thumbnail": "assets/generated/thumbs/kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-4-2223327b.jpg",
+      "source": "raw_assets/up3c_4.jpeg",
+      "originalSize": "3439 x 2293",
+      "processedSize": "2048 x 1366",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/640s",
+        "ISO": "500",
+        "DateTimeOriginal": "2023:09:23 15:51:10",
+        "DateTimeDigitized": "2023:09:23 15:51:10",
+        "DateTime": "2023:09:23 15:51:10"
+      }
+    },
+    {
+      "id": "boeing-c-40a-clipper-fleet-logistics-support-squadron-51-vr-51-usn-clipper-1-ba218d93",
+      "aircraftId": "boeing-c-40a-clipper",
+      "aircraftType": "Boeing C-40A Clipper",
+      "squadronId": "boeing-c-40a-clipper-fleet-logistics-support-squadron-51-vr-51",
+      "squadronName": "Fleet Logistics Support Squadron 51 (VR-51)",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "United States",
+      "year": "2023",
+      "date": "2023-09-23",
+      "sortDate": "2023-09-23",
+      "locationName": "Atsugi Air Base",
+      "pinId": "atsugi-air-base",
+      "title": "",
+      "caption": "USN Clipper landing at Atsugi Air Base in rainy weather",
+      "image": "assets/generated/photos/boeing-c-40a-clipper-fleet-logistics-support-squadron-51-vr-51-usn-clipper-1-ba218d93.jpg",
+      "thumbnail": "assets/generated/thumbs/boeing-c-40a-clipper-fleet-logistics-support-squadron-51-vr-51-usn-clipper-1-ba218d93.jpg",
+      "source": "raw_assets/usn_clipper_1.jpeg",
+      "originalSize": "4544 x 3029",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "125",
+        "DateTimeOriginal": "2023:09:23 13:19:40",
+        "DateTimeDigitized": "2023:09:23 13:19:40",
+        "DateTime": "2023:09:23 13:19:40"
+      }
+    },
+    {
+      "id": "boeing-c-40a-clipper-fleet-logistics-support-squadron-51-vr-51-usn-clipper-2-9393a5c9",
+      "aircraftId": "boeing-c-40a-clipper",
+      "aircraftType": "Boeing C-40A Clipper",
+      "squadronId": "boeing-c-40a-clipper-fleet-logistics-support-squadron-51-vr-51",
+      "squadronName": "Fleet Logistics Support Squadron 51 (VR-51)",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "United States",
+      "year": "2023",
+      "date": "2023-09-23",
+      "sortDate": "2023-09-23",
+      "locationName": "Atsugi Air Base",
+      "pinId": "atsugi-air-base",
+      "title": "",
+      "caption": "USN Clipper landing at Atsugi Air Base in rainy weather",
+      "image": "assets/generated/photos/boeing-c-40a-clipper-fleet-logistics-support-squadron-51-vr-51-usn-clipper-2-9393a5c9.jpg",
+      "thumbnail": "assets/generated/thumbs/boeing-c-40a-clipper-fleet-logistics-support-squadron-51-vr-51-usn-clipper-2-9393a5c9.jpg",
+      "source": "raw_assets/usn_clipper_2.jpeg",
+      "originalSize": "4986 x 3324",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "30.5mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:09:23 13:19:56",
+        "DateTimeDigitized": "2023:09:23 13:19:56",
+        "DateTime": "2023:09:23 13:19:56"
+      }
+    },
+    {
+      "id": "lockheed-c-130j-super-hercules-36th-airlift-squadron-usaf-c130-1-fbe9c3d3",
+      "aircraftId": "lockheed-c-130j-super-hercules",
+      "aircraftType": "Lockheed C-130J Super Hercules",
+      "squadronId": "lockheed-c-130j-super-hercules-36th-airlift-squadron",
+      "squadronName": "36th Airlift Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "United States",
+      "year": "2023",
+      "date": "2023-09-18",
+      "sortDate": "2023-09-18",
+      "locationName": "Yokota Air Base",
+      "pinId": "yokota-air-base",
+      "title": "",
+      "caption": "USAF C-130J Super Hercules at Yokota Air Base",
+      "image": "assets/generated/photos/lockheed-c-130j-super-hercules-36th-airlift-squadron-usaf-c130-1-fbe9c3d3.jpg",
+      "thumbnail": "assets/generated/thumbs/lockheed-c-130j-super-hercules-36th-airlift-squadron-usaf-c130-1-fbe9c3d3.jpg",
+      "source": "raw_assets/usaf_c130_1.jpeg",
+      "originalSize": "4575 x 3050",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/1000s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:09:18 13:56:25",
+        "DateTimeDigitized": "2023:09:18 13:56:25",
+        "DateTime": "2023:09:18 13:56:25"
+      }
+    },
+    {
+      "id": "lockheed-c-130j-super-hercules-36th-airlift-squadron-usaf-c130-2-cff435b3",
+      "aircraftId": "lockheed-c-130j-super-hercules",
+      "aircraftType": "Lockheed C-130J Super Hercules",
+      "squadronId": "lockheed-c-130j-super-hercules-36th-airlift-squadron",
+      "squadronName": "36th Airlift Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "United States",
+      "year": "2023",
+      "date": "2023-09-18",
+      "sortDate": "2023-09-18",
+      "locationName": "Yokota Air Base",
+      "pinId": "yokota-air-base",
+      "title": "",
+      "caption": "USAF C-130J Super Hercules at Yokota Air Base",
+      "image": "assets/generated/photos/lockheed-c-130j-super-hercules-36th-airlift-squadron-usaf-c130-2-cff435b3.jpg",
+      "thumbnail": "assets/generated/thumbs/lockheed-c-130j-super-hercules-36th-airlift-squadron-usaf-c130-2-cff435b3.jpg",
+      "source": "raw_assets/usaf_c130_2.jpeg",
+      "originalSize": "5003 x 3335",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "75.8mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/1000s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:09:18 13:56:55",
+        "DateTimeDigitized": "2023:09:18 13:56:55",
+        "DateTime": "2023:09:18 13:56:55"
+      }
+    },
+    {
+      "id": "lockheed-c-130j-super-hercules-36th-airlift-squadron-usaf-c130-3-b7c079bd",
+      "aircraftId": "lockheed-c-130j-super-hercules",
+      "aircraftType": "Lockheed C-130J Super Hercules",
+      "squadronId": "lockheed-c-130j-super-hercules-36th-airlift-squadron",
+      "squadronName": "36th Airlift Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "United States",
+      "year": "2023",
+      "date": "2023-09-18",
+      "sortDate": "2023-09-18",
+      "locationName": "Yokota Air Base",
+      "pinId": "yokota-air-base",
+      "title": "",
+      "caption": "USAF C-130J Super Hercules at Yokota Air Base",
+      "image": "assets/generated/photos/lockheed-c-130j-super-hercules-36th-airlift-squadron-usaf-c130-3-b7c079bd.jpg",
+      "thumbnail": "assets/generated/thumbs/lockheed-c-130j-super-hercules-36th-airlift-squadron-usaf-c130-3-b7c079bd.jpg",
+      "source": "raw_assets/usaf_c130_3.jpeg",
+      "originalSize": "4456 x 2971",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "75.8mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/1000s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:09:18 13:56:52",
+        "DateTimeDigitized": "2023:09:18 13:56:52",
+        "DateTime": "2023:09:18 13:56:52"
+      }
+    },
+    {
+      "id": "bell-uh-1-iroquois-459th-airlift-squadron-usaf-huey-1-327d184c",
+      "aircraftId": "bell-uh-1-iroquois",
+      "aircraftType": "Bell UH-1 Iroquois",
+      "squadronId": "bell-uh-1-iroquois-459th-airlift-squadron",
+      "squadronName": "459th Airlift Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "United States",
+      "year": "2023",
+      "date": "2023-09-18",
+      "sortDate": "2023-09-18",
+      "locationName": "Yokota Air Base",
+      "pinId": "yokota-air-base",
+      "title": "",
+      "caption": "USAF UH-1 Iroquois (Huey) at Yokota Air Base",
+      "image": "assets/generated/photos/bell-uh-1-iroquois-459th-airlift-squadron-usaf-huey-1-327d184c.jpg",
+      "thumbnail": "assets/generated/thumbs/bell-uh-1-iroquois-459th-airlift-squadron-usaf-huey-1-327d184c.jpg",
+      "source": "raw_assets/usaf_huey_1.jpeg",
+      "originalSize": "4242 x 2828",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/1000s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:09:18 13:55:23",
+        "DateTimeDigitized": "2023:09:18 13:55:23",
+        "DateTime": "2023:09:18 13:55:23"
+      }
+    },
+    {
+      "id": "bell-uh-1-iroquois-459th-airlift-squadron-usaf-huey-2-a3454c8b",
+      "aircraftId": "bell-uh-1-iroquois",
+      "aircraftType": "Bell UH-1 Iroquois",
+      "squadronId": "bell-uh-1-iroquois-459th-airlift-squadron",
+      "squadronName": "459th Airlift Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "United States",
+      "year": "2023",
+      "date": "2023-09-18",
+      "sortDate": "2023-09-18",
+      "locationName": "Yokota Air Base",
+      "pinId": "yokota-air-base",
+      "title": "",
+      "caption": "USAF UH-1 Iroquois (Huey) at Yokota Air Base",
+      "image": "assets/generated/photos/bell-uh-1-iroquois-459th-airlift-squadron-usaf-huey-2-a3454c8b.jpg",
+      "thumbnail": "assets/generated/thumbs/bell-uh-1-iroquois-459th-airlift-squadron-usaf-huey-2-a3454c8b.jpg",
+      "source": "raw_assets/usaf_huey_2.jpeg",
+      "originalSize": "3496 x 2331",
+      "processedSize": "2048 x 1366",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "177.9mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/1000s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:09:18 13:30:49",
+        "DateTimeDigitized": "2023:09:18 13:30:49",
+        "DateTime": "2023:09:18 13:30:49"
+      }
+    },
+    {
+      "id": "bell-uh-1-iroquois-459th-airlift-squadron-usaf-huey-3-dfb3f360",
+      "aircraftId": "bell-uh-1-iroquois",
+      "aircraftType": "Bell UH-1 Iroquois",
+      "squadronId": "bell-uh-1-iroquois-459th-airlift-squadron",
+      "squadronName": "459th Airlift Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "United States",
+      "year": "2023",
+      "date": "2023-09-18",
+      "sortDate": "2023-09-18",
+      "locationName": "Yokota Air Base",
+      "pinId": "yokota-air-base",
+      "title": "",
+      "caption": "USAF UH-1 Iroquois (Huey) at Yokota Air Base",
+      "image": "assets/generated/photos/bell-uh-1-iroquois-459th-airlift-squadron-usaf-huey-3-dfb3f360.jpg",
+      "thumbnail": "assets/generated/thumbs/bell-uh-1-iroquois-459th-airlift-squadron-usaf-huey-3-dfb3f360.jpg",
+      "source": "raw_assets/usaf_huey_3.jpeg",
+      "originalSize": "4566 x 3044",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/11.0",
+        "ExposureTime": "1/30s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:09:18 14:03:54",
+        "DateTimeDigitized": "2023:09:18 14:03:54",
+        "DateTime": "2023:09:18 14:03:54"
+      }
+    },
+    {
+      "id": "boeing-777-300er-701st-squadron-special-airlift-group-cygnus-1-eefe1457",
+      "aircraftId": "boeing-777-300er",
+      "aircraftType": "Boeing 777-300ER",
+      "squadronId": "boeing-777-300er-701st-squadron-special-airlift-group",
+      "squadronName": "701st Squadron, Special Airlift Group",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2023",
+      "date": "2023-09-11",
+      "sortDate": "2023-09-11",
+      "locationName": "Haneda Airport",
+      "pinId": "haneda-airport",
+      "title": "",
+      "caption": "Japan Air Force One (JASDF Boeing 777-300ER) landing at Haneda Airport",
+      "image": "assets/generated/photos/boeing-777-300er-701st-squadron-special-airlift-group-cygnus-1-eefe1457.jpg",
+      "thumbnail": "assets/generated/thumbs/boeing-777-300er-701st-squadron-special-airlift-group-cygnus-1-eefe1457.jpg",
+      "source": "raw_assets/cygnus_1.jpeg",
+      "originalSize": "4964 x 3309",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "105.8mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:09:11 07:27:36",
+        "DateTimeDigitized": "2023:09:11 07:27:36",
+        "DateTime": "2023:09:11 07:27:36"
+      }
+    },
+    {
+      "id": "boeing-777-300er-701st-squadron-special-airlift-group-cygnus-2-7a2cefa2",
+      "aircraftId": "boeing-777-300er",
+      "aircraftType": "Boeing 777-300ER",
+      "squadronId": "boeing-777-300er-701st-squadron-special-airlift-group",
+      "squadronName": "701st Squadron, Special Airlift Group",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2023",
+      "date": "2023-09-11",
+      "sortDate": "2023-09-11",
+      "locationName": "Haneda Airport",
+      "pinId": "haneda-airport",
+      "title": "",
+      "caption": "Japan Air Force One (JASDF Boeing 777-300ER) landing at Haneda Airport",
+      "image": "assets/generated/photos/boeing-777-300er-701st-squadron-special-airlift-group-cygnus-2-7a2cefa2.jpg",
+      "thumbnail": "assets/generated/thumbs/boeing-777-300er-701st-squadron-special-airlift-group-cygnus-2-7a2cefa2.jpg",
+      "source": "raw_assets/cygnus_2.jpeg",
+      "originalSize": "4838 x 3225",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/1000s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:09:11 07:17:30",
+        "DateTimeDigitized": "2023:09:11 07:17:30",
+        "DateTime": "2023:09:11 07:17:30"
+      }
+    },
+    {
+      "id": "lockheed-c-130r-air-transport-squadron-61-jmsdf-c130-1-6408913f",
+      "aircraftId": "lockheed-c-130r",
+      "aircraftType": "Lockheed C-130R",
+      "squadronId": "lockheed-c-130r-air-transport-squadron-61",
+      "squadronName": "Air Transport Squadron 61",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2023",
+      "date": "2023-09-09",
+      "sortDate": "2023-09-09",
+      "locationName": "Atsugi Air Base",
+      "pinId": "atsugi-air-base",
+      "title": "",
+      "caption": "JMSDF C-130R taking off from Atsugi Air Base",
+      "image": "assets/generated/photos/lockheed-c-130r-air-transport-squadron-61-jmsdf-c130-1-6408913f.jpg",
+      "thumbnail": "assets/generated/thumbs/lockheed-c-130r-air-transport-squadron-61-jmsdf-c130-1-6408913f.jpg",
+      "source": "raw_assets/jmsdf_c130_1.jpeg",
+      "originalSize": "4960 x 3307",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/1000s",
+        "ISO": "200",
+        "DateTimeOriginal": "2023:09:09 10:12:14",
+        "DateTimeDigitized": "2023:09:09 10:12:14",
+        "DateTime": "2023:09:09 10:12:14"
+      }
+    },
+    {
+      "id": "lockheed-c-130r-air-transport-squadron-61-jmsdf-c130-2-d35f4b0a",
+      "aircraftId": "lockheed-c-130r",
+      "aircraftType": "Lockheed C-130R",
+      "squadronId": "lockheed-c-130r-air-transport-squadron-61",
+      "squadronName": "Air Transport Squadron 61",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2023",
+      "date": "2023-09-09",
+      "sortDate": "2023-09-09",
+      "locationName": "Atsugi Air Base",
+      "pinId": "atsugi-air-base",
+      "title": "",
+      "caption": "JMSDF C-130R taking off from Atsugi Air Base",
+      "image": "assets/generated/photos/lockheed-c-130r-air-transport-squadron-61-jmsdf-c130-2-d35f4b0a.jpg",
+      "thumbnail": "assets/generated/thumbs/lockheed-c-130r-air-transport-squadron-61-jmsdf-c130-2-d35f4b0a.jpg",
+      "source": "raw_assets/jmsdf_c130_2.jpeg",
+      "originalSize": "5472 x 3648",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "31.3mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/1000s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:09:09 10:12:29",
+        "DateTimeDigitized": "2023:09:09 10:12:29",
+        "DateTime": "2023:09:09 10:12:29"
+      }
+    },
+    {
+      "id": "kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-1-fea3d7fc",
+      "aircraftId": "kawasaki-up-3c-orion",
+      "aircraftType": "Kawasaki UP-3C Orion",
+      "squadronId": "kawasaki-up-3c-orion-air-development-squadron-51-vx-51",
+      "squadronName": "Air Development Squadron 51 (VX-51)",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2023",
+      "date": "2023-09-09",
+      "sortDate": "2023-09-09",
+      "locationName": "Atsugi Air Base",
+      "pinId": "atsugi-air-base",
+      "title": "",
+      "caption": "UP-3C Equipment testing plane at JMSDF Atsugi Air Base",
+      "image": "assets/generated/photos/kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-1-fea3d7fc.jpg",
+      "thumbnail": "assets/generated/thumbs/kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-1-fea3d7fc.jpg",
+      "source": "raw_assets/up3c_1.jpeg",
+      "originalSize": "5449 x 3633",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "132.2mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/1000s",
+        "ISO": "200",
+        "DateTimeOriginal": "2023:09:09 08:49:18",
+        "DateTimeDigitized": "2023:09:09 08:49:18",
+        "DateTime": "2023:09:09 08:49:18"
+      }
+    },
+    {
+      "id": "kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-2-cbf75cd5",
+      "aircraftId": "kawasaki-up-3c-orion",
+      "aircraftType": "Kawasaki UP-3C Orion",
+      "squadronId": "kawasaki-up-3c-orion-air-development-squadron-51-vx-51",
+      "squadronName": "Air Development Squadron 51 (VX-51)",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2023",
+      "date": "2023-09-09",
+      "sortDate": "2023-09-09",
+      "locationName": "Atsugi Air Base",
+      "pinId": "atsugi-air-base",
+      "title": "",
+      "caption": "UP-3C Equipment testing plane at JMSDF Atsugi Air Base",
+      "image": "assets/generated/photos/kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-2-cbf75cd5.jpg",
+      "thumbnail": "assets/generated/thumbs/kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-2-cbf75cd5.jpg",
+      "source": "raw_assets/up3c_2.jpeg",
+      "originalSize": "5298 x 3532",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/1000s",
+        "ISO": "320",
+        "DateTimeOriginal": "2023:09:09 08:46:17",
+        "DateTimeDigitized": "2023:09:09 08:46:17",
+        "DateTime": "2023:09:09 08:46:17"
+      }
+    },
+    {
+      "id": "kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-3-ab0347f6",
+      "aircraftId": "kawasaki-up-3c-orion",
+      "aircraftType": "Kawasaki UP-3C Orion",
+      "squadronId": "kawasaki-up-3c-orion-air-development-squadron-51-vx-51",
+      "squadronName": "Air Development Squadron 51 (VX-51)",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2023",
+      "date": "2023-09-09",
+      "sortDate": "2023-09-09",
+      "locationName": "Atsugi Air Base",
+      "pinId": "atsugi-air-base",
+      "title": "",
+      "caption": "UP-3C Equipment testing plane at JMSDF Atsugi Air Base",
+      "image": "assets/generated/photos/kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-3-ab0347f6.jpg",
+      "thumbnail": "assets/generated/thumbs/kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-3-ab0347f6.jpg",
+      "source": "raw_assets/up3c_3.jpeg",
+      "originalSize": "5413 x 3609",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "186.6mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/1000s",
+        "ISO": "320",
+        "DateTimeOriginal": "2023:09:09 08:47:01",
+        "DateTimeDigitized": "2023:09:09 08:47:01",
+        "DateTime": "2023:09:09 08:47:01"
+      }
+    },
+    {
+      "id": "kawasaki-p-1-air-patrol-squadron-3-p1-1-4d1b8850",
+      "aircraftId": "kawasaki-p-1",
+      "aircraftType": "Kawasaki P-1",
+      "squadronId": "kawasaki-p-1-air-patrol-squadron-3",
+      "squadronName": "Air Patrol Squadron 3",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2023",
+      "date": "2023-09-09",
+      "sortDate": "2023-09-09",
+      "locationName": "Atsugi Air Base",
+      "pinId": "atsugi-air-base",
+      "title": "",
+      "caption": "JMSDF P-1 MPA at Atsugi Air Base",
+      "image": "assets/generated/photos/kawasaki-p-1-air-patrol-squadron-3-p1-1-4d1b8850.jpg",
+      "thumbnail": "assets/generated/thumbs/kawasaki-p-1-air-patrol-squadron-3-p1-1-4d1b8850.jpg",
+      "source": "raw_assets/p1_1.jpeg",
+      "originalSize": "5381 x 3587",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "174.9mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/1000s",
+        "ISO": "200",
+        "DateTimeOriginal": "2023:09:09 10:45:08",
+        "DateTimeDigitized": "2023:09:09 10:45:08",
+        "DateTime": "2023:09:09 10:45:08"
+      }
+    },
+    {
+      "id": "kawasaki-p-1-air-patrol-squadron-3-p1-2-497454c5",
+      "aircraftId": "kawasaki-p-1",
+      "aircraftType": "Kawasaki P-1",
+      "squadronId": "kawasaki-p-1-air-patrol-squadron-3",
+      "squadronName": "Air Patrol Squadron 3",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2023",
+      "date": "2023-09-09",
+      "sortDate": "2023-09-09",
+      "locationName": "Atsugi Air Base",
+      "pinId": "atsugi-air-base",
+      "title": "",
+      "caption": "JMSDF P-1 MPA at Atsugi Air Base",
+      "image": "assets/generated/photos/kawasaki-p-1-air-patrol-squadron-3-p1-2-497454c5.jpg",
+      "thumbnail": "assets/generated/thumbs/kawasaki-p-1-air-patrol-squadron-3-p1-2-497454c5.jpg",
+      "source": "raw_assets/p1_2.jpeg",
+      "originalSize": "5472 x 3648",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "146.8mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/1000s",
+        "ISO": "200",
+        "DateTimeOriginal": "2023:09:09 10:45:42",
+        "DateTimeDigitized": "2023:09:09 10:45:42",
+        "DateTime": "2023:09:09 10:45:42"
+      }
+    },
+    {
+      "id": "kawasaki-p-1-air-patrol-squadron-3-p1-3-3e9a87ab",
+      "aircraftId": "kawasaki-p-1",
+      "aircraftType": "Kawasaki P-1",
+      "squadronId": "kawasaki-p-1-air-patrol-squadron-3",
+      "squadronName": "Air Patrol Squadron 3",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2023",
+      "date": "2023-09-09",
+      "sortDate": "2023-09-09",
+      "locationName": "Atsugi Air Base",
+      "pinId": "atsugi-air-base",
+      "title": "",
+      "caption": "JMSDF P-1 MPA at Atsugi Air Base",
+      "image": "assets/generated/photos/kawasaki-p-1-air-patrol-squadron-3-p1-3-3e9a87ab.jpg",
+      "thumbnail": "assets/generated/thumbs/kawasaki-p-1-air-patrol-squadron-3-p1-3-3e9a87ab.jpg",
+      "source": "raw_assets/p1_3.jpeg",
+      "originalSize": "5278 x 3519",
+      "processedSize": "2048 x 1365",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "168mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/1000s",
+        "ISO": "250",
+        "DateTimeOriginal": "2023:09:09 10:45:26",
+        "DateTimeDigitized": "2023:09:09 10:45:26",
+        "DateTime": "2023:09:09 10:45:26"
       }
     },
     {

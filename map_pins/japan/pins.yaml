@@ -66,6 +66,11 @@ pins:
     icao: RJTK
     coordinates: [35.3983, 139.9100]
     enabled: true
+  - id: atsugi-air-base
+    name: Atsugi Air Base
+    icao: RJTA
+    coordinates: [35.4547, 139.4500]
+    enabled: true
   - id: chitose-air-base
     name: Chitose Air Base
     icao: RJCJ
