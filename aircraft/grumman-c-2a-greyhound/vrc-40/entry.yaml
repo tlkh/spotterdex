@@ -4,6 +4,7 @@ unit_type: squadron
 country: United States
 squadron_logo: vrc_40.png
 photos:
-  - path: c2_vrc40.jpg
-    location: Changi Airport
-    caption: Grumman C-2A Greyhound from VRC-40 "Rawhides" landing in Singapore
+- path: c2_vrc40.jpg
+  location: Changi Airport
+  caption: Grumman C-2A Greyhound from VRC-40 "Rawhides" landing in Singapore
+aircraft_family: heavy

@@ -2,9 +2,10 @@ aircraft_type: Lockheed C-130R
 squadron_name: Air Transport Squadron 61
 country: Japan
 photos:
-  - path: jmsdf_c130_1.jpeg
-    location: Atsugi Air Base
-    caption: JMSDF C-130R taking off from Atsugi Air Base
-  - path: jmsdf_c130_2.jpeg
-    location: Atsugi Air Base
-    caption: JMSDF C-130R taking off from Atsugi Air Base
+- path: jmsdf_c130_1.jpeg
+  location: Atsugi Air Base
+  caption: JMSDF C-130R taking off from Atsugi Air Base
+- path: jmsdf_c130_2.jpeg
+  location: Atsugi Air Base
+  caption: JMSDF C-130R taking off from Atsugi Air Base
+aircraft_family: heavy

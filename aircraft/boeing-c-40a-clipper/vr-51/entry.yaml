@@ -3,9 +3,10 @@ squadron_name: Fleet Logistics Support Squadron 51 (VR-51)
 unit_type: squadron
 country: United States
 photos:
-  - path: usn_clipper_1.jpeg
-    location: Atsugi Air Base
-    caption: USN Clipper landing at Atsugi Air Base in rainy weather
-  - path: usn_clipper_2.jpeg
-    location: Atsugi Air Base
-    caption: USN Clipper landing at Atsugi Air Base in rainy weather
+- path: usn_clipper_1.jpeg
+  location: Atsugi Air Base
+  caption: USN Clipper landing at Atsugi Air Base in rainy weather
+- path: usn_clipper_2.jpeg
+  location: Atsugi Air Base
+  caption: USN Clipper landing at Atsugi Air Base in rainy weather
+aircraft_family: heavy

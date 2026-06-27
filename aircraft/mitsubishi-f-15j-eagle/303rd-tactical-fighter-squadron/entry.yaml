@@ -3,7 +3,8 @@ squadron_name: 303rd Tactical Fighter Squadron
 squadron_logo: jasdf_303.png
 country: Japan
 photos:
-  - path: 728893.jpg
-    year: 2025
-    location: Komatsu Air Base
-    caption: Mitsubishi F-15J Eagle from 303 TFS taking off from Komatsu Air Base in Japan.
+- path: 728893.jpg
+  year: 2025
+  location: Komatsu Air Base
+  caption: Mitsubishi F-15J Eagle from 303 TFS taking off from Komatsu Air Base in Japan.
+aircraft_family: fighter

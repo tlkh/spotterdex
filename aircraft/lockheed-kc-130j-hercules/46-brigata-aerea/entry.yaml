@@ -3,6 +3,7 @@ squadron_name: 46^ Brigata Aerea
 unit_type: squadron
 country: Italy
 photos:
-  - path: italy_c130.jpg
-    location: Singapore
-    caption: Italian Air Force KC-130J taking off from Singapore
+- path: italy_c130.jpg
+  location: Singapore
+  caption: Italian Air Force KC-130J taking off from Singapore
+aircraft_family: heavy

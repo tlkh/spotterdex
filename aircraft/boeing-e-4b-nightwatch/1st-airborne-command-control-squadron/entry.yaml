@@ -4,6 +4,7 @@ unit_type: squadron
 country: United States
 squadron_logo: 1st_Command_&_Control_Squadron.png
 photos:
-  - path: e4b_1.jpg
-    location: Singapore
-    caption: Doomsday plane (E-4B Nightwatch) taking off from Singapore after annual IISS Shangri-La Dialogue
+- path: e4b_1.jpg
+  location: Singapore
+  caption: Doomsday plane (E-4B Nightwatch) taking off from Singapore after annual IISS Shangri-La Dialogue
+aircraft_family: heavy

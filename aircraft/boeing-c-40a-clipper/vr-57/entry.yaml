@@ -3,6 +3,7 @@ squadron_name: Fleet Logistics Support Squadron 57 (VR-57)
 unit_type: squadron
 country: United States
 photos:
-  - path: wsss_clipper_1.jpg
-    location: Changi Airport
-    caption: United States Navy C-40A Clipper from VR-57 landing at Singapore Changi Airport
+- path: wsss_clipper_1.jpg
+  location: Changi Airport
+  caption: United States Navy C-40A Clipper from VR-57 landing at Singapore Changi Airport
+aircraft_family: heavy

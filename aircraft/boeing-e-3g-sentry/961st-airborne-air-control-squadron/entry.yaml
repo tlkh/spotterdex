@@ -3,7 +3,8 @@ squadron_name: 961st Airborne Air Control Squadron
 squadron_logo: usaf_961_ronin.png
 country: United States
 photos:
-  - path: zz_0007.jpg
-    year: 2025
-    location: Kadena Air Base
-    caption: Boeing E-3G Sentry from the 961st Airborne Air Control Squadron, 18th Wing, at Kadena Air Base.
+- path: zz_0007.jpg
+  year: 2025
+  location: Kadena Air Base
+  caption: Boeing E-3G Sentry from the 961st Airborne Air Control Squadron, 18th Wing, at Kadena Air Base.
+aircraft_family: heavy

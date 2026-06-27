@@ -3,6 +3,7 @@ squadron_name: No. 36 Squadron
 unit_type: squadron
 country: Australia
 photos:
-  - path: raaf_c17.jpg
-    location: Singapore
-    caption: RAAF C-17 from No. 36 Squadron landing in Singapore
+- path: raaf_c17.jpg
+  location: Singapore
+  caption: RAAF C-17 from No. 36 Squadron landing in Singapore
+aircraft_family: heavy

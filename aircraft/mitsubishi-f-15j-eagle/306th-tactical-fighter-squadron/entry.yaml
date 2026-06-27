@@ -3,7 +3,8 @@ squadron_name: 306th Tactical Fighter Squadron
 squadron_logo: jasdf_306.png
 country: Japan
 photos:
-  - path: 928907.jpg
-    year: 2025
-    location: Komatsu Air Base
-    caption: Mitsubishi F-15J Eagle from 306 TFS taking off from Komatsu Air Base in Japan.
+- path: 928907.jpg
+  year: 2025
+  location: Komatsu Air Base
+  caption: Mitsubishi F-15J Eagle from 306 TFS taking off from Komatsu Air Base in Japan.
+aircraft_family: fighter

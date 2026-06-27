@@ -1,8 +1,9 @@
 aircraft_type: G550 CAEW
-squadron_name: 14° Stormo
+squadron_name: "14\xB0 Stormo"
 unit_type: squadron
 country: Italy
 photos:
-  - path: italy_g550.jpg
-    location: Singapore
-    caption: Italian Air Force (Aeronautica Militare) G550 Conformal Airborne Early Warning (CAEW) taking off from Singapore
+- path: italy_g550.jpg
+  location: Singapore
+  caption: Italian Air Force (Aeronautica Militare) G550 Conformal Airborne Early Warning (CAEW) taking off from Singapore
+aircraft_family: heavy

@@ -1,78 +1,80 @@
 country: Japan
 pins:
-  - id: naha-air-base
-    name: Naha Air Base
-    icao: ROAH
-    coordinates: [26.1958, 127.6458]
-    enabled: true
-  - id: kadena-air-base
-    name: Kadena Air Base
-    icao: RODN
-    coordinates: [26.3556, 127.7680]
-    enabled: true
-  - id: mcas-futenma
-    name: MCAS Futenma
-    icao: ROTM
-    coordinates: [26.2743, 127.7560]
-    enabled: true
-  - id: tsuiki-air-base
-    name: Tsuiki Air Base
-    icao: RJFZ
-    coordinates: [33.6850, 131.0400]
-    enabled: true
-  - id: kitakyushu-airport
-    name: Kitakyushu Airport
-    icao: RJFR
-    coordinates: [33.8459, 131.0350]
-    enabled: true
-  - id: komaki-air-base
-    name: Komaki Air Base
-    icao: RJNA
-    coordinates: [35.2550, 136.9244]
-    enabled: true
-  - id: gifu-air-base
-    name: Gifu Air Base
-    icao: RJNG
-    hero_photo: gifu_formation_2.jpeg
-    coordinates: [35.3939, 136.8700]
-    enabled: true
-  - id: komatsu-air-base
-    name: Komatsu Air Base
-    icao: RJNK
-    coordinates: [36.3933, 136.4067]
-    enabled: true
-  - id: yokota-air-base
-    name: Yokota Air Base
-    icao: RJTY
-    coordinates: [35.7485, 139.3480]
-    enabled: true
-  - id: iruma-air-base
-    name: Iruma Air Base
-    icao: RJTJ
-    coordinates: [35.8419, 139.4110]
-    enabled: true
-  - id: chofu-airport
-    name: Chofu Airport
-    icao: RJTF
-    coordinates: [35.6717, 139.5280]
-    enabled: true
-  - id: haneda-airport
-    name: Haneda Airport
-    icao: RJTT
-    coordinates: [35.5523, 139.7800]
-    enabled: true
-  - id: kisarazu-airfield
-    name: Kisarazu Airfield
-    icao: RJTK
-    coordinates: [35.3983, 139.9100]
-    enabled: true
-  - id: atsugi-air-base
-    name: Atsugi Air Base
-    icao: RJTA
-    coordinates: [35.4547, 139.4500]
-    enabled: true
-  - id: chitose-air-base
-    name: Chitose Air Base
-    icao: RJCJ
-    coordinates: [42.7945, 141.6664]
-    enabled: true
+- id: naha-air-base
+  name: Naha Air Base
+  icao: ROAH
+  coordinates: [26.1958, 127.6458]
+  enabled: true
+- id: kadena-air-base
+  name: Kadena Air Base
+  icao: RODN
+  coordinates: [26.3556, 127.768]
+  enabled: true
+- id: mcas-futenma
+  name: MCAS Futenma
+  icao: ROTM
+  coordinates: [26.2743, 127.756]
+  enabled: true
+- id: tsuiki-air-base
+  name: Tsuiki Air Base
+  icao: RJFZ
+  coordinates: [33.685, 131.04]
+  enabled: true
+  hero_photo: DSC06176-Enhanced-NR.jpeg
+- id: kitakyushu-airport
+  name: Kitakyushu Airport
+  icao: RJFR
+  coordinates: [33.8459, 131.035]
+  enabled: true
+- id: komaki-air-base
+  name: Komaki Air Base
+  icao: RJNA
+  coordinates: [35.255, 136.9244]
+  enabled: true
+- id: gifu-air-base
+  name: Gifu Air Base
+  icao: RJNG
+  hero_photo: gifu_formation_2.jpeg
+  coordinates: [35.3939, 136.87]
+  enabled: true
+- id: komatsu-air-base
+  name: Komatsu Air Base
+  icao: RJNK
+  coordinates: [36.3933, 136.4067]
+  enabled: true
+- id: yokota-air-base
+  name: Yokota Air Base
+  icao: RJTY
+  coordinates: [35.7485, 139.348]
+  enabled: true
+- id: iruma-air-base
+  name: Iruma Air Base
+  icao: RJTJ
+  coordinates: [35.8419, 139.411]
+  enabled: true
+- id: chofu-airport
+  name: Chofu Airport
+  icao: RJTF
+  coordinates: [35.6717, 139.528]
+  enabled: true
+- id: haneda-airport
+  name: Haneda Airport
+  icao: RJTT
+  coordinates: [35.5523, 139.78]
+  enabled: true
+- id: kisarazu-airfield
+  name: Kisarazu Airfield
+  icao: RJTK
+  coordinates: [35.3983, 139.91]
+  enabled: true
+  hero_photo: DSC07396-Enhanced-NR.jpeg
+- id: atsugi-air-base
+  name: Atsugi Air Base
+  icao: RJTA
+  coordinates: [35.4547, 139.45]
+  enabled: true
+- id: chitose-air-base
+  name: Chitose Air Base
+  icao: RJCJ
+  coordinates: [42.7945, 141.6664]
+  enabled: true

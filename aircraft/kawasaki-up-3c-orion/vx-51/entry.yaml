@@ -2,15 +2,16 @@ aircraft_type: Kawasaki UP-3C Orion
 squadron_name: Air Development Squadron 51 (VX-51)
 country: Japan
 photos:
-  - path: up3c_1.jpeg
-    location: Atsugi Air Base
-    caption: UP-3C Equipment testing plane at JMSDF Atsugi Air Base
-  - path: up3c_2.jpeg
-    location: Atsugi Air Base
-    caption: UP-3C Equipment testing plane at JMSDF Atsugi Air Base
-  - path: up3c_3.jpeg
-    location: Atsugi Air Base
-    caption: UP-3C Equipment testing plane at JMSDF Atsugi Air Base
-  - path: up3c_4.jpeg
-    location: Atsugi Air Base
-    caption: UP-3C Equipment testing plane at JMSDF Atsugi Air Base
+- path: up3c_1.jpeg
+  location: Atsugi Air Base
+  caption: UP-3C Equipment testing plane at JMSDF Atsugi Air Base
+- path: up3c_2.jpeg
+  location: Atsugi Air Base
+  caption: UP-3C Equipment testing plane at JMSDF Atsugi Air Base
+- path: up3c_3.jpeg
+  location: Atsugi Air Base
+  caption: UP-3C Equipment testing plane at JMSDF Atsugi Air Base
+- path: up3c_4.jpeg
+  location: Atsugi Air Base
+  caption: UP-3C Equipment testing plane at JMSDF Atsugi Air Base
+aircraft_family: heavy

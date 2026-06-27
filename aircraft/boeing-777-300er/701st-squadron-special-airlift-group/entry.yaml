@@ -2,9 +2,11 @@ aircraft_type: Boeing 777-300ER
 squadron_name: 701st Squadron, Special Airlift Group
 country: Japan
 photos:
-  - path: cygnus_1.jpeg
-    location: Haneda Airport
-    caption: Japan Air Force One (JASDF Boeing 777-300ER) landing at Haneda Airport
-  - path: cygnus_2.jpeg
-    location: Haneda Airport
-    caption: Japan Air Force One (JASDF Boeing 777-300ER) landing at Haneda Airport
+- path: cygnus_1.jpeg
+  location: Haneda Airport
+  caption: Japan Air Force One (JASDF Boeing 777-300ER) landing at Haneda Airport
+- path: cygnus_2.jpeg
+  location: Haneda Airport
+  caption: Japan Air Force One (JASDF Boeing 777-300ER) landing at Haneda Airport
+aircraft_family: heavy
+squadron_logo: 701_sqn_logo.png

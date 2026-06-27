@@ -14,12 +14,30 @@
     dexGroupMode: "squadron",
     map: null,
     markerLayer: null,
+    mapTrafficLayer: null,
+    mapRouteLayer: null,
+    mapRouteVisible: false,
+    mapDossierOpen: true,
     markersByPinId: new Map(),
+    mapResizeObserver: null,
+    mapRefreshHandle: null,
     activePhotoIds: [],
     activePhotoIndex: 0,
     activePhotoContext: "map",
+    statsPhotoIds: [],
+    statsPhotoLabel: "",
     viewerInfoOpen: false,
+    viewerZoom: 1,
+    viewerPanX: 0,
+    viewerPanY: 0,
+    viewerCleanMode: false,
+    viewerPointers: new Map(),
+    viewerDragOrigin: null,
+    viewerPinchStart: null,
     mobileMapPanel: null,
+    mapControlPanelOpen: true,
+    squadronHeroOverrides: new Map(),
+    squadronPhotographedOnly: false,
     isApplyingHash: false
   };
 
@@ -30,6 +48,7 @@
   async function init() {
     cacheElements();
     setupTheme();
+    loadSquadronHeroOverrides();
     setupEvents();
 
     state.data = prepareData(await loadData());
@@ -55,6 +74,9 @@
     els.worldMap = document.getElementById("worldMap");
     els.mapFallback = document.getElementById("mapFallback");
     els.mapResults = document.getElementById("mapResults");
+    els.mapMissionHud = document.getElementById("mapMissionHud");
+    els.mapRouteButton = document.getElementById("mapRouteButton");
+    els.mapDossierButton = document.getElementById("mapDossierButton");
     els.recentPhotosStrip = document.getElementById("recentPhotosStrip");
     els.recentPhotosCount = document.getElementById("recentPhotosCount");
     els.aircraftGrid = document.getElementById("aircraftGrid");
@@ -63,9 +85,12 @@
     els.statsDashboard = document.getElementById("statsDashboard");
     els.exifDashboard = document.getElementById("exifDashboard");
     els.squadronLogoGrid = document.getElementById("squadronLogoGrid");
+    els.squadronFilters = document.getElementById("squadronFilters");
+    els.squadronCountryRail = document.getElementById("squadronCountryRail");
     els.squadronDetail = document.getElementById("squadronDetail");
     els.squadronPageCount = document.getElementById("squadronPageCount");
     els.photoViewer = document.getElementById("photoViewer");
+    els.viewerImageFrame = document.querySelector(".viewer-image-frame");
     els.viewerImage = document.getElementById("viewerImage");
     els.viewerKicker = document.getElementById("viewerKicker");
     els.viewerTitle = document.getElementById("viewerTitle");
@@ -73,6 +98,12 @@
     els.viewerMetadata = document.getElementById("viewerMetadata");
     els.viewerInfo = document.getElementById("viewerInfo");
     els.viewerInfoButton = document.getElementById("viewerInfoButton");
+    els.viewerFilmstrip = document.getElementById("viewerFilmstrip");
+    els.viewerTelemetry = document.getElementById("viewerTelemetry");
+    els.viewerZoomOutButton = document.getElementById("viewerZoomOutButton");
+    els.viewerZoomResetButton = document.getElementById("viewerZoomResetButton");
+    els.viewerZoomInButton = document.getElementById("viewerZoomInButton");
+    els.viewerCleanButton = document.getElementById("viewerCleanButton");
   }
 
   async function loadData() {
@@ -198,6 +229,32 @@
     updateThemeButton();
   }
 
+  function loadSquadronHeroOverrides() {
+    try {
+      const stored = JSON.parse(localStorage.getItem("spotterdex-squadron-heroes") || "{}");
+      if (stored && typeof stored === "object") {
+        state.squadronHeroOverrides = new Map(
+          Object.entries(stored).filter(([, photoId]) => typeof photoId === "string" && photoId)
+        );
+      }
+    } catch (error) {
+      state.squadronHeroOverrides = new Map();
+    }
+  }
+
+  function setSquadronHeroOverride(squadronId, photoId) {
+    if (!squadronId) {
+      return;
+    }
+    if (photoId && state.photoById.has(photoId)) {
+      state.squadronHeroOverrides.set(squadronId, photoId);
+    } else {
+      state.squadronHeroOverrides.delete(squadronId);
+    }
+    localStorage.setItem("spotterdex-squadron-heroes", JSON.stringify(Object.fromEntries(state.squadronHeroOverrides)));
+    renderSquadronsPage();
+  }
+
   function setupEvents() {
     document.querySelectorAll("[data-tab-target]").forEach((button) => {
       button.addEventListener("click", () => setActiveTab(button.dataset.tabTarget));
@@ -212,26 +269,49 @@
 
     els.themeToggle.addEventListener("click", toggleTheme);
     document.getElementById("fitPinsButton").addEventListener("click", fitMapToPins);
+    els.mapRouteButton.addEventListener("click", toggleMapRoute);
+    els.mapDossierButton.addEventListener("click", () => {
+      if (isMobileMapLayout()) {
+        toggleMapPanel("results");
+      } else {
+        setMapDossierOpen(!state.mapDossierOpen);
+      }
+    });
     document.getElementById("closeViewerButton").addEventListener("click", closeViewer);
     document.getElementById("previousPhotoButton").addEventListener("click", () => stepPhoto(-1));
     document.getElementById("nextPhotoButton").addEventListener("click", () => stepPhoto(1));
     els.viewerInfoButton.addEventListener("click", () => setViewerInfoOpen(!state.viewerInfoOpen));
+    els.viewerZoomOutButton.addEventListener("click", () => setViewerZoom(state.viewerZoom - 0.25));
+    els.viewerZoomResetButton.addEventListener("click", resetViewerTransform);
+    els.viewerZoomInButton.addEventListener("click", () => setViewerZoom(state.viewerZoom + 0.25));
+    els.viewerCleanButton.addEventListener("click", () => setViewerCleanMode(!state.viewerCleanMode));
     els.viewerImage.addEventListener("contextmenu", (event) => event.preventDefault());
     els.viewerImage.setAttribute("draggable", "false");
+    els.viewerImage.addEventListener("wheel", handleViewerWheel, { passive: false });
+    els.viewerImage.addEventListener("pointerdown", handleViewerPointerDown);
+    els.viewerImage.addEventListener("pointermove", handleViewerPointerMove);
+    els.viewerImage.addEventListener("pointerup", handleViewerPointerUp);
+    els.viewerImage.addEventListener("pointercancel", handleViewerPointerUp);
+    els.viewerImage.addEventListener("dblclick", () => {
+      if (state.viewerZoom > 1) {
+        resetViewerTransform();
+      } else {
+        setViewerZoom(2);
+      }
+    });
 
     els.locationSearch.addEventListener("input", renderLocations);
     els.aircraftSearch.addEventListener("input", renderDex);
 
     document.addEventListener("click", handleDocumentClick);
+    document.addEventListener("change", handleDocumentChange);
     document.addEventListener("keydown", handleKeydown);
     window.addEventListener("hashchange", () => applyDeepLinkFromHash());
     window.addEventListener("resize", debounce(() => {
       updateMapPanelState();
       updateViewerInfoState();
-      if (state.map) {
-        state.map.invalidateSize();
-        renderPins();
-      }
+      renderMapMissionHud();
+      refreshMapLayout();
     }, 150));
   }
 
@@ -247,6 +327,54 @@
     const mapPanelButton = event.target.closest("[data-map-panel-toggle]");
     if (mapPanelButton) {
       toggleMapPanel(mapPanelButton.dataset.mapPanelToggle);
+      return;
+    }
+
+    const mapDossierButton = event.target.closest("[data-map-dossier-toggle]");
+    if (mapDossierButton) {
+      if (isMobileMapLayout()) {
+        setMapPanel(null);
+      } else {
+        setMapDossierOpen(false);
+      }
+      return;
+    }
+
+    const mapControlToggle = event.target.closest("[data-map-control-toggle]");
+    if (mapControlToggle) {
+      setMapControlPanelOpen(!state.mapControlPanelOpen);
+      return;
+    }
+
+    const squadronPhotoToggle = event.target.closest("[data-squadron-photographed-toggle]");
+    if (squadronPhotoToggle) {
+      state.squadronPhotographedOnly = !state.squadronPhotographedOnly;
+      renderSquadronsPage();
+      return;
+    }
+
+    const countryJump = event.target.closest("[data-squadron-country-jump]");
+    if (countryJump) {
+      const target = document.getElementById(countryJump.dataset.squadronCountryJump || "");
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      return;
+    }
+
+    const statsFilter = event.target.closest("[data-stats-filter-kind]");
+    if (statsFilter) {
+      openStatsPhotoSet(
+        statsFilter.dataset.statsFilterKind,
+        statsFilter.dataset.statsFilterValue || "",
+        statsFilter.dataset.statsFilterLabel || "Selected frames"
+      );
+      return;
+    }
+
+    const squadronHeroReset = event.target.closest("[data-squadron-hero-reset]");
+    if (squadronHeroReset) {
+      setSquadronHeroOverride(squadronHeroReset.dataset.squadronHeroReset, "");
       return;
     }
 
@@ -285,16 +413,31 @@
       return;
     }
 
+    const filmstripButton = event.target.closest("[data-viewer-photo-index]");
+    if (filmstripButton) {
+      selectViewerPhoto(Number(filmstripButton.dataset.viewerPhotoIndex));
+      return;
+    }
+
     const photoButton = event.target.closest("[data-photo-id]");
     if (photoButton) {
       openViewer(photoButton.dataset.photoId, photoButton.dataset.photoContext);
     }
   }
 
+  function handleDocumentChange(event) {
+    const heroPicker = event.target.closest("[data-squadron-hero-picker]");
+    if (heroPicker) {
+      setSquadronHeroOverride(heroPicker.dataset.squadronHeroPicker, heroPicker.value);
+    }
+  }
+
   function handleKeydown(event) {
     if (!els.photoViewer.hidden) {
       if (event.key === "Escape") {
-        if (state.viewerInfoOpen && isMobileViewerLayout()) {
+        if (state.viewerCleanMode) {
+          setViewerCleanMode(false);
+        } else if (state.viewerInfoOpen && isMobileViewerLayout()) {
           setViewerInfoOpen(false);
         } else {
           closeViewer();
@@ -303,6 +446,18 @@
         stepPhoto(-1);
       } else if (event.key === "ArrowRight") {
         stepPhoto(1);
+      } else if (event.key === "+" || event.key === "=") {
+        event.preventDefault();
+        setViewerZoom(state.viewerZoom + 0.25);
+      } else if (event.key === "-") {
+        event.preventDefault();
+        setViewerZoom(state.viewerZoom - 0.25);
+      } else if (event.key === "0") {
+        event.preventDefault();
+        resetViewerTransform();
+      } else if (event.key.toLowerCase() === "h") {
+        event.preventDefault();
+        setViewerCleanMode(!state.viewerCleanMode);
       }
     } else if (event.key === "Escape" && state.mobileMapPanel && isMobileMapLayout()) {
       setMapPanel(null);
@@ -318,8 +473,49 @@
     updateMapPanelState();
 
     if (state.map) {
-      window.requestAnimationFrame(() => state.map.invalidateSize());
+      refreshMapLayout();
     }
+  }
+
+  function setMapDossierOpen(isOpen) {
+    state.mapDossierOpen = Boolean(isOpen);
+    updateMapDossierState();
+    refreshMapLayout();
+  }
+
+  function setMapControlPanelOpen(isOpen) {
+    state.mapControlPanelOpen = Boolean(isOpen);
+    updateMapControlPanelState();
+    refreshMapLayout();
+  }
+
+  function updateMapControlPanelState() {
+    if (!els.mapWorkspace) {
+      return;
+    }
+    els.mapWorkspace.classList.toggle("is-control-panel-open", state.mapControlPanelOpen);
+    const toggle = els.mapResults?.querySelector("[data-map-control-toggle]");
+    if (toggle) {
+      const label = state.mapControlPanelOpen ? "Hide collection panel" : "Show collection panel";
+      toggle.setAttribute("aria-label", label);
+      toggle.setAttribute("title", label);
+      const icon = toggle.querySelector("span");
+      if (icon) {
+        icon.textContent = state.mapControlPanelOpen ? "◀" : "☰";
+      }
+    }
+  }
+
+  function updateMapDossierState() {
+    if (!els.mapWorkspace || !els.mapDossierButton) {
+      return;
+    }
+    els.mapWorkspace.classList.toggle("is-dossier-open", state.mapDossierOpen);
+    els.mapDossierButton.setAttribute("aria-expanded", String(state.mapDossierOpen));
+    els.mapDossierButton.setAttribute("aria-label", state.mapDossierOpen ? "Hide location details" : "Show location details");
+    els.mapDossierButton.querySelector("span:last-child").textContent = state.mapDossierOpen
+      ? "Hide details"
+      : "Location details";
   }
 
   function updateMapPanelState() {
@@ -370,8 +566,7 @@
     if (viewId === "mapView") {
       window.requestAnimationFrame(() => {
         if (state.map) {
-          state.map.invalidateSize();
-          renderPins();
+          refreshMapLayout();
           if (!activeBefore || activeBefore.id !== viewId) {
             fitMapToPins();
           }
@@ -409,6 +604,10 @@
     els.root.dataset.theme = next;
     localStorage.setItem("spotterdex-theme", next);
     updateThemeButton();
+    if (state.map) {
+      renderPins();
+      renderMapResults();
+    }
   }
 
   function resolvedTheme() {
@@ -517,6 +716,7 @@
 
   function renderAll() {
     renderStats();
+    renderMapMissionHud();
     renderLocations();
     initMap();
     fitMapToPins();
@@ -524,6 +724,8 @@
     renderRecentPhotos();
     renderMapResults();
     updateMapPanelState();
+    updateMapControlPanelState();
+    updateMapDossierState();
     renderDex();
     renderStatsDashboard();
     renderExifDashboard();
@@ -584,8 +786,44 @@
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(state.map);
 
+    state.mapTrafficLayer = window.L.layerGroup().addTo(state.map);
     state.markerLayer = window.L.layerGroup().addTo(state.map);
-    state.map.on("zoomend moveend", renderPins);
+    state.mapRouteLayer = window.L.layerGroup().addTo(state.map);
+    state.map.on("zoomend moveend", () => {
+      renderPins();
+      renderMapMissionHud();
+    });
+    observeMapSize();
+    refreshMapLayout();
+    renderMapRoute();
+  }
+
+  function observeMapSize() {
+    if (!window.ResizeObserver || !els.worldMap || state.mapResizeObserver) {
+      return;
+    }
+
+    state.mapResizeObserver = new ResizeObserver(() => refreshMapLayout());
+    state.mapResizeObserver.observe(els.worldMap);
+    if (els.mapWorkspace) {
+      state.mapResizeObserver.observe(els.mapWorkspace);
+    }
+  }
+
+  function refreshMapLayout() {
+    if (!state.map) {
+      return;
+    }
+
+    window.cancelAnimationFrame(state.mapRefreshHandle);
+    state.mapRefreshHandle = window.requestAnimationFrame(() => {
+      state.map.invalidateSize({ pan: false });
+      renderPins();
+      window.setTimeout(() => {
+        state.map.invalidateSize({ pan: false });
+        renderPins();
+      }, 120);
+    });
   }
 
   function renderPins() {
@@ -621,6 +859,167 @@
       marker.addTo(state.markerLayer);
     });
 
+    renderMapTraffic();
+
+  }
+
+  function renderMapTraffic() {
+    if (!state.mapTrafficLayer || !window.L) {
+      return;
+    }
+    state.mapTrafficLayer.clearLayers();
+
+    state.data.pins
+      .filter((pin) => pin.enabled)
+      .forEach((pin) => {
+        const families = uniqueFamiliesForPhotos(photosForPin(pin));
+        families.forEach((family, index) => {
+          window.L.marker([pin.lat, pin.lon], {
+            icon: mapTrafficIcon(pin, family, index),
+            interactive: false,
+            keyboard: false,
+            zIndexOffset: -120
+          }).addTo(state.mapTrafficLayer);
+        });
+      });
+  }
+
+  function uniqueFamiliesForPhotos(photos) {
+    const families = new Map();
+    photos.forEach((photo) => {
+      const family = aircraftFamilyForPhoto(photo);
+      if (family && !families.has(family.id)) {
+        families.set(family.id, family);
+      }
+    });
+    return Array.from(families.values());
+  }
+
+  function mapTrafficIcon(pin, family, index) {
+    const motion = trafficMotionFor(`${pin.id}-${family.id}-${index}`);
+    const directionClass = motion.approaching ? " is-approaching" : " is-departing";
+    return window.L.divIcon({
+      className: "spotterdex-traffic-anchor",
+      html: `
+        <span
+          class="map-traffic-aircraft${directionClass}"
+          style="--traffic-start-x: ${motion.startX}px; --traffic-start-y: ${motion.startY}px; --traffic-end-x: ${motion.endX}px; --traffic-end-y: ${motion.endY}px; --traffic-heading: ${motion.heading}deg; --traffic-delay: -${motion.delay}ms; --traffic-duration: ${motion.duration}ms;"
+          aria-hidden="true"
+        >
+          <img src="${escapeAttr(family.mapIcon || family.icon)}" alt="">
+        </span>
+      `,
+      iconSize: [0, 0],
+      iconAnchor: [0, 0]
+    });
+  }
+
+  function trafficMotionFor(seedText) {
+    const seed = stableHash(seedText);
+    const departureHeading = seed % 360;
+    const radians = ((departureHeading - 90) * Math.PI) / 180;
+    const distance = 38 + (seed % 34);
+    const vectorX = Math.round(Math.cos(radians) * distance);
+    const vectorY = Math.round(Math.sin(radians) * distance);
+    const approaching = Boolean(seed % 2);
+    return {
+      approaching,
+      heading: approaching ? (departureHeading + 180) % 360 : departureHeading,
+      startX: approaching ? vectorX : -4,
+      startY: approaching ? vectorY : -4,
+      endX: approaching ? -4 : vectorX,
+      endY: approaching ? -4 : vectorY,
+      delay: seed % 12000,
+      duration: 11000 + (seed % 7000)
+    };
+  }
+
+  function stableHash(value) {
+    return Array.from(String(value)).reduce((hash, character) => {
+      return ((hash << 5) - hash + character.charCodeAt(0)) >>> 0;
+    }, 2166136261);
+  }
+
+  function renderMapMissionHud() {
+    if (!els.mapMissionHud) {
+      return;
+    }
+
+    const locations = recentLocations();
+    const newest = locations[0] || null;
+    const oldest = locations[locations.length - 1] || null;
+    const pin = state.pinById.get(state.selectedPinId);
+    const coordinate = state.map
+      ? `${state.map.getCenter().lat.toFixed(2)}° ${state.map.getCenter().lng.toFixed(2)}°`
+      : "Atlas standby";
+    const range = newest && oldest
+      ? `${formatDisplayDate(oldest.latestDate)} — ${formatDisplayDate(newest.latestDate)}`
+      : "No dated frames yet";
+
+    els.mapMissionHud.innerHTML = `
+      <span class="map-hud-kicker">Field atlas</span>
+      <strong>${escapeHtml(pin ? pin.name : "Global coverage")}</strong>
+      <span>${state.data.photos.length} frames · ${locations.length} photographed locations</span>
+      <span class="map-hud-meta">${escapeHtml(range)}</span>
+      <span class="map-hud-coordinate">${escapeHtml(coordinate)}</span>
+    `;
+  }
+
+  function toggleMapRoute() {
+    state.mapRouteVisible = !state.mapRouteVisible;
+    renderMapRoute();
+  }
+
+  function renderMapRoute() {
+    if (!els.mapRouteButton) {
+      return;
+    }
+
+    els.mapRouteButton.setAttribute("aria-pressed", String(state.mapRouteVisible));
+    els.mapRouteButton.setAttribute("aria-label", state.mapRouteVisible ? "Hide chronological route" : "Show chronological route");
+    els.mapRouteButton.classList.toggle("is-active", state.mapRouteVisible);
+    els.mapRouteButton.querySelector("span:last-child").textContent = state.mapRouteVisible
+      ? "Hide route"
+      : "Show route";
+
+    if (!state.mapRouteLayer || !window.L) {
+      return;
+    }
+
+    state.mapRouteLayer.clearLayers();
+    if (!state.mapRouteVisible) {
+      return;
+    }
+
+    const stops = recentLocations()
+      .filter((location) => Number.isFinite(location.latestTime))
+      .sort((a, b) => a.latestTime - b.latestTime);
+    if (stops.length < 2) {
+      return;
+    }
+
+    const points = stops.map((location) => [location.pin.lat, location.pin.lon]);
+    window.L.polyline(points, {
+      color: "#d8c59a",
+      weight: 2.5,
+      opacity: 0.86,
+      dashArray: "9 10",
+      lineCap: "round",
+      className: "spotterdex-route-line"
+    }).addTo(state.mapRouteLayer);
+
+    stops.forEach((location, index) => {
+      window.L.circleMarker([location.pin.lat, location.pin.lon], {
+        radius: index === stops.length - 1 ? 6 : 4,
+        color: "#f4ead2",
+        weight: 1,
+        fillColor: "#6f5832",
+        fillOpacity: 0.92,
+        className: "spotterdex-route-stop"
+      })
+        .bindTooltip(`${location.pin.name} · ${formatDisplayDate(location.latestDate)}`, { direction: "top", offset: [0, -6] })
+        .addTo(state.mapRouteLayer);
+    });
   }
 
   function clusterPins(pins) {
@@ -635,14 +1034,14 @@
     }
 
     const threshold = zoom <= 4
-      ? 118
+      ? 92
       : zoom <= 6
-        ? 98
+        ? 76
         : zoom <= 8
-          ? 78
+          ? 60
           : zoom <= 10
-            ? 62
-            : 48;
+            ? 46
+            : 36;
     const clusters = [];
     pins.forEach((pin) => {
       const point = state.map.latLngToLayerPoint([pin.lat, pin.lon]);
@@ -705,18 +1104,38 @@
     const photos = photosForPin(pin);
     const profile = locationProfile(pin, photos);
     const unitGroupLabel = photoUnitGroupLabel(photos);
+    const typeCount = unique(photos.map((photo) => normalizeKey(photo.aircraftType))).length;
+    const unitCount = unique(
+      photos.map((photo) => {
+        const squadron = squadronForPhoto(photo);
+        const unitName = squadron ? squadron.name : photo.squadronName;
+        const unitType = squadron ? squadron.unitType : photo.unitType;
+        return normalizeKey(`${photo.country || ""}-${unitName || ""}-${unitType || ""}`);
+      })
+    ).length;
+    const typeLabel = `${typeCount} ${typeCount === 1 ? "Type" : "Types"}`;
+    const unitLabel = `${unitCount} ${unitGroupLabel}${unitCount === 1 ? "" : "s"}`;
     els.mapResults.innerHTML = `
+      <div class="mission-dossier-heading">
+        <div>
+          <h2>Location Details</h2>
+        </div>
+        <button
+          class="map-control-toggle"
+          type="button"
+          data-map-dossier-toggle
+          aria-label="Hide location details"
+          title="Hide location details"
+        >
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
       ${renderLocationDetail(profile)}
 
-      <div class="result-header location-photo-browser">
-        <div>
-          <p class="eyebrow">Photo archive</p>
-          <h2>All frames</h2>
-          <p class="muted">${photos.length} photo${photos.length === 1 ? "" : "s"} at this location</p>
-        </div>
-        <div class="segmented" aria-label="Organize map photos">
-          ${segmentButton("Aircraft Type", "type", state.mapGroupMode, "data-map-group")}
-          ${segmentButton(unitGroupLabel, "squadron", state.mapGroupMode, "data-map-group")}
+      <div class="location-photo-browser">
+        <div class="segmented location-archive-toggle" aria-label="Organize map photos">
+          ${segmentButton(typeLabel, "type", state.mapGroupMode, "data-map-group")}
+          ${segmentButton(unitLabel, "squadron", state.mapGroupMode, "data-map-group")}
         </div>
       </div>
       ${renderPhotoGroups(photos, state.mapGroupMode, "map")}
@@ -987,28 +1406,34 @@
     }
 
     const collectionStats = collectionStatsSummary();
+    const countryCounts = countBy(state.data.photos, (photo) => photo.country || "Country not set");
     els.statsDashboard.innerHTML = `
-      ${statsDashboardPair(
-        "Photos",
-        collectionStats.photoCount,
-        "Photographed locations",
-        collectionStats.photographedLocationCount,
-        `${collectionStats.photoCount} photo${collectionStats.photoCount === 1 ? "" : "s"} across ${collectionStats.photographedLocationCount} location${collectionStats.photographedLocationCount === 1 ? "" : "s"}`
-      )}
-      ${statsDashboardPair(
-        "Aircraft types",
-        collectionStats.aircraftTypeCount,
-        "Squadrons",
-        collectionStats.squadronCount,
-        `${collectionStats.aircraftTypeCount} type${collectionStats.aircraftTypeCount === 1 ? "" : "s"} across ${collectionStats.squadronCount} squadron${collectionStats.squadronCount === 1 ? "" : "s"}`
-      )}
-      ${statsDashboardPair(
-        "Locations",
-        collectionStats.locationCount,
-        "Countries",
-        collectionStats.countryCount,
-        `${collectionStats.locationCount} enabled map location${collectionStats.locationCount === 1 ? "" : "s"} across ${collectionStats.countryCount} countr${collectionStats.countryCount === 1 ? "y" : "ies"}`
-      )}
+      <div class="stats-summary-grid">
+        ${statsDashboardPair(
+          "Photos",
+          collectionStats.photoCount,
+          "Photographed locations",
+          collectionStats.photographedLocationCount,
+          `${collectionStats.photoCount} photo${collectionStats.photoCount === 1 ? "" : "s"} across ${collectionStats.photographedLocationCount} location${collectionStats.photographedLocationCount === 1 ? "" : "s"}`
+        )}
+        ${statsDashboardPair(
+          "Aircraft types",
+          collectionStats.aircraftTypeCount,
+          "Squadrons",
+          collectionStats.squadronCount,
+          `${collectionStats.aircraftTypeCount} type${collectionStats.aircraftTypeCount === 1 ? "" : "s"} across ${collectionStats.squadronCount} squadron${collectionStats.squadronCount === 1 ? "" : "s"}`
+        )}
+        ${statsDashboardPair(
+          "Locations",
+          collectionStats.locationCount,
+          "Countries",
+          collectionStats.countryCount,
+          `${collectionStats.locationCount} enabled map location${collectionStats.locationCount === 1 ? "" : "s"} across ${collectionStats.countryCount} countr${collectionStats.countryCount === 1 ? "y" : "ies"}`
+        )}
+      </div>
+      <div class="stats-visual-grid stats-visual-grid-single">
+        ${renderCountryDistribution(countryCounts)}
+      </div>
     `;
   }
 
@@ -1025,6 +1450,46 @@
         </div>
         <p>${escapeHtml(detail)}</p>
       </article>
+    `;
+  }
+
+  function renderCountryDistribution(counts) {
+    const items = topCounts(counts, 6);
+    const max = Math.max(1, ...items.map((item) => item.count));
+    return `
+      <section class="stats-visual-card">
+        <div class="stats-visual-heading">
+          <div>
+            <p class="eyebrow">World coverage</p>
+            <h2>Frames by country</h2>
+          </div>
+          <span>Open a country</span>
+        </div>
+        ${
+          items.length
+            ? `<div class="stats-country-list">
+                ${items
+                  .map(
+                    (item) => `
+                      <button
+                        class="stats-country-row"
+                        type="button"
+                        data-stats-filter-kind="country"
+                        data-stats-filter-value="${escapeAttr(item.label)}"
+                        data-stats-filter-label="${escapeAttr(`${item.label} frames`)}"
+                        aria-label="Open ${item.count} photo${item.count === 1 ? "" : "s"} from ${escapeAttr(item.label)}"
+                      >
+                        <span>${escapeHtml(item.label)}</span>
+                        <span class="stats-country-track" aria-hidden="true"><span style="width: ${Math.max(10, Math.round((item.count / max) * 100))}%"></span></span>
+                        <strong>${item.count}</strong>
+                      </button>
+                    `
+                  )
+                  .join("")}
+              </div>`
+            : '<p class="muted">Add photos with country metadata to see world coverage.</p>'
+        }
+      </section>
     `;
   }
 
@@ -1068,12 +1533,12 @@
       </div>
 
       <div class="exif-dashboard-grid">
-        ${renderExifCountList("Camera bodies", cameraCounts)}
-        ${renderExifCountList("Lenses", lensCounts)}
-        ${renderExifCountList("Focal lengths", focalCounts)}
-        ${renderExifCountList("Shutter speeds", shutterCounts)}
-        ${renderExifCountList("Apertures", apertureCounts)}
-        ${renderExifCountList("ISO", isoCounts)}
+        ${renderExifCountList("Camera bodies", cameraCounts, "camera")}
+        ${renderExifCountList("Lenses", lensCounts, "lens")}
+        ${renderExifCountList("Focal lengths", focalCounts, "focal")}
+        ${renderExifCountList("Shutter speeds", shutterCounts, "shutter")}
+        ${renderExifCountList("Apertures", apertureCounts, "aperture")}
+        ${renderExifCountList("ISO", isoCounts, "iso")}
       </div>
     `;
   }
@@ -1083,12 +1548,22 @@
       return;
     }
 
-    const squadrons = collectSquadrons();
-    els.squadronPageCount.textContent = `${squadrons.length} squadron${squadrons.length === 1 ? "" : "s"}`;
+    const allSquadrons = collectSquadrons();
+    const squadrons = filterSquadrons(allSquadrons);
+    const countLabel = `${squadrons.length} of ${allSquadrons.length} squadron${allSquadrons.length === 1 ? "" : "s"}`;
+    els.squadronPageCount.textContent = countLabel;
+    renderSquadronFilters(allSquadrons, squadrons);
+    renderSquadronCountryRail(squadrons);
 
-    if (!squadrons.length) {
+    if (!allSquadrons.length) {
       els.squadronLogoGrid.innerHTML = '<div class="empty-state compact">Add squadron entries to populate this page.</div>';
       els.squadronDetail.innerHTML = '<div class="empty-state">Squadron photos will appear here once entries are added.</div>';
+      return;
+    }
+
+    if (!squadrons.length) {
+      els.squadronLogoGrid.innerHTML = '<div class="empty-state compact">No squadrons match this wall filter.</div>';
+      renderSquadronDetail([]);
       return;
     }
 
@@ -1096,11 +1571,55 @@
     renderSquadronDetail(squadrons);
   }
 
+  function filterSquadrons(squadrons) {
+    return squadrons.filter((squadron) => {
+      const photos = photosForSquadronRecord(squadron);
+      return !state.squadronPhotographedOnly || photos.length > 0;
+    });
+  }
+
+  function renderSquadronFilters(allSquadrons, filteredSquadrons) {
+    if (!els.squadronFilters) {
+      return;
+    }
+    els.squadronFilters.innerHTML = `
+      <button
+        class="squadron-photo-filter${state.squadronPhotographedOnly ? " is-active" : ""}"
+        type="button"
+        data-squadron-photographed-toggle
+        aria-pressed="${state.squadronPhotographedOnly ? "true" : "false"}"
+      >
+        <span aria-hidden="true">◉</span>
+        Photographed only
+      </button>
+      <span class="squadron-filter-count">${filteredSquadrons.length} shown</span>
+    `;
+  }
+
+  function renderSquadronCountryRail(squadrons) {
+    if (!els.squadronCountryRail) {
+      return;
+    }
+    const groups = groupSquadronsByCountry(squadrons);
+    els.squadronCountryRail.innerHTML = groups.length
+      ? groups
+          .map(
+            (group) => `
+              <button type="button" data-squadron-country-jump="${escapeAttr(squadronCountryId(group.country))}">
+                <span>${escapeHtml(group.country)}</span>
+                <span>${group.squadrons.length}</span>
+              </button>
+            `
+          )
+          .join("")
+      : '<span class="muted">No countries</span>';
+  }
+
   function renderSquadronCountrySections(squadrons) {
     return groupSquadronsByCountry(squadrons)
       .map(
         (group) => `
-          <section class="squadron-country-section">
+          <section class="squadron-country-section" id="${escapeAttr(squadronCountryId(group.country))}">
             <div class="group-header squadron-country-header">
               <div>
                 <p class="eyebrow">Country</p>
@@ -1192,7 +1711,8 @@
     const logoContent = squadron.logo
       ? `<img src="${escapeAttr(squadron.logo)}" alt="${escapeAttr(squadron.name)} logo">`
       : `<span class="squadron-logo-fallback">${escapeHtml(initials(squadron.name))}</span>`;
-    const heroImage = squadron.heroPhoto ? squadron.heroPhoto.thumbnail || squadron.heroPhoto.image || "" : "";
+    const hero = squadronCardHero(squadron);
+    const heroImage = hero ? hero.thumbnail || hero.image || "" : "";
     const typePreview = squadron.aircraftTypes.slice(0, 3).join(", ");
     const extraTypes = Math.max(0, squadron.aircraftTypes.length - 3);
     const activeClass = squadron.id === state.selectedSquadronId ? " is-active" : "";
@@ -1216,6 +1736,22 @@
     `;
   }
 
+  function squadronCardHero(squadron) {
+    const overrideId = state.squadronHeroOverrides.get(squadron.id);
+    const override = overrideId ? state.photoById.get(overrideId) : null;
+    if (override && (override.thumbnail || override.image)) {
+      return override;
+    }
+    if (squadron.heroPhoto && (squadron.heroPhoto.thumbnail || squadron.heroPhoto.image)) {
+      return squadron.heroPhoto;
+    }
+    return photosForSquadronRecord(squadron).find((photo) => photo.thumbnail || photo.image) || null;
+  }
+
+  function squadronCountryId(country) {
+    return `squadron-country-${normalizeKey(country || "unknown")}`;
+  }
+
   function renderSquadronDetail(squadrons = collectSquadrons()) {
     if (!els.squadronDetail) {
       return;
@@ -1233,7 +1769,8 @@
 
     const photos = photosForSquadronRecord(squadron);
     const typePreview = squadron.aircraftTypes.join(", ");
-    const heroImage = squadron.heroPhoto ? squadron.heroPhoto.image || squadron.heroPhoto.thumbnail || "" : "";
+    const hero = squadronCardHero(squadron);
+    const heroImage = hero ? hero.image || hero.thumbnail || "" : "";
     const logo = squadron.logo
       ? `<img src="${escapeAttr(squadron.logo)}" alt="${escapeAttr(squadron.name)} logo">`
       : `<span class="squadron-logo-fallback">${escapeHtml(initials(squadron.name))}</span>`;
@@ -1254,7 +1791,37 @@
         </div>
       </div>
       ${typePreview ? `<p class="muted squadron-type-list">${escapeHtml(typePreview)}</p>` : ""}
+      ${renderSquadronHeroPicker(squadron, photos)}
       ${renderSquadronPhotoGrid(photos)}
+    `;
+  }
+
+  function renderSquadronHeroPicker(squadron, photos) {
+    if (!photos.length) {
+      return "";
+    }
+    const overrideId = state.squadronHeroOverrides.get(squadron.id) || "";
+    return `
+      <div class="squadron-hero-picker">
+        <label for="squadronHero-${escapeAttr(squadron.id)}">Card hero</label>
+        <select id="squadronHero-${escapeAttr(squadron.id)}" data-squadron-hero-picker="${escapeAttr(squadron.id)}">
+          <option value="">Use source/default hero</option>
+          ${photos
+            .map(
+              (photo) => `
+                <option value="${escapeAttr(photo.id)}"${photo.id === overrideId ? " selected" : ""}>
+                  ${escapeHtml(`${photo.aircraftType} — ${displayPhotoDate(photo)}`)}
+                </option>
+              `
+            )
+            .join("")}
+        </select>
+        ${
+          overrideId
+            ? `<button type="button" data-squadron-hero-reset="${escapeAttr(squadron.id)}">Reset</button>`
+            : ""
+        }
+      </div>
     `;
   }
 
@@ -1280,7 +1847,7 @@
     `;
   }
 
-  function renderExifCountList(title, counts) {
+  function renderExifCountList(title, counts, filterKind) {
     const icon = statsIcon(exifIconForTitle(title));
     const items = topCounts(counts, 5);
     if (!items.length) {
@@ -1301,11 +1868,18 @@
             .map((item) => {
               const width = Math.max(8, Math.round((item.count / max) * 100));
               return `
-                <div class="exif-bar-row">
+                <button
+                  class="exif-bar-row"
+                  type="button"
+                  data-stats-filter-kind="${escapeAttr(filterKind)}"
+                  data-stats-filter-value="${escapeAttr(item.label)}"
+                  data-stats-filter-label="${escapeAttr(`${title}: ${item.label}`)}"
+                  aria-label="Open ${item.count} photo${item.count === 1 ? "" : "s"} matching ${escapeAttr(item.label)}"
+                >
                   <span class="exif-bar-label">${escapeHtml(item.label)}</span>
                   <span class="exif-bar-track" aria-hidden="true"><span style="width: ${width}%"></span></span>
                   <span class="exif-bar-count">${item.count}</span>
-                </div>
+                </button>
               `;
             })
             .join("")}
@@ -1518,6 +2092,7 @@
     renderLocations();
     renderPins();
     renderMapResults();
+    renderMapMissionHud();
 
     if (options.updateHash !== false) {
       updateDeepLink("location", pinId);
@@ -1529,6 +2104,8 @@
 
     if (isMobileMapLayout() && options.openPanel !== false) {
       setMapPanel("results");
+    } else if (!isMobileMapLayout() && options.openDossier !== false) {
+      setMapDossierOpen(true);
     }
   }
 
@@ -1643,20 +2220,27 @@
         <span class="spotterdex-marker-dot">${escapeHtml(countryFlag(pin.country))}</span>
         ${renderMapMarkerLabel(mapPinLabel(pin), preview)}
       `,
-      iconSize: [340, 54],
-      iconAnchor: [15, 27]
+      iconSize: [0, 0],
+      iconAnchor: [0, 0]
     });
   }
 
   function mapPinLabel(pin) {
-    return isMobileMapLayout() && pin.icao ? pin.icao : pin.name;
+    return pin.name;
   }
 
   function mapClusterLabel(pins) {
-    const labels = unique(pins.map(mapPinLabel));
-    return labels.length <= 3
-      ? labels.join(" / ")
-      : `${labels.slice(0, 2).join(" / ")} / +${labels.length - 2}`;
+    const names = unique(pins.map((pin) => pin.name));
+    const fullLabel = names.join(" / ");
+    if (names.length <= 3 && fullLabel.length <= 44) {
+      return fullLabel;
+    }
+
+    const codes = unique(pins.map((pin) => pin.icao || pin.name));
+    if (codes.length <= 4) {
+      return codes.join(" / ");
+    }
+    return `${codes.slice(0, 3).join(" / ")} / +${codes.length - 3}`;
   }
 
   function clusterMarkerIcon(cluster, clusterLabel) {
@@ -1671,17 +2255,23 @@
         </span>
         ${renderMapMarkerLabel(clusterLabel, preview)}
       `,
-      iconSize: [380, 58],
-      iconAnchor: [18, 29]
+      iconSize: [0, 0],
+      iconAnchor: [0, 0]
     });
   }
 
   function renderMapMarkerLabel(title, preview) {
+    const assets = [
+      preview.families.length ? renderMapMarkerFamilies(preview.families) : "",
+      preview.families.length && preview.logos.length ? '<span class="map-marker-divider" aria-hidden="true">|</span>' : "",
+      preview.logos.length ? renderMapMarkerLogos(preview.logos) : ""
+    ]
+      .filter(Boolean)
+      .join("");
     return `
       <span class="spotterdex-marker-label">
         <span class="spotterdex-marker-title">${escapeHtml(title)}</span>
-        ${renderMapMarkerLogos(preview.logos)}
-        ${renderMapMarkerFamilies(preview.families)}
+        ${assets ? `<span class="map-marker-assets">${assets}</span>` : ""}
       </span>
     `;
   }
@@ -1755,16 +2345,28 @@
   function aircraftFamilyForPhoto(photo) {
     const type = normalizeText(photo.aircraftType);
     if (/\b(ah|uh|ch|mh|sh)-?\d|apache|helicopter|rotor|uh-60|ah-64/.test(type)) {
-      return { id: "helicopter", label: "Helicopter", icon: "assets/icons/aircraft-family-helicopter.png" };
+      return aircraftFamilyAsset("helicopter", "Helicopter");
     }
     if (/\bf-?\d|fighter|eagle|falcon|hornet|raptor|typhoon|rafale|mirage/.test(type)) {
-      return { id: "fighter", label: "Fighter", icon: "assets/icons/aircraft-family-fighter.png" };
+      return aircraftFamilyAsset("fighter", "Fighter");
     }
     if (/747|sentry|airlift|cargo|transport|tanker|freighter|heavy|c-2|ec-2|rc-2|u-125/.test(type)) {
-      return { id: "heavy", label: "Heavy", icon: "assets/icons/aircraft-family-heavy.png" };
+      return aircraftFamilyAsset("heavy", "Heavy");
     }
     return null;
   }
+
+function aircraftFamilyAsset(id, label) {
+  const variant = resolvedTheme() === "dark" ? "light" : "dark";
+  const extension = id === "helicopter" ? "gif" : "png";
+  const stem = id === "helicopter" ? "aircraft-family-helicopter-top" : `aircraft-family-${id}`;
+  return {
+    id,
+    label,
+    icon: `assets/icons/aircraft-family-${id}.png`,
+    mapIcon: `assets/icons/${stem}-${variant}.${extension}`
+  };
+}
 
   function focusMapPin(pinId) {
     if (!state.map) {
@@ -1826,9 +2428,11 @@
       return;
     }
 
+    state.map.invalidateSize({ pan: false });
     const pins = state.data.pins.filter((pin) => pin.enabled);
     if (!pins.length) {
       state.map.setView([20, 0], 2);
+      refreshMapLayout();
       return;
     }
 
@@ -1838,6 +2442,7 @@
       maxZoom: 9,
       animate: true
     });
+    refreshMapLayout();
 
   }
 
@@ -1880,7 +2485,7 @@
     }
 
     const style = window.getComputedStyle(panel);
-    if (style.display === "none" || style.visibility === "hidden") {
+    if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) === 0) {
       return { left: 0, right: 0 };
     }
 
@@ -1910,6 +2515,8 @@
       ? currentDexPhotoIds()
       : viewerContext === "recent"
         ? currentRecentPhotoIds()
+        : viewerContext === "stats"
+          ? state.statsPhotoIds
         : viewerContext === "squadron"
           ? currentSquadronPhotoIds()
           : viewerContext === "photo"
@@ -1918,7 +2525,12 @@
     state.activePhotoIds = collection.includes(photoId) ? collection : [photoId];
     state.activePhotoIndex = Math.max(0, state.activePhotoIds.indexOf(photoId));
     state.activePhotoContext = viewerContext;
+    if (viewerContext !== "stats") {
+      state.statsPhotoLabel = "";
+    }
     state.viewerInfoOpen = false;
+    setViewerCleanMode(false);
+    resetViewerTransform();
 
     els.photoViewer.hidden = false;
     document.body.style.overflow = "hidden";
@@ -1930,10 +2542,50 @@
     }
   }
 
+  function openStatsPhotoSet(kind, value, label) {
+    const photos = state.data.photos
+      .filter((photo) => statsPhotoMatches(photo, kind, value))
+      .sort(sortPhotos);
+    if (!photos.length) {
+      return;
+    }
+    state.statsPhotoIds = photos.map((photo) => photo.id);
+    state.statsPhotoLabel = label;
+    openViewer(photos[0].id, "stats");
+  }
+
+  function statsPhotoMatches(photo, kind, value) {
+    const exif = photo.exif || {};
+    if (kind === "country") {
+      return (photo.country || "Country not set") === value;
+    }
+    if (kind === "camera") {
+      return [exif.Make, exif.Model].filter(Boolean).join(" ") === value;
+    }
+    if (kind === "lens") {
+      return statsLensLabels(photo).includes(value);
+    }
+    if (kind === "focal") {
+      return statsFocalLength(photo) === value;
+    }
+    if (kind === "shutter") {
+      return String(exif.ExposureTime || "") === value;
+    }
+    if (kind === "aperture") {
+      return String(exif.FNumber || "") === value;
+    }
+    if (kind === "iso") {
+      return String(exif.ISO || "") === value;
+    }
+    return false;
+  }
+
   function closeViewer(options = {}) {
     els.photoViewer.hidden = true;
     document.body.style.overflow = "";
     setViewerInfoOpen(false);
+    setViewerCleanMode(false);
+    resetViewerTransform();
 
     if (options.updateHash !== false) {
       updateDeepLinkForViewerContext();
@@ -1945,6 +2597,17 @@
       return;
     }
     state.activePhotoIndex = (state.activePhotoIndex + offset + state.activePhotoIds.length) % state.activePhotoIds.length;
+    resetViewerTransform();
+    renderViewerPhoto();
+    updateDeepLink("photo", state.activePhotoIds[state.activePhotoIndex]);
+  }
+
+  function selectViewerPhoto(index) {
+    if (!Number.isInteger(index) || index < 0 || index >= state.activePhotoIds.length) {
+      return;
+    }
+    state.activePhotoIndex = index;
+    resetViewerTransform();
     renderViewerPhoto();
     updateDeepLink("photo", state.activePhotoIds[state.activePhotoIndex]);
   }
@@ -1959,7 +2622,9 @@
 
     els.viewerImage.src = photo.image || "";
     els.viewerImage.alt = `${photo.aircraftType} photographed at ${photo.locationName}`;
-    els.viewerKicker.textContent = `${state.activePhotoIndex + 1} of ${state.activePhotoIds.length}`;
+    els.viewerKicker.textContent = state.activePhotoContext === "stats" && state.statsPhotoLabel
+      ? `${state.statsPhotoLabel} · ${state.activePhotoIndex + 1} of ${state.activePhotoIds.length}`
+      : `${state.activePhotoIndex + 1} of ${state.activePhotoIds.length}`;
     els.viewerTitle.textContent = photo.title || photo.aircraftType;
     els.viewerCaption.textContent = [
       photo.caption,
@@ -1970,7 +2635,204 @@
     els.viewerMetadata.innerHTML = metadataSections(photo)
       .map(renderMetadataSection)
       .join("");
+    renderViewerTelemetry(photo);
+    renderViewerFilmstrip();
     updateViewerInfoState();
+  }
+
+  function renderViewerTelemetry(photo) {
+    if (!els.viewerTelemetry) {
+      return;
+    }
+    const exif = photo.exif || {};
+    const details = [
+      `${state.activePhotoIndex + 1} / ${state.activePhotoIds.length}`,
+      exif.FocalLength,
+      exif.ExposureTime,
+      exif.FNumber
+    ].filter(Boolean);
+    els.viewerTelemetry.innerHTML = details
+      .map((detail, index) => `<span${index === 0 ? ' class="viewer-frame-count"' : ""}>${escapeHtml(detail)}</span>`)
+      .join("");
+  }
+
+  function resetViewerTransform() {
+    state.viewerZoom = 1;
+    state.viewerPanX = 0;
+    state.viewerPanY = 0;
+    state.viewerPointers.clear();
+    state.viewerDragOrigin = null;
+    state.viewerPinchStart = null;
+    els.viewerImage?.classList.remove("is-dragging");
+    updateViewerTransform();
+  }
+
+  function setViewerZoom(value) {
+    state.viewerZoom = Math.min(4, Math.max(1, Number(value) || 1));
+    if (state.viewerZoom <= 1) {
+      state.viewerPanX = 0;
+      state.viewerPanY = 0;
+    } else {
+      constrainViewerPan();
+    }
+    updateViewerTransform();
+  }
+
+  function setViewerCleanMode(isClean) {
+    state.viewerCleanMode = Boolean(isClean);
+    if (!els.photoViewer || !els.viewerCleanButton) {
+      return;
+    }
+    els.photoViewer.classList.toggle("is-clean", state.viewerCleanMode);
+    els.viewerCleanButton.setAttribute("aria-pressed", String(state.viewerCleanMode));
+    els.viewerCleanButton.textContent = state.viewerCleanMode ? "Exit clean" : "Clean";
+  }
+
+  function updateViewerTransform() {
+    if (!els.viewerImage) {
+      return;
+    }
+    const zoom = state.viewerZoom || 1;
+    els.viewerImage.style.transform = `translate3d(${state.viewerPanX}px, ${state.viewerPanY}px, 0) scale(${zoom})`;
+    els.viewerImage.classList.toggle("is-zoomed", zoom > 1);
+    if (els.viewerZoomResetButton) {
+      els.viewerZoomResetButton.textContent = `${Math.round(zoom * 100)}%`;
+      els.viewerZoomResetButton.setAttribute("aria-label", `Reset photo zoom, currently ${Math.round(zoom * 100)} percent`);
+    }
+  }
+
+  function constrainViewerPan() {
+    if (!els.viewerImage || !els.viewerImageFrame) {
+      return;
+    }
+    const width = els.viewerImage.clientWidth || els.viewerImageFrame.clientWidth || 0;
+    const height = els.viewerImage.clientHeight || els.viewerImageFrame.clientHeight || 0;
+    const maxX = Math.max(0, (width * state.viewerZoom - els.viewerImageFrame.clientWidth) / 2);
+    const maxY = Math.max(0, (height * state.viewerZoom - els.viewerImageFrame.clientHeight) / 2);
+    state.viewerPanX = Math.min(maxX, Math.max(-maxX, state.viewerPanX));
+    state.viewerPanY = Math.min(maxY, Math.max(-maxY, state.viewerPanY));
+  }
+
+  function handleViewerWheel(event) {
+    if (els.photoViewer.hidden) {
+      return;
+    }
+    event.preventDefault();
+    const direction = event.deltaY < 0 ? 0.18 : -0.18;
+    setViewerZoom(state.viewerZoom + direction);
+  }
+
+  function handleViewerPointerDown(event) {
+    if (els.photoViewer.hidden) {
+      return;
+    }
+    els.viewerImage.setPointerCapture?.(event.pointerId);
+    state.viewerPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (state.viewerPointers.size === 1) {
+      state.viewerDragOrigin = {
+        x: event.clientX,
+        y: event.clientY,
+        panX: state.viewerPanX,
+        panY: state.viewerPanY
+      };
+    } else if (state.viewerPointers.size === 2) {
+      const [first, second] = Array.from(state.viewerPointers.values());
+      state.viewerPinchStart = {
+        distance: Math.hypot(second.x - first.x, second.y - first.y),
+        zoom: state.viewerZoom
+      };
+      state.viewerDragOrigin = null;
+    }
+    if (state.viewerZoom > 1 || state.viewerPointers.size > 1) {
+      els.viewerImage.classList.add("is-dragging");
+      event.preventDefault();
+    }
+  }
+
+  function handleViewerPointerMove(event) {
+    if (!state.viewerPointers.has(event.pointerId)) {
+      return;
+    }
+    state.viewerPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (state.viewerPointers.size >= 2 && state.viewerPinchStart) {
+      const [first, second] = Array.from(state.viewerPointers.values());
+      const distance = Math.hypot(second.x - first.x, second.y - first.y);
+      setViewerZoom(state.viewerPinchStart.zoom * (distance / Math.max(1, state.viewerPinchStart.distance)));
+      event.preventDefault();
+      return;
+    }
+    if (state.viewerZoom > 1 && state.viewerDragOrigin) {
+      state.viewerPanX = state.viewerDragOrigin.panX + event.clientX - state.viewerDragOrigin.x;
+      state.viewerPanY = state.viewerDragOrigin.panY + event.clientY - state.viewerDragOrigin.y;
+      constrainViewerPan();
+      updateViewerTransform();
+      event.preventDefault();
+    }
+  }
+
+  function handleViewerPointerUp(event) {
+    state.viewerPointers.delete(event.pointerId);
+    if (state.viewerPointers.size < 2) {
+      state.viewerPinchStart = null;
+    }
+    if (state.viewerPointers.size === 1) {
+      const [pointer] = Array.from(state.viewerPointers.values());
+      state.viewerDragOrigin = {
+        x: pointer.x,
+        y: pointer.y,
+        panX: state.viewerPanX,
+        panY: state.viewerPanY
+      };
+    } else if (!state.viewerPointers.size) {
+      state.viewerDragOrigin = null;
+      els.viewerImage.classList.remove("is-dragging");
+    }
+  }
+
+  function renderViewerFilmstrip() {
+    if (!els.viewerFilmstrip) {
+      return;
+    }
+
+    if (state.activePhotoIds.length <= 1) {
+      els.viewerFilmstrip.hidden = true;
+      els.viewerFilmstrip.innerHTML = "";
+      return;
+    }
+
+    els.viewerFilmstrip.hidden = false;
+    els.viewerFilmstrip.innerHTML = state.activePhotoIds
+      .map((photoId, index) => {
+        const photo = state.photoById.get(photoId);
+        if (!photo) {
+          return "";
+        }
+        const image = photo.thumbnail || photo.image || "";
+        const activeClass = index === state.activePhotoIndex ? " is-active" : "";
+        return `
+          <button
+            class="viewer-filmstrip-item${activeClass}"
+            type="button"
+            data-viewer-photo-index="${index}"
+            aria-label="Open photo ${index + 1} of ${state.activePhotoIds.length}: ${escapeAttr(photo.aircraftType)} at ${escapeAttr(photo.locationName)}"
+            aria-current="${index === state.activePhotoIndex ? "true" : "false"}"
+          >
+            ${
+              image
+                ? `<img src="${escapeAttr(image)}" alt="">`
+                : `<span class="viewer-filmstrip-fallback" aria-hidden="true">${index + 1}</span>`
+            }
+          </button>
+        `;
+      })
+      .join("");
+
+    window.requestAnimationFrame(() => {
+      const activeItem = els.viewerFilmstrip.querySelector(".viewer-filmstrip-item.is-active");
+      if (activeItem) {
+        activeItem.scrollIntoView({ block: "nearest", inline: "center" });
+      }
+    });
   }
 
   function updateDeepLinkForViewerContext() {

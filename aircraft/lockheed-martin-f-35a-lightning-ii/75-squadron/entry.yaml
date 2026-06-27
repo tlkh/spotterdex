@@ -4,19 +4,20 @@ squadron_logo: raaf_75_sqn.png
 unit_type: squadron
 country: Australia
 photos:
-  - path: raaf_f35a_1.jpg
-    year: 2026
-    location: Changi Exhibition Center
-    caption: RAAF F-35A at Singapore Airshow 2026
-  - path: raaf_f35a_2.jpg
-    year: 2026
-    location: Changi Exhibition Center
-    caption: RAAF F-35A at Singapore Airshow 2026
-  - path: raaf_f35a_3.jpg
-    year: 2026
-    location: Changi Exhibition Center
-    caption: RAAF F-35A at Singapore Airshow 2026
-  - path: raaf_f35a_4.jpg
-    year: 2026
-    location: Changi Exhibition Center
-    caption: RAAF F-35A at Singapore Airshow 2026
+- path: raaf_f35a_1.jpg
+  year: 2026
+  location: Changi Exhibition Center
+  caption: RAAF F-35A at Singapore Airshow 2026
+- path: raaf_f35a_2.jpg
+  year: 2026
+  location: Changi Exhibition Center
+  caption: RAAF F-35A at Singapore Airshow 2026
+- path: raaf_f35a_3.jpg
+  year: 2026
+  location: Changi Exhibition Center
+  caption: RAAF F-35A at Singapore Airshow 2026
+- path: raaf_f35a_4.jpg
+  year: 2026
+  location: Changi Exhibition Center
+  caption: RAAF F-35A at Singapore Airshow 2026
+aircraft_family: fighter

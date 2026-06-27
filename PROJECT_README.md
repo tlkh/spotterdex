@@ -57,10 +57,26 @@ Install the script dependencies once:
 python3 -m pip install -r requirements.txt
 ```
 
+## Local Data Manager
+
+Run the local manager when you want to attach `raw_assets/` images to aircraft entries, add or update location hero images, create new entries or pins, and rebuild the generated site from one browser surface:
+
+```bash
+python3 tools/spotterdex_manager.py
+```
+
+Open `http://127.0.0.1:8765/`. The manager writes source YAML under `aircraft/` and `map_pins/`, then streams the generator output when you press Build, ending with changed generated files, manifest count deltas, warnings, and commit-scope guidance. Its thumbnail cache lives in `.spotterdex-manager-cache/` and is ignored by git.
+
 Build the static data, resize photos to 2048 px wide JPEGs, and generate 1024 px wide thumbnails:
 
 ```bash
 python3 tools/build_spotterdex.py
+```
+
+Photo processing uses multiprocessing by default with one fewer worker than the number of CPU cores. Override it when needed:
+
+```bash
+python3 tools/build_spotterdex.py --workers 4
 ```
 
 The included sample YAML references demo photo paths. To create stylized placeholder source images for the sample dataset, run:

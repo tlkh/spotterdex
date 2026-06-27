@@ -4,12 +4,14 @@
 from __future__ import annotations
 
 import argparse
+import os
 import hashlib
 import json
 import re
 import shutil
 import sys
 import unicodedata
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
@@ -27,6 +29,7 @@ except ImportError as exc:  # pragma: no cover - user environment guard
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp"}
 EXIF_TAGS = {value: key for key, value in ExifTags.TAGS.items()}
+PROGRESS_LINE_MODE = False
 
 
 class BuildWarningLog:
@@ -54,11 +57,12 @@ class ProgressBar:
     def __init__(self, label: str, total: int, enabled: bool = True, width: int = 28) -> None:
         self.label = label
         self.total = max(0, total)
-        self.enabled = bool(enabled and self.total and sys.stderr.isatty())
+        self.line_mode = bool(enabled and PROGRESS_LINE_MODE)
+        self.enabled = bool(enabled and self.total and (sys.stderr.isatty() or self.line_mode))
         self.width = max(10, width)
         self.current = 0
         self.last_line_length = 0
-        if self.enabled:
+        if self.enabled and not self.line_mode:
             self.render()
 
     def advance(self, detail: str = "") -> None:
@@ -69,6 +73,8 @@ class ProgressBar:
         if not self.enabled:
             return
         self.current = self.total
+        if self.line_mode:
+            return
         self.render()
         sys.stderr.write("\n")
         sys.stderr.flush()
@@ -76,6 +82,11 @@ class ProgressBar:
 
     def render(self, detail: str = "") -> None:
         if not self.enabled:
+            return
+        if self.line_mode:
+            detail_text = truncate_progress_detail(detail)
+            suffix = f" {detail_text}" if detail_text else ""
+            print(f"{self.label}: {self.current}/{self.total}{suffix}", file=sys.stderr, flush=True)
             return
         ratio = self.current / self.total if self.total else 1
         filled = min(self.width, round(self.width * ratio))
@@ -110,6 +121,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--logo-max-size", type=int, default=512, help="Maximum squadron logo width or height in pixels.")
     parser.add_argument("--strict", action="store_true", help="Return a non-zero exit code if validation warnings are found.")
     parser.add_argument("--no-progress", action="store_true", help="Disable terminal progress bars during the build.")
+    parser.add_argument("--progress-lines", action="store_true", help="Emit one progress line per processed item.")
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=None,
+        help="Photo processing worker processes. Defaults to CPU cores minus one.",
+    )
     parser.add_argument(
         "--make-demo-images",
         action="store_true",
@@ -118,8 +136,16 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def normalize_worker_count(value: Optional[int]) -> int:
+    if value is not None:
+        return max(1, int(value))
+    return max(1, (os.cpu_count() or 1) - 1)
+
+
 def main() -> int:
     args = parse_args()
+    global PROGRESS_LINE_MODE
+    PROGRESS_LINE_MODE = args.progress_lines
     root = args.root.resolve()
     warnings = BuildWarningLog()
 
@@ -132,6 +158,7 @@ def main() -> int:
     json_output = root / args.json_output
     js_output = root / args.js_output
     show_progress = not args.no_progress
+    photo_workers = normalize_worker_count(args.workers)
 
     pins = load_pins(
         root=root,
@@ -157,6 +184,7 @@ def main() -> int:
         logo_max_size=args.logo_max_size,
         pin_lookup=pin_lookup,
         make_demo_images=args.make_demo_images,
+        workers=photo_workers,
         warnings=warnings,
         show_progress=show_progress,
     )
@@ -292,6 +320,7 @@ def load_aircraft(
     logo_max_size: int,
     pin_lookup: Dict[str, str],
     make_demo_images: bool,
+    workers: int,
     warnings: BuildWarningLog,
     show_progress: bool = True,
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
@@ -303,6 +332,8 @@ def load_aircraft(
     squadron_by_key: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
     photos: List[Dict[str, Any]] = []
     used_photo_ids: set[str] = set()
+    photo_jobs: List[Dict[str, Any]] = []
+    photo_targets: Dict[int, Tuple[Dict[str, Any], Dict[str, Any]]] = {}
 
     yaml_files = sorted(list(aircraft_dir.glob("*/*/*.yaml")) + list(aircraft_dir.glob("*/*/*.yml")))
     entry_sources: List[Tuple[Path, Dict[str, Any]]] = []
@@ -316,7 +347,7 @@ def load_aircraft(
     read_progress.finish()
 
     photo_total = sum(count_photo_items(data) for _, data in entry_sources)
-    photo_progress = ProgressBar("Processing photos", photo_total, enabled=show_progress)
+    skipped_photo_count = 0
     for yaml_path, data in entry_sources:
         aircraft_data = data.get("aircraft") if isinstance(data.get("aircraft"), dict) else {}
         squadron_data = data.get("squadron") if isinstance(data.get("squadron"), dict) else {}
@@ -414,10 +445,12 @@ def load_aircraft(
             ) if isinstance(photo_item, dict) else f"photo #{index}"
             if not isinstance(photo_item, dict):
                 warnings.add(f"skipping invalid photo #{index} in {relative_posix(yaml_path, root)}")
-                photo_progress.advance(photo_label)
+                skipped_photo_count += 1
                 continue
 
-            photo_record = process_photo(
+            photo_job = prepare_photo_job(
+                order=len(photo_jobs),
+                label=photo_label,
                 root=root,
                 raw_assets_dir=raw_assets_dir,
                 yaml_path=yaml_path,
@@ -438,16 +471,34 @@ def load_aircraft(
                 used_photo_ids=used_photo_ids,
                 warnings=warnings,
             )
-            photo_progress.advance(photo_label)
-            if not photo_record:
+            if not photo_job:
+                skipped_photo_count += 1
                 continue
+            photo_targets[photo_job["order"]] = (aircraft_entry, squadron_entry)
+            photo_jobs.append(photo_job)
 
-            photos.append(photo_record)
-            aircraft_entry["photoIds"].append(photo_record["id"])
-            squadron_entry["photoIds"].append(photo_record["id"])
-            if not aircraft_entry["coverPhoto"]:
-                aircraft_entry["coverPhoto"] = photo_record["id"]
-    photo_progress.finish()
+    photo_progress = ProgressBar("Processing photos", photo_total, enabled=show_progress)
+    for _ in range(skipped_photo_count):
+        photo_progress.advance("skipped")
+    photo_results = process_photo_jobs(
+        jobs=photo_jobs,
+        workers=workers,
+        progress=photo_progress,
+    )
+    for order, result in sorted(photo_results.items()):
+        for message in result.get("notes", []):
+            warnings.info(message)
+        for message in result.get("warnings", []):
+            warnings.add(message)
+        photo_record = result.get("record")
+        if not photo_record:
+            continue
+        aircraft_entry, squadron_entry = photo_targets[order]
+        photos.append(photo_record)
+        aircraft_entry["photoIds"].append(photo_record["id"])
+        squadron_entry["photoIds"].append(photo_record["id"])
+        if not aircraft_entry["coverPhoto"]:
+            aircraft_entry["coverPhoto"] = photo_record["id"]
 
     aircraft_entries = sorted(aircraft_by_id.values(), key=lambda item: item["typeName"])
     for entry in aircraft_entries:
@@ -495,6 +546,16 @@ def apply_aircraft_stats(aircraft_entries: List[Dict[str, Any]], photos: List[Di
         }
 
 
+def format_pin_label(pin: Dict[str, Any]) -> str:
+    name = str(pin.get("name") or pin.get("id") or "Unknown location").strip()
+    country = str(pin.get("country") or "").strip()
+    icao = str(pin.get("icao") or "").strip()
+    suffix_parts = [part for part in (country, icao) if part]
+    if suffix_parts:
+        return f"{name} ({', '.join(suffix_parts)})"
+    return name
+
+
 def validate_manifest(manifest: Dict[str, Any], root: Path, warnings: BuildWarningLog) -> None:
     pins = manifest.get("pins", [])
     photos = manifest.get("photos", [])
@@ -503,6 +564,7 @@ def validate_manifest(manifest: Dict[str, Any], root: Path, warnings: BuildWarni
     pin_ids: set[str] = set()
     pin_name_keys: set[str] = set()
     enabled_pin_ids: set[str] = set()
+    pins_by_id: Dict[str, Dict[str, Any]] = {}
     pin_hero_photo_ids: List[Tuple[str, str]] = []
     for pin in pins:
         pin_id = str(pin.get("id") or "")
@@ -515,6 +577,7 @@ def validate_manifest(manifest: Dict[str, Any], root: Path, warnings: BuildWarni
         if pin_id in pin_ids:
             warnings.add(f"duplicate pin id in generated manifest: {pin_id}")
         pin_ids.add(pin_id)
+        pins_by_id[pin_id] = pin
 
         if pin_key in pin_name_keys:
             warnings.add(f"duplicate pin name/country in generated manifest: {pin.get('name')}")
@@ -613,7 +676,205 @@ def validate_manifest(manifest: Dict[str, Any], root: Path, warnings: BuildWarni
     if empty_entries:
         warnings.info(f"{len(empty_entries)} aircraft entries currently have no photos.")
     if empty_pins:
-        warnings.info(f"{len(empty_pins)} enabled map pins currently have no matched photos.")
+        empty_pin_names = [
+            format_pin_label(pins_by_id[pin_id])
+            for pin_id in sorted(empty_pins, key=lambda value: format_pin_label(pins_by_id.get(value, {"id": value})))
+            if pin_id in pins_by_id
+        ]
+        if empty_pin_names:
+            warnings.info(
+                f"{len(empty_pins)} enabled map pins currently have no matched photos: "
+                + "; ".join(empty_pin_names)
+            )
+        else:
+            warnings.info(f"{len(empty_pins)} enabled map pins currently have no matched photos.")
+
+
+def prepare_photo_job(
+    order: int,
+    label: str,
+    root: Path,
+    raw_assets_dir: Path,
+    yaml_path: Path,
+    photo_item: Dict[str, Any],
+    index: int,
+    type_name: str,
+    aircraft_id: str,
+    squadron_name: str,
+    squadron_id: str,
+    unit_type: str,
+    country: str,
+    photo_output_dir: Path,
+    thumb_output_dir: Path,
+    target_width: int,
+    thumb_width: int,
+    pin_lookup: Dict[str, str],
+    make_demo_images: bool,
+    used_photo_ids: set[str],
+    warnings: BuildWarningLog,
+) -> Optional[Dict[str, Any]]:
+    source_value = photo_item.get("path") or photo_item.get("file") or photo_item.get("filepath")
+    if not source_value:
+        warnings.add(f"photo #{index} in {relative_posix(yaml_path, root)} has no path")
+        return None
+
+    source_path = resolve_photo_source(root, raw_assets_dir, yaml_path, source_value)
+    if not source_path.exists() and not make_demo_images:
+        warnings.add(f"photo source not found: {relative_posix(source_path, root)}")
+        return None
+
+    if source_path.suffix.lower() not in IMAGE_EXTENSIONS:
+        warnings.add(f"unsupported image type skipped: {relative_posix(source_path, root)}")
+        return None
+
+    photo_id = unique_id(
+        f"{type_name}-{squadron_name}-{source_path.stem}-{short_hash(relative_posix(source_path, root))}",
+        used_photo_ids,
+    )
+    return {
+        "order": order,
+        "label": label,
+        "root": str(root),
+        "source_path": str(source_path),
+        "output_path": str(photo_output_dir / f"{photo_id}.jpg"),
+        "thumb_path": str(thumb_output_dir / f"{photo_id}.jpg"),
+        "photo_id": photo_id,
+        "photo_item": photo_item,
+        "type_name": type_name,
+        "aircraft_id": aircraft_id,
+        "squadron_name": squadron_name,
+        "squadron_id": squadron_id,
+        "unit_type": unit_type,
+        "country": country,
+        "target_width": target_width,
+        "thumb_width": thumb_width,
+        "pin_lookup": pin_lookup,
+        "make_demo_images": make_demo_images,
+    }
+
+
+def process_photo_jobs(
+    jobs: List[Dict[str, Any]],
+    workers: int,
+    progress: ProgressBar,
+) -> Dict[int, Dict[str, Any]]:
+    results: Dict[int, Dict[str, Any]] = {}
+    if not jobs:
+        progress.finish()
+        return results
+
+    worker_count = min(max(1, workers), len(jobs))
+    if worker_count <= 1:
+        for job in jobs:
+            results[job["order"]] = process_photo_job(job)
+            progress.advance(job.get("label", "photo"))
+        progress.finish()
+        return results
+
+    try:
+        with ProcessPoolExecutor(max_workers=worker_count) as executor:
+            futures = {executor.submit(process_photo_job, job): job for job in jobs}
+            for future in as_completed(futures):
+                job = futures[future]
+                try:
+                    result = future.result()
+                except Exception as exc:  # pragma: no cover - process-pool guard
+                    result = {
+                        "order": job["order"],
+                        "record": None,
+                        "warnings": [f"could not process {job.get('source_path', job.get('label', 'photo'))}: {exc}"],
+                    }
+                results[job["order"]] = result
+                progress.advance(job.get("label", "photo"))
+    except (OSError, PermissionError) as exc:
+        results[-1] = {
+            "order": -1,
+            "record": None,
+            "notes": [f"parallel photo processing unavailable ({exc}); falling back to one worker."],
+        }
+        for job in jobs:
+            results[job["order"]] = process_photo_job(job)
+            progress.advance(job.get("label", "photo"))
+    progress.finish()
+    return results
+
+
+def process_photo_job(job: Dict[str, Any]) -> Dict[str, Any]:
+    warnings: List[str] = []
+    root = Path(job["root"])
+    source_path = Path(job["source_path"])
+    output_path = Path(job["output_path"])
+    thumb_path = Path(job["thumb_path"])
+    photo_item = job["photo_item"]
+    type_name = str(job["type_name"])
+    squadron_name = str(job["squadron_name"])
+
+    if not source_path.exists():
+        if job.get("make_demo_images"):
+            make_demo_image(
+                source_path,
+                type_name,
+                squadron_name,
+                str(photo_item.get("location") or photo_item.get("location_name") or ""),
+            )
+        else:
+            warnings.append(f"photo source not found: {relative_posix(source_path, root)}")
+            return {"order": job["order"], "record": None, "warnings": warnings}
+
+    if source_path.suffix.lower() not in IMAGE_EXTENSIONS:
+        warnings.append(f"unsupported image type skipped: {relative_posix(source_path, root)}")
+        return {"order": job["order"], "record": None, "warnings": warnings}
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    thumb_path.parent.mkdir(parents=True, exist_ok=True)
+
+    try:
+        with Image.open(source_path) as opened:
+            exif = extract_exif(opened)
+            output_exif = normalized_output_exif(opened)
+            original_size = f"{opened.width} x {opened.height}"
+            image = ImageOps.exif_transpose(opened)
+            image = image.convert("RGB")
+            processed = resize_to_width(image, int(job["target_width"]))
+            thumbnail = resize_to_width(image, int(job["thumb_width"]))
+            save_kwargs = {"exif": output_exif} if output_exif else {}
+            processed.save(output_path, "JPEG", quality=90, optimize=True, progressive=True, **save_kwargs)
+            thumbnail.save(thumb_path, "JPEG", quality=82, optimize=True, progressive=True, **save_kwargs)
+    except Exception as exc:  # pragma: no cover - depends on source image
+        warnings.append(f"could not process {relative_posix(source_path, root)}: {exc}")
+        return {"order": job["order"], "record": None, "warnings": warnings}
+
+    location_name = str(photo_item.get("location") or photo_item.get("location_name") or "Unknown location").strip()
+    explicit_pin = photo_item.get("pin_id") or photo_item.get("pin")
+    pin_id = resolve_pin_id(explicit_pin, location_name, job["pin_lookup"])
+    photo_date = read_photo_date(photo_item, exif)
+    year = str(photo_item.get("year") or (photo_date[:4] if photo_date else "")).strip()
+
+    record = {
+        "id": job["photo_id"],
+        "aircraftId": job["aircraft_id"],
+        "aircraftType": type_name,
+        "squadronId": job["squadron_id"],
+        "squadronName": squadron_name,
+        "unitType": job["unit_type"],
+        "unitLabel": unit_display_label(job["unit_type"]),
+        "country": job["country"],
+        "year": year,
+        "date": photo_date,
+        "sortDate": photo_date or (f"{year}-01-01" if year else ""),
+        "locationName": location_name,
+        "pinId": pin_id,
+        "title": str(photo_item.get("title") or ""),
+        "caption": str(photo_item.get("caption") or ""),
+        "image": site_path_for(output_path, root),
+        "thumbnail": site_path_for(thumb_path, root),
+        "source": site_path_for(source_path, root),
+        "originalSize": original_size,
+        "processedSize": format_size(processed.size),
+        "thumbnailSize": format_size(thumbnail.size),
+        "exif": exif,
+    }
+    return {"order": job["order"], "record": record, "warnings": warnings}
 
 
 def process_photo(

@@ -3,7 +3,8 @@ squadron_name: JASDF Air Rescue Wing
 squadron_logo: jasdf_air_rescue_wing.png
 country: Japan
 photos:
-  - path: 584621.jpg
-    year: 2025
-    location: Tsuiki Air Base
-    caption: Mitsubishi UH-60J 58-4621 from JASDF Air Rescue Wing performing a SAR demonstration at Tsuiki Air Base.
+- path: 584621.jpg
+  year: 2025
+  location: Tsuiki Air Base
+  caption: Mitsubishi UH-60J 58-4621 from JASDF Air Rescue Wing performing a SAR demonstration at Tsuiki Air Base.
+aircraft_family: helicopter

@@ -3,7 +3,8 @@ squadron_name: 304th Tactical Fighter Squadron
 squadron_logo: jasdf_304.png
 country: Japan
 photos:
-  - path: 128925.jpg
-    year: 2025
-    location: Naha Air Base
-    caption: Mitsubishi F-15J Eagle 12-8925 landing at Naha Air Base in Okinawa, Japan.
+- path: 128925.jpg
+  year: 2025
+  location: Naha Air Base
+  caption: Mitsubishi F-15J Eagle 12-8925 landing at Naha Air Base in Okinawa, Japan.
+aircraft_family: fighter

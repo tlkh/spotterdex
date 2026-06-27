@@ -3,6 +3,7 @@ squadron_name: Escadron de Chasse 1/4
 unit_type: squadron
 country: France
 photos:
-  - path: rafale_b_2.jpg
-    location: Singapore
-    caption: French Rafale B taking off from Singapore
+- path: rafale_b_2.jpg
+  location: Singapore
+  caption: French Rafale B taking off from Singapore
+aircraft_family: fighter

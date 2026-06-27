@@ -3,6 +3,7 @@ squadron_name: 356th Fighter Squadron
 unit_type: squadron
 country: United States
 photos:
-  - path: usaf_ak_f35a_2.JPG
-    location: Singapore
-    caption: USAF F-35A from 356th Fighter Squadron ("Green Devils") landing in Singapore
+- path: usaf_ak_f35a_2.JPG
+  location: Singapore
+  caption: USAF F-35A from 356th Fighter Squadron ("Green Devils") landing in Singapore
+aircraft_family: fighter

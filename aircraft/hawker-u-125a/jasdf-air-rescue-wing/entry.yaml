@@ -3,7 +3,21 @@ squadron_name: JASDF Air Rescue Wing
 squadron_logo: jasdf_air_rescue_wing.png
 country: Japan
 photos:
-  - path: 423022.jpg
-    year: 2025
-    location: Tsuiki Air Base
-    caption: Hawker U-125A 42-3022 from JASDF Air Rescue Wing during a SAR demonstration at Tsuiki Air Base.
+- path: 423022.jpg
+  year: 2025
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: Hawker U-125A 42-3022 from JASDF Air Rescue Wing during a SAR demonstration at Tsuiki Air Base.
+- path: DSC09892-Enhanced-NR.jpeg
+  location: Komatsu Air Base
+  pin_id: komatsu-air-base
+  caption: Hawker U-125A from JASDF Air Rescue Wing during a SAR demonstration at Komatsu Air Base.
+- path: DSC09830-Enhanced-NR.jpeg
+  location: Komatsu Air Base
+  pin_id: komatsu-air-base
+  caption: Hawker U-125A from JASDF Air Rescue Wing during a SAR demonstration at Komatsu Air Base.
+- path: DSC09828-Enhanced-NR.jpeg
+  location: Komatsu Air Base
+  pin_id: komatsu-air-base
+  caption: Hawker U-125A from JASDF Air Rescue Wing during a SAR demonstration at Komatsu Air Base.
+aircraft_family: heavy

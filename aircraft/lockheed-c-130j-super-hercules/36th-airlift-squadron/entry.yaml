@@ -2,12 +2,21 @@ aircraft_type: Lockheed C-130J Super Hercules
 squadron_name: 36th Airlift Squadron
 country: United States
 photos:
-  - path: usaf_c130_1.jpeg
-    location: Yokota Air Base
-    caption: USAF C-130J Super Hercules at Yokota Air Base
-  - path: usaf_c130_2.jpeg
-    location: Yokota Air Base
-    caption: USAF C-130J Super Hercules at Yokota Air Base
-  - path: usaf_c130_3.jpeg
-    location: Yokota Air Base
-    caption: USAF C-130J Super Hercules at Yokota Air Base
+- path: usaf_c130_1.jpeg
+  location: Yokota Air Base
+  caption: USAF C-130J Super Hercules at Yokota Air Base
+- path: usaf_c130_2.jpeg
+  location: Yokota Air Base
+  caption: USAF C-130J Super Hercules at Yokota Air Base
+- path: usaf_c130_3.jpeg
+  location: Yokota Air Base
+  caption: USAF C-130J Super Hercules at Yokota Air Base
+- path: DSC09870-Enhanced-NR.jpeg
+  location: Yokota Air Base
+  pin_id: yokota-air-base
+  caption: C-130J flying past Mt Fuji after departing from Yokota Air Base
+- path: DSC08863-Enhanced-NR.jpeg
+  location: Yokota Air Base
+  pin_id: yokota-air-base
+  caption: C-130J taking off from Yokota Air Base
+aircraft_family: heavy

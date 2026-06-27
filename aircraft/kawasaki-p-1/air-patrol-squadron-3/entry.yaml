@@ -2,12 +2,13 @@ aircraft_type: Kawasaki P-1
 squadron_name: Air Patrol Squadron 3
 country: Japan
 photos:
-  - path: p1_1.jpeg
-    location: Atsugi Air Base
-    caption: JMSDF P-1 MPA at Atsugi Air Base
-  - path: p1_2.jpeg
-    location: Atsugi Air Base
-    caption: JMSDF P-1 MPA at Atsugi Air Base
-  - path: p1_3.jpeg
-    location: Atsugi Air Base
-    caption: JMSDF P-1 MPA at Atsugi Air Base
+- path: p1_1.jpeg
+  location: Atsugi Air Base
+  caption: JMSDF P-1 MPA at Atsugi Air Base
+- path: p1_2.jpeg
+  location: Atsugi Air Base
+  caption: JMSDF P-1 MPA at Atsugi Air Base
+- path: p1_3.jpeg
+  location: Atsugi Air Base
+  caption: JMSDF P-1 MPA at Atsugi Air Base
+aircraft_family: heavy

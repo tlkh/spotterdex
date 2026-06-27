@@ -154,6 +154,24 @@
           <div class="map-column">
             <section class="map-stage" aria-label="World map with aircraft spotting pins">
               <div class="world-map" id="worldMap" role="img" aria-label="OpenStreetMap showing aircraft spotting locations"></div>
+              <div class="map-mission-hud" id="mapMissionHud" aria-label="Map mission summary"></div>
+              <div class="map-route-controls" aria-label="Map timeline controls">
+                <button class="map-hud-button" type="button" id="mapRouteButton" aria-label="Show chronological route" aria-pressed="false">
+                  <span aria-hidden="true">⌁</span>
+                  <span>Show route</span>
+                </button>
+                <button
+                  class="map-hud-button map-dossier-toggle"
+                  type="button"
+                  id="mapDossierButton"
+                  aria-controls="mapResults"
+                  aria-label="Hide location details"
+                  aria-expanded="true"
+                >
+                  <span aria-hidden="true">▱</span>
+                  <span>Location details</span>
+                </button>
+              </div>
               <p class="map-fallback" id="mapFallback" hidden>
                 Map tiles are unavailable. Recent locations can still be selected from the list.
               </p>
@@ -225,7 +243,14 @@
             <p class="lead">
               Browse squadrons by insignia, aircraft types, countries, and archived photos.
             </p>
-            <div class="squadron-country-list" id="squadronLogoGrid"></div>
+            <div class="squadron-filter-bar" id="squadronFilters" aria-label="Filter squadron wall"></div>
+            <div class="squadron-explorer">
+              <aside class="squadron-country-rail" aria-label="Jump to country">
+                <p class="eyebrow">Jump to country</p>
+                <nav id="squadronCountryRail" class="squadron-country-nav"></nav>
+              </aside>
+              <div class="squadron-country-list" id="squadronLogoGrid"></div>
+            </div>
           </section>
 
           <section class="results-panel squadron-detail" id="squadronDetail" aria-live="polite"></section>
@@ -268,11 +293,19 @@
           aria-controls="viewerInfo"
           aria-expanded="false"
         >i</button>
+        <div class="viewer-telemetry" id="viewerTelemetry" aria-live="polite"></div>
+        <div class="viewer-zoom-controls" aria-label="Photo display controls">
+          <button class="viewer-button viewer-tool" type="button" id="viewerZoomOutButton" aria-label="Zoom out">−</button>
+          <button class="viewer-button viewer-tool viewer-zoom-readout" type="button" id="viewerZoomResetButton" aria-label="Reset photo zoom">1×</button>
+          <button class="viewer-button viewer-tool" type="button" id="viewerZoomInButton" aria-label="Zoom in">+</button>
+          <button class="viewer-button viewer-tool viewer-clean-toggle" type="button" id="viewerCleanButton" aria-pressed="false">Clean</button>
+        </div>
         <div class="viewer-image-frame">
           <button class="viewer-button previous" type="button" id="previousPhotoButton" aria-label="Previous photo">◀</button>
           <img id="viewerImage" alt="" draggable="false">
           <button class="viewer-button next" type="button" id="nextPhotoButton" aria-label="Next photo">▶</button>
         </div>
+        <div class="viewer-filmstrip" id="viewerFilmstrip" aria-label="Photo thumbnails"></div>
       </div>
       <aside class="viewer-info" id="viewerInfo">
         <p class="eyebrow" id="viewerKicker">Photo</p>

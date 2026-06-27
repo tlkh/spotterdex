@@ -3,6 +3,7 @@ squadron_name: 355th Fighter Squadron
 unit_type: squadron
 country: United States
 photos:
-  - path: usaf_ak_f35a_1.JPG
-    location: Singapore
-    caption: USAF F-35A from 355th Fighter Squadron ("Fighting Falcons") landing in Singapore
+- path: usaf_ak_f35a_1.JPG
+  location: Singapore
+  caption: USAF F-35A from 355th Fighter Squadron ("Fighting Falcons") landing in Singapore
+aircraft_family: fighter

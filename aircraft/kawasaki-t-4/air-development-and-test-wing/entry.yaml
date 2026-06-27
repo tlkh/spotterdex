@@ -3,6 +3,7 @@ squadron_name: Air Development and Test Wing
 squadron_logo: jasdf_adtw.png
 country: Japan
 photos:
-  - path: xx5606.jpg
-    location: Gifu Air Base
-    caption: Kawasaki T-4 from ADTW landing at Gifu Air Base.
+- path: xx5606.jpg
+  location: Gifu Air Base
+  caption: Kawasaki T-4 from ADTW landing at Gifu Air Base.
+aircraft_family: fighter

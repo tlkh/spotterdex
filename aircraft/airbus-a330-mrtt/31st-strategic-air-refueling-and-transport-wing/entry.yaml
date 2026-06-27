@@ -3,9 +3,11 @@ squadron_name: 31st Strategic Air Refueling and Transport Wing
 unit_type: squadron
 country: France
 photos:
-  - path: french_mrtt_1.jpg
-    location: Singapore
-    caption: French A330 MRTT landing in Singapore
-  - path: french_mrtt_2.jpg
-    location: Singapore
-    caption: French A330 MRTT landing in Singapore
+- path: french_mrtt_1.jpg
+  location: Singapore
+  caption: French A330 MRTT landing in Singapore
+- path: french_mrtt_2.jpg
+  location: Singapore
+  caption: French A330 MRTT landing in Singapore
+squadron_logo: 031_EARTS_logo.png
+aircraft_family: heavy

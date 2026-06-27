@@ -561,6 +561,128 @@ h3 {
   content: "";
 }
 
+.map-mission-hud,
+.map-route-controls {
+  position: absolute;
+  z-index: 4;
+  border: 1px solid color-mix(in srgb, var(--line-strong) 70%, transparent);
+  background: var(--glass-strong);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(16px) saturate(1.08);
+}
+
+.map-mission-hud {
+  top: 16px;
+  left: 16px;
+  display: grid;
+  max-width: min(330px, calc(100% - 32px));
+  gap: 2px;
+  padding: 11px 13px;
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 0.75rem;
+  pointer-events: none;
+}
+
+.map-mission-hud strong,
+.map-mission-hud .map-hud-kicker,
+.map-mission-hud .map-hud-coordinate {
+  color: var(--text);
+}
+
+.map-mission-hud strong {
+  overflow: hidden;
+  font-size: 0.94rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map-hud-kicker {
+  color: var(--blue) !important;
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.map-hud-meta,
+.map-hud-coordinate {
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.map-route-controls {
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: var(--radius);
+}
+
+.map-hud-button {
+  display: inline-flex;
+  min-height: 34px;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: calc(var(--radius) - 2px);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 850;
+  transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.map-hud-button:hover,
+.map-hud-button.is-active {
+  border-color: color-mix(in srgb, var(--line-strong) 88%, transparent);
+  background: var(--surface);
+  transform: translateY(-1px);
+}
+
+.map-hud-button:focus-visible,
+.map-control-toggle:focus-visible,
+.squadron-photo-filter:focus-visible,
+.squadron-country-nav button:focus-visible,
+.stats-country-row:focus-visible,
+.exif-bar-row:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+
+.mission-dossier-heading {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.map-control-toggle {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.map-control-toggle:hover {
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+
 .map-toolbar {
   position: absolute;
   top: 14px;
@@ -593,6 +715,10 @@ h3 {
   width: 100%;
   height: 100%;
   min-height: 520px;
+}
+
+.spotterdex-route-line {
+  filter: drop-shadow(0 1px 2px rgba(23, 19, 11, 0.42));
 }
 
 .map-fallback {
@@ -652,17 +778,19 @@ h3 {
 }
 
 .spotterdex-marker-shell {
-  display: flex !important;
-  width: min(340px, 48vw) !important;
-  height: auto !important;
-  align-items: center;
-  gap: 8px;
+  position: relative;
+  display: block !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: visible !important;
   border: 0 !important;
   background: transparent !important;
 }
 
 .spotterdex-marker-dot {
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
   display: grid;
   width: 30px;
   height: 30px;
@@ -675,9 +803,11 @@ h3 {
   color: var(--surface);
   font-size: 0.86rem;
   font-weight: 900;
+  transform: translate(-50%, -50%);
   transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
 }
 
+.spotterdex-marker-dot::before,
 .spotterdex-marker-dot::after {
   position: absolute;
   inset: -6px;
@@ -689,19 +819,29 @@ h3 {
   transition: opacity 180ms ease, transform 180ms ease;
 }
 
+.spotterdex-marker-dot::before {
+  content: "";
+}
+
 .spotterdex-marker-label {
+  position: absolute;
+  top: auto;
+  bottom: 22px;
+  left: 0;
   display: grid;
   width: max-content;
   max-width: min(292px, calc(48vw - 44px));
   min-width: 0;
-  gap: 4px;
+  gap: 5px;
   padding: 7px 10px;
   border: 1px solid color-mix(in srgb, var(--line-strong) 70%, transparent);
   border-radius: var(--radius);
-  background: var(--glass-strong);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
   box-shadow: 0 10px 28px rgba(24, 24, 22, 0.16);
   color: var(--text);
   line-height: 1;
+  text-align: center;
+  transform: translateX(-50%);
   backdrop-filter: blur(14px) saturate(1.05);
 }
 
@@ -717,6 +857,7 @@ h3 {
   white-space: nowrap;
 }
 
+.map-marker-assets,
 .map-logo-row,
 .map-family-row {
   display: inline-flex;
@@ -725,6 +866,18 @@ h3 {
   gap: 3px;
   min-width: 0;
   overflow: hidden;
+}
+
+.map-marker-assets {
+  width: 100%;
+  gap: 5px;
+  justify-content: center;
+}
+
+.map-marker-divider {
+  color: var(--muted);
+  font-size: 0.82em;
+  font-weight: 900;
 }
 
 .map-logo-row img {
@@ -747,12 +900,17 @@ h3 {
 .spotterdex-marker-shell.is-active .spotterdex-marker-dot {
   background: var(--pin-active);
   color: #ffffff;
-  transform: scale(1.12);
+  transform: translate(-50%, -50%) scale(1.12);
 }
 
+.spotterdex-marker-shell.is-active .spotterdex-marker-dot::before,
 .spotterdex-marker-shell.is-active .spotterdex-marker-dot::after {
-  opacity: 1;
-  transform: scale(1);
+  border-color: color-mix(in srgb, var(--pin-active) 78%, transparent);
+  animation: selected-pin-radar 2.6s ease-out infinite;
+}
+
+.spotterdex-marker-shell.is-active .spotterdex-marker-dot::before {
+  animation-delay: -1.3s;
 }
 
 .spotterdex-marker-shell.is-active .spotterdex-marker-label {
@@ -767,7 +925,13 @@ h3 {
 }
 
 .spotterdex-cluster-shell {
-  width: min(380px, 54vw) !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.spotterdex-cluster-shell .spotterdex-marker-label {
+  top: auto;
+  bottom: 25px;
 }
 
 .spotterdex-cluster-shell .spotterdex-marker-label {
@@ -775,8 +939,96 @@ h3 {
 }
 
 .spotterdex-marker-shell:hover .spotterdex-marker-dot {
-  transform: translateY(-2px);
+  transform: translate(-50%, calc(-50% - 2px));
   box-shadow: 0 16px 34px rgba(38, 35, 31, 0.32);
+}
+
+.spotterdex-traffic-anchor {
+  width: 0 !important;
+  height: 0 !important;
+  overflow: visible !important;
+  pointer-events: none !important;
+}
+
+.map-traffic-aircraft {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 22px;
+  height: 22px;
+  pointer-events: none;
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+  animation-delay: var(--traffic-delay);
+  animation-duration: var(--traffic-duration);
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+
+.map-traffic-aircraft img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 3px rgba(16, 21, 28, 0.24));
+  opacity: 0.74;
+}
+
+.map-traffic-aircraft.is-approaching {
+  animation-name: map-aircraft-approach;
+}
+
+.map-traffic-aircraft.is-departing {
+  animation-name: map-aircraft-depart;
+}
+
+@keyframes selected-pin-radar {
+  0% {
+    opacity: 0.52;
+    transform: scale(0.72);
+  }
+  72%,
+  100% {
+    opacity: 0;
+    transform: scale(2.9);
+  }
+}
+
+@keyframes map-aircraft-approach {
+  0% {
+    opacity: 0;
+    transform: translate(var(--traffic-start-x), var(--traffic-start-y)) rotate(var(--traffic-heading));
+  }
+  14% {
+    opacity: 0.72;
+  }
+  78% {
+    opacity: 0.64;
+    transform: translate(var(--traffic-end-x), var(--traffic-end-y)) rotate(var(--traffic-heading));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--traffic-end-x), var(--traffic-end-y)) rotate(var(--traffic-heading));
+  }
+}
+
+@keyframes map-aircraft-depart {
+  0% {
+    opacity: 0;
+    transform: translate(var(--traffic-start-x), var(--traffic-start-y)) rotate(var(--traffic-heading));
+  }
+  14% {
+    opacity: 0.72;
+  }
+  78% {
+    opacity: 0.64;
+    transform: translate(var(--traffic-end-x), var(--traffic-end-y)) rotate(var(--traffic-heading));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--traffic-end-x), var(--traffic-end-y)) rotate(var(--traffic-heading));
+  }
 }
 
 .cluster-count,
@@ -1160,6 +1412,18 @@ button.location-unit-chip:focus-visible,
 
 .location-photo-browser {
   padding-top: 4px;
+  margin-bottom: 14px;
+}
+
+.segmented.location-archive-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  width: 100%;
+}
+
+.location-archive-toggle .segment-button {
+  width: 100%;
 }
 
 .segmented {
@@ -1265,8 +1529,100 @@ button.location-unit-chip:focus-visible,
 
 .stats-dashboard-grid {
   display: grid;
+  gap: 14px;
+}
+
+.stats-summary-grid {
+  display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
+}
+
+.stats-visual-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 12px;
+}
+
+.stats-visual-grid.stats-visual-grid-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.stats-visual-card {
+  display: grid;
+  min-width: 0;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: linear-gradient(145deg, var(--surface), var(--surface-strong));
+}
+
+.stats-visual-heading {
+  display: flex;
+  gap: 12px;
+  align-items: start;
+  justify-content: space-between;
+}
+
+.stats-visual-heading .eyebrow {
+  margin-bottom: 3px;
+}
+
+.stats-visual-heading > span {
+  padding-top: 3px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.stats-country-list {
+  display: grid;
+  gap: 8px;
+}
+
+.stats-country-row {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(86px, 0.72fr) minmax(80px, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  padding: 5px 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-align: left;
+}
+
+.stats-country-row strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.stats-country-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.stats-country-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--cyan);
+  transition: width 180ms ease, filter 180ms ease;
+}
+
+.stats-country-row:hover .stats-country-track span,
+.stats-country-row:focus-visible .stats-country-track span {
+  filter: brightness(1.12) saturate(1.12);
+}
 }
 
 .stats-pair-card {
@@ -1388,9 +1744,16 @@ button.location-unit-chip:focus-visible,
 
 .exif-bar-row {
   display: grid;
+  width: 100%;
   grid-template-columns: minmax(72px, 0.9fr) minmax(70px, 1fr) auto;
   gap: 8px;
   align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
 }
 
 .exif-bar-label,
@@ -1424,6 +1787,12 @@ button.location-unit-chip:focus-visible,
   height: 100%;
   border-radius: inherit;
   background: var(--cyan);
+  transition: width 180ms ease, filter 180ms ease;
+}
+
+.exif-bar-row:hover .exif-bar-track span,
+.exif-bar-row:focus-visible .exif-bar-track span {
+  filter: brightness(1.15) saturate(1.1);
 }
 
 .squadrons-hero {
@@ -1434,6 +1803,100 @@ button.location-unit-chip:focus-visible,
 .squadrons-hero .lead {
   max-width: 760px;
   margin-bottom: 0;
+}
+
+.squadron-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.squadron-photo-filter {
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.squadron-photo-filter:hover,
+.squadron-photo-filter.is-active {
+  border-color: var(--line-strong);
+  background: var(--blue-soft);
+  color: var(--blue-strong);
+}
+
+.squadron-filter-count {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.squadron-explorer {
+  display: grid;
+  grid-template-columns: minmax(132px, 160px) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.squadron-country-rail {
+  position: sticky;
+  top: 96px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-strong);
+}
+
+.squadron-country-rail .eyebrow {
+  margin: 0;
+  font-size: 0.68rem;
+}
+
+.squadron-country-nav {
+  display: grid;
+  gap: 4px;
+}
+
+.squadron-country-nav button {
+  display: flex;
+  width: 100%;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 8px;
+  border: 1px solid transparent;
+  border-radius: calc(var(--radius) - 2px);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-align: left;
+}
+
+.squadron-country-nav button span:last-child {
+  display: grid;
+  min-width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--blue-strong);
+  font-size: 0.68rem;
+}
+
+.squadron-country-nav button:hover {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--text);
 }
 
 .squadron-country-list {
@@ -1507,6 +1970,14 @@ button.location-unit-chip:focus-visible,
   place-items: stretch;
 }
 
+.squadron-logo-media.has-hero::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.03), rgba(0, 0, 0, 0.36));
+  content: "";
+  pointer-events: none;
+}
+
 .squadron-card-hero {
   width: 100%;
   height: 100%;
@@ -1536,6 +2007,7 @@ button.location-unit-chip:focus-visible,
   background: color-mix(in srgb, var(--surface) 84%, transparent);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(12px);
+  z-index: 1;
 }
 
 .squadron-card-logo.is-standalone {
@@ -1652,6 +2124,50 @@ button.location-unit-chip:focus-visible,
 
 .squadron-type-list {
   margin: 0;
+}
+
+.squadron-hero-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-strong);
+}
+
+.squadron-hero-picker label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.squadron-hero-picker select {
+  min-width: min(100%, 280px);
+  min-height: 36px;
+  flex: 1 1 190px;
+  padding: 7px 30px 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius) - 2px);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.squadron-hero-picker button {
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius) - 2px);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.squadron-hero-picker button:hover {
+  border-color: var(--line-strong);
+  color: var(--text);
 }
 
 .aircraft-grid {
@@ -1878,15 +2394,64 @@ button.location-unit-chip:focus-visible,
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: 0;
+  padding: 0 0 104px;
   background: #050505;
+}
+
+.viewer-telemetry {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  z-index: 4;
+  display: inline-flex;
+  max-width: calc(100% - 210px);
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(10, 10, 10, 0.58);
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.75rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  backdrop-filter: blur(16px);
+}
+
+.viewer-telemetry span {
+  overflow: hidden;
+  padding: 8px 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viewer-telemetry span + span {
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.viewer-telemetry .viewer-frame-count {
+  color: #f4ead2;
+}
+
+.viewer-zoom-controls {
+  position: absolute;
+  top: 18px;
+  right: 76px;
+  z-index: 5;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(10, 10, 10, 0.54);
+  backdrop-filter: blur(16px);
 }
 
 .viewer-image-frame {
   position: relative;
   display: inline-grid;
   max-width: 100%;
-  max-height: 100vh;
+  max-height: calc(100vh - 104px);
   place-items: center;
 }
 
@@ -1895,11 +2460,27 @@ button.location-unit-chip:focus-visible,
   width: auto;
   height: auto;
   max-width: 100%;
-  max-height: 100vh;
+  max-height: calc(100vh - 104px);
   border-radius: 0;
   object-fit: contain;
   box-shadow: none;
+  cursor: zoom-in;
+  touch-action: none;
   user-select: none;
+  transition: transform 180ms ease;
+  will-change: transform;
+}
+
+.viewer-stage img.is-zoomed {
+  cursor: grab;
+}
+
+.viewer-stage img.is-zoomed:active {
+  cursor: grabbing;
+}
+
+.viewer-stage img.is-dragging {
+  transition: none;
 }
 
 .viewer-button {
@@ -1938,14 +2519,124 @@ button.location-unit-chip:focus-visible,
   font-style: italic;
 }
 
+.viewer-button.viewer-tool {
+  position: static;
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  border: 0;
+  background: transparent;
+  font-size: 1rem;
+}
+
+.viewer-button.viewer-zoom-readout {
+  width: 52px;
+  color: #f4ead2;
+  font-size: 0.7rem;
+}
+
+.viewer-button.viewer-clean-toggle {
+  width: auto;
+  padding: 0 10px;
+  border-left: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .viewer-button.previous {
-  bottom: 18px;
+  top: 50%;
   left: 18px;
+  transform: translateY(-50%);
 }
 
 .viewer-button.next {
-  bottom: 18px;
+  top: 50%;
   right: 18px;
+  transform: translateY(-50%);
+}
+
+.viewer-button.previous:hover,
+.viewer-button.next:hover {
+  transform: translateY(calc(-50% - 1px));
+}
+
+.viewer-filmstrip {
+  position: absolute;
+  right: 18px;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  left: 18px;
+  z-index: 2;
+  display: flex;
+  min-height: 76px;
+  gap: 10px;
+  align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  background: rgba(10, 10, 10, 0.58);
+  backdrop-filter: blur(18px);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.42) transparent;
+}
+
+.viewer-filmstrip[hidden] {
+  display: none;
+}
+
+.viewer-filmstrip::-webkit-scrollbar {
+  height: 8px;
+}
+
+.viewer-filmstrip::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.38);
+}
+
+.viewer-filmstrip-item {
+  display: grid;
+  flex: 0 0 72px;
+  width: 72px;
+  height: 52px;
+  place-items: center;
+  overflow: hidden;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  opacity: 0.72;
+  transition: border-color 180ms ease, opacity 180ms ease, transform 180ms ease;
+}
+
+.viewer-filmstrip-item:hover,
+.viewer-filmstrip-item:focus-visible {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.viewer-filmstrip-item:focus-visible {
+  outline: 2px solid #f8fafc;
+  outline-offset: 3px;
+}
+
+.viewer-filmstrip-item.is-active {
+  border-color: #f8fafc;
+  opacity: 1;
+}
+
+.viewer-filmstrip-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.viewer-filmstrip-fallback {
+  color: #f8fafc;
+  font-weight: 900;
 }
 
 .viewer-info {
@@ -1956,6 +2647,31 @@ button.location-unit-chip:focus-visible,
   border-left: 1px solid rgba(255, 255, 255, 0.16);
   background: rgba(7, 7, 7, 0.78);
   backdrop-filter: blur(24px);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.photo-viewer.is-clean .viewer-info,
+.photo-viewer.is-clean .viewer-telemetry,
+.photo-viewer.is-clean .viewer-filmstrip,
+.photo-viewer.is-clean .viewer-button.close,
+.photo-viewer.is-clean .viewer-button.info-toggle,
+.photo-viewer.is-clean .viewer-button.previous,
+.photo-viewer.is-clean .viewer-button.next {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.photo-viewer.is-clean .viewer-zoom-controls {
+  border-color: transparent;
+  background: transparent;
+  opacity: 0.28;
+  transition: opacity 180ms ease, background 180ms ease;
+}
+
+.photo-viewer.is-clean .viewer-zoom-controls:hover,
+.photo-viewer.is-clean .viewer-zoom-controls:focus-within {
+  background: rgba(10, 10, 10, 0.54);
+  opacity: 1;
 }
 
 .viewer-info .eyebrow {
@@ -2200,6 +2916,8 @@ button.location-unit-chip:focus-visible,
 
   #mapView .map-stage::after {
     background:
+      repeating-linear-gradient(0deg, transparent 0 58px, color-mix(in srgb, var(--surface) 17%, transparent) 59px 60px),
+      repeating-linear-gradient(90deg, transparent 0 58px, color-mix(in srgb, var(--surface) 13%, transparent) 59px 60px),
       radial-gradient(circle at 18% 22%, color-mix(in srgb, var(--surface) 22%, transparent), transparent 34%),
       linear-gradient(90deg, color-mix(in srgb, var(--bg) 58%, transparent) 0%, transparent 36%, transparent 68%, color-mix(in srgb, var(--bg) 36%, transparent) 100%),
       linear-gradient(180deg, color-mix(in srgb, var(--bg) 32%, transparent) 0%, transparent 34%, color-mix(in srgb, var(--bg) 46%, transparent) 100%);
@@ -2223,6 +2941,16 @@ button.location-unit-chip:focus-visible,
     background: var(--glass);
     box-shadow: var(--portfolio-shadow);
     backdrop-filter: blur(24px) saturate(1.08);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(calc(-100% - 28px));
+    transition: opacity 220ms ease, transform 220ms ease;
+  }
+
+  #mapView .map-workspace.is-control-panel-open > .control-panel {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
   }
 
   #mapView .control-panel h1 {
@@ -2246,18 +2974,51 @@ button.location-unit-chip:focus-visible,
     right: clamp(18px, 3vw, 48px);
     bottom: clamp(18px, 3vw, 42px);
     z-index: 20;
-    width: min(880px, max(470px, calc(100vw - 520px)));
+    width: clamp(340px, 28vw, 430px);
     max-height: none;
     overflow: auto;
     border-color: color-mix(in srgb, var(--line-strong) 68%, transparent);
     background: var(--glass);
     box-shadow: var(--portfolio-shadow);
     backdrop-filter: blur(24px) saturate(1.08);
+    opacity: 0;
+    pointer-events: none;
+    transform: translate3d(calc(100% + 26px), 0, 0);
+    transition: opacity 220ms ease, transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform, opacity;
+  }
+
+  #mapView .map-workspace.is-dossier-open #mapResults {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate3d(0, 0, 0);
+  }
+
+  #mapView .map-mission-hud {
+    top: auto;
+    bottom: clamp(30px, 4vw, 56px);
+    left: 50%;
+    max-width: min(300px, calc(100vw - 800px));
+    transform: translateX(-50%);
+  }
+
+  #mapView .map-route-controls {
+    top: clamp(18px, 3vw, 42px);
+    right: clamp(18px, 3vw, 48px);
+    transition: right 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  #mapView .map-workspace.is-dossier-open .map-route-controls {
+    right: min(calc(28vw + clamp(36px, 6vw, 96px)), 510px);
   }
 
   #mapView .leaflet-control-container {
     position: relative;
     z-index: 3;
+  }
+
+  #mapView .leaflet-top.leaflet-left {
+    margin-top: 102px;
   }
 }
 
@@ -2295,6 +3056,59 @@ button.location-unit-chip:focus-visible,
 
   .control-panel {
     position: static;
+  }
+
+  .squadron-explorer {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .squadron-country-rail {
+    position: static;
+    padding: 10px;
+  }
+
+  .squadron-country-nav {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .squadron-country-nav button {
+    width: auto;
+    flex: 0 0 auto;
+  }
+
+  #mapView .map-mission-hud {
+    top: 12px;
+    bottom: auto;
+    left: 12px;
+    max-width: min(236px, calc(100vw - 152px));
+    padding: 9px 11px;
+    transform: none;
+  }
+
+  #mapView .map-route-controls {
+    top: 12px;
+    right: 12px;
+    padding: 4px;
+  }
+
+  #mapView .map-route-controls .map-hud-button {
+    min-height: 32px;
+    padding: 7px 9px;
+  }
+
+  #mapView .map-dossier-toggle {
+    display: none;
+  }
+
+  #mapView .map-control-toggle {
+    display: none;
+  }
+
+  #mapView .leaflet-top.leaflet-left {
+    margin-top: 102px;
   }
 
   #mapView {
@@ -2422,12 +3236,12 @@ button.location-unit-chip:focus-visible,
     z-index: 3;
   }
 
-  #mapView .spotterdex-marker-shell {
-    width: min(306px, 54vw) !important;
+  #mapView .spotterdex-marker-label {
+    max-width: 242px;
   }
 
-  #mapView .spotterdex-marker-label {
-    max-width: min(252px, calc(54vw - 44px));
+  #mapView .spotterdex-cluster-shell .spotterdex-marker-label {
+    max-width: 262px;
   }
 }
 
@@ -2612,18 +3426,9 @@ button.location-unit-chip:focus-visible,
     z-index: 3;
   }
 
-  #mapView .spotterdex-marker-shell {
-    width: min(286px, 74vw) !important;
-    gap: 6px;
-  }
-
   #mapView .spotterdex-marker-label {
     max-width: min(236px, calc(74vw - 42px));
     padding: 6px 8px;
-  }
-
-  #mapView .spotterdex-cluster-shell {
-    width: min(306px, 80vw) !important;
   }
 
   #mapView .spotterdex-cluster-shell .spotterdex-marker-label {
@@ -2672,6 +3477,11 @@ button.location-unit-chip:focus-visible,
     grid-template-columns: 1fr;
   }
 
+  .stats-summary-grid,
+  .stats-visual-grid {
+    grid-template-columns: 1fr;
+  }
+
   .exif-summary-grid,
   .exif-dashboard-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2707,17 +3517,40 @@ button.location-unit-chip:focus-visible,
   .viewer-stage {
     height: 100svh;
     min-height: 100svh;
-    padding: 0;
+    padding: 0 0 108px;
+  }
+
+  .viewer-telemetry {
+    top: 18px;
+    left: 72px;
+    max-width: calc(100vw - 146px);
+  }
+
+  .viewer-telemetry span {
+    padding: 7px 8px;
+    font-size: 0.7rem;
+  }
+
+  .viewer-zoom-controls {
+    top: auto;
+    right: auto;
+    bottom: 94px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .viewer-button.viewer-clean-toggle {
+    width: 54px;
   }
 
   .viewer-image-frame {
     max-width: 100vw;
-    max-height: 100svh;
+    max-height: calc(100svh - 108px);
   }
 
   .viewer-stage img {
     max-width: 100vw;
-    max-height: 100svh;
+    max-height: calc(100svh - 108px);
   }
 
   .viewer-button {
@@ -2732,9 +3565,17 @@ button.location-unit-chip:focus-visible,
     background: rgba(255, 255, 255, 0.16);
   }
 
-  .viewer-button.previous,
-  .viewer-button.next {
-    bottom: max(18px, env(safe-area-inset-bottom));
+  .viewer-filmstrip {
+    right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    left: 12px;
+    min-height: 72px;
+  }
+
+  .viewer-filmstrip-item {
+    flex-basis: 64px;
+    width: 64px;
+    height: 48px;
   }
 
   .viewer-info {
@@ -2805,6 +3646,30 @@ button.location-unit-chip:focus-visible,
   .squadron-logo-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
+  }
+
+  #mapView .map-route-controls .map-hud-button span:last-child {
+    display: none;
+  }
+
+  #mapView .map-route-controls .map-hud-button {
+    width: 32px;
+    padding: 0;
+  }
+
+  .squadron-filter-bar {
+    align-items: stretch;
+    padding: 10px;
+  }
+
+  .squadron-filter-set,
+  .squadron-segmented {
+    width: 100%;
+  }
+
+  .squadron-photo-filter,
+  .squadron-filter-count {
+    margin-left: 0;
   }
 
   .squadron-logo-card {
@@ -2904,6 +3769,10 @@ button.location-unit-chip:focus-visible,
     grid-template-columns: 1fr;
   }
 
+  .stats-country-row {
+    grid-template-columns: minmax(72px, 0.72fr) minmax(58px, 1fr) auto;
+  }
+
   .location-hero {
     height: 150px;
   }
@@ -2942,6 +3811,10 @@ button.location-unit-chip:focus-visible,
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .map-traffic-aircraft {
+    display: none;
+  }
+
   *,
   *::before,
   *::after {

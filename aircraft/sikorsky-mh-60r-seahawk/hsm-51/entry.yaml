@@ -3,9 +3,10 @@ squadron_name: Helicopter Maritime Strike Squadron 51 (HSM-51)
 unit_type: squadron
 country: United States
 photos:
-  - path: usn_seahawk_1.jpeg
-    location: Atsugi Air Base
-    caption: USN MH-60R Seahawk landing at Atsugi Air Base in rainy weather
-  - path: usn_seahawk_2.jpeg
-    location: Atsugi Air Base
-    caption: USN MH-60R Seahawk landing at Atsugi Air Base in rainy weather
+- path: usn_seahawk_1.jpeg
+  location: Atsugi Air Base
+  caption: USN MH-60R Seahawk landing at Atsugi Air Base in rainy weather
+- path: usn_seahawk_2.jpeg
+  location: Atsugi Air Base
+  caption: USN MH-60R Seahawk landing at Atsugi Air Base in rainy weather
+aircraft_family: helicopter

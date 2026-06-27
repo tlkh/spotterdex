@@ -3,7 +3,24 @@ squadron_name: Air Development and Test Wing
 squadron_logo: jasdf_adtw.png
 country: Japan
 photos:
-  - path: 128928.jpg
-    year: 2026
-    location: Gifu Air Base
-    caption: Mitsubishi F-15J 12-8928 from ADTW landing at Gifu Air Base.
+- path: 128928.jpg
+  year: 2026
+  location: Gifu Air Base
+  caption: Mitsubishi F-15J 12-8928 from ADTW landing at Gifu Air Base.
+- path: DSC07575-Enhanced-NR.jpeg
+  location: Gifu Air Base
+  pin_id: gifu-air-base
+  caption: ADTW F-15J at Gifu Air Base
+- path: DSC07205-Enhanced-NR.jpeg
+  location: Gifu Air Base
+  pin_id: gifu-air-base
+  caption: ADTW F-15J at Gifu Air Base
+- path: DSC00354-Enhanced-NR.jpeg
+  location: Gifu Air Base
+  pin_id: gifu-air-base
+  caption: ADTW F-15J at Gifu Air Base
+- path: DSC07295-Enhanced-NR.jpeg
+  location: Gifu Air Base
+  pin_id: gifu-air-base
+  caption: F-15J making low pass over Gifu Air Base during an airshow rehearsal
+aircraft_family: fighter

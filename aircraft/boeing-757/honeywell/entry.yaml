@@ -3,9 +3,11 @@ squadron_name: Honeywell
 unit_type: organisation
 country: United States
 photos:
-  - path: honeywell_1.jpg
-    location: Changi Airport
-    caption: Honeywell Flying Testbed (Boeing 757) landing in Singapore Changi Airport
-  - path: honeywell_2.jpg
-    location: Changi Airport
-    caption: Honeywell Flying Testbed (Boeing 757) landing in Singapore Changi Airport
+- path: honeywell_1.jpg
+  location: Changi Airport
+  caption: Honeywell Flying Testbed (Boeing 757) landing in Singapore Changi Airport
+- path: honeywell_2.jpg
+  location: Changi Airport
+  caption: Honeywell Flying Testbed (Boeing 757) landing in Singapore Changi Airport
+aircraft_family: heavy
+squadron_logo: honeywell-aerospace-logo.png
