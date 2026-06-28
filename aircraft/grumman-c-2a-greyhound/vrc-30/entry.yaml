@@ -7,4 +7,5 @@ photos:
 - path: c2_vrc30.jpg
   location: Singapore
   caption: Grumman C-2A Greyhound from VRC-30 "Providers" landing in Singapore
+  caption_ai_assisted: true
 aircraft_family: heavy

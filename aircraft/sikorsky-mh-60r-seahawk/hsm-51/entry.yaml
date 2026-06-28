@@ -5,8 +5,10 @@ country: United States
 photos:
 - path: usn_seahawk_1.jpeg
   location: Atsugi Air Base
-  caption: USN MH-60R Seahawk landing at Atsugi Air Base in rainy weather
+  caption: USN MH-60R Seahawk from HSM-51 with landing at Atsugi Air Base
+  caption_ai_assisted: true
 - path: usn_seahawk_2.jpeg
   location: Atsugi Air Base
-  caption: USN MH-60R Seahawk landing at Atsugi Air Base in rainy weather
+  caption: USN MH-60R Seahawk from HSM-51 with landing at Atsugi Air Base
+  caption_ai_assisted: true
 aircraft_family: helicopter

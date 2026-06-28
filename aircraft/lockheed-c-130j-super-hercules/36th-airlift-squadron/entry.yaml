@@ -4,19 +4,24 @@ country: United States
 photos:
 - path: usaf_c130_1.jpeg
   location: Yokota Air Base
-  caption: USAF C-130J Super Hercules at Yokota Air Base
+  caption: USAF C-130J Super Hercules from the 36th Airlift Squadron at Yokota Air Base
+  caption_ai_assisted: true
 - path: usaf_c130_2.jpeg
   location: Yokota Air Base
-  caption: USAF C-130J Super Hercules at Yokota Air Base
+  caption: USAF C-130J Super Hercules of the 36th Airlift Squadron at Yokota Air Base
+  caption_ai_assisted: true
 - path: usaf_c130_3.jpeg
   location: Yokota Air Base
-  caption: USAF C-130J Super Hercules at Yokota Air Base
+  caption: USAF C-130J Super Hercules of the 36th Airlift Squadron at Yokota Air Base
+  caption_ai_assisted: true
 - path: DSC09870-Enhanced-NR.jpeg
   location: Yokota Air Base
   pin_id: yokota-air-base
-  caption: C-130J flying past Mt Fuji after departing from Yokota Air Base
+  caption: Lockheed C-130J Super Hercules from the 36th Airlift Squadron flies past Mount Fuji.
+  caption_ai_assisted: true
 - path: DSC08863-Enhanced-NR.jpeg
   location: Yokota Air Base
   pin_id: yokota-air-base
-  caption: C-130J taking off from Yokota Air Base
+  caption: Lockheed C-130J Super Hercules of the 36th Airlift Squadron climbing after take-off
+  caption_ai_assisted: true
 aircraft_family: heavy

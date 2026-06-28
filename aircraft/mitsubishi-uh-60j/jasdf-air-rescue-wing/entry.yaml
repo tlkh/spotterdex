@@ -6,5 +6,11 @@ photos:
 - path: 584621.jpg
   year: 2025
   location: Tsuiki Air Base
-  caption: Mitsubishi UH-60J 58-4621 from JASDF Air Rescue Wing performing a SAR demonstration at Tsuiki Air Base.
+  caption: Mitsubishi UH-60J 58-4621 from the JASDF Air Rescue Wing at Tsuiki Air Base
+  caption_ai_assisted: true
+- path: DSC08902-Enhanced-NR.jpeg
+  location: Kisarazu Airfield
+  pin_id: kisarazu-airfield
+  caption: JASDF Air Rescue UH-60J at Kisarazu Airfield
+  caption_ai_assisted: true
 aircraft_family: helicopter

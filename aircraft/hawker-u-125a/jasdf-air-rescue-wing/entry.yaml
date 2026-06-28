@@ -8,16 +8,25 @@ photos:
   location: Tsuiki Air Base
   pin_id: tsuiki-air-base
   caption: Hawker U-125A 42-3022 from JASDF Air Rescue Wing during a SAR demonstration at Tsuiki Air Base.
+  caption_ai_assisted: true
 - path: DSC09892-Enhanced-NR.jpeg
   location: Komatsu Air Base
   pin_id: komatsu-air-base
   caption: Hawker U-125A from JASDF Air Rescue Wing during a SAR demonstration at Komatsu Air Base.
+  caption_ai_assisted: true
 - path: DSC09830-Enhanced-NR.jpeg
   location: Komatsu Air Base
   pin_id: komatsu-air-base
-  caption: Hawker U-125A from JASDF Air Rescue Wing during a SAR demonstration at Komatsu Air Base.
+  caption: Hawker U-125A from JASDF Air Rescue Wing conducts a SAR demonstration at Komatsu Air Base
+  caption_ai_assisted: true
 - path: DSC09828-Enhanced-NR.jpeg
   location: Komatsu Air Base
   pin_id: komatsu-air-base
   caption: Hawker U-125A from JASDF Air Rescue Wing during a SAR demonstration at Komatsu Air Base.
+  caption_ai_assisted: true
+- path: DSC06045-Enhanced-NR.jpeg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: A light blue Hawker U-125A, marked 017, taxis on the runway at Tsuiki Air Base.
+  caption_ai_assisted: true
 aircraft_family: heavy

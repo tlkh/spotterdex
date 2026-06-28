@@ -4,9 +4,11 @@ country: Japan
 photos:
 - path: cygnus_1.jpeg
   location: Haneda Airport
-  caption: Japan Air Force One (JASDF Boeing 777-300ER) landing at Haneda Airport
+  caption: Japan Air Force One (JASDF Boeing 777-300ER) at Haneda Airport
+  caption_ai_assisted: true
 - path: cygnus_2.jpeg
   location: Haneda Airport
   caption: Japan Air Force One (JASDF Boeing 777-300ER) landing at Haneda Airport
+  caption_ai_assisted: true
 aircraft_family: heavy
 squadron_logo: 701_sqn_logo.png

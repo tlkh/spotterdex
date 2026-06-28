@@ -5,5 +5,6 @@ country: United States
 photos:
 - path: wolfhound_1.jpg
   location: Singapore
-  caption: U.S. Special Operations Command (AFSOC) C-146A Wolfhound (Dornier 328) landing in Singapore
+  caption: USAF Special Operations Command C-146A Wolfhound landing in Singapore
+  caption_ai_assisted: true
 aircraft_family: heavy

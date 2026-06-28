@@ -4,11 +4,14 @@ country: Japan
 photos:
 - path: p1_1.jpeg
   location: Atsugi Air Base
-  caption: JMSDF P-1 MPA at Atsugi Air Base
+  caption: JMSDF Air Patrol Squadron 3 Kawasaki P-1 at Atsugi Air Base
+  caption_ai_assisted: true
 - path: p1_2.jpeg
   location: Atsugi Air Base
-  caption: JMSDF P-1 MPA at Atsugi Air Base
+  caption: JMSDF P-1 MPA from Air Patrol Squadron 3 at Atsugi Air Base
+  caption_ai_assisted: true
 - path: p1_3.jpeg
   location: Atsugi Air Base
-  caption: JMSDF P-1 MPA at Atsugi Air Base
+  caption: JMSDF Kawasaki P-1 from Air Patrol Squadron 3 at Atsugi Air Base
+  caption_ai_assisted: true
 aircraft_family: heavy

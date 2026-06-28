@@ -5,11 +5,14 @@ country: United States
 photos:
 - path: metrea_kc135_1.jpg
   location: Singapore
-  caption: Metrea KC-135R (ex-RSAF) landing in Singapore
+  caption: Metrea KC-135 Stratotanker (ex-RSAF) flying over Singapore
+  caption_ai_assisted: true
 - path: metrea_kc135_2.jpg
   location: Singapore
-  caption: Metrea KC-135R (ex-RSAF) landing in Singapore
+  caption: Metrea KC-135 Stratotanker (ex-RSAF) landing in Singapore
+  caption_ai_assisted: true
 - path: metrea_kc135_3.jpg
   location: Singapore
-  caption: Metrea KC-135R (ex-RSAF) landing in Singapore
+  caption: Metrea KC-135 Stratotanker (ex-RSAF) landing in Singapore
+  caption_ai_assisted: true
 aircraft_family: heavy

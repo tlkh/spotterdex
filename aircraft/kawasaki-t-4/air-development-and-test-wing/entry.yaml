@@ -5,5 +5,6 @@ country: Japan
 photos:
 - path: xx5606.jpg
   location: Gifu Air Base
-  caption: Kawasaki T-4 from ADTW landing at Gifu Air Base.
+  caption: Kawasaki T-4 from the Air Development and Test Wing landing at Gifu Air Base
+  caption_ai_assisted: true
 aircraft_family: fighter

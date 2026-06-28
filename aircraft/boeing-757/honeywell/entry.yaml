@@ -5,9 +5,11 @@ country: United States
 photos:
 - path: honeywell_1.jpg
   location: Changi Airport
-  caption: Honeywell Flying Testbed (Boeing 757) landing in Singapore Changi Airport
+  caption: Honeywell Boeing 757 landing in Singapore Changi Airport
+  caption_ai_assisted: true
 - path: honeywell_2.jpg
   location: Changi Airport
-  caption: Honeywell Flying Testbed (Boeing 757) landing in Singapore Changi Airport
+  caption: A Honeywell Boeing 757 lands at Changi Airport
+  caption_ai_assisted: true
 aircraft_family: heavy
 squadron_logo: honeywell-aerospace-logo.png

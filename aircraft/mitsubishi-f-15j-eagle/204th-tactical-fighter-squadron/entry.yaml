@@ -6,5 +6,6 @@ photos:
 - path: 204_sunset.jpg
   year: 2025
   location: Naha Air Base
-  caption: Mitsubishi F-15J Eagle from 204 TFS landing at Naha Air Base in Okinawa, Japan.
+  caption: Mitsubishi F-15J Eagle from the 204th Tactical Fighter Squadron landing at Naha Air Base in Okinawa, Japan at sunset
+  caption_ai_assisted: true
 aircraft_family: fighter

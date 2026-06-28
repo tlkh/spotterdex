@@ -6,5 +6,6 @@ photos:
 - path: zz_0007.jpg
   year: 2025
   location: Kadena Air Base
-  caption: Boeing E-3G Sentry from the 961st Airborne Air Control Squadron, 18th Wing, at Kadena Air Base.
+  caption: U.S. Air Force Boeing E-3G Sentry from the 961st Airborne Air Control Squadron at Kadena Air Base
+  caption_ai_assisted: true
 aircraft_family: heavy

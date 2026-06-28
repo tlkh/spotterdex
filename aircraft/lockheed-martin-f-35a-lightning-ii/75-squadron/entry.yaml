@@ -7,17 +7,21 @@ photos:
 - path: raaf_f35a_1.jpg
   year: 2026
   location: Changi Exhibition Center
-  caption: RAAF F-35A at Singapore Airshow 2026
+  caption: Lockheed Martin F-35A Lightning II from 75 Squadron making a low pass at Changi Exhibition Center
+  caption_ai_assisted: true
 - path: raaf_f35a_2.jpg
   year: 2026
   location: Changi Exhibition Center
-  caption: RAAF F-35A at Singapore Airshow 2026
+  caption: RAAF F-35A 75 Squadron at Changi Exhibition Center
+  caption_ai_assisted: true
 - path: raaf_f35a_3.jpg
   year: 2026
   location: Changi Exhibition Center
-  caption: RAAF F-35A at Singapore Airshow 2026
+  caption: 75 Squadron F-35A Lightning II at Changi Exhibition Center
+  caption_ai_assisted: true
 - path: raaf_f35a_4.jpg
   year: 2026
   location: Changi Exhibition Center
-  caption: RAAF F-35A at Singapore Airshow 2026
+  caption: 75 Squadron F-35A Lightning II at Changi Exhibition Center
+  caption_ai_assisted: true
 aircraft_family: fighter

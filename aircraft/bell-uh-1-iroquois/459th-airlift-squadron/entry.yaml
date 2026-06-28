@@ -4,12 +4,15 @@ country: United States
 photos:
 - path: usaf_huey_1.jpeg
   location: Yokota Air Base
-  caption: USAF UH-1 Iroquois (Huey) at Yokota Air Base
+  caption: USAF UH-1 Iroquois from the 459th Airlift Squadron at Yokota Air Base
+  caption_ai_assisted: true
 - path: usaf_huey_2.jpeg
   location: Yokota Air Base
-  caption: USAF UH-1 Iroquois (Huey) at Yokota Air Base
+  caption: 459th Airlift Squadron Bell UH-1 Iroquois at Yokota Air Base
+  caption_ai_assisted: true
 - path: usaf_huey_3.jpeg
   location: Yokota Air Base
-  caption: USAF UH-1 Iroquois (Huey) at Yokota Air Base
+  caption: USAF Bell UH-1 Iroquois, 459th Airlift Squadron, at Yokota Air Base
+  caption_ai_assisted: true
 aircraft_family: helicopter
 squadron_logo: 459th_Airlift_Squadron_logo.png

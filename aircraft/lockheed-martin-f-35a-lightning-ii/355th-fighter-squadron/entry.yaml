@@ -5,5 +5,6 @@ country: United States
 photos:
 - path: usaf_ak_f35a_1.JPG
   location: Singapore
-  caption: USAF F-35A from 355th Fighter Squadron ("Fighting Falcons") landing in Singapore
+  caption: An F-35A from the 355th Fighter Squadron lands in Singapore
+  caption_ai_assisted: true
 aircraft_family: fighter

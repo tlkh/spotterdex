@@ -8,5 +8,6 @@ photos:
   caption: Italian Air Force F-35A in Singapore
 - path: italy_f35_6.jpg
   location: Singapore
-  caption: Italian Air Force F-35A in Singapore
+  caption: "6\xB0 Stormo F-35A taking off from Singapore"
+  caption_ai_assisted: true
 aircraft_family: fighter

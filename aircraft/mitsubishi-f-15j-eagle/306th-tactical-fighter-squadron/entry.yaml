@@ -6,5 +6,6 @@ photos:
 - path: 928907.jpg
   year: 2025
   location: Komatsu Air Base
-  caption: Mitsubishi F-15J Eagle from 306 TFS taking off from Komatsu Air Base in Japan.
+  caption: A Mitsubishi F-15J Eagle from the 306th Tactical Fighter Squadron takes off from Komatsu Air Base.
+  caption_ai_assisted: true
 aircraft_family: fighter

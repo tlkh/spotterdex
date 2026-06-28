@@ -9,6 +9,7 @@ SpotterDex build script.
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import io
 import json
@@ -28,7 +29,9 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
+from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlparse
+from urllib.request import Request, urlopen
 
 try:
     import yaml
@@ -45,6 +48,10 @@ ROOT = Path(__file__).resolve().parents[1]
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp"}
 CACHE_DIR = ROOT / ".spotterdex-manager-cache"
 THUMB_DIR = CACHE_DIR / "thumbs"
+NVIDIA_CAPTION_ENDPOINT = "https://inference-api.nvidia.com/v1/chat/completions"
+NVIDIA_CAPTION_MODEL = "nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
+NVIDIA_CAPTION_IMAGE_WIDTH = 768
+NVIDIA_CAPTION_TIMEOUT_SECONDS = 75
 
 
 class FlowList(list):
@@ -53,6 +60,10 @@ class FlowList(list):
 
 class SpotterDexDumper(yaml.SafeDumper):
     pass
+
+
+class CaptionAssistError(ValueError):
+    """A safe, user-facing error from the server-side caption assistant."""
 
 
 MISSING_FIELD_LABELS = {
@@ -147,6 +158,7 @@ class SpotterDexManager:
         location_name = clean_text(payload.get("locationName"))
         pin_id = clean_text(payload.get("pinId"))
         caption = clean_text(payload.get("caption"))
+        caption_ai_assisted = payload.get("captionAiAssisted") is True
         date = clean_text(payload.get("date"))
         year = clean_year(payload.get("year") or (date[:4] if date else ""))
         dedupe = payload.get("dedupe", True) is not False
@@ -185,6 +197,8 @@ class SpotterDexManager:
                 item["pin_id"] = pin_id
             if caption:
                 item["caption"] = caption
+            if caption_ai_assisted:
+                item["caption_ai_assisted"] = True
             photos.append(item)
             existing.add(yaml_photo_path)
             appended.append(asset_rel)
@@ -207,6 +221,7 @@ class SpotterDexManager:
         photos = data.get("photos")
         if not isinstance(photos, list) or index < 0 or index >= len(photos):
             raise ValueError("Photo index is invalid.")
+        existing_photo = photos[index] if isinstance(photos[index], dict) else {}
         if not isinstance(photos[index], dict):
             photos[index] = {}
 
@@ -226,9 +241,67 @@ class SpotterDexManager:
                 updated[key] = int(value)
             else:
                 updated[key] = value
+        if payload_caption_is_ai_assisted(incoming) or photo_caption_is_ai_assisted(existing_photo):
+            updated["caption_ai_assisted"] = True
         photos[index] = updated
         write_yaml(entry_path, data)
         return {"ok": True, "message": "Photo updated."}
+
+    def generate_caption(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate a non-persistent caption suggestion from a source image."""
+        entry_path = self._project_path(payload.get("entryPath") or "")
+        if not entry_path or not entry_path.exists() or not self._is_within(entry_path, self.aircraft_dir):
+            raise CaptionAssistError("Choose an aircraft entry before generating a caption.")
+
+        entry_data = read_yaml(entry_path)
+        aircraft_type = read_aircraft_type(entry_data, entry_path)
+        squadron_name = read_squadron_name(entry_data, entry_path)
+        location = clean_text(payload.get("locationName"))
+        source_path: Optional[Path] = None
+
+        asset_value = clean_text(payload.get("assetPath"))
+        if asset_value:
+            source_path = self._raw_asset_path(asset_value)
+        else:
+            try:
+                index = int(payload.get("index"))
+            except (TypeError, ValueError) as exc:
+                raise CaptionAssistError("Choose a photo before generating a caption.") from exc
+            photos = entry_data.get("photos")
+            if not isinstance(photos, list) or index < 0 or index >= len(photos):
+                raise CaptionAssistError("The selected photo no longer exists in this entry.")
+            photo = photos[index]
+            if not isinstance(photo, dict):
+                raise CaptionAssistError("The selected photo is not a valid YAML photo record.")
+            source_value = photo.get("path") or photo.get("file") or photo.get("filepath") or ""
+            source_path = resolve_photo_source(self.root, self.raw_assets_dir, entry_path, source_value)
+            location = location or clean_text(photo.get("location") or photo.get("location_name"))
+
+        if (
+            source_path is None
+            or not source_path.exists()
+            or source_path.suffix.lower() not in IMAGE_EXTENSIONS
+            or not self._is_within(source_path, self.root)
+        ):
+            raise CaptionAssistError("The selected photo source is unavailable or is not a supported image.")
+
+        draft_caption = clean_text(payload.get("draftCaption"))
+        if len(draft_caption) > 4000:
+            raise CaptionAssistError("The existing caption is too long to refine.")
+
+        image_url = caption_image_data_url(source_path)
+        prompt = build_caption_prompt(
+            aircraft_type=aircraft_type,
+            squadron_name=squadron_name,
+            location=location,
+            draft_caption=draft_caption,
+        )
+        caption = request_nvidia_caption(prompt=prompt, image_url=image_url)
+        return {
+            "ok": True,
+            "caption": caption,
+            "message": "Caption suggestion ready. Review it, then save the photo.",
+        }
 
     def delete_photo(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         entry_path = self._project_path(payload.get("entryPath") or "")
@@ -675,6 +748,7 @@ class SpotterDexManager:
                         "exifDate": exif_date,
                         "title": clean_text(item.get("title")),
                         "caption": clean_text(item.get("caption")),
+                        "captionAiAssisted": photo_caption_is_ai_assisted(item),
                         "missingFields": missing_fields,
                         "missingFieldLabels": [MISSING_FIELD_LABELS[field] for field in missing_fields],
                     }
@@ -816,6 +890,7 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
                 "/api/attach": self.context.manager.append_photos,
                 "/api/update-entry": self.context.manager.update_entry,
                 "/api/update-photo": self.context.manager.update_photo,
+                "/api/generate-caption": self.context.manager.generate_caption,
                 "/api/delete-photo": self.context.manager.delete_photo,
                 "/api/create-entry": self.context.manager.create_entry,
                 "/api/create-pin": self.context.manager.create_pin,
@@ -1275,6 +1350,159 @@ def parse_float(value: Any, label: str) -> float:
 
 def clean_text(value: Any) -> str:
     return str(value or "").strip()
+
+
+def photo_caption_is_ai_assisted(photo_item: Dict[str, Any]) -> bool:
+    value = photo_item.get("caption_ai_assisted", photo_item.get("captionAiAssisted"))
+    return value is True or clean_text(value).lower() in {"1", "true", "yes"}
+
+
+def payload_caption_is_ai_assisted(payload: Dict[str, Any]) -> bool:
+    return payload.get("captionAiAssisted") is True or payload.get("caption_ai_assisted") is True
+
+
+def caption_image_data_url(source_path: Path) -> str:
+    """Return a server-generated 768 px-wide JPEG data URL for the VLM."""
+    try:
+        with Image.open(source_path) as opened:
+            image = ImageOps.exif_transpose(opened)
+            height = max(1, round(image.height * NVIDIA_CAPTION_IMAGE_WIDTH / image.width))
+            image = image.resize((NVIDIA_CAPTION_IMAGE_WIDTH, height), Image.Resampling.LANCZOS)
+            if image.mode in {"RGBA", "LA"}:
+                background = Image.new("RGB", image.size, "white")
+                alpha = image.getchannel("A")
+                background.paste(image.convert("RGB"), mask=alpha)
+                image = background
+            elif image.mode != "RGB":
+                image = image.convert("RGB")
+            buffer = io.BytesIO()
+            image.save(buffer, "JPEG", quality=88, optimize=True)
+    except Exception as exc:  # Pillow uses multiple exception types for malformed source files.
+        print(f"Caption image preparation failed for {source_path}: {exc}", file=sys.stderr)
+        raise CaptionAssistError("The selected image could not be prepared for caption assistance.") from exc
+
+    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+    return f"data:image/jpeg;base64,{encoded}"
+
+
+def build_caption_prompt(
+    *,
+    aircraft_type: str,
+    squadron_name: str,
+    location: str,
+    draft_caption: str,
+) -> str:
+    return "\n".join(
+        [
+            "Write one concise, polished English caption for this aviation photograph.",
+            "Use the image and the supplied metadata. Return only the final caption, without a label, "
+            "quotation marks, Markdown, or an explanation.",
+            "The caption must be accurate and specific, but do not invent a registration, date, weather, "
+            "mission, livery detail, manoeuvre, or other fact that is not visibly supported or supplied.",
+            "If an existing caption is supplied, refine it when useful and remove unsupported details.",
+            "",
+            f"Aircraft type: {aircraft_type or 'Not supplied'}",
+            f"Squadron or operator: {squadron_name or 'Not supplied'}",
+            f"Location: {location or 'Not supplied'}",
+            f"Existing caption: {draft_caption or 'None'}",
+        ]
+    )
+
+
+def nvidia_caption_endpoint() -> str:
+    configured = clean_text(
+        os.getenv("NVIDIA_CAPTION_ENDPOINT")
+        or os.getenv("NVIDIA_INFERENCE_BASE_URL")
+        or os.getenv("NVIDIA_INFERENCE_URL")
+        or NVIDIA_CAPTION_ENDPOINT
+    ).rstrip("/")
+    if configured.endswith("/chat/completions"):
+        return configured
+    if configured.endswith("/v1"):
+        return f"{configured}/chat/completions"
+    raise CaptionAssistError("NVIDIA_CAPTION_ENDPOINT must be a /v1 base URL or /v1/chat/completions endpoint.")
+
+
+def resolve_nvidia_caption_key() -> str:
+    value = clean_text(os.getenv("LLM_API_KEY"))
+    if value:
+        return value
+    raise CaptionAssistError("Caption assist is not configured. Set LLM_API_KEY in the manager environment and restart it.")
+
+
+def extract_caption_from_response(payload: Any) -> str:
+    if not isinstance(payload, dict):
+        raise CaptionAssistError("Caption assist returned an invalid response.")
+    choices = payload.get("choices")
+    if not isinstance(choices, list) or not choices:
+        raise CaptionAssistError("Caption assist returned no caption.")
+    first_choice = choices[0] if isinstance(choices[0], dict) else {}
+    message = first_choice.get("message") if isinstance(first_choice, dict) else {}
+    content = message.get("content") if isinstance(message, dict) else ""
+    if isinstance(content, list):
+        content = " ".join(
+            clean_text(item.get("text"))
+            for item in content
+            if isinstance(item, dict) and clean_text(item.get("text"))
+        )
+    caption = " ".join(clean_text(content).split())
+    if caption.lower().startswith("caption:"):
+        caption = caption.split(":", 1)[1].strip()
+    if len(caption) >= 2 and caption[0] == caption[-1] and caption[0] in {'"', "'"}:
+        caption = caption[1:-1].strip()
+    if not caption:
+        raise CaptionAssistError("Caption assist returned no usable caption.")
+    return caption
+
+
+def request_nvidia_caption(*, prompt: str, image_url: str) -> str:
+    api_key = resolve_nvidia_caption_key()
+    model = clean_text(os.getenv("NVIDIA_CAPTION_MODEL")) or NVIDIA_CAPTION_MODEL
+    body = {
+        "model": model,
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are a precise aviation photography caption editor.",
+            },
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": image_url}},
+                ],
+            },
+        ],
+        "temperature": 0.25,
+        "max_tokens": 9999,
+        "stream": False,
+    }
+    request = Request(
+        nvidia_caption_endpoint(),
+        data=json.dumps(body).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urlopen(request, timeout=NVIDIA_CAPTION_TIMEOUT_SECONDS) as response:
+            response_body = response.read()
+    except HTTPError as exc:
+        if exc.code in {401, 403}:
+            raise CaptionAssistError("Caption assist could not authenticate with NVIDIA. Check the server-side key.") from exc
+        raise CaptionAssistError(f"Caption assist is temporarily unavailable (NVIDIA returned {exc.code}).") from exc
+    except (URLError, TimeoutError) as exc:
+        raise CaptionAssistError("Caption assist could not reach NVIDIA. Please try again.") from exc
+
+    try:
+        return extract_caption_from_response(json.loads(response_body.decode("utf-8")))
+    except CaptionAssistError:
+        raise
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise CaptionAssistError("Caption assist returned an invalid response.") from exc
 
 
 def clean_year(value: Any) -> str:
@@ -1859,9 +2087,25 @@ INDEX_HTML = r"""<!doctype html>
       padding: 8px 10px;
       outline: none;
     }
+    input[type="checkbox"] {
+      width: auto;
+      min-height: 0;
+      padding: 0;
+      accent-color: var(--accent);
+    }
     textarea {
       min-height: 84px;
       resize: vertical;
+    }
+    .caption-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 2px;
+    }
+    .caption-actions .subtle {
+      line-height: 1.35;
     }
     input:focus, select:focus, textarea:focus {
       border-color: var(--accent);
@@ -2239,6 +2483,40 @@ INDEX_HTML = r"""<!doctype html>
       font-size: 11px;
       font-weight: 850;
     }
+    .bulk-caption-list {
+      display: grid;
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .bulk-caption-card {
+      display: grid;
+      grid-template-columns: minmax(150px, 0.4fr) minmax(0, 1fr);
+      gap: 14px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+    .bulk-caption-card img,
+    .bulk-caption-card .missing {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border-radius: 6px;
+      background: #d8e1e8;
+    }
+    .bulk-caption-content {
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+    }
+    .bulk-caption-status {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .bulk-caption-status.error { color: var(--bad); }
+    .bulk-caption-status.ready { color: var(--good); }
     .toast {
       position: fixed;
       right: 18px;
@@ -2286,6 +2564,9 @@ INDEX_HTML = r"""<!doctype html>
         max-height: none;
       }
       .split {
+        grid-template-columns: 1fr;
+      }
+      .bulk-caption-card {
         grid-template-columns: 1fr;
       }
     }
@@ -2357,6 +2638,7 @@ INDEX_HTML = r"""<!doctype html>
       <section class="panel workspace">
         <nav class="tabs" aria-label="Manager views">
           <button class="tab active" data-tab="attach" type="button">Attach</button>
+          <button class="tab" data-tab="bulk-captions" type="button">Bulk Captions</button>
           <button class="tab" data-tab="missing" type="button">Missing</button>
           <button class="tab" data-tab="entries" type="button">Entries</button>
           <button class="tab" data-tab="locations" type="button">Locations</button>
@@ -2395,6 +2677,10 @@ INDEX_HTML = r"""<!doctype html>
             <div class="field wide">
               <label for="captionInput">Caption</label>
               <textarea id="captionInput" placeholder="Caption for attached photos"></textarea>
+              <div class="caption-actions">
+                <span class="subtle">Uses the one selected image; review before attaching.</span>
+                <button class="btn ghost" id="generateAttachCaptionBtn" type="button">AI Caption</button>
+              </div>
             </div>
           </div>
           <div class="bar">
@@ -2432,6 +2718,10 @@ INDEX_HTML = r"""<!doctype html>
               <div class="field">
                 <label for="editCaption">Caption</label>
                 <textarea id="editCaption"></textarea>
+                <div class="caption-actions">
+                  <span class="subtle">Uses Nemotron 3 Omni; review before saving.</span>
+                  <button class="btn ghost" id="generateEditCaptionBtn" type="button">AI Caption</button>
+                </div>
               </div>
               <button class="btn secondary" id="savePhotoBtn" type="button">Save Photo</button>
             </div>
@@ -2439,6 +2729,26 @@ INDEX_HTML = r"""<!doctype html>
               <div class="photo-list" id="photoList"></div>
             </div>
           </div>
+        </section>
+
+        <section class="view" id="bulk-captionsView">
+          <div class="bar">
+            <div>
+              <h2 class="panel-title">Bulk Update Captions</h2>
+              <div class="subtle" id="bulkCaptionSummary">Select existing photo assets to build a review queue.</div>
+            </div>
+            <div class="card-actions">
+              <button class="btn ghost" id="refreshBulkCaptionsBtn" type="button">Refresh Selection</button>
+              <button class="btn primary" id="runBulkCaptionsBtn" type="button">Propose Captions</button>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field wide">
+              <label><input id="bulkExcludeAiCaptions" type="checkbox" checked> Exclude captions already assisted by AI</label>
+              <div class="subtle">Only selected source images linked to an existing caption are eligible. Suggestions run one at a time with a 0.5 second pause between images.</div>
+            </div>
+          </div>
+          <div class="bulk-caption-list" id="bulkCaptionList"></div>
         </section>
 
         <section class="view" id="missingView">
@@ -2582,7 +2892,18 @@ INDEX_HTML = r"""<!doctype html>
       selectedAssets: new Set(),
       selectedIssueKey: "",
       assetFilter: "untagged",
-      activeTab: "attach"
+      activeTab: "attach",
+      captionAssist: {
+        attachAssetPath: "",
+        editPhotoKey: "",
+        missingPhotoKey: ""
+      },
+      bulkCaptions: {
+        queue: null,
+        results: {},
+        running: false,
+        excludeAi: true
+      }
     };
     const missingFieldLabels = {
       source: "Source image",
@@ -2629,6 +2950,19 @@ INDEX_HTML = r"""<!doctype html>
       return `${entry.aircraftType} - ${entry.squadronName} (${entry.country || "Unknown"})`;
     }
 
+    async function readApiJson(response) {
+      const contentType = response.headers.get("content-type") || "";
+      const raw = await response.text();
+      if (!contentType.includes("application/json")) {
+        throw new Error(raw.trim().slice(0, 300) || `Request failed: ${response.status}`);
+      }
+      try {
+        return JSON.parse(raw);
+      } catch (error) {
+        throw new Error(`The server returned invalid JSON (${response.status}).`);
+      }
+    }
+
     async function api(path, body = null) {
       const options = body ? {
         method: "POST",
@@ -2636,7 +2970,7 @@ INDEX_HTML = r"""<!doctype html>
         body: JSON.stringify(body)
       } : {};
       const response = await fetch(path, options);
-      const payload = await response.json();
+      const payload = await readApiJson(response);
       if (!response.ok || payload.ok === false) {
         throw new Error(payload.message || `Request failed: ${response.status}`);
       }
@@ -2646,7 +2980,7 @@ INDEX_HTML = r"""<!doctype html>
     async function loadState(keepSelection = true) {
       const previous = keepSelection ? new Set(state.selectedAssets) : new Set();
       const response = await fetch("/api/state");
-      state.data = await response.json();
+      state.data = await readApiJson(response);
       state.selectedAssets = new Set([...previous].filter((path) => state.data.assets.some((asset) => asset.path === path)));
       renderAll();
     }
@@ -2661,6 +2995,7 @@ INDEX_HTML = r"""<!doctype html>
       renderEntryCards();
       renderLocationDetails();
       renderMissingFields();
+      renderBulkCaptions();
     }
 
     function renderStats() {
@@ -2730,6 +3065,192 @@ INDEX_HTML = r"""<!doctype html>
       $("selectedStrip").innerHTML = selected.length
         ? selected.map((path) => `<img src="${thumbUrl(path)}" alt="${escapeHtml(path)}" title="${escapeHtml(path)}">`).join("")
         : `<div class="empty">No selected assets</div>`;
+    }
+
+    function captionPhotoKey(entryPath, index) {
+      return `${entryPath}::${index}`;
+    }
+
+    function selectedBulkCaptionCandidates() {
+      const candidates = [];
+      let selectedPhotoCount = 0;
+      let aiExcludedCount = 0;
+      let missingCaptionCount = 0;
+      for (const entry of state.data?.aircraft || []) {
+        for (const photo of entry.photos || []) {
+          if (photo.invalid || !photo.exists || !photo.sourceAssetPath || !state.selectedAssets.has(photo.sourceAssetPath)) continue;
+          selectedPhotoCount += 1;
+          if (!String(photo.caption || "").trim()) {
+            missingCaptionCount += 1;
+            continue;
+          }
+          if (state.bulkCaptions.excludeAi && photo.captionAiAssisted) {
+            aiExcludedCount += 1;
+            continue;
+          }
+          candidates.push({
+            key: captionPhotoKey(entry.entryPath, photo.index),
+            entry,
+            photo
+          });
+        }
+      }
+      return {candidates, selectedPhotoCount, aiExcludedCount, missingCaptionCount};
+    }
+
+    function currentBulkCaptionQueue() {
+      return state.bulkCaptions.queue || selectedBulkCaptionCandidates().candidates;
+    }
+
+    function resetBulkCaptionQueue() {
+      if (state.bulkCaptions.running) return;
+      state.bulkCaptions.queue = null;
+      state.bulkCaptions.results = {};
+    }
+
+    function bulkProposalValue(key, fallback = "") {
+      const node = [...document.querySelectorAll("[data-bulk-caption-key]")]
+        .find((item) => item.dataset.bulkCaptionKey === key);
+      return node ? node.value : fallback;
+    }
+
+    function renderBulkCaptions() {
+      if (!state.data) return;
+      const selection = selectedBulkCaptionCandidates();
+      const queue = currentBulkCaptionQueue();
+      const results = state.bulkCaptions.results;
+      const usingSavedQueue = state.bulkCaptions.queue !== null;
+      const selectedLabel = `${state.selectedAssets.size} selected source image(s), ${selection.candidates.length} eligible human-written caption(s)`;
+      const exclusions = [
+        selection.aiExcludedCount ? `${selection.aiExcludedCount} AI-assisted excluded` : "",
+        selection.missingCaptionCount ? `${selection.missingCaptionCount} without a caption` : ""
+      ].filter(Boolean).join("; ");
+      $("bulkCaptionSummary").textContent = [
+        selectedLabel,
+        exclusions,
+        usingSavedQueue ? `${queue.length} caption(s) in the current review queue` : ""
+      ].filter(Boolean).join(". ");
+      $("bulkExcludeAiCaptions").checked = state.bulkCaptions.excludeAi;
+      $("refreshBulkCaptionsBtn").disabled = state.bulkCaptions.running;
+      $("runBulkCaptionsBtn").disabled = state.bulkCaptions.running || !queue.length;
+      $("runBulkCaptionsBtn").textContent = state.bulkCaptions.running ? "Proposing..." : "Propose Captions";
+
+      if (!queue.length) {
+        $("bulkCaptionList").innerHTML = `<div class="empty">Select one or more existing raw photo assets with human-written captions, then return here to create a review queue.</div>`;
+        return;
+      }
+
+      $("bulkCaptionList").innerHTML = queue.map((candidate) => {
+        const result = results[candidate.key] || {status: "ready"};
+        const photo = candidate.photo;
+        const media = `<img src="${thumbUrl(photo.sourceAssetPath)}" loading="lazy" alt="${escapeHtml(photo.path)}">`;
+        const metadata = [candidate.entry.aircraftType, candidate.entry.squadronName, photo.location || photo.pinId || "No location"].filter(Boolean).join(" / ");
+        let review = `<div class="bulk-caption-status">Ready to propose</div>`;
+        if (result.status === "generating") {
+          review = `<div class="bulk-caption-status">Writing a proposed caption...</div>`;
+        } else if (result.status === "error") {
+          review = `<div class="bulk-caption-status error">Could not propose a caption: ${escapeHtml(result.message || "Unknown error")}</div>`;
+        } else if (result.status === "rejected") {
+          review = `<div class="bulk-caption-status">Rejected. The original caption remains unchanged.</div>`;
+        } else if (result.status === "proposed") {
+          review = `
+            <div class="field">
+              <label>Proposed caption</label>
+              <textarea data-bulk-caption-key="${escapeHtml(candidate.key)}">${escapeHtml(result.caption || "")}</textarea>
+            </div>
+            <div class="card-actions">
+              <button class="btn secondary" type="button" data-bulk-accept="${escapeHtml(candidate.key)}">Accept Caption</button>
+              <button class="btn ghost" type="button" data-bulk-reject="${escapeHtml(candidate.key)}">Reject</button>
+            </div>
+          `;
+        }
+        return `
+          <article class="bulk-caption-card">
+            <div>${media}</div>
+            <div class="bulk-caption-content">
+              <div class="mini-title">${escapeHtml(photo.path)}</div>
+              <div class="mini-meta">${escapeHtml(metadata)}<br>${escapeHtml(candidate.entry.entryPath)}</div>
+              <details>
+                <summary class="mini-meta">Current caption</summary>
+                <div class="mini-meta" style="margin-top: 6px;">${escapeHtml(photo.caption || "")}</div>
+              </details>
+              ${review}
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function wait(milliseconds) {
+      return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+    }
+
+    async function runBulkCaptions() {
+      if (state.bulkCaptions.running) return;
+      const {candidates} = selectedBulkCaptionCandidates();
+      if (!candidates.length) {
+        throw new Error("Select existing images with eligible human-written captions first.");
+      }
+      state.bulkCaptions.queue = candidates;
+      state.bulkCaptions.results = {};
+      state.bulkCaptions.running = true;
+      renderBulkCaptions();
+      try {
+        for (let index = 0; index < candidates.length; index += 1) {
+          const candidate = candidates[index];
+          state.bulkCaptions.results[candidate.key] = {status: "generating"};
+          renderBulkCaptions();
+          try {
+            const result = await api("/api/generate-caption", {
+              entryPath: candidate.entry.entryPath,
+              index: candidate.photo.index,
+              draftCaption: candidate.photo.caption
+            });
+            state.bulkCaptions.results[candidate.key] = {status: "proposed", caption: result.caption || ""};
+          } catch (error) {
+            state.bulkCaptions.results[candidate.key] = {status: "error", message: error.message || "Request failed"};
+          }
+          renderBulkCaptions();
+          if (index < candidates.length - 1) await wait(500);
+        }
+      } finally {
+        state.bulkCaptions.running = false;
+        renderBulkCaptions();
+      }
+    }
+
+    async function acceptBulkCaption(key) {
+      const candidate = currentBulkCaptionQueue().find((item) => item.key === key);
+      const result = state.bulkCaptions.results[key];
+      if (!candidate || !result || result.status !== "proposed") return;
+      const caption = bulkProposalValue(key, result.caption).trim();
+      if (!caption) throw new Error("A caption is required before accepting it.");
+      const photo = candidate.photo;
+      await api("/api/update-photo", {
+        entryPath: candidate.entry.entryPath,
+        index: photo.index,
+        photo: {
+          path: photo.path,
+          location: photo.location || "",
+          pin_id: photo.pinId || "",
+          date: photo.date || "",
+          year: photo.year || "",
+          title: photo.title || "",
+          caption,
+          captionAiAssisted: true
+        }
+      });
+      state.bulkCaptions.queue = currentBulkCaptionQueue().filter((item) => item.key !== key);
+      delete state.bulkCaptions.results[key];
+      await loadState(true);
+      toast("Caption accepted and marked as AI-assisted.");
+    }
+
+    function rejectBulkCaption(key) {
+      const result = state.bulkCaptions.results[key];
+      if (!result || result.status !== "proposed") return;
+      state.bulkCaptions.results[key] = {status: "rejected"};
+      renderBulkCaptions();
     }
 
     function renderEntryOptions() {
@@ -2974,6 +3495,7 @@ INDEX_HTML = r"""<!doctype html>
     }
 
     function renderMissingPhotoEditor(issue) {
+      state.captionAssist.missingPhotoKey = "";
       const selectedPin = state.data.pins.find((pin) => pin.id === issue.photo.pinId || pin.name === issue.photo.location);
       const pinOptions = state.data.pins.map((pin) => (
         `<option value="${escapeHtml(pin.key)}"${selectedPin?.key === pin.key ? " selected" : ""}>${escapeHtml(pinOptionLabel(pin))}</option>`
@@ -2999,6 +3521,10 @@ INDEX_HTML = r"""<!doctype html>
           <div class="field wide">
             <label for="missingPhotoCaption">Caption</label>
             <textarea id="missingPhotoCaption">${escapeHtml(issue.photo.caption || "")}</textarea>
+            <div class="caption-actions">
+              <span class="subtle">Uses Nemotron 3 Omni; review before saving.</span>
+              <button class="btn ghost" id="generateMissingCaptionBtn" type="button">AI Caption</button>
+            </div>
           </div>
         </div>
         <div class="mini-meta" style="margin-top: 10px;">
@@ -3015,6 +3541,7 @@ INDEX_HTML = r"""<!doctype html>
       if (!entry) return;
       const photo = entry.photos.find((item) => item.index === index);
       if (!photo || photo.invalid) return;
+      state.captionAssist.editPhotoKey = "";
       $("editIndex").value = String(index);
       $("editPath").value = photo.path || "";
       $("editDate").value = photo.date || "";
@@ -3025,6 +3552,7 @@ INDEX_HTML = r"""<!doctype html>
     }
 
     function clearEditor() {
+      state.captionAssist.editPhotoKey = "";
       $("editIndex").value = "";
       $("editPath").value = "";
       $("editDate").value = "";
@@ -3033,22 +3561,92 @@ INDEX_HTML = r"""<!doctype html>
       $("editLocation").value = "";
     }
 
+    async function populateCaption(buttonId, targetId, payload) {
+      const button = $(buttonId);
+      const originalLabel = button ? button.textContent : "AI Caption";
+      if (button) {
+        button.disabled = true;
+        button.textContent = "Writing...";
+      }
+      try {
+        const result = await api("/api/generate-caption", payload);
+        $(targetId).value = result.caption || "";
+        toast(result.message || "Caption suggestion ready. Review it before saving.");
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = originalLabel;
+        }
+      }
+    }
+
+    async function generateAttachCaption() {
+      const entry = selectedEntry();
+      if (!entry) throw new Error("Choose an entry before generating a caption.");
+      if (state.selectedAssets.size !== 1) {
+        throw new Error("Select exactly one raw image to generate an attachment caption.");
+      }
+      const pin = selectedPin("pinSelect");
+      const [assetPath] = [...state.selectedAssets];
+      await populateCaption("generateAttachCaptionBtn", "captionInput", {
+        entryPath: entry.entryPath,
+        assetPath,
+        locationName: pin ? pin.name : "",
+        draftCaption: $("captionInput").value
+      });
+      state.captionAssist.attachAssetPath = assetPath;
+    }
+
+    async function generateEditedCaption() {
+      const entry = selectedEntry();
+      const index = $("editIndex").value;
+      if (!entry || index === "") throw new Error("Choose a photo to edit before generating a caption.");
+      const pin = selectedPin("editLocation");
+      await populateCaption("generateEditCaptionBtn", "editCaption", {
+        entryPath: entry.entryPath,
+        index: Number(index),
+        locationName: pin ? pin.name : "",
+        draftCaption: $("editCaption").value
+      });
+      state.captionAssist.editPhotoKey = captionPhotoKey(entry.entryPath, Number(index));
+    }
+
+    async function generateMissingCaption() {
+      const issue = getSelectedIssue();
+      if (!issue || issue.type !== "photo") throw new Error("Choose a photo item before generating a caption.");
+      const pin = state.data.pins.find((item) => item.key === $("missingPhotoLocation").value);
+      await populateCaption("generateMissingCaptionBtn", "missingPhotoCaption", {
+        entryPath: issue.entry.entryPath,
+        index: issue.photo.index,
+        locationName: pin ? pin.name : "",
+        draftCaption: $("missingPhotoCaption").value
+      });
+      state.captionAssist.missingPhotoKey = captionPhotoKey(issue.entry.entryPath, issue.photo.index);
+    }
+
     async function attachSelected() {
       const entry = selectedEntry();
       if (!entry) throw new Error("Choose an entry.");
       const pin = selectedPin("pinSelect");
+      const selectedAssetPaths = [...state.selectedAssets];
+      const aiCaptionAssetPath = state.captionAssist.attachAssetPath;
+      if (aiCaptionAssetPath && (selectedAssetPaths.length !== 1 || selectedAssetPaths[0] !== aiCaptionAssetPath)) {
+        throw new Error("The AI caption belongs to one selected image. Re-select it or generate a new caption before attaching.");
+      }
       const payload = {
         entryPath: entry.entryPath,
-        assetPaths: [...state.selectedAssets],
+        assetPaths: selectedAssetPaths,
         locationName: pin ? pin.name : "",
         pinId: pin ? pin.id : "",
         caption: $("captionInput").value,
+        captionAiAssisted: Boolean(aiCaptionAssetPath),
         date: $("photoDate").value,
         year: $("photoYear").value,
         dedupe: $("dedupeSelect").value !== "allow"
       };
       const result = await api("/api/attach", payload);
       state.selectedAssets.clear();
+      state.captionAssist.attachAssetPath = "";
       toast(result.message);
       await loadState(false);
     }
@@ -3067,11 +3665,13 @@ INDEX_HTML = r"""<!doctype html>
           pin_id: pin ? pin.id : "",
           date: $("editDate").value,
           year: $("editYear").value,
-          caption: $("editCaption").value
+          caption: $("editCaption").value,
+          captionAiAssisted: state.captionAssist.editPhotoKey === captionPhotoKey(entry.entryPath, Number(index))
         }
       };
       const result = await api("/api/update-photo", payload);
       toast(result.message);
+      state.captionAssist.editPhotoKey = "";
       clearEditor();
       await loadState(true);
     }
@@ -3090,10 +3690,12 @@ INDEX_HTML = r"""<!doctype html>
           date: $("missingPhotoDate").value,
           year: $("missingPhotoYear").value,
           title: issue.photo.title || "",
-          caption: $("missingPhotoCaption").value
+          caption: $("missingPhotoCaption").value,
+          captionAiAssisted: state.captionAssist.missingPhotoKey === captionPhotoKey(issue.entry.entryPath, issue.photo.index)
         }
       });
       toast(result.message);
+      state.captionAssist.missingPhotoKey = "";
       state.selectedIssueKey = "";
       await loadState(true);
       renderMissingFields();
@@ -3372,6 +3974,11 @@ INDEX_HTML = r"""<!doctype html>
       $("entryListSearch").addEventListener("input", renderEntryCards);
       $("missingSearch").addEventListener("input", renderMissingFields);
       $("missingFilter").addEventListener("change", renderMissingFields);
+      $("bulkExcludeAiCaptions").addEventListener("change", (event) => {
+        state.bulkCaptions.excludeAi = event.target.checked;
+        resetBulkCaptionQueue();
+        renderBulkCaptions();
+      });
       $("entrySelect").addEventListener("change", () => {
         clearEditor();
         renderEntryDetail();
@@ -3380,15 +3987,24 @@ INDEX_HTML = r"""<!doctype html>
       $("reloadBtn").addEventListener("click", () => loadState(true).then(() => toast("Reloaded")));
       $("clearSelectionBtn").addEventListener("click", () => {
         state.selectedAssets.clear();
+        resetBulkCaptionQueue();
         renderAssetGrid();
         renderSelectedStrip();
+        renderBulkCaptions();
       });
       $("clearEditorBtn").addEventListener("click", clearEditor);
       $("attachBtn").addEventListener("click", () => attachSelected().catch((error) => toast(error.message)));
+      $("generateAttachCaptionBtn").addEventListener("click", () => generateAttachCaption().catch((error) => toast(error.message)));
       $("savePhotoBtn").addEventListener("click", () => saveEditedPhoto().catch((error) => toast(error.message)));
+      $("generateEditCaptionBtn").addEventListener("click", () => generateEditedCaption().catch((error) => toast(error.message)));
       $("createEntryBtn").addEventListener("click", () => createEntry().catch((error) => toast(error.message)));
       $("createPinBtn").addEventListener("click", () => createPin().catch((error) => toast(error.message)));
       $("setHeroBtn").addEventListener("click", () => setLocationHero().catch((error) => toast(error.message)));
+      $("refreshBulkCaptionsBtn").addEventListener("click", () => {
+        resetBulkCaptionQueue();
+        renderBulkCaptions();
+      });
+      $("runBulkCaptionsBtn").addEventListener("click", () => runBulkCaptions().catch((error) => toast(error.message)));
       $("buildBtn").addEventListener("click", () => runBuild().catch((error) => toast(error.message)));
       $("buildBtn2").addEventListener("click", () => runBuild().catch((error) => toast(error.message)));
       $("assetFilter").addEventListener("click", (event) => {
@@ -3404,8 +4020,16 @@ INDEX_HTML = r"""<!doctype html>
         const path = card.dataset.asset;
         if (state.selectedAssets.has(path)) state.selectedAssets.delete(path);
         else state.selectedAssets.add(path);
+        resetBulkCaptionQueue();
         renderAssetGrid();
         renderSelectedStrip();
+        renderBulkCaptions();
+      });
+      $("bulkCaptionList").addEventListener("click", (event) => {
+        const accept = event.target.closest("[data-bulk-accept]");
+        const reject = event.target.closest("[data-bulk-reject]");
+        if (accept) acceptBulkCaption(accept.dataset.bulkAccept).catch((error) => toast(error.message));
+        if (reject) rejectBulkCaption(reject.dataset.bulkReject);
       });
       $("photoList").addEventListener("click", (event) => {
         const edit = event.target.closest("[data-edit-photo]");
@@ -3427,6 +4051,9 @@ INDEX_HTML = r"""<!doctype html>
         renderMissingFields();
       });
       $("missingEditor").addEventListener("click", (event) => {
+        if (event.target.closest("#generateMissingCaptionBtn")) {
+          generateMissingCaption().catch((error) => toast(error.message));
+        }
         if (event.target.closest("#saveMissingPhotoBtn")) {
           saveMissingPhoto().catch((error) => toast(error.message));
         }

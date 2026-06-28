@@ -7,4 +7,5 @@ photos:
   year: 2026
   location: Gifu Air Base
   caption: Kawasaki EC-2 (68-1203) landing at Gifu Air Base after a test flight.
+  caption_ai_assisted: true
 aircraft_family: heavy

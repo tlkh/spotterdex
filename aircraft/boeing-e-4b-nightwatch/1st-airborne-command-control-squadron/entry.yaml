@@ -6,5 +6,6 @@ squadron_logo: 1st_Command_&_Control_Squadron.png
 photos:
 - path: e4b_1.jpg
   location: Singapore
-  caption: Doomsday plane (E-4B Nightwatch) taking off from Singapore after annual IISS Shangri-La Dialogue
+  caption: A Boeing E-4B Nightwatch aircraft, marked 'United States of America' with tail number 28076, takes off from Singapore.
+  caption_ai_assisted: true
 aircraft_family: heavy

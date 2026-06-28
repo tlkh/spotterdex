@@ -5,9 +5,11 @@ country: France
 photos:
 - path: beluga_1.jpg
   location: Singapore
-  caption: Airbus A300-600ST (Super Transporter) or Beluga landing in Singapore
+  caption: Airbus A300-600ST (Super Transporter) landing in Singapore
+  caption_ai_assisted: true
 - path: beluga_2.jpg
   location: Singapore
-  caption: Airbus A300-600ST (Super Transporter) or Beluga landing in Singapore
+  caption: Airbus A300-600ST (Super Transporter) landing in Singapore
+  caption_ai_assisted: true
 aircraft_family: heavy
 squadron_logo: airbus_logo.png

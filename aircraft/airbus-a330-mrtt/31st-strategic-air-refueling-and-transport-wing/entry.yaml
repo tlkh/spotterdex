@@ -5,7 +5,8 @@ country: France
 photos:
 - path: french_mrtt_1.jpg
   location: Singapore
-  caption: French A330 MRTT landing in Singapore
+  caption: French Air Force A330 MRTT landing in Singapore
+  caption_ai_assisted: true
 - path: french_mrtt_2.jpg
   location: Singapore
   caption: French A330 MRTT landing in Singapore

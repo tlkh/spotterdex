@@ -5,14 +5,18 @@ country: Italy
 photos:
 - path: italy_f35_2.jpg
   location: Singapore
-  caption: Italian Air Force F-35A in Singapore
+  caption: Italian Air Force F-35A (32-16) in Singapore
+  caption_ai_assisted: true
 - path: italy_f35_3.jpg
   location: Singapore
-  caption: Italian Air Force F-35A in Singapore
+  caption: "F-35A Lightning II (12-06) from 32\xB0 Stormo in Singapore"
+  caption_ai_assisted: true
 - path: italy_f35_4.jpg
   location: Singapore
-  caption: Italian Air Force F-35A in Singapore
+  caption: Italian Air Force F-35A (32-15) landing in Singapore
+  caption_ai_assisted: true
 - path: italy_f35_5.jpg
   location: Singapore
-  caption: Italian Air Force F-35A in Singapore
+  caption: "Italian Air Force F-35A Lightning II from 32\xB0 Stormo in Singapore"
+  caption_ai_assisted: true
 aircraft_family: fighter

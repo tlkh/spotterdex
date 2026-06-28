@@ -21,6 +21,8 @@ Read this section first before making changes.
 - **Organisation override:** use `unit_type: organisation` for airline/operator entries that should be labelled Organisation instead of Squadron. These records remain in the Dex and viewer but are excluded from the Squadrons page.
 - **Dex grouping:** the UI groups by `aircraft_type`, not folder name. Multiple squadrons of the same type appear under one Dex card.
 - **Commit scope for content work:** stage new/changed `aircraft/**/entry.yaml`, `map_pins/**/pins.yaml`, rebuilt `data/`, and new/changed files under `assets/generated/` and `assets/logos/`. Never stage `raw_assets/`.
+- **Local management app:** run `python3 tools/spotterdex_manager.py` for the local browser editor at `http://127.0.0.1:8765/`. It edits source YAML and can run the existing generator; it is not part of the published GitHub Pages site. Stop it with `Ctrl+C` after use or testing; do not leave the management app running.
+- **AI captions in the management app:** the AI Caption buttons send a server-resized 768px-wide source image plus aircraft type, squadron/operator, location, and the current caption to Nemotron 3 Omni. Set `LLM_API_KEY` only in the manager process environment; never expose it to browser JavaScript, logs, generated data, or commits. Saving an AI-assisted suggestion writes the source-only `caption_ai_assisted: true` metadata marker. The Bulk Captions tab processes selected, existing human-written captions one at a time with a 0.5 second pause, filters prior AI-assisted captions by default, and requires a user to edit, accept, or reject every proposal.
 - **Do not add** frontend frameworks, bundlers, map tile prefetching, or hidden attribution.
 
 ## Agent Workflows

@@ -5,17 +5,21 @@ country: Japan
 photos:
 - path: 638101.jpg
   location: Gifu Air Base
-  caption: Mitsubishi F-2B 63-8101 landing at Gifu Air Base.
+  caption: Mitsubishi F-2B (63-8101) landing at Gifu Air Base
+  caption_ai_assisted: true
 - path: DSC09667-Enhanced-NR.jpeg
   location: Gifu Air Base
   pin_id: gifu-air-base
   caption: ADTW F-2B at Gifu Air Base
+  caption_ai_assisted: true
 - path: DSC09175-Enhanced-NR.jpeg
   location: Gifu Air Base
   pin_id: gifu-air-base
-  caption: ADTW F-2B at Gifu Air Base
+  caption: Mitsubishi F-2B of the Air Development and Test Wing at Gifu Air Base
+  caption_ai_assisted: true
 - path: DSC00239-Enhanced-NR.jpeg
   location: Gifu Air Base
   pin_id: gifu-air-base
-  caption: ADTW F-2B at Gifu Air Base
+  caption: A pair of ADTW F-2B take off in formation at Gifu Air Base
+  caption_ai_assisted: true
 aircraft_family: fighter

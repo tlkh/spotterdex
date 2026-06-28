@@ -5,6 +5,7 @@ country: Singapore
 photos:
 - path: rsaf_mrtt_760_1.jpg
   location: Singapore
-  caption: Republic of Singapore Air Force MRTT (760) from 112 SQN taking off from Singapore
+  caption: Republic of Singapore Air Force MRTT (760) from 112 Squadron in flight
+  caption_ai_assisted: true
 aircraft_family: heavy
 squadron_logo: 112_sqn.png

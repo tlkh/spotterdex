@@ -6,7 +6,8 @@ photos:
 - path: 128928.jpg
   year: 2026
   location: Gifu Air Base
-  caption: Mitsubishi F-15J 12-8928 from ADTW landing at Gifu Air Base.
+  caption: Mitsubishi F-15J (12-8928) from ADTW landing at Gifu Air Base
+  caption_ai_assisted: true
 - path: DSC07575-Enhanced-NR.jpeg
   location: Gifu Air Base
   pin_id: gifu-air-base
@@ -14,13 +15,16 @@ photos:
 - path: DSC07205-Enhanced-NR.jpeg
   location: Gifu Air Base
   pin_id: gifu-air-base
-  caption: ADTW F-15J at Gifu Air Base
+  caption: Mitsubishi F-15J Eagle from the Air Development and Test Wing climbs over Gifu Air Base
+  caption_ai_assisted: true
 - path: DSC00354-Enhanced-NR.jpeg
   location: Gifu Air Base
   pin_id: gifu-air-base
-  caption: ADTW F-15J at Gifu Air Base
+  caption: Two Mitsubishi F-15J Eagles from the Air Development and Test Wing break after a formation take-off at Gifu Air Base
+  caption_ai_assisted: true
 - path: DSC07295-Enhanced-NR.jpeg
   location: Gifu Air Base
   pin_id: gifu-air-base
   caption: F-15J making low pass over Gifu Air Base during an airshow rehearsal
+  caption_ai_assisted: true
 aircraft_family: fighter

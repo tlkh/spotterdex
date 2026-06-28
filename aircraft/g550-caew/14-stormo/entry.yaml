@@ -5,5 +5,6 @@ country: Italy
 photos:
 - path: italy_g550.jpg
   location: Singapore
-  caption: Italian Air Force (Aeronautica Militare) G550 Conformal Airborne Early Warning (CAEW) taking off from Singapore
+  caption: "14\xB0 Stormo G550 CAEW aircraft flying in Singapore"
+  caption_ai_assisted: true
 aircraft_family: heavy

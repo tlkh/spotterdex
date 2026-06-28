@@ -67,6 +67,21 @@ python3 tools/spotterdex_manager.py
 
 Open `http://127.0.0.1:8765/`. The manager writes source YAML under `aircraft/` and `map_pins/`, then streams the generator output when you press Build, ending with changed generated files, manifest count deltas, warnings, and commit-scope guidance. Its thumbnail cache lives in `.spotterdex-manager-cache/` and is ignored by git.
 
+### AI caption assistance
+
+The manager's **AI Caption** buttons can write or refine the caption for one selected raw image, an existing photo, or a Missing-fields photo. The source image is resized to 768 px wide in the local server process and sent with the aircraft type, squadron/operator, location, and current caption to Nemotron 3 Omni. Suggestions populate the editor only; review and save them normally. Saving an AI-assisted suggestion adds `caption_ai_assisted: true` to the source YAML; this is intentionally absent from the published manifest.
+
+Use the **Bulk Captions** tab to polish selected existing captions. It proposes one caption at a time with a 0.5 second pause between requests, excludes previously AI-assisted captions by default, and lets you edit then accept or reject each suggestion. Accepted captions are marked as AI-assisted in source YAML.
+
+Set a server-side NVIDIA Inference Hub key before starting the manager. The key is never sent to browser JavaScript:
+
+```bash
+export LLM_API_KEY="..."
+python3 tools/spotterdex_manager.py
+```
+
+`NVIDIA_CAPTION_ENDPOINT` can override the default `https://inference-api.nvidia.com/v1/chat/completions`, and `NVIDIA_CAPTION_MODEL` can override the default `nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` deployment. Stop the local manager with `Ctrl+C` when you finish using or testing it.
+
 Build the static data, resize photos to 2048 px wide JPEGs, and generate 1024 px wide thumbnails:
 
 ```bash

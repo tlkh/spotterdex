@@ -4,14 +4,18 @@ country: Japan
 photos:
 - path: up3c_1.jpeg
   location: Atsugi Air Base
-  caption: UP-3C Equipment testing plane at JMSDF Atsugi Air Base
+  caption: Kawasaki UP-3C Orion from Air Development Squadron 51 at Atsugi Air Base
+  caption_ai_assisted: true
 - path: up3c_2.jpeg
   location: Atsugi Air Base
-  caption: UP-3C Equipment testing plane at JMSDF Atsugi Air Base
+  caption: An Air Development Squadron 51 (VX-51) Kawasaki UP-3C Orion, marked with tail number 9151, taxis on the runway at Atsugi Air Base.
+  caption_ai_assisted: true
 - path: up3c_3.jpeg
   location: Atsugi Air Base
-  caption: UP-3C Equipment testing plane at JMSDF Atsugi Air Base
+  caption: Kawasaki UP-3C Orion from Air Development Squadron 51 at Atsugi Air Base
+  caption_ai_assisted: true
 - path: up3c_4.jpeg
   location: Atsugi Air Base
-  caption: UP-3C Equipment testing plane at JMSDF Atsugi Air Base
+  caption: A Kawasaki UP-3C Orion equipment testing plane from Air Development Squadron 51 (VX-51) at Atsugi Air Base
+  caption_ai_assisted: true
 aircraft_family: heavy

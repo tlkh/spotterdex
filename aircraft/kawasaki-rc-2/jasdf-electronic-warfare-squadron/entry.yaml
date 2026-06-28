@@ -6,5 +6,6 @@ photos:
 - path: 181202.jpg
   year: 2025
   location: Naha Air Base
-  caption: Kawasaki RC-2 18-1202 landing at Naha Air Base.
+  caption: Kawasaki RC-2 (18-1202) landing at Naha Air Base
+  caption_ai_assisted: true
 aircraft_family: heavy

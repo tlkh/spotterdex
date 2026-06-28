@@ -220,11 +220,13 @@ img {
 }
 
 .tab-button {
+  position: relative;
   padding: 8px 14px;
   overflow: hidden;
   color: var(--muted);
   font-weight: 700;
   text-overflow: ellipsis;
+  transition: border-color 180ms ease, background 180ms ease, color 180ms ease, transform 180ms ease;
 }
 
 .tab-button.is-active {
@@ -553,99 +555,6 @@ h3 {
   background: var(--surface-strong);
 }
 
-.map-stage::after {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  content: "";
-}
-
-.map-mission-hud,
-.map-route-controls {
-  position: absolute;
-  z-index: 4;
-  border: 1px solid color-mix(in srgb, var(--line-strong) 70%, transparent);
-  background: var(--glass-strong);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(16px) saturate(1.08);
-}
-
-.map-mission-hud {
-  top: 16px;
-  left: 16px;
-  display: grid;
-  max-width: min(330px, calc(100% - 32px));
-  gap: 2px;
-  padding: 11px 13px;
-  border-radius: var(--radius);
-  color: var(--muted);
-  font-size: 0.75rem;
-  pointer-events: none;
-}
-
-.map-mission-hud strong,
-.map-mission-hud .map-hud-kicker,
-.map-mission-hud .map-hud-coordinate {
-  color: var(--text);
-}
-
-.map-mission-hud strong {
-  overflow: hidden;
-  font-size: 0.94rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.map-hud-kicker {
-  color: var(--blue) !important;
-  font-size: 0.64rem;
-  font-weight: 900;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-}
-
-.map-hud-meta,
-.map-hud-coordinate {
-  margin-top: 3px;
-  font-variant-numeric: tabular-nums;
-}
-
-.map-route-controls {
-  top: 16px;
-  right: 16px;
-  display: flex;
-  gap: 6px;
-  padding: 6px;
-  border-radius: var(--radius);
-}
-
-.map-hud-button {
-  display: inline-flex;
-  min-height: 34px;
-  gap: 6px;
-  align-items: center;
-  justify-content: center;
-  padding: 7px 10px;
-  border: 1px solid transparent;
-  border-radius: calc(var(--radius) - 2px);
-  background: transparent;
-  color: var(--text);
-  cursor: pointer;
-  font-size: 0.78rem;
-  font-weight: 850;
-  transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
-}
-
-.map-hud-button:hover,
-.map-hud-button.is-active {
-  border-color: color-mix(in srgb, var(--line-strong) 88%, transparent);
-  background: var(--surface);
-  transform: translateY(-1px);
-}
-
-.map-hud-button:focus-visible,
-.map-control-toggle:focus-visible,
 .squadron-photo-filter:focus-visible,
 .squadron-country-nav button:focus-visible,
 .stats-country-row:focus-visible,
@@ -654,33 +563,8 @@ h3 {
   outline-offset: 3px;
 }
 
-.mission-dossier-heading {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  justify-content: space-between;
+.location-details-title {
   margin-bottom: 12px;
-}
-
-.map-control-toggle {
-  display: grid;
-  width: 32px;
-  height: 32px;
-  flex: 0 0 auto;
-  place-items: center;
-  padding: 0;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 1.15rem;
-  line-height: 1;
-}
-
-.map-control-toggle:hover {
-  border-color: var(--line-strong);
-  color: var(--text);
 }
 
 .map-toolbar {
@@ -845,6 +729,11 @@ h3 {
   backdrop-filter: blur(14px) saturate(1.05);
 }
 
+.spotterdex-marker-label.is-below-pin {
+  top: 22px;
+  bottom: auto;
+}
+
 .spotterdex-marker-title {
   display: block;
   min-width: 0;
@@ -934,6 +823,11 @@ h3 {
   bottom: 25px;
 }
 
+.spotterdex-cluster-shell .spotterdex-marker-label.is-below-pin {
+  top: 25px;
+  bottom: auto;
+}
+
 .spotterdex-cluster-shell .spotterdex-marker-label {
   max-width: min(326px, calc(54vw - 50px));
 }
@@ -1000,11 +894,11 @@ h3 {
     opacity: 0;
     transform: translate(var(--traffic-start-x), var(--traffic-start-y)) rotate(var(--traffic-heading));
   }
-  14% {
-    opacity: 0.72;
+  8% {
+    opacity: 0.78;
   }
-  78% {
-    opacity: 0.64;
+  90% {
+    opacity: 0.7;
     transform: translate(var(--traffic-end-x), var(--traffic-end-y)) rotate(var(--traffic-heading));
   }
   100% {
@@ -1018,11 +912,11 @@ h3 {
     opacity: 0;
     transform: translate(var(--traffic-start-x), var(--traffic-start-y)) rotate(var(--traffic-heading));
   }
-  14% {
-    opacity: 0.72;
+  8% {
+    opacity: 0.78;
   }
-  78% {
-    opacity: 0.64;
+  90% {
+    opacity: 0.7;
     transform: translate(var(--traffic-end-x), var(--traffic-end-y)) rotate(var(--traffic-heading));
   }
   100% {
@@ -1161,7 +1055,7 @@ h3 {
 .location-detail-page {
   display: grid;
   gap: 14px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 .location-hero {
@@ -1411,8 +1305,7 @@ button.location-unit-chip:focus-visible,
 }
 
 .location-photo-browser {
-  padding-top: 4px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .segmented.location-archive-toggle {
@@ -1424,6 +1317,18 @@ button.location-unit-chip:focus-visible,
 
 .location-archive-toggle .segment-button {
   width: 100%;
+}
+
+.group-header h3 {
+  margin: 0;
+  line-height: 1.15;
+}
+
+.group-header .count-pill {
+  display: inline-grid;
+  align-self: center;
+  place-items: center;
+  line-height: 1;
 }
 
 .segmented {
@@ -1474,6 +1379,36 @@ button.location-unit-chip:focus-visible,
   border-radius: var(--radius);
   background: transparent;
   box-shadow: none;
+}
+
+.photo-card,
+.recent-photo-card,
+.location-recent-card,
+.location-hero,
+.squadron-logo-card {
+  --lens-x: 50%;
+  --lens-y: 50%;
+  --lens-opacity: 0;
+  isolation: isolate;
+}
+
+.photo-card::after,
+.recent-photo-card::after,
+.location-recent-card::after,
+.location-hero::after,
+.squadron-logo-card::after {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at var(--lens-x) var(--lens-y), rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.1) 13%, transparent 38%),
+    linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.08) 46%, transparent 62%);
+  content: "";
+  mix-blend-mode: soft-light;
+  opacity: var(--lens-opacity);
+  pointer-events: none;
+  transition: opacity 280ms ease;
 }
 
 .photo-card:hover,
@@ -2126,50 +2061,6 @@ button.location-unit-chip:focus-visible,
   margin: 0;
 }
 
-.squadron-hero-picker {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  padding: 10px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface-strong);
-}
-
-.squadron-hero-picker label {
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 850;
-}
-
-.squadron-hero-picker select {
-  min-width: min(100%, 280px);
-  min-height: 36px;
-  flex: 1 1 190px;
-  padding: 7px 30px 7px 9px;
-  border: 1px solid var(--line);
-  border-radius: calc(var(--radius) - 2px);
-  background: var(--surface);
-  color: var(--text);
-}
-
-.squadron-hero-picker button {
-  min-height: 36px;
-  padding: 7px 10px;
-  border: 1px solid var(--line);
-  border-radius: calc(var(--radius) - 2px);
-  background: var(--surface);
-  color: var(--muted);
-  cursor: pointer;
-  font-weight: 800;
-}
-
-.squadron-hero-picker button:hover {
-  border-color: var(--line-strong);
-  color: var(--text);
-}
-
 .aircraft-grid {
   display: grid;
   width: 100%;
@@ -2378,6 +2269,7 @@ button.location-unit-chip:focus-visible,
   z-index: 30;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+  isolation: isolate;
   background: #050505;
   color: #f8fafc;
 }
@@ -2386,8 +2278,29 @@ button.location-unit-chip:focus-visible,
   display: none;
 }
 
+.photo-viewer:not([hidden]) {
+  animation: viewer-open 240ms ease-out both;
+}
+
+.viewer-ambient {
+  position: absolute;
+  inset: -8%;
+  z-index: 0;
+  background-image:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.44), rgba(0, 0, 0, 0.2) 54%, rgba(0, 0, 0, 0.72)),
+    var(--viewer-backdrop, none);
+  background-position: center;
+  background-size: cover;
+  filter: blur(52px) saturate(1.28) brightness(0.62);
+  opacity: 0.78;
+  pointer-events: none;
+  transform: scale(1.08);
+  animation: viewer-ambient-drift 14s ease-in-out infinite alternate;
+}
+
 .viewer-stage {
   position: relative;
+  z-index: 1;
   display: flex;
   min-width: 0;
   min-height: 100vh;
@@ -2395,7 +2308,9 @@ button.location-unit-chip:focus-visible,
   justify-content: center;
   overflow: hidden;
   padding: 0 0 104px;
-  background: #050505;
+  background:
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.035), transparent 48%),
+    rgba(5, 5, 5, 0.46);
 }
 
 .viewer-telemetry {
@@ -2455,6 +2370,41 @@ button.location-unit-chip:focus-visible,
   place-items: center;
 }
 
+.viewer-image-frame::before,
+.viewer-image-frame::after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+}
+
+.viewer-image-frame::before {
+  background:
+    linear-gradient(#ffffff, #ffffff) left top / 26px 1px no-repeat,
+    linear-gradient(#ffffff, #ffffff) left top / 1px 26px no-repeat,
+    linear-gradient(#ffffff, #ffffff) right top / 26px 1px no-repeat,
+    linear-gradient(#ffffff, #ffffff) right top / 1px 26px no-repeat,
+    linear-gradient(#ffffff, #ffffff) left bottom / 26px 1px no-repeat,
+    linear-gradient(#ffffff, #ffffff) left bottom / 1px 26px no-repeat,
+    linear-gradient(#ffffff, #ffffff) right bottom / 26px 1px no-repeat,
+    linear-gradient(#ffffff, #ffffff) right bottom / 1px 26px no-repeat;
+}
+
+.viewer-image-frame::after {
+  background: linear-gradient(108deg, transparent 34%, rgba(255, 255, 255, 0.14) 48%, transparent 62%);
+  transform: translateX(-130%);
+}
+
+.viewer-image-frame.is-focusing::before {
+  animation: viewer-reticle 720ms ease-out both;
+}
+
+.viewer-image-frame.is-focusing::after {
+  animation: viewer-scan 760ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 .viewer-stage img {
   display: block;
   width: auto;
@@ -2463,12 +2413,16 @@ button.location-unit-chip:focus-visible,
   max-height: calc(100vh - 104px);
   border-radius: 0;
   object-fit: contain;
-  box-shadow: none;
+  box-shadow: 0 34px 110px rgba(0, 0, 0, 0.42);
   cursor: zoom-in;
   touch-action: none;
   user-select: none;
   transition: transform 180ms ease;
   will-change: transform;
+}
+
+.viewer-stage img.is-entering {
+  animation: viewer-focus-in 540ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .viewer-stage img.is-zoomed {
@@ -2640,12 +2594,14 @@ button.location-unit-chip:focus-visible,
 }
 
 .viewer-info {
+  position: relative;
+  z-index: 1;
   min-width: 0;
   max-height: 100vh;
   overflow: auto;
   padding: 34px;
   border-left: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(7, 7, 7, 0.78);
+  background: rgba(7, 7, 7, 0.72);
   backdrop-filter: blur(24px);
   transition: opacity 220ms ease, transform 220ms ease;
 }
@@ -2749,6 +2705,73 @@ button.location-unit-chip:focus-visible,
   transform: translateY(-1px);
 }
 
+@keyframes viewer-open {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes viewer-ambient-drift {
+  from {
+    transform: scale(1.08) translate3d(-0.5%, -0.5%, 0);
+  }
+  to {
+    transform: scale(1.14) translate3d(0.5%, 0.5%, 0);
+  }
+}
+
+@keyframes viewer-focus-in {
+  0% {
+    clip-path: inset(1.5%);
+    filter: blur(12px) brightness(0.72) saturate(0.76);
+    opacity: 0.18;
+  }
+  58% {
+    filter: blur(1px) brightness(1.04) saturate(1.03);
+    opacity: 1;
+  }
+  100% {
+    clip-path: inset(0);
+    filter: none;
+    opacity: 1;
+  }
+}
+
+@keyframes viewer-reticle {
+  0% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  28% {
+    opacity: 0.5;
+  }
+  76% {
+    opacity: 0.32;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+@keyframes viewer-scan {
+  0% {
+    opacity: 0;
+    transform: translateX(-130%);
+  }
+  24% {
+    opacity: 0.72;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(130%);
+  }
+}
+
 @keyframes page-in {
   from {
     opacity: 0;
@@ -2780,6 +2803,10 @@ button.location-unit-chip:focus-visible,
   }
 }
 
+.view.is-active {
+  animation: page-in 280ms ease-out both;
+}
+
 .view.is-active .control-panel,
 .view.is-active .map-stage,
 .view.is-active .recent-photos-panel,
@@ -2795,8 +2822,11 @@ button.location-unit-chip:focus-visible,
 .view.is-active .location-recent-card,
 .view.is-active .squadron-logo-card,
 .view.is-active .stats-pair-card,
-.view.is-active .exif-count-card {
-  animation: item-in 320ms ease-out both;
+.view.is-active .exif-count-card,
+.view.is-active .stats-country-row,
+.view.is-active .exif-bar-row,
+.view.is-active .squadron-country-section {
+  animation: item-in 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .view.is-active .photo-card:nth-child(2),
@@ -2815,6 +2845,18 @@ button.location-unit-chip:focus-visible,
 .view.is-active .aircraft-card:nth-child(4),
 .view.is-active .squadron-logo-card:nth-child(4) {
   animation-delay: 105ms;
+}
+
+.view.is-active .photo-card:nth-child(5),
+.view.is-active .aircraft-card:nth-child(5),
+.view.is-active .squadron-logo-card:nth-child(5) {
+  animation-delay: 140ms;
+}
+
+.view.is-active .photo-card:nth-child(6),
+.view.is-active .aircraft-card:nth-child(6),
+.view.is-active .squadron-logo-card:nth-child(6) {
+  animation-delay: 175ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2914,15 +2956,6 @@ button.location-unit-chip:focus-visible,
     box-shadow: none;
   }
 
-  #mapView .map-stage::after {
-    background:
-      repeating-linear-gradient(0deg, transparent 0 58px, color-mix(in srgb, var(--surface) 17%, transparent) 59px 60px),
-      repeating-linear-gradient(90deg, transparent 0 58px, color-mix(in srgb, var(--surface) 13%, transparent) 59px 60px),
-      radial-gradient(circle at 18% 22%, color-mix(in srgb, var(--surface) 22%, transparent), transparent 34%),
-      linear-gradient(90deg, color-mix(in srgb, var(--bg) 58%, transparent) 0%, transparent 36%, transparent 68%, color-mix(in srgb, var(--bg) 36%, transparent) 100%),
-      linear-gradient(180deg, color-mix(in srgb, var(--bg) 32%, transparent) 0%, transparent 34%, color-mix(in srgb, var(--bg) 46%, transparent) 100%);
-  }
-
   #mapView .world-map {
     height: 100%;
     min-height: inherit;
@@ -2994,24 +3027,6 @@ button.location-unit-chip:focus-visible,
     transform: translate3d(0, 0, 0);
   }
 
-  #mapView .map-mission-hud {
-    top: auto;
-    bottom: clamp(30px, 4vw, 56px);
-    left: 50%;
-    max-width: min(300px, calc(100vw - 800px));
-    transform: translateX(-50%);
-  }
-
-  #mapView .map-route-controls {
-    top: clamp(18px, 3vw, 42px);
-    right: clamp(18px, 3vw, 48px);
-    transition: right 260ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  #mapView .map-workspace.is-dossier-open .map-route-controls {
-    right: min(calc(28vw + clamp(36px, 6vw, 96px)), 510px);
-  }
-
   #mapView .leaflet-control-container {
     position: relative;
     z-index: 3;
@@ -3079,34 +3094,6 @@ button.location-unit-chip:focus-visible,
     flex: 0 0 auto;
   }
 
-  #mapView .map-mission-hud {
-    top: 12px;
-    bottom: auto;
-    left: 12px;
-    max-width: min(236px, calc(100vw - 152px));
-    padding: 9px 11px;
-    transform: none;
-  }
-
-  #mapView .map-route-controls {
-    top: 12px;
-    right: 12px;
-    padding: 4px;
-  }
-
-  #mapView .map-route-controls .map-hud-button {
-    min-height: 32px;
-    padding: 7px 9px;
-  }
-
-  #mapView .map-dossier-toggle {
-    display: none;
-  }
-
-  #mapView .map-control-toggle {
-    display: none;
-  }
-
   #mapView .leaflet-top.leaflet-left {
     margin-top: 102px;
   }
@@ -3142,12 +3129,6 @@ button.location-unit-chip:focus-visible,
     border-radius: 0;
     background: #dedbd3;
     box-shadow: none;
-  }
-
-  #mapView .map-stage::after {
-    background:
-      linear-gradient(90deg, color-mix(in srgb, var(--bg) 34%, transparent) 0%, transparent 46%, color-mix(in srgb, var(--bg) 24%, transparent) 100%),
-      linear-gradient(180deg, color-mix(in srgb, var(--bg) 24%, transparent) 0%, transparent 38%, color-mix(in srgb, var(--bg) 38%, transparent) 100%);
   }
 
   #mapView .world-map {
@@ -3314,12 +3295,6 @@ button.location-unit-chip:focus-visible,
     border-radius: 0;
     background: #dedbd3;
     box-shadow: none;
-  }
-
-  #mapView .map-stage::after {
-    background:
-      linear-gradient(90deg, color-mix(in srgb, var(--bg) 34%, transparent) 0%, transparent 46%, color-mix(in srgb, var(--bg) 24%, transparent) 100%),
-      linear-gradient(180deg, color-mix(in srgb, var(--bg) 24%, transparent) 0%, transparent 38%, color-mix(in srgb, var(--bg) 38%, transparent) 100%);
   }
 
   #mapView .world-map {
@@ -3646,15 +3621,6 @@ button.location-unit-chip:focus-visible,
   .squadron-logo-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
-  }
-
-  #mapView .map-route-controls .map-hud-button span:last-child {
-    display: none;
-  }
-
-  #mapView .map-route-controls .map-hud-button {
-    width: 32px;
-    padding: 0;
   }
 
   .squadron-filter-bar {

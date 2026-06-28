@@ -154,24 +154,6 @@
           <div class="map-column">
             <section class="map-stage" aria-label="World map with aircraft spotting pins">
               <div class="world-map" id="worldMap" role="img" aria-label="OpenStreetMap showing aircraft spotting locations"></div>
-              <div class="map-mission-hud" id="mapMissionHud" aria-label="Map mission summary"></div>
-              <div class="map-route-controls" aria-label="Map timeline controls">
-                <button class="map-hud-button" type="button" id="mapRouteButton" aria-label="Show chronological route" aria-pressed="false">
-                  <span aria-hidden="true">⌁</span>
-                  <span>Show route</span>
-                </button>
-                <button
-                  class="map-hud-button map-dossier-toggle"
-                  type="button"
-                  id="mapDossierButton"
-                  aria-controls="mapResults"
-                  aria-label="Hide location details"
-                  aria-expanded="true"
-                >
-                  <span aria-hidden="true">▱</span>
-                  <span>Location details</span>
-                </button>
-              </div>
               <p class="map-fallback" id="mapFallback" hidden>
                 Map tiles are unavailable. Recent locations can still be selected from the list.
               </p>
@@ -283,6 +265,7 @@
     </main>
 
     <div class="photo-viewer" id="photoViewer" role="dialog" aria-modal="true" aria-label="Photo viewer" hidden>
+      <div class="viewer-ambient" aria-hidden="true"></div>
       <div class="viewer-stage">
         <button class="viewer-button close" type="button" id="closeViewerButton" aria-label="Close viewer">x</button>
         <button

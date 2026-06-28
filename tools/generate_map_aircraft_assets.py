@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -46,26 +47,65 @@ def write_monochrome_variant(family: str, variant: str, color: tuple[int, int, i
 
 
 def draw_helicopter_frame(color: tuple[int, int, int], angle: float) -> Image.Image:
-    size = 160
+    """Draw a compact, proportional helicopter from directly above."""
+    size = 192
+    center_x, rotor_y = 96, 82
     frame = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    body = ImageDraw.Draw(frame)
-    rgba = (*color, 255)
 
-    # Top-down fuselage, tail boom, and tail rotor.
-    body.ellipse((54, 44, 106, 111), fill=rgba)
-    body.polygon(((70, 103), (90, 103), (87, 149), (73, 149)), fill=rgba)
-    body.ellipse((65, 51, 95, 81), fill=(*color, 190))
-    body.line((80, 139, 80, 156), fill=rgba, width=4)
-    body.line((70, 151, 90, 151), fill=rgba, width=3)
-
-    # Rotor animation: a rotating pair of long top-view blades.
+    # Four tapered, semi-translucent rotor blades give motion without turning
+    # the aircraft itself into a wide horizontal bar.
     rotor = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     rotor_draw = ImageDraw.Draw(rotor)
-    rotor_draw.rounded_rectangle((13, 76, 147, 84), radius=4, fill=(*color, 220))
-    rotor = rotor.rotate(angle, resample=Image.Resampling.BICUBIC, center=(80, 80))
+    for blade in range(4):
+        radians = math.radians(angle + blade * 90)
+        direction = (math.cos(radians), math.sin(radians))
+        perpendicular = (-direction[1], direction[0])
+        root, tip = 11, 64
+        root_width, tip_width = 3.2, 5.0
+        points = []
+        for distance, width in ((root, root_width), (tip, tip_width)):
+            base_x = center_x + direction[0] * distance
+            base_y = rotor_y + direction[1] * distance
+            points.append((base_x + perpendicular[0] * width, base_y + perpendicular[1] * width))
+        for distance, width in ((tip, tip_width), (root, root_width)):
+            base_x = center_x + direction[0] * distance
+            base_y = rotor_y + direction[1] * distance
+            points.append((base_x - perpendicular[0] * width, base_y - perpendicular[1] * width))
+        rotor_draw.polygon(points, fill=(*color, 180))
     frame.alpha_composite(rotor)
+
     body = ImageDraw.Draw(frame)
-    body.ellipse((73, 73, 87, 87), fill=rgba)
+    solid = (*color, 255)
+    mid = (*color, 220)
+    soft = (*color, 170)
+
+    # Nose/cockpit, cabin, and engine shoulders. The silhouette stays narrow
+    # beneath the main rotor, closer to a utility helicopter's top view.
+    body.polygon(((96, 38), (80, 54), (75, 82), (79, 111), (88, 123), (104, 123), (113, 111), (117, 82), (112, 54)), fill=solid)
+    body.ellipse((82, 45, 110, 81), fill=mid)
+    body.rounded_rectangle((82, 77, 110, 116), radius=11, fill=solid)
+    body.line((96, 49, 96, 116), fill=soft, width=2)
+
+    # Slim tail boom, tailplane, and animated tail rotor.
+    body.polygon(((89, 113), (103, 113), (100, 166), (92, 166)), fill=solid)
+    body.polygon(((92, 161), (100, 161), (104, 175), (96, 181), (88, 175)), fill=mid)
+    body.line((80, 153, 112, 153), fill=mid, width=3)
+    tail_angle = math.radians(angle * 2.1)
+    tail_center = (96, 173)
+    tail_dx = math.cos(tail_angle) * 12
+    tail_dy = math.sin(tail_angle) * 12
+    body.line((tail_center[0] - tail_dx, tail_center[1] - tail_dy, tail_center[0] + tail_dx, tail_center[1] + tail_dy), fill=soft, width=3)
+    body.line((tail_center[0] - tail_dy, tail_center[1] + tail_dx, tail_center[0] + tail_dy, tail_center[1] - tail_dx), fill=soft, width=3)
+
+    # Landing skids add recognisable structure while remaining readable at map scale.
+    body.arc((60, 92, 86, 143), start=70, end=290, fill=mid, width=3)
+    body.arc((106, 92, 132, 143), start=250, end=110, fill=mid, width=3)
+    body.line((72, 125, 86, 132), fill=mid, width=2)
+    body.line((120, 125, 106, 132), fill=mid, width=2)
+
+    # Rotor mast stays sharp above the animated blade set.
+    body.ellipse((89, 75, 103, 89), fill=solid)
+    body.ellipse((93, 79, 99, 85), fill=(*color, 120))
     return frame
 
 
@@ -77,13 +117,13 @@ def transparent_palette(image: Image.Image) -> Image.Image:
 
 
 def write_helicopter_gif(variant: str, color: tuple[int, int, int]) -> None:
-    frames = [transparent_palette(draw_helicopter_frame(color, step * 22.5)) for step in range(8)]
+    frames = [transparent_palette(draw_helicopter_frame(color, step * 15)) for step in range(12)]
     output = ICON_DIR / f"aircraft-family-helicopter-top-{variant}.gif"
     frames[0].save(
         output,
         save_all=True,
         append_images=frames[1:],
-        duration=90,
+        duration=75,
         loop=0,
         disposal=2,
         transparency=frames[0].info["transparency"],

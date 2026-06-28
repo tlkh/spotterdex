@@ -1,0 +1,12 @@
+aircraft_type: Boeing KC-767J
+squadron_name: 404th Tactical Airlift Tanker Squadron
+country: Japan
+photos:
+- path: DSC09722-Enhanced-NR.jpeg
+  location: Gifu Air Base
+  pin_id: gifu-air-base
+  caption: KC-767J flying over Gifu Air Base
+- path: DSC07517-Enhanced-NR.jpeg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: KC-767J on the ground at Tsuiki Air Base
