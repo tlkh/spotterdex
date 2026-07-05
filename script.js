@@ -1,25 +1,38 @@
 (function () {
-  const EMPTY_DATA = { generatedAt: null, pins: [], aircraft: [], photos: [] };
+  const EMPTY_DATA = { generatedAt: null, pins: [], aircraft: [], squadrons: [], airshows: [], photos: [] };
+  const EMPTY_PHOTOS = Object.freeze([]);
   const RECENT_PHOTO_LIMIT = 8;
+  const MAP_LABEL_GAP = 2;
+  const MAP_PANEL_GAP = 10;
 
   const state = {
     data: EMPTY_DATA,
     pinById: new Map(),
     photoById: new Map(),
     aircraftById: new Map(),
+    airshowById: new Map(),
+    photosByPinId: new Map(),
+    enabledPins: [],
     selectedPinId: null,
     selectedAircraftId: null,
     selectedSquadronId: null,
-    mapGroupMode: "squadron",
+    selectedAirshowId: null,
+    expandedLocationGroupKeys: new Set(),
     dexGroupMode: "squadron",
     map: null,
     markerLayer: null,
+    mapLeaderLayer: null,
     mapTrafficLayer: null,
     mapTrafficInitialized: false,
+    mapPreviewCache: new Map(),
     mapDossierOpen: true,
     markersByPinId: new Map(),
+    mapCalloutLayouts: [],
+    activeMapMarkerId: null,
+    mapZoomInProgress: false,
     mapResizeObserver: null,
     mapRefreshHandle: null,
+    mapRefreshTimer: null,
     activePhotoIds: [],
     activePhotoIndex: 0,
     activePhotoContext: "map",
@@ -53,12 +66,22 @@
     state.data = prepareData(await loadData());
     chooseInitialSelections();
     renderAll();
+    updateShareMetadata();
     applyDeepLinkFromHash({ initial: true });
   }
 
   function cacheElements() {
     els.root = document.documentElement;
     els.brand = document.querySelector(".brand");
+    els.metaDescription = document.querySelector('meta[name="description"]');
+    els.ogTitle = document.querySelector('meta[property="og:title"]');
+    els.ogDescription = document.querySelector('meta[property="og:description"]');
+    els.ogImage = document.querySelector('meta[property="og:image"]');
+    els.ogUrl = document.querySelector('meta[property="og:url"]');
+    els.twitterTitle = document.querySelector('meta[name="twitter:title"]');
+    els.twitterDescription = document.querySelector('meta[name="twitter:description"]');
+    els.twitterImage = document.querySelector('meta[name="twitter:image"]');
+    els.canonical = document.querySelector('link[rel="canonical"]');
     els.themeToggle = document.getElementById("themeToggle");
     els.viewSelect = document.getElementById("viewSelect");
     els.aircraftCount = document.getElementById("aircraftCount");
@@ -76,7 +99,7 @@
     els.recentPhotosStrip = document.getElementById("recentPhotosStrip");
     els.recentPhotosCount = document.getElementById("recentPhotosCount");
     els.aircraftGrid = document.getElementById("aircraftGrid");
-    els.dexDetail = document.getElementById("dexDetail");
+    els.aircraftDetail = document.getElementById("aircraftDetail");
     els.dexCount = document.getElementById("dexCount");
     els.statsDashboard = document.getElementById("statsDashboard");
     els.exifDashboard = document.getElementById("exifDashboard");
@@ -84,7 +107,10 @@
     els.squadronFilters = document.getElementById("squadronFilters");
     els.squadronCountryRail = document.getElementById("squadronCountryRail");
     els.squadronDetail = document.getElementById("squadronDetail");
+    els.locationDetail = document.getElementById("locationDetail");
     els.squadronPageCount = document.getElementById("squadronPageCount");
+    els.airshowTimeline = document.getElementById("airshowTimeline");
+    els.airshowPageCount = document.getElementById("airshowPageCount");
     els.photoViewer = document.getElementById("photoViewer");
     els.viewerImageFrame = document.querySelector(".viewer-image-frame");
     els.viewerImage = document.getElementById("viewerImage");
@@ -124,6 +150,8 @@
       generatedAt: rawData.generatedAt || null,
       pins: Array.isArray(rawData.pins) ? rawData.pins : [],
       aircraft: Array.isArray(rawData.aircraft) ? rawData.aircraft : [],
+      squadrons: Array.isArray(rawData.squadrons) ? rawData.squadrons : [],
+      airshows: Array.isArray(rawData.airshows) ? rawData.airshows : [],
       photos: Array.isArray(rawData.photos) ? rawData.photos : []
     };
 
@@ -141,18 +169,21 @@
       .filter((pin) => Number.isFinite(pin.lat) && Number.isFinite(pin.lon));
 
     data.photos = data.photos.map((photo, index) => {
-      const unitType = normalizeUnitType(photo.unitType || photo.unit_type || photo.squadronType);
+      const tagScope = normalizePhotoScope(photo.tagScope || photo.tag_scope);
+      const unitType = tagScope === "location" ? "" : normalizeUnitType(photo.unitType || photo.unit_type || photo.squadronType);
       return {
         ...photo,
         id: String(photo.id || `photo-${index + 1}`),
+        tagScope,
         year: photo.year ? String(photo.year) : "",
         date: photo.date ? String(photo.date) : "",
         sortDate: photo.sortDate ? String(photo.sortDate) : deriveSortDate(photo),
         locationName: photo.locationName || photo.location || "Unknown location",
-        aircraftType: photo.aircraftType || "Unknown aircraft",
-        squadronName: photo.squadronName || photo.unitName || unknownUnitName(unitType),
+        airshow: photo.airshow || photo.airshowName || photo.airshow_name || "",
+        aircraftType: photo.aircraftType || defaultPhotoSubject(tagScope),
+        squadronName: photo.squadronName || photo.unitName || (tagScope === "location" ? "" : unknownUnitName(unitType)),
         unitType,
-        unitLabel: photo.unitLabel || unitDisplayLabel(unitType),
+        unitLabel: tagScope === "location" ? "" : photo.unitLabel || unitDisplayLabel(unitType),
         thumbnail: photo.thumbnail || photo.image || "",
         exif: photo.exif && typeof photo.exif === "object" ? photo.exif : {}
       };
@@ -176,10 +207,18 @@
         stats: entry.stats && typeof entry.stats === "object" ? entry.stats : {}
       }))
       .sort((a, b) => a.typeName.localeCompare(b.typeName));
+    data.squadrons = data.squadrons
+      .map(normalizeUnitRecord)
+      .sort((a, b) => `${a.country} ${a.name}`.localeCompare(`${b.country} ${b.name}`));
 
     state.pinById = new Map(data.pins.map((pin) => [pin.id, pin]));
     state.photoById = new Map(data.photos.map((photo) => [photo.id, photo]));
     state.aircraftById = new Map(data.aircraft.map((entry) => [entry.id, entry]));
+    data.airshows = normalizeAirshows(data.airshows, data.photos);
+    state.airshowById = new Map(data.airshows.map((airshow) => [airshow.id, airshow]));
+    state.photosByPinId = indexPhotosByPin(data.pins, data.photos);
+    state.enabledPins = data.pins.filter((pin) => pin.enabled);
+    state.mapPreviewCache.clear();
 
     data.aircraft.forEach((entry) => {
       const matchingPhotoIds = data.photos
@@ -191,6 +230,28 @@
     });
 
     return data;
+  }
+
+  function indexPhotosByPin(pins, photos) {
+    const photosByPinId = new Map(pins.map((pin) => [pin.id, []]));
+    const pinIdsByLocation = new Map();
+    pins.forEach((pin) => {
+      const locationKey = normalizeKey(pin.name);
+      const ids = pinIdsByLocation.get(locationKey) || [];
+      ids.push(pin.id);
+      pinIdsByLocation.set(locationKey, ids);
+    });
+
+    photos.forEach((photo) => {
+      const matchingPinIds = new Set();
+      if (photosByPinId.has(photo.pinId)) {
+        matchingPinIds.add(photo.pinId);
+      }
+      (pinIdsByLocation.get(normalizeKey(photo.locationName)) || []).forEach((pinId) => matchingPinIds.add(pinId));
+      matchingPinIds.forEach((pinId) => photosByPinId.get(pinId).push(photo));
+    });
+    photosByPinId.forEach((pinPhotos) => pinPhotos.sort(sortPhotos));
+    return photosByPinId;
   }
 
   function normalizeUnitRecord(squadron) {
@@ -207,6 +268,64 @@
       unitLabel: squadron.unitLabel || unitDisplayLabel(unitType),
       showOnSquadronsPage: squadron.showOnSquadronsPage !== false && unitType === "squadron"
     };
+  }
+
+  function normalizeAirshows(rawAirshows, photos) {
+    const byKey = new Map();
+    const addAirshow = (rawAirshow, fallbackName = "") => {
+      const name = String(rawAirshow?.name || rawAirshow?.event || fallbackName || "").trim();
+      if (!name) {
+        return null;
+      }
+      const key = normalizeKey(name);
+      if (!byKey.has(key)) {
+        byKey.set(key, {
+          id: String(rawAirshow?.id || slugify(name)),
+          name,
+          photoIds: [],
+          heroPhotoId: String(rawAirshow?.heroPhotoId || rawAirshow?.hero_photo_id || ""),
+          firstDate: String(rawAirshow?.firstDate || ""),
+          latestDate: String(rawAirshow?.latestDate || "")
+        });
+      }
+      const airshow = byKey.get(key);
+      airshow.photoIds.push(...(Array.isArray(rawAirshow?.photoIds) ? rawAirshow.photoIds.map(String) : []));
+      if (!airshow.heroPhotoId && rawAirshow?.heroPhotoId) {
+        airshow.heroPhotoId = String(rawAirshow.heroPhotoId);
+      }
+      return airshow;
+    };
+
+    rawAirshows.forEach((airshow) => addAirshow(airshow));
+    photos.forEach((photo) => {
+      if (!photo.airshow) {
+        return;
+      }
+      const airshow = addAirshow({}, photo.airshow);
+      airshow.photoIds.push(photo.id);
+    });
+
+    return Array.from(byKey.values())
+      .map((airshow) => {
+        const photoIds = unique(airshow.photoIds).filter((photoId) => state.photoById.has(photoId));
+        const eventPhotos = photoIds.map((photoId) => state.photoById.get(photoId)).filter(Boolean).sort(sortPhotos);
+        const dates = eventPhotos.map((photo) => photo.sortDate).filter(Boolean).sort();
+        return {
+          ...airshow,
+          photoIds,
+          photoCount: eventPhotos.length,
+          firstDate: airshow.firstDate || dates[0] || "",
+          latestDate: airshow.latestDate || dates[dates.length - 1] || ""
+        };
+      })
+      .filter((airshow) => airshow.photoIds.length)
+      .sort((a, b) => {
+        const dateDiff = Date.parse(b.latestDate || "") - Date.parse(a.latestDate || "");
+        if (Number.isFinite(dateDiff) && dateDiff) {
+          return dateDiff;
+        }
+        return b.latestDate.localeCompare(a.latestDate) || a.name.localeCompare(b.name);
+      });
   }
 
   function chooseInitialSelections() {
@@ -227,7 +346,7 @@
 
   function setupEvents() {
     document.querySelectorAll("[data-tab-target]").forEach((button) => {
-      button.addEventListener("click", () => setActiveTab(button.dataset.tabTarget));
+      button.addEventListener("click", () => openDirectoryView(button.dataset.tabTarget));
     });
     if (els.brand) {
       els.brand.addEventListener("click", (event) => {
@@ -235,7 +354,7 @@
         goToMapHome();
       });
     }
-    els.viewSelect.addEventListener("change", () => setActiveTab(els.viewSelect.value));
+    els.viewSelect.addEventListener("change", () => openDirectoryView(els.viewSelect.value));
 
     els.themeToggle.addEventListener("click", toggleTheme);
     document.getElementById("fitPinsButton").addEventListener("click", fitMapToPins);
@@ -283,6 +402,17 @@
     }
   }
 
+  function openDirectoryView(viewId) {
+    if (viewId === "dexView") {
+      state.selectedAircraftId = null;
+    } else if (viewId === "squadronsView") {
+      state.selectedSquadronId = null;
+    } else if (viewId === "airshowsView") {
+      state.selectedAirshowId = null;
+    }
+    setActiveTab(viewId);
+  }
+
   function handleLensPointerMove(event) {
     const surface = event.target instanceof Element
       ? event.target.closest(".photo-card, .recent-photo-card, .location-recent-card, .location-hero, .squadron-logo-card")
@@ -322,6 +452,20 @@
       setViewerInfoOpen(false);
     }
 
+    const copyFieldGuideButton = event.target.closest("[data-copy-field-guide]");
+    if (copyFieldGuideButton) {
+      copyFieldGuideLink(copyFieldGuideButton).catch(() => {
+        copyFieldGuideButton.textContent = "Copy failed";
+      });
+      return;
+    }
+
+    const printFieldGuideButton = event.target.closest("[data-print-field-guide]");
+    if (printFieldGuideButton) {
+      window.print();
+      return;
+    }
+
     const mapPanelButton = event.target.closest("[data-map-panel-toggle]");
     if (mapPanelButton) {
       toggleMapPanel(mapPanelButton.dataset.mapPanelToggle);
@@ -354,17 +498,34 @@
       return;
     }
 
-    const mapGroupButton = event.target.closest("[data-map-group]");
-    if (mapGroupButton) {
-      state.mapGroupMode = mapGroupButton.dataset.mapGroup;
+    const dexGroupButton = event.target.closest("[data-dex-group]");
+    if (dexGroupButton) {
+      state.dexGroupMode = dexGroupButton.dataset.dexGroup;
+      renderAircraftDetail();
+      return;
+    }
+
+    const locationPageButton = event.target.closest("[data-location-page-id]");
+    if (locationPageButton) {
+      selectLocationPage(locationPageButton.dataset.locationPageId);
+      return;
+    }
+
+    const locationGroupButton = event.target.closest("[data-location-group-key]");
+    if (locationGroupButton) {
+      const key = locationGroupButton.dataset.locationGroupKey;
+      if (state.expandedLocationGroupKeys.has(key)) {
+        state.expandedLocationGroupKeys.delete(key);
+      } else {
+        state.expandedLocationGroupKeys.add(key);
+      }
       renderMapResults();
       return;
     }
 
-    const dexGroupButton = event.target.closest("[data-dex-group]");
-    if (dexGroupButton) {
-      state.dexGroupMode = dexGroupButton.dataset.dexGroup;
-      renderDexDetail();
+    const detailBackButton = event.target.closest("[data-detail-back]");
+    if (detailBackButton) {
+      setActiveTab(detailBackButton.dataset.detailBack);
       return;
     }
 
@@ -386,6 +547,12 @@
         closeViewer({ updateHash: false });
       }
       selectSquadron(squadronButton.dataset.squadronId);
+      return;
+    }
+
+    const airshowButton = event.target.closest("[data-airshow-id]");
+    if (airshowButton) {
+      selectAirshow(airshowButton.dataset.airshowId);
       return;
     }
 
@@ -492,6 +659,7 @@
 
   function setActiveTab(viewId, options = {}) {
     const activeBefore = document.querySelector("[data-view].is-active");
+    const navigationViewId = navigationViewFor(viewId);
     document.querySelectorAll("[data-view]").forEach((view) => {
       const isActive = view.id === viewId;
       view.hidden = !isActive;
@@ -499,12 +667,12 @@
     });
 
     document.querySelectorAll("[data-tab-target]").forEach((button) => {
-      const isActive = button.dataset.tabTarget === viewId;
+      const isActive = button.dataset.tabTarget === navigationViewId;
       button.classList.toggle("is-active", isActive);
       button.setAttribute("aria-selected", String(isActive));
     });
     if (els.viewSelect) {
-      els.viewSelect.value = viewId;
+      els.viewSelect.value = navigationViewId;
     }
 
     if (options.updateHash !== false && !state.isApplyingHash) {
@@ -521,6 +689,91 @@
         }
       });
     }
+
+    updateShareMetadata();
+  }
+
+  function navigationViewFor(viewId) {
+    if (viewId === "aircraftDetailView") {
+      return "dexView";
+    }
+    if (viewId === "squadronDetailView") {
+      return "squadronsView";
+    }
+    if (viewId === "locationDetailView") {
+      return "mapView";
+    }
+    return viewId;
+  }
+
+  function updateShareMetadata() {
+    const activeView = document.querySelector("[data-view].is-active")?.id;
+    const defaultTitle = "SpotterDex - Timothy's Logbook";
+    const defaultDescription = "An aircraft spotting logbook and aviation photography field guide.";
+    const defaultImage = "assets/generated/photos/location-hero-gifu-air-base.jpg";
+    let title = defaultTitle;
+    let description = defaultDescription;
+    let image = defaultImage;
+
+    if (activeView === "aircraftDetailView") {
+      const aircraft = state.aircraftById?.get(state.selectedAircraftId);
+      if (aircraft) {
+        const photos = photosForAircraft(aircraft);
+        const cover = state.photoById.get(aircraft.coverPhoto) || photos[0];
+        title = `${aircraft.typeName} field guide | SpotterDex`;
+        description = `${photos.length} photographed frame${photos.length === 1 ? "" : "s"} of ${aircraft.typeName}, organised by unit and location.`;
+        image = cover?.image || cover?.thumbnail || defaultImage;
+      }
+    } else if (activeView === "locationDetailView") {
+      const pin = state.pinById?.get(state.selectedPinId);
+      if (pin) {
+        const photos = photosForPin(pin);
+        const profile = locationProfile(pin, photos);
+        const hero = profile.heroPhoto || profile.heroAsset || photos[0];
+        title = `${pin.name} field guide | SpotterDex`;
+        description = `${photos.length} photographed frame${photos.length === 1 ? "" : "s"} at ${pin.name}${pin.country ? `, ${pin.country}` : ""}.`;
+        image = hero?.image || hero?.thumbnail || defaultImage;
+      }
+    }
+
+    const shareUrl = window.location.href;
+    const canonicalUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`;
+    const imageUrl = new URL(image, document.baseURI).href;
+    document.title = title;
+    if (els.metaDescription) els.metaDescription.content = description;
+    if (els.ogTitle) els.ogTitle.content = title;
+    if (els.ogDescription) els.ogDescription.content = description;
+    if (els.ogImage) els.ogImage.content = imageUrl;
+    if (els.ogUrl) els.ogUrl.content = shareUrl;
+    if (els.twitterTitle) els.twitterTitle.content = title;
+    if (els.twitterDescription) els.twitterDescription.content = description;
+    if (els.twitterImage) els.twitterImage.content = imageUrl;
+    if (els.canonical) els.canonical.href = canonicalUrl;
+  }
+
+  async function copyFieldGuideLink(button) {
+    const link = window.location.href;
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(link);
+    } else {
+      const temporaryInput = document.createElement("textarea");
+      temporaryInput.value = link;
+      temporaryInput.setAttribute("readonly", "");
+      temporaryInput.style.position = "fixed";
+      temporaryInput.style.opacity = "0";
+      document.body.appendChild(temporaryInput);
+      temporaryInput.select();
+      const copied = document.execCommand("copy");
+      temporaryInput.remove();
+      if (!copied) {
+        throw new Error("Could not copy link");
+      }
+    }
+    const originalLabel = button.dataset.copyFieldGuide || "Copy link";
+    button.textContent = "Copied";
+    window.setTimeout(() => {
+      button.textContent = originalLabel;
+    }, 1800);
   }
 
   function goToMapHome() {
@@ -537,12 +790,18 @@
   function updateDeepLinkForView(viewId) {
     if (viewId === "mapView" && state.selectedPinId) {
       updateDeepLink("location", state.selectedPinId);
-    } else if (viewId === "dexView" && state.selectedAircraftId) {
+    } else if (viewId === "locationDetailView" && state.selectedPinId) {
+      updateLocationDetailLink(state.selectedPinId);
+    } else if (viewId === "aircraftDetailView" && state.selectedAircraftId) {
       updateDeepLink("aircraft", state.selectedAircraftId);
-    } else if (viewId === "squadronsView" && state.selectedSquadronId) {
+    } else if (viewId === "squadronDetailView" && state.selectedSquadronId) {
       updateDeepLink("squadron", state.selectedSquadronId);
+    } else if (viewId === "airshowsView" && state.selectedAirshowId) {
+      updateDeepLink("airshow", state.selectedAirshowId);
     } else if (viewId === "statsView") {
       updateDeepLink("stats", "summary");
+    } else if (viewId === "dexView" || viewId === "squadronsView" || viewId === "airshowsView") {
+      clearDeepLink();
     }
   }
 
@@ -553,9 +812,12 @@
     localStorage.setItem("spotterdex-theme", next);
     updateThemeButton();
     if (state.map) {
+      state.mapPreviewCache.clear();
       renderPins({ refreshTraffic: true });
       renderMapResults();
     }
+    renderLocationPage();
+    renderAirshowsPage();
   }
 
   function resolvedTheme() {
@@ -665,18 +927,21 @@
   function renderAll() {
     renderStats();
     renderLocations();
+    updateMapPanelState();
+    updateMapControlPanelState();
+    updateMapDossierState();
     initMap();
     fitMapToPins();
     renderPins();
     renderRecentPhotos();
     renderMapResults();
-    updateMapPanelState();
-    updateMapControlPanelState();
-    updateMapDossierState();
     renderDex();
+    renderAircraftDetail();
+    renderLocationPage();
     renderStatsDashboard();
     renderExifDashboard();
     renderSquadronsPage();
+    renderAirshowsPage();
   }
 
   function renderStats() {
@@ -733,10 +998,21 @@
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(state.map);
 
+    const leaderPane = state.map.createPane("spotterdexLeaderPane");
+    leaderPane.style.zIndex = "590";
+    leaderPane.style.pointerEvents = "none";
     state.mapTrafficLayer = window.L.layerGroup().addTo(state.map);
+    state.mapLeaderLayer = window.L.layerGroup().addTo(state.map);
     state.markerLayer = window.L.layerGroup().addTo(state.map);
-    state.map.on("zoomend moveend", () => {
-      renderPins();
+    state.map.on("zoomstart", () => {
+      state.mapZoomInProgress = true;
+    });
+    state.map.on("moveend", () => {
+      const needsReflow = state.mapZoomInProgress || mapCalloutsNeedReflow();
+      state.mapZoomInProgress = false;
+      if (needsReflow) {
+        renderPins();
+      }
     });
     observeMapSize();
     refreshMapLayout();
@@ -760,117 +1036,769 @@
     }
 
     window.cancelAnimationFrame(state.mapRefreshHandle);
+    window.clearTimeout(state.mapRefreshTimer);
     state.mapRefreshHandle = window.requestAnimationFrame(() => {
       state.map.invalidateSize({ pan: false });
       renderPins();
-      window.setTimeout(() => {
+      const renderedSize = mapSizeKey();
+      state.mapRefreshTimer = window.setTimeout(() => {
         state.map.invalidateSize({ pan: false });
-        renderPins();
+        if (mapSizeKey() !== renderedSize) {
+          renderPins();
+        }
       }, 120);
     });
   }
 
   function renderPins(options = {}) {
-    if (!state.map || !state.markerLayer || !window.L) {
+    if (!state.map || !state.markerLayer || !state.mapLeaderLayer || !window.L) {
       return;
     }
 
     state.markerLayer.clearLayers();
+    state.mapLeaderLayer.clearLayers();
     state.markersByPinId = new Map();
-    const clusters = clusterPins(state.data.pins.filter((pin) => pin.enabled));
-    const markerLayouts = mapMarkerLayouts(clusters);
+    const pins = state.enabledPins;
+    const markerLayouts = mapMarkerLayouts(pins);
 
     markerLayouts.forEach((layout) => {
-      const { cluster, labelPlacement, preview } = layout;
-      if (cluster.pins.length === 1) {
-        const pin = cluster.pins[0];
-        const marker = window.L.marker([pin.lat, pin.lon], {
-          icon: mapMarkerIcon(pin, pin.id === state.selectedPinId, preview, labelPlacement),
-          title: pin.name
-        })
-          .on("click", () => selectPin(pin.id, { pan: false }));
-
-        marker.addTo(state.markerLayer);
-        state.markersByPinId.set(pin.id, marker);
-        return;
-      }
-
-      const marker = window.L.marker([cluster.lat, cluster.lon], {
-        icon: clusterMarkerIcon(cluster, layout.title, preview, labelPlacement),
-        title: `${cluster.pins.length} locations`
+      const { pin, preview, callout } = layout;
+      window.L.marker([pin.lat, pin.lon], {
+        icon: mapLeaderIcon(callout),
+        interactive: false,
+        keyboard: false,
+        pane: "spotterdexLeaderPane"
+      }).addTo(state.mapLeaderLayer);
+      const marker = window.L.marker([pin.lat, pin.lon], {
+        icon: mapMarkerIcon(pin, pin.id === state.selectedPinId, preview, callout),
+        title: pin.name,
+        zIndexOffset: pin.id === state.selectedPinId ? 800 : 0
       })
-        .on("click", () => zoomToCluster(cluster.pins));
+        .on("click", () => selectPin(pin.id, { pan: false }));
 
       marker.addTo(state.markerLayer);
+      state.markersByPinId.set(pin.id, marker);
     });
+    state.mapCalloutLayouts = markerLayouts.map((layout) => ({
+      pinId: layout.pin.id,
+      point: { x: layout.point.x, y: layout.point.y },
+      bounds: layout.bounds
+    }));
+    state.activeMapMarkerId = state.selectedPinId;
 
     renderMapTraffic(options.refreshTraffic);
 
   }
 
-  function mapMarkerLayouts(clusters) {
-    const layouts = clusters.map((cluster) => {
-      const isCluster = cluster.pins.length > 1;
-      const pin = isCluster ? null : cluster.pins[0];
-      const title = isCluster ? mapClusterLabel(cluster.pins) : mapPinLabel(pin);
+  function mapSizeKey() {
+    if (!state.map) {
+      return "";
+    }
+    const size = state.map.getSize();
+    return `${size.x}x${size.y}`;
+  }
+
+  function mapCalloutsNeedReflow() {
+    if (!state.mapCalloutLayouts.length) {
+      return true;
+    }
+    const mapSize = state.map.getSize();
+    const margin = isMobileMapLayout() ? 8 : 12;
+    return state.mapCalloutLayouts.some((layout) => {
+      const pin = state.pinById.get(layout.pinId);
+      if (!pin) {
+        return true;
+      }
+      const point = state.map.latLngToContainerPoint([pin.lat, pin.lon]);
+      const shiftX = point.x - layout.point.x;
+      const shiftY = point.y - layout.point.y;
+      return (
+        layout.bounds.left + shiftX < margin ||
+        layout.bounds.right + shiftX > mapSize.x - margin ||
+        layout.bounds.top + shiftY < margin ||
+        layout.bounds.bottom + shiftY > mapSize.y - margin
+      );
+    });
+  }
+
+  function mapMarkerLayouts(pins) {
+    const mapSize = state.map.getSize();
+    const markerRadius = 12;
+    const margin = isMobileMapLayout() ? 8 : 12;
+    const blockedBounds = mapCalloutBlockedBounds();
+    const layouts = pins.map((pin) => {
+      const preview = mapLocationPreview([pin]);
       return {
-        cluster,
-        isCluster,
-        title,
-        preview: mapLocationPreview(cluster.pins),
-        point: state.map.latLngToLayerPoint([cluster.lat, cluster.lon]),
-        labelPlacement: "above"
+        pin,
+        preview,
+        // Callouts are positioned inside the marker DOM, so keep their collision
+        // layout in the map container's coordinate system. Layer points drift when
+        // Leaflet translates a pane during a resize or pan.
+        point: state.map.latLngToContainerPoint([pin.lat, pin.lon]),
+        labelSize: mapLabelSize(mapPinLabel(pin), preview),
+        callout: null
       };
     });
-
+    assignPreferredCalloutLanes(layouts, mapSize, margin);
     layouts.forEach((layout) => {
-      layout.labelPlacement = preferredMapLabelPlacement(layout, layouts);
+      layout.candidates = mapLabelCandidates(layout, mapSize);
+    });
+    const markerPoints = layouts.map((layout) => layout.point);
+    const occupied = [];
+    layouts
+      .slice()
+      .sort((a, b) => mapLabelLayoutPriority(a, b))
+      .forEach((layout) => {
+        const { candidates } = layout;
+        const available = candidates.find((candidate) => (
+          !candidateOverlapsLabels(candidate.bounds, occupied) &&
+          !candidateBreaksVerticalStack(candidate.bounds, layout, occupied) &&
+          !candidateOverlapsBlockedBounds(candidate.bounds, blockedBounds) &&
+          !candidateOverlapsMarkers(candidate.bounds, markerPoints, markerRadius)
+        ));
+        const chosen = available || candidates
+          .slice()
+          .sort((a, b) => mapLabelCandidateScore(a, layout, occupied, markerPoints, markerRadius, blockedBounds) - mapLabelCandidateScore(b, layout, occupied, markerPoints, markerRadius, blockedBounds))[0];
+
+        layout.bounds = chosen.bounds;
+        occupied.push({ layout, bounds: chosen.bounds });
+      });
+    resolveMapLabelCollisions(layouts, markerPoints, markerRadius, blockedBounds);
+    layouts.forEach((layout) => {
+      layout.callout = mapCalloutForBounds(layout, layout.bounds);
     });
 
     return layouts;
   }
 
-  function preferredMapLabelPlacement(layout, layouts) {
-    const above = mapLabelBounds(layout, "above");
-    const overlapsAbove = layouts.some((other) => other !== layout && markerOverlapsLabel(other, above));
-    if (!overlapsAbove) {
-      return "above";
-    }
-
-    const below = mapLabelBounds(layout, "below");
-    const overlapsBelow = layouts.some((other) => other !== layout && markerOverlapsLabel(other, below));
-    return overlapsBelow ? "above" : "below";
-  }
-
-  function mapLabelBounds(layout, placement) {
+  function mapLabelSize(title, preview) {
     const isMobile = isMobileMapLayout();
-    const maxWidth = layout.isCluster
-      ? isMobile ? 252 : 326
-      : isMobile ? 236 : 292;
-    const estimatedWidth = Math.min(maxWidth, Math.max(104, layout.title.length * (isMobile ? 7.1 : 7.7) + 24));
-    const hasAssets = layout.preview.families.length || layout.preview.logos.length;
-    const estimatedHeight = hasAssets ? 48 : 31;
-    const offset = layout.isCluster ? 25 : 22;
-    const top = placement === "below"
-      ? layout.point.y + offset
-      : layout.point.y - offset - estimatedHeight;
-
+    const maxWidth = isMobile ? 236 : 292;
+    const characterWidth = isMobile ? 6.8 : 7.25;
+    const hasAssets = preview.families.length || preview.logos.length;
     return {
-      left: layout.point.x - estimatedWidth / 2,
-      right: layout.point.x + estimatedWidth / 2,
-      top,
-      bottom: top + estimatedHeight
+      width: Math.min(maxWidth, Math.max(108, Math.ceil(title.length * characterWidth + 22))),
+      height: hasAssets ? 45 : 28
     };
   }
 
-  function markerOverlapsLabel(layout, bounds) {
-    const radius = layout.isCluster ? 20 : 17;
-    return (
-      layout.point.x >= bounds.left - radius &&
-      layout.point.x <= bounds.right + radius &&
-      layout.point.y >= bounds.top - radius &&
-      layout.point.y <= bounds.bottom + radius
+  function mapLabelLayoutPriority(a, b) {
+    const aSelected = a.pin.id === state.selectedPinId;
+    const bSelected = b.pin.id === state.selectedPinId;
+    if (aSelected !== bSelected) {
+      return aSelected ? -1 : 1;
+    }
+    const areaDifference = (b.labelSize.width * b.labelSize.height) - (a.labelSize.width * a.labelSize.height);
+    if (areaDifference) {
+      return areaDifference;
+    }
+    if (a.point.y !== b.point.y) {
+      return a.point.y - b.point.y;
+    }
+    return a.point.x - b.point.x;
+  }
+
+  function mapLabelCandidates(layout, mapSize) {
+    const { width, height } = layout.labelSize;
+    const margin = isMobileMapLayout() ? 8 : 12;
+    const candidates = [];
+    const maxHorizontalDistance = isMobileMapLayout() ? 240 : 280;
+    const stackRows = mapCalloutStackRows(layout, mapSize, margin);
+    const shallowLimit = Math.max(64, height + 22);
+    const shallowRows = stackRows.filter((row) => Math.abs(row.centerY - layout.point.y) <= shallowLimit);
+    const steepRows = stackRows.filter((row) => Math.abs(row.centerY - layout.point.y) > shallowLimit);
+
+    // Nearby labels enter shared left/right lanes. Filling a lane from top to
+    // bottom prevents adjacent labels from forming horizontal rows.
+    if (layout.calloutClusterSize === 1) {
+      const directLeaderLength = isMobileMapLayout() ? 24 : 28;
+      appendDirectMapLabelCandidate(candidates, layout, mapSize, margin, "right", directLeaderLength);
+      appendDirectMapLabelCandidate(candidates, layout, mapSize, margin, "left", directLeaderLength);
+    }
+    const sharedDirection = layout.preferredStackLane ? layout.preferredStackLane.direction : "right";
+    const alternateDirection = sharedDirection === "right" ? "left" : "right";
+    appendStackedMapLabelCandidates(candidates, layout, mapSize, margin, sharedDirection, shallowRows, maxHorizontalDistance, "shared");
+    appendStackedMapLabelCandidates(candidates, layout, mapSize, margin, sharedDirection, steepRows, maxHorizontalDistance, "shared");
+    appendStackedMapLabelCandidates(candidates, layout, mapSize, margin, alternateDirection, shallowRows, maxHorizontalDistance);
+    appendStackedMapLabelCandidates(candidates, layout, mapSize, margin, alternateDirection, steepRows, maxHorizontalDistance);
+    appendStackedMapLabelCandidates(candidates, layout, mapSize, margin, sharedDirection, shallowRows, maxHorizontalDistance, "fallback");
+    appendStackedMapLabelCandidates(candidates, layout, mapSize, margin, sharedDirection, steepRows, maxHorizontalDistance, "fallback");
+
+    if (candidates.length) {
+      return candidates;
+    }
+
+    const left = Math.max(margin, Math.min(mapSize.x - margin - width, layout.point.x - width / 2));
+    const top = Math.max(margin, Math.min(mapSize.y - margin - height, layout.point.y - height / 2));
+    return [{
+      bounds: { left, right: left + width, top, bottom: top + height },
+      distance: 0
+    }];
+  }
+
+  function mapCalloutStackRows(layout, mapSize, margin) {
+    const rowHeight = 4;
+    const rows = [];
+    for (let top = margin; top <= mapSize.y - margin - layout.labelSize.height; top += rowHeight) {
+      rows.push({
+        top,
+        centerY: top + layout.labelSize.height / 2
+      });
+    }
+    return rows.sort((a, b) => (
+      Math.abs(a.centerY - layout.point.y) - Math.abs(b.centerY - layout.point.y)
+    ));
+  }
+
+  function assignPreferredCalloutLanes(layouts, mapSize, margin) {
+    const clusters = mapCalloutClusters(layouts, mapSize);
+    clusters.forEach((cluster, clusterId) => {
+      const direction = mapPreferredCalloutDirection(cluster, clusters);
+      const lanes = mapBalancedCalloutLanes(cluster, mapSize, margin, direction);
+      cluster.forEach((layout) => {
+        layout.calloutClusterId = clusterId;
+        layout.calloutClusterSize = cluster.length;
+        layout.preferredStackLane = lanes.get(layout) || null;
+      });
+    });
+  }
+
+  function mapBalancedCalloutLanes(cluster, mapSize, margin, defaultDirection) {
+    const country = cluster[0] && cluster[0].pin.country;
+    const isDenseCountryCluster = Boolean(
+      country &&
+      cluster.length >= 5 &&
+      cluster.every((layout) => layout.pin.country === country)
     );
+
+    // A dense group such as the Tokyo-area Japan pins is easier to scan when
+    // it fans into two short, vertical rails instead of forming one very tall
+    // stack on the side chosen for the broader country region. Keep the broad
+    // region preference as the first choice, then alternate by accumulated
+    // label height so both sides remain visually balanced as names vary.
+    const layoutsByDirection = new Map([
+      ["left", []],
+      ["right", []]
+    ]);
+    if (isDenseCountryCluster) {
+      const alternateDirection = defaultDirection === "right" ? "left" : "right";
+      const sideHeights = { left: 0, right: 0 };
+      cluster
+        .slice()
+        .sort((a, b) => a.point.y - b.point.y || a.point.x - b.point.x)
+        .forEach((layout) => {
+          const direction = sideHeights[defaultDirection] <= sideHeights[alternateDirection]
+            ? defaultDirection
+            : alternateDirection;
+          layoutsByDirection.get(direction).push(layout);
+          sideHeights[direction] += layout.labelSize.height + MAP_LABEL_GAP;
+        });
+    } else {
+      layoutsByDirection.get(defaultDirection).push(...cluster);
+    }
+
+    const lanes = new Map();
+    layoutsByDirection.forEach((sideLayouts, direction) => {
+      if (!sideLayouts.length) {
+        return;
+      }
+      const lane = preferredCalloutLane(sideLayouts, mapSize, margin, direction);
+      sideLayouts.forEach((layout) => lanes.set(layout, lane));
+    });
+    return lanes;
+  }
+
+  function mapPreferredCalloutDirection(cluster, clusters) {
+    const country = cluster[0] && cluster[0].pin.country;
+    const isCountryRegion = country && cluster.length > 1 && cluster.every((layout) => layout.pin.country === country);
+    if (!isCountryRegion) {
+      return "right";
+    }
+
+    const countryRegions = clusters.filter((candidate) => (
+      candidate.length > 1 && candidate.every((layout) => layout.pin.country === country)
+    ));
+    if (countryRegions.length < 2) {
+      return "right";
+    }
+
+    const centerLongitude = cluster.reduce((total, layout) => total + layout.pin.lon, 0) / cluster.length;
+    const easternmostLongitude = Math.max(...countryRegions.map((candidate) => (
+      candidate.reduce((total, layout) => total + layout.pin.lon, 0) / candidate.length
+    )));
+    return centerLongitude < easternmostLongitude ? "left" : "right";
+  }
+
+  function mapCalloutClusters(layouts, mapSize) {
+    const threshold = isMobileMapLayout()
+      ? 160
+      : Math.min(284, Math.max(200, mapSize.x * 0.18));
+    const stableClusters = mapStableCountryClusters(layouts);
+    const assigned = new Set(stableClusters.flat());
+    const remaining = new Set(layouts.filter((layout) => !assigned.has(layout)));
+    const clusters = stableClusters.slice();
+
+    while (remaining.size) {
+      const candidates = Array.from(remaining);
+      // Use a compact, density-first group rather than a transitive chain.
+      // A label group should be one local neighborhood, not every pin linked
+      // by a series of short hops across the map.
+      const anchor = candidates
+        .map((layout) => ({
+          layout,
+          nearby: candidates.filter((candidate) => (
+            mapPinsShareCalloutCluster(candidate, layout, threshold)
+          )).length
+        }))
+        .sort((a, b) => (
+          b.nearby - a.nearby ||
+          a.layout.point.y - b.layout.point.y ||
+          a.layout.point.x - b.layout.point.x
+        ))[0].layout;
+      const cluster = candidates.filter((candidate) => (
+        mapPinsShareCalloutCluster(candidate, anchor, threshold)
+      ));
+      cluster.forEach((layout) => remaining.delete(layout));
+
+      clusters.push(cluster);
+    }
+
+    return clusters;
+  }
+
+  function mapPinsShareCalloutCluster(first, second, screenThreshold) {
+    const screenDistance = Math.hypot(first.point.x - second.point.x, first.point.y - second.point.y);
+    return screenDistance <= screenThreshold && mapPinDistanceKm(first.pin, second.pin) <= 1600;
+  }
+
+  function mapStableCountryClusters(layouts) {
+    const byCountry = new Map();
+    layouts.forEach((layout) => {
+      const country = layout.pin.country || "";
+      const group = byCountry.get(country) || [];
+      group.push(layout);
+      byCountry.set(country, group);
+    });
+
+    return Array.from(byCountry.values())
+      .filter((group) => group.length >= 8)
+      .flatMap((group) => mapGeographicClusters(group));
+  }
+
+  function mapGeographicClusters(layouts) {
+    // Dense countries use compact regional groups. This keeps the Nagoya /
+    // Hokuriku rail distinct from Tokyo while keeping Okinawa independent at
+    // every zoom level.
+    const regionThresholdKm = 200;
+    const remaining = new Set(layouts);
+    const clusters = [];
+
+    while (remaining.size) {
+      const candidates = Array.from(remaining);
+      const anchor = candidates
+        .map((layout) => ({
+          layout,
+          nearby: candidates.filter((candidate) => (
+            mapPinDistanceKm(candidate.pin, layout.pin) <= regionThresholdKm
+          )).length
+        }))
+        .sort((a, b) => (
+          b.nearby - a.nearby ||
+          a.layout.pin.lat - b.layout.pin.lat ||
+          a.layout.pin.lon - b.layout.pin.lon
+        ))[0].layout;
+      const cluster = candidates.filter((candidate) => (
+        mapPinDistanceKm(candidate.pin, anchor.pin) <= regionThresholdKm
+      ));
+      cluster.forEach((layout) => remaining.delete(layout));
+      clusters.push(cluster);
+    }
+
+    return clusters;
+  }
+
+  function mapPinDistanceKm(first, second) {
+    const toRadians = Math.PI / 180;
+    const latitudeDelta = (second.lat - first.lat) * toRadians;
+    const longitudeDelta = (second.lon - first.lon) * toRadians;
+    const a = (
+      Math.sin(latitudeDelta / 2) ** 2 +
+      Math.cos(first.lat * toRadians) * Math.cos(second.lat * toRadians) *
+      Math.sin(longitudeDelta / 2) ** 2
+    );
+    return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  function preferredCalloutLane(cluster, mapSize, margin, direction) {
+    const maximumWidth = Math.max(...cluster.map((layout) => layout.labelSize.width));
+    const anchors = mapCalloutLaneAnchors(mapSize, margin, direction, maximumWidth);
+    const minimumDistance = isMobileMapLayout() ? 24 : 28;
+    const maximumDistance = mapCalloutSharedRailMaximumDistance();
+    const viable = anchors.filter((anchor) => cluster.every((layout) => {
+      const horizontalDistance = direction === "right"
+        ? anchor - layout.point.x
+        : layout.point.x - anchor;
+      return horizontalDistance >= minimumDistance && horizontalDistance <= maximumDistance;
+    }));
+    const ranked = (viable.length ? viable : anchors)
+      .map((anchor) => {
+        const distances = cluster.map((layout) => direction === "right"
+          ? anchor - layout.point.x
+          : layout.point.x - anchor);
+        const validCount = distances.filter((distance) => (
+          distance >= minimumDistance && distance <= maximumDistance
+        )).length;
+        return {
+          anchor,
+          validCount,
+          averageDistance: distances.reduce((total, distance) => total + Math.abs(distance), 0) / distances.length
+        };
+      })
+      .sort((a, b) => b.validCount - a.validCount || a.averageDistance - b.averageDistance);
+
+    return ranked.length ? { direction, anchor: ranked[0].anchor } : null;
+  }
+
+  function mapCalloutSharedRailMaximumDistance() {
+    // A shared rail may extend slightly beyond an ordinary callout. This keeps
+    // a regional stack aligned without broadly allowing long leaders.
+    return isMobileMapLayout() ? 264 : 320;
+  }
+
+  function mapCalloutLaneAnchors(mapSize, margin, direction, maximumWidth) {
+    const spacing = isMobileMapLayout() ? 48 : 64;
+    const anchors = [];
+    if (direction === "right") {
+      const maximumLeft = mapSize.x - margin - maximumWidth;
+      for (let left = margin; left <= maximumLeft; left += spacing) {
+        anchors.push(left);
+      }
+      if (maximumLeft >= margin && anchors[anchors.length - 1] !== maximumLeft) {
+        anchors.push(maximumLeft);
+      }
+    } else {
+      const minimumRight = margin + maximumWidth;
+      for (let right = mapSize.x - margin; right >= minimumRight; right -= spacing) {
+        anchors.push(right);
+      }
+      if (minimumRight <= mapSize.x - margin && anchors[anchors.length - 1] !== minimumRight) {
+        anchors.push(minimumRight);
+      }
+    }
+    return anchors;
+  }
+
+  function appendDirectMapLabelCandidate(candidates, layout, mapSize, margin, direction, leaderLength) {
+    const { width, height } = layout.labelSize;
+    const isRight = direction === "right";
+    const left = Math.round(isRight
+      ? layout.point.x + leaderLength
+      : layout.point.x - leaderLength - width);
+    const top = Math.round(layout.point.y - height / 2);
+    const bounds = {
+      left,
+      right: left + width,
+      top,
+      bottom: top + height
+    };
+    if (bounds.left < margin || bounds.right > mapSize.x - margin || bounds.top < margin || bounds.bottom > mapSize.y - margin) {
+      return;
+    }
+    candidates.push({
+      bounds,
+      distance: leaderLength + width / 2
+    });
+  }
+
+  function appendStackedMapLabelCandidates(candidates, layout, mapSize, margin, direction, rows, maxHorizontalDistance, laneMode = "all") {
+    const { width, height } = layout.labelSize;
+    const lanes = mapCalloutStackLanes(layout, mapSize, margin, direction, maxHorizontalDistance)
+      .filter((lane) => {
+        const isSharedRail = isPreferredStackLane(layout, direction, lane);
+        return laneMode === "shared" ? isSharedRail : laneMode === "fallback" ? !isSharedRail : true;
+      });
+    lanes.forEach((lane) => {
+      rows.forEach((row) => {
+        const bounds = {
+          left: lane.left,
+          right: lane.left + width,
+          top: row.top,
+          bottom: row.top + height
+        };
+        candidates.push({
+          bounds,
+          distance: Math.hypot(row.centerY - layout.point.y, lane.horizontalDistance)
+        });
+      });
+    });
+  }
+
+  function mapCalloutStackLanes(layout, mapSize, margin, direction, maxHorizontalDistance) {
+    const { width } = layout.labelSize;
+    const isRight = direction === "right";
+    const minimumDistance = isMobileMapLayout() ? 24 : 28;
+    const laneSpacing = isMobileMapLayout() ? 48 : 64;
+    const sharedRailMaximumDistance = mapCalloutSharedRailMaximumDistance();
+    const lanes = [];
+
+    if (isRight) {
+      for (let left = margin; left <= mapSize.x - margin - width; left += laneSpacing) {
+        const horizontalDistance = left - layout.point.x;
+        const isSharedRail = layout.preferredStackLane &&
+          layout.preferredStackLane.direction === direction &&
+          layout.preferredStackLane.anchor === left;
+        if (horizontalDistance >= minimumDistance && (
+          horizontalDistance <= maxHorizontalDistance ||
+          (isSharedRail && horizontalDistance <= sharedRailMaximumDistance)
+        )) {
+          lanes.push({ left, horizontalDistance, anchor: left });
+        }
+      }
+    } else {
+      for (let right = mapSize.x - margin; right >= margin + width; right -= laneSpacing) {
+        const horizontalDistance = layout.point.x - right;
+        const isSharedRail = layout.preferredStackLane &&
+          layout.preferredStackLane.direction === direction &&
+          layout.preferredStackLane.anchor === right;
+        if (horizontalDistance >= minimumDistance && (
+          horizontalDistance <= maxHorizontalDistance ||
+          (isSharedRail && horizontalDistance <= sharedRailMaximumDistance)
+        )) {
+          lanes.push({ left: right - width, horizontalDistance, anchor: right });
+        }
+      }
+    }
+
+    return lanes.sort((a, b) => {
+      const aPreferred = isPreferredStackLane(layout, direction, a);
+      const bPreferred = isPreferredStackLane(layout, direction, b);
+      if (aPreferred !== bPreferred) {
+        return aPreferred ? -1 : 1;
+      }
+      return a.horizontalDistance - b.horizontalDistance;
+    });
+  }
+
+  function isPreferredStackLane(layout, direction, lane) {
+    const preferred = layout.preferredStackLane;
+    return Boolean(preferred && preferred.direction === direction && preferred.anchor === lane.anchor);
+  }
+
+  function mapCalloutBlockedBounds() {
+    const mapRect = els.worldMap && els.worldMap.getBoundingClientRect();
+    if (!mapRect || !mapRect.width || !mapRect.height) {
+      return [];
+    }
+    return [els.mapControlPanel, els.mapResults]
+      .map((panel) => mapPanelCalloutBounds(panel, mapRect))
+      .filter(Boolean);
+  }
+
+  function mapPanelCalloutBounds(panel, mapRect) {
+    if (!panel || !mapPanelShouldReserveSpace(panel)) {
+      return null;
+    }
+    const rect = panel.getBoundingClientRect();
+    if (!rect.width || !rect.height) {
+      return null;
+    }
+    const isLeftPanel = panel === els.mapControlPanel;
+    const style = window.getComputedStyle(panel);
+    const sideProperty = isLeftPanel ? "left" : "right";
+    const computedInset = Number.parseFloat(style[sideProperty]);
+    const fallbackInset = isLeftPanel ? rect.left - mapRect.left : mapRect.right - rect.right;
+    const inset = Number.isFinite(computedInset) ? computedInset : fallbackInset;
+    const width = Math.min(rect.width, mapRect.width);
+    const left = isLeftPanel ? inset : mapRect.width - inset - width;
+    const top = Math.max(0, rect.top - mapRect.top);
+    const bottom = Math.min(mapRect.height, rect.bottom - mapRect.top);
+    if (bottom <= top) {
+      return null;
+    }
+    return {
+      left: Math.max(0, left - MAP_PANEL_GAP),
+      right: Math.min(mapRect.width, left + width + MAP_PANEL_GAP),
+      top: Math.max(0, top - MAP_PANEL_GAP),
+      bottom: Math.min(mapRect.height, bottom + MAP_PANEL_GAP)
+    };
+  }
+
+  function mapPanelShouldReserveSpace(panel) {
+    if (panel === els.mapControlPanel) {
+      return isMobileMapLayout() ? state.mobileMapPanel === "locations" : state.mapControlPanelOpen;
+    }
+    if (panel === els.mapResults) {
+      return isMobileMapLayout() ? state.mobileMapPanel === "results" : state.mapDossierOpen;
+    }
+    return false;
+  }
+
+  function candidateOverlapsLabels(bounds, occupied) {
+    return occupied.some((other) => rectsOverlap(bounds, other.bounds || other, MAP_LABEL_GAP));
+  }
+
+  function candidateOverlapsBlockedBounds(bounds, blockedBounds) {
+    return blockedBounds.some((blocked) => rectsOverlap(bounds, blocked, MAP_LABEL_GAP));
+  }
+
+  function candidateOverlapsMarkers(bounds, markerPoints, radius) {
+    return markerPoints.some((point) => (
+      point.x >= bounds.left - radius &&
+      point.x <= bounds.right + radius &&
+      point.y >= bounds.top - radius &&
+      point.y <= bounds.bottom + radius
+    ));
+  }
+
+  function candidateBreaksVerticalStack(bounds, layout, occupied) {
+    if (layout.calloutClusterSize <= 1) {
+      return false;
+    }
+    return occupied.some((other) => (
+      other.layout.calloutClusterId === layout.calloutClusterId &&
+      verticalBandsOverlap(bounds, other.bounds)
+    ));
+  }
+
+  function verticalBandsOverlap(a, b) {
+    return !(a.bottom + MAP_LABEL_GAP <= b.top || a.top - MAP_LABEL_GAP >= b.bottom);
+  }
+
+  function mapLabelCandidateScore(candidate, layout, occupied, markerPoints, radius, blockedBounds) {
+    const labelOverlap = occupied.reduce((total, other) => total + rectOverlapArea(candidate.bounds, other.bounds || other, MAP_LABEL_GAP), 0);
+    const blockedOverlap = blockedBounds.reduce((total, blocked) => (
+      total + rectOverlapArea(candidate.bounds, blocked, MAP_LABEL_GAP)
+    ), 0);
+    const stackConflicts = occupied.reduce((total, other) => (
+      total + (
+        other.layout &&
+        other.layout.calloutClusterId === layout.calloutClusterId &&
+        verticalBandsOverlap(candidate.bounds, other.bounds)
+          ? 1
+          : 0
+      )
+    ), 0);
+    const markerOverlap = markerPoints.reduce((total, point) => {
+      const overlaps = (
+        point.x >= candidate.bounds.left - radius &&
+        point.x <= candidate.bounds.right + radius &&
+        point.y >= candidate.bounds.top - radius &&
+        point.y <= candidate.bounds.bottom + radius
+      );
+      return total + (overlaps ? 1 : 0);
+    }, 0);
+    return candidate.distance + labelOverlap * 1000 + stackConflicts * 10000 + markerOverlap * 100000 + blockedOverlap * 100000;
+  }
+
+  function resolveMapLabelCollisions(layouts, markerPoints, radius, blockedBounds) {
+    const maximumPasses = layouts.length * layouts.length;
+    for (let pass = 0; pass < maximumPasses; pass += 1) {
+      const pair = firstOverlappingLabelPair(layouts);
+      if (!pair) {
+        return;
+      }
+
+      const [first, second] = pair;
+      const otherLayouts = layouts.filter((layout) => layout !== first && layout !== second);
+      const firstAlternative = mapLabelAlternative(first, second, otherLayouts, markerPoints, radius, blockedBounds);
+      const secondAlternative = mapLabelAlternative(second, first, otherLayouts, markerPoints, radius, blockedBounds);
+
+      if (firstAlternative) {
+        first.bounds = firstAlternative.bounds;
+        continue;
+      }
+      if (secondAlternative) {
+        second.bounds = secondAlternative.bounds;
+        continue;
+      }
+      return;
+    }
+  }
+
+  function firstOverlappingLabelPair(layouts) {
+    for (let index = 0; index < layouts.length; index += 1) {
+      for (let comparison = index + 1; comparison < layouts.length; comparison += 1) {
+        if (rectsOverlap(layouts[index].bounds, layouts[comparison].bounds, MAP_LABEL_GAP)) {
+          return [layouts[index], layouts[comparison]];
+        }
+      }
+    }
+    return null;
+  }
+
+  function mapLabelAlternative(layout, pairedLayout, otherLayouts, markerPoints, radius, blockedBounds) {
+    const occupied = otherLayouts.map((otherLayout) => ({
+      layout: otherLayout,
+      bounds: otherLayout.bounds
+    }));
+    return layout.candidates.find((candidate) => (
+      !sameRect(candidate.bounds, layout.bounds) &&
+      !candidateOverlapsLabels(candidate.bounds, occupied) &&
+      !candidateBreaksVerticalStack(candidate.bounds, layout, occupied) &&
+      !candidateOverlapsBlockedBounds(candidate.bounds, blockedBounds) &&
+      !rectsOverlap(candidate.bounds, pairedLayout.bounds, MAP_LABEL_GAP) &&
+      !candidateOverlapsMarkers(candidate.bounds, markerPoints, radius)
+    ));
+  }
+
+  function sameRect(a, b) {
+    return a.left === b.left && a.right === b.right && a.top === b.top && a.bottom === b.bottom;
+  }
+
+  function rectsOverlap(a, b, padding = 0) {
+    return !(
+      a.right + padding <= b.left ||
+      a.left - padding >= b.right ||
+      a.bottom + padding <= b.top ||
+      a.top - padding >= b.bottom
+    );
+  }
+
+  function rectOverlapArea(a, b, padding = 0) {
+    const left = Math.max(a.left - padding, b.left - padding);
+    const right = Math.min(a.right + padding, b.right + padding);
+    const top = Math.max(a.top - padding, b.top - padding);
+    const bottom = Math.min(a.bottom + padding, b.bottom + padding);
+    return right > left && bottom > top ? (right - left) * (bottom - top) : 0;
+  }
+
+  function mapCalloutForBounds(layout, bounds) {
+    const labelLeft = bounds.left - layout.point.x;
+    const labelTop = bounds.top - layout.point.y;
+    const labelRight = bounds.right - layout.point.x;
+    const labelBottom = bounds.bottom - layout.point.y;
+    const endpoint = {
+      x: Math.max(labelLeft, Math.min(0, labelRight)),
+      y: Math.max(labelTop, Math.min(0, labelBottom))
+    };
+    const isHorizontalEdge = endpoint.x === labelLeft || endpoint.x === labelRight;
+    const bend = isHorizontalEdge
+      ? { x: Math.round(endpoint.x * 0.58), y: endpoint.y }
+      : { x: endpoint.x, y: Math.round(endpoint.y * 0.58) };
+    const leader = mapLeaderGeometry([{ x: 0, y: 0 }, bend, endpoint]);
+
+    return {
+      labelLeft,
+      labelTop,
+      width: layout.labelSize.width,
+      height: layout.labelSize.height,
+      leader
+    };
+  }
+
+  function mapLeaderGeometry(points) {
+    const padding = 4;
+    const minX = Math.min(...points.map((point) => point.x)) - padding;
+    const maxX = Math.max(...points.map((point) => point.x)) + padding;
+    const minY = Math.min(...points.map((point) => point.y)) - padding;
+    const maxY = Math.max(...points.map((point) => point.y)) + padding;
+    return {
+      left: minX,
+      top: minY,
+      width: Math.max(1, maxX - minX),
+      height: Math.max(1, maxY - minY),
+      points: points.map((point) => `${Math.round(point.x - minX)},${Math.round(point.y - minY)}`).join(" ")
+    };
   }
 
   function renderMapTraffic(force = false) {
@@ -882,10 +1810,8 @@
     }
     state.mapTrafficLayer.clearLayers();
 
-    state.data.pins
-      .filter((pin) => pin.enabled)
-      .forEach((pin) => {
-        const families = uniqueFamiliesForPhotos(photosForPin(pin));
+    state.enabledPins.forEach((pin) => {
+        const families = mapLocationPreview([pin]).families;
         families.forEach((family, index) => {
           window.L.marker([pin.lat, pin.lon], {
             icon: mapTrafficIcon(pin, family, index),
@@ -894,19 +1820,8 @@
             zIndexOffset: -120
           }).addTo(state.mapTrafficLayer);
         });
-      });
-    state.mapTrafficInitialized = true;
-  }
-
-  function uniqueFamiliesForPhotos(photos) {
-    const families = new Map();
-    photos.forEach((photo) => {
-      const family = aircraftFamilyForPhoto(photo);
-      if (family && !families.has(family.id)) {
-        families.set(family.id, family);
-      }
     });
-    return Array.from(families.values());
+    state.mapTrafficInitialized = true;
   }
 
   function mapTrafficIcon(pin, family, index) {
@@ -954,78 +1869,6 @@
     }, 2166136261);
   }
 
-  function clusterPins(pins) {
-    const zoom = state.map ? state.map.getZoom() : NaN;
-    if (!state.map || !Number.isFinite(zoom) || zoom >= 13) {
-      return pins.map((pin) => ({
-        pins: [pin],
-        lat: pin.lat,
-        lon: pin.lon,
-        point: null
-      }));
-    }
-
-    const threshold = zoom <= 4
-      ? 92
-      : zoom <= 6
-        ? 76
-        : zoom <= 8
-          ? 60
-          : zoom <= 10
-            ? 46
-            : 36;
-    const clusters = [];
-    pins.forEach((pin) => {
-      const point = state.map.latLngToLayerPoint([pin.lat, pin.lon]);
-      let match = null;
-      for (const cluster of clusters) {
-        if (point.distanceTo(cluster.point) <= threshold) {
-          match = cluster;
-          break;
-        }
-      }
-
-      if (!match) {
-        clusters.push({
-          pins: [pin],
-          lat: pin.lat,
-          lon: pin.lon,
-          point
-        });
-        return;
-      }
-
-      const nextCount = match.pins.length + 1;
-      match.lat = (match.lat * match.pins.length + pin.lat) / nextCount;
-      match.lon = (match.lon * match.pins.length + pin.lon) / nextCount;
-      match.point = window.L.point(
-        (match.point.x * match.pins.length + point.x) / nextCount,
-        (match.point.y * match.pins.length + point.y) / nextCount
-      );
-      match.pins.push(pin);
-    });
-
-    return clusters;
-  }
-
-  function zoomToCluster(pins) {
-    if (!state.map || !window.L || !pins.length) {
-      return;
-    }
-
-    if (pins.length === 1) {
-      selectPin(pins[0].id);
-      return;
-    }
-
-    const bounds = window.L.latLngBounds(pins.map((pin) => [pin.lat, pin.lon]));
-    state.map.fitBounds(bounds, {
-      padding: [58, 58],
-      maxZoom: 13,
-      animate: true
-    });
-  }
-
   function renderMapResults() {
     const pin = state.pinById.get(state.selectedPinId);
     if (!pin) {
@@ -1035,29 +1878,9 @@
 
     const photos = photosForPin(pin);
     const profile = locationProfile(pin, photos);
-    const unitGroupLabel = photoUnitGroupLabel(photos);
-    const typeCount = unique(photos.map((photo) => normalizeKey(photo.aircraftType))).length;
-    const unitCount = unique(
-      photos.map((photo) => {
-        const squadron = squadronForPhoto(photo);
-        const unitName = squadron ? squadron.name : photo.squadronName;
-        const unitType = squadron ? squadron.unitType : photo.unitType;
-        return normalizeKey(`${photo.country || ""}-${unitName || ""}-${unitType || ""}`);
-      })
-    ).length;
-    const typeLabel = `${typeCount} ${typeCount === 1 ? "Type" : "Types"}`;
-    const unitLabel = `${unitCount} ${unitGroupLabel}${unitCount === 1 ? "" : "s"}`;
     els.mapResults.innerHTML = `
       <h2 class="location-details-title">Location Details</h2>
-      ${renderLocationDetail(profile)}
-
-      <div class="location-photo-browser">
-        <div class="segmented location-archive-toggle" aria-label="Organize map photos">
-          ${segmentButton(typeLabel, "type", state.mapGroupMode, "data-map-group")}
-          ${segmentButton(unitLabel, "squadron", state.mapGroupMode, "data-map-group")}
-        </div>
-      </div>
-      ${renderPhotoGroups(photos, state.mapGroupMode, "map")}
+      ${renderMapLocationPanel(profile)}
     `;
   }
 
@@ -1084,9 +1907,7 @@
       hasCustomHero: hero.custom,
       families: Array.from(familiesById.values()),
       units,
-      recentPhotos: photos
-        .filter((photo) => (photo.thumbnail || photo.image) && (hero.custom || !heroPhoto || photo.id !== heroPhoto.id))
-        .slice(0, 4)
+      locationPhotos: photos.filter((photo) => photo.tagScope === "location")
     };
   }
 
@@ -1103,160 +1924,189 @@
     }
 
     return {
-      photo: photos.find((photo) => photo.image || photo.thumbnail) || null,
+      photo: photos.find((photo) => photo.tagScope === "location" && (photo.image || photo.thumbnail))
+        || photos.find((photo) => photo.image || photo.thumbnail)
+        || null,
       asset: null,
       custom: false
     };
   }
 
-  function renderLocationDetail(profile) {
-    const { pin, heroPhoto, heroAsset, families, units, recentPhotos } = profile;
+  function renderMapLocationPanel(profile) {
+    const { pin, heroPhoto, heroAsset, families, units, locationPhotos, photos } = profile;
     const heroImage = heroPhoto
       ? heroPhoto.image || heroPhoto.thumbnail
       : heroAsset
         ? heroAsset.image || heroAsset.thumbnail
         : "";
     const heroStyle = heroImage ? "" : " is-empty";
-    const heroTag = heroPhoto ? "button" : "div";
-    const heroAttrs = heroPhoto
-      ? `type="button" data-photo-id="${escapeAttr(heroPhoto.id)}" data-photo-context="map"`
-      : "";
 
     return `
-      <section class="location-detail-page" aria-label="${escapeAttr(pin.name)} location details">
-        <${heroTag} class="location-hero${heroStyle}" ${heroAttrs}>
+      <section class="location-detail-page location-map-panel" aria-label="${escapeAttr(pin.name)} location details">
+        <div class="location-hero location-map-hero${heroStyle}">
           ${
             heroImage
               ? `<img src="${escapeAttr(heroImage)}" alt="${escapeAttr(locationHeroAlt(pin, heroPhoto))}">`
               : '<span class="empty-cover">No location photo</span>'
           }
           <span class="location-hero-overlay">
-            <span class="eyebrow">${escapeHtml(pin.country || "Location")}</span>
+            <span class="eyebrow">${escapeHtml(locationKicker(pin))}</span>
             <strong>${escapeHtml(pin.name)}</strong>
-            <span>${escapeHtml(locationMetaLine(pin))}</span>
+            ${renderLocationIdentityMarks(families, units)}
           </span>
-        </${heroTag}>
-
-        <div class="location-detail-grid">
-          <section class="location-detail-block">
-            <div class="compact-heading">
-              <h3>Aircraft families</h3>
-              <span class="count-pill">${families.length}</span>
-            </div>
-            ${renderLocationFamilies(families)}
-          </section>
-
-          <section class="location-detail-block">
-            <div class="compact-heading">
-              <h3>Units observed</h3>
-              <span class="count-pill">${units.length}</span>
-            </div>
-            ${renderLocationUnits(units)}
-          </section>
         </div>
-
-        <section class="location-detail-block">
-          <div class="compact-heading">
-            <h3>Recent photos</h3>
-            <span class="count-pill">${recentPhotos.length}</span>
-          </div>
-          ${renderLocationRecentPhotos(recentPhotos)}
-        </section>
+        <button class="location-page-button" type="button" data-location-page-id="${escapeAttr(pin.id)}">
+          <span>Open location page</span>
+          <span aria-hidden="true">→</span>
+        </button>
+        <div class="location-expandable-list">
+          ${locationPhotos.length ? renderLocationExpandableSection(pin, locationPhotos, "location") : ""}
+          ${renderLocationExpandableSection(pin, photos, "type")}
+          ${renderLocationExpandableSection(pin, photos, "squadron")}
+        </div>
       </section>
     `;
   }
 
-  function locationMetaLine(pin) {
-    return [pin.icao ? `ICAO ${pin.icao}` : "", pin.country || ""]
-      .filter(Boolean)
-      .join(" - ");
+  function locationKicker(pin) {
+    return [pin.icao, pin.country].filter(Boolean).join(" - ") || "Location";
+  }
+
+  function renderLocationIdentityMarks(families, units) {
+    const familyMarks = (families || []).slice(0, 3).map((family) => `
+      <span class="location-identity-mark is-family" title="${escapeAttr(family.label)}">
+        <img src="${escapeAttr(family.mapIcon || family.icon)}" alt="${escapeAttr(family.label)}">
+      </span>
+    `);
+    const unitMarks = (units || []).filter((unit) => unit.logo).slice(0, 6).map((unit) => `
+      <span class="location-identity-mark is-unit" title="${escapeAttr(`${unit.name} logo`)}">
+        <img src="${escapeAttr(unit.logo)}" alt="${escapeAttr(`${unit.name} logo`)}">
+      </span>
+    `);
+    if (!familyMarks.length && !unitMarks.length) {
+      return "";
+    }
+    return `<span class="location-identity-marks" aria-label="Aircraft families and squadron logos">${familyMarks.join("")}${unitMarks.join("")}</span>`;
+  }
+
+  function locationPhotoGroups(pin, photos, kind) {
+    const groups = new Map();
+    const addPhoto = (key, details, photo) => {
+      if (!groups.has(key)) {
+        groups.set(key, { ...details, key, photos: [] });
+      }
+      groups.get(key).photos.push(photo);
+    };
+
+    photos.forEach((photo) => {
+      if (kind === "location") {
+        if (photo.tagScope !== "location") return;
+        addPhoto("location", { title: "Location-specific images", eyebrow: "Location tag", logo: "" }, photo);
+        return;
+      }
+      if (kind === "type") {
+        if (photo.tagScope !== "aircraft") return;
+        const title = photo.aircraftType || "Unknown aircraft";
+        addPhoto(`type-${normalizeKey(title)}`, { title, eyebrow: "Aircraft type", logo: "" }, photo);
+        return;
+      }
+      if (!photo.squadronName || photo.tagScope === "location") return;
+      const squadron = squadronForPhoto(photo);
+      const title = squadron?.name || photo.squadronName;
+      const unitType = squadron?.unitType || photo.unitType;
+      addPhoto(
+        `unit-${normalizeKey(`${photo.country || pin.country || ""}-${title}-${unitType || ""}`)}`,
+        { title, eyebrow: squadron?.unitLabel || photo.unitLabel || unitDisplayLabel(unitType), logo: squadron?.logo || "" },
+        photo
+      );
+    });
+
+    return Array.from(groups.values())
+      .map((group) => ({ ...group, photos: group.photos.sort(sortPhotos) }))
+      .sort((a, b) => {
+        const latestDiff = (b.photos[0]?.sortTime || 0) - (a.photos[0]?.sortTime || 0);
+        return latestDiff || a.title.localeCompare(b.title);
+      });
+  }
+
+  function renderLocationExpandableSection(pin, photos, kind) {
+    const groups = locationPhotoGroups(pin, photos, kind);
+    if (!groups.length) {
+      return "";
+    }
+    const labels = {
+      location: "Location frames",
+      type: "Aircraft types",
+      squadron: "Squadrons and organisations"
+    };
+    return `
+      <section class="location-expandable-section">
+        <div class="compact-heading">
+          <h3>${escapeHtml(labels[kind])}</h3>
+          <span class="count-pill">${groups.length}</span>
+        </div>
+        <div class="location-expandable-groups">
+          ${groups.map((group) => renderLocationExpandableGroup(pin, group, kind)).join("")}
+        </div>
+      </section>
+    `;
+  }
+
+  function renderLocationExpandableGroup(pin, group, kind) {
+    const groupKey = `${pin.id}:${kind}:${group.key}`;
+    const isExpanded = state.expandedLocationGroupKeys.has(groupKey);
+    const latest = group.photos[0];
+    const image = latest?.thumbnail || latest?.image || "";
+    const remaining = group.photos.slice(1);
+    const logo = group.logo
+      ? `<img class="location-group-logo" src="${escapeAttr(group.logo)}" alt="${escapeAttr(`${group.title} logo`)}">`
+      : "";
+    return `
+      <article class="location-expandable-group${isExpanded ? " is-expanded" : ""}">
+        <button
+          class="location-group-toggle"
+          type="button"
+          data-location-group-key="${escapeAttr(groupKey)}"
+          aria-expanded="${isExpanded ? "true" : "false"}"
+          aria-controls="location-group-${escapeAttr(slugify(groupKey))}"
+        >
+          <span class="location-group-latest">
+            ${image ? `<img src="${escapeAttr(image)}" alt="${escapeAttr(`${group.title} most recent photo`)}">` : '<span class="location-group-fallback">No photo</span>'}
+          </span>
+          <span class="location-group-copy">
+            <span class="eyebrow">${escapeHtml(group.eyebrow)}</span>
+            <strong>${escapeHtml(group.title)}</strong>
+            <span>${escapeHtml(displayPhotoDate(latest))} · ${group.photos.length} photo${group.photos.length === 1 ? "" : "s"}</span>
+          </span>
+          ${logo}
+          <span class="location-group-chevron" aria-hidden="true">${isExpanded ? "−" : "+"}</span>
+        </button>
+        ${
+          isExpanded
+            ? `<div class="location-group-archive" id="location-group-${escapeAttr(slugify(groupKey))}">
+                ${remaining.length
+                  ? `<div class="photo-grid location-group-photo-grid">${remaining.map((photo) => renderPhotoCard(photo, "map")).join("")}</div>`
+                  : '<p class="muted">This is the only frame in the group.</p>'}
+              </div>`
+            : ""
+        }
+      </article>
+    `;
   }
 
   function locationHeroAlt(pin, heroPhoto) {
     if (heroPhoto) {
-      return `${heroPhoto.aircraftType} at ${pin.name}`;
+      return `${photoSubjectLabel(heroPhoto)} at ${pin.name}`;
     }
     return `${pin.name} location hero`;
-  }
-
-  function renderLocationFamilies(families) {
-    if (!families.length) {
-      return '<div class="empty-state compact">No aircraft families detected yet.</div>';
-    }
-
-    return `
-      <div class="location-family-list">
-        ${families
-          .map(
-            (family) => `
-              <span class="location-family-chip" title="${escapeAttr(family.label)}" aria-label="${escapeAttr(family.label)}">
-                <img src="${escapeAttr(family.icon)}" alt="">
-              </span>
-            `
-          )
-          .join("")}
-      </div>
-    `;
-  }
-
-  function renderLocationUnits(units) {
-    if (!units.length) {
-      return '<div class="empty-state compact">No squadrons or organisations linked yet.</div>';
-    }
-
-    return `
-      <div class="location-unit-list">
-        ${units
-          .map(
-            (unit) => {
-              const tagName = unit.squadronId ? "button" : "span";
-              const attrs = unit.squadronId
-                ? `type="button" data-squadron-id="${escapeAttr(unit.squadronId)}"`
-                : "";
-              return `
-              <${tagName} class="location-unit-chip" ${attrs} title="${escapeAttr(unit.name)}" aria-label="${escapeAttr(`${unit.name} ${unit.unitLabel}`)}">
-                ${
-                  unit.logo
-                    ? `<img src="${escapeAttr(unit.logo)}" alt="${escapeAttr(unit.name)} logo">`
-                    : `<span class="location-unit-fallback" aria-hidden="true">${escapeHtml(initials(unit.name))}</span>`
-                }
-              </${tagName}>
-            `;
-            }
-          )
-          .join("")}
-      </div>
-    `;
-  }
-
-  function renderLocationRecentPhotos(photos) {
-    if (!photos.length) {
-      return '<div class="empty-state compact">No recent photos found for this location.</div>';
-    }
-
-    return `
-      <div class="location-recent-grid">
-        ${photos
-          .map((photo) => {
-            const image = photo.thumbnail || photo.image || "";
-            return `
-              <button class="location-recent-card" type="button" data-photo-id="${escapeAttr(photo.id)}" data-photo-context="map">
-                <img src="${escapeAttr(image)}" alt="${escapeAttr(photo.aircraftType)} at ${escapeAttr(photo.locationName)}">
-                <span>
-                  <strong>${escapeHtml(photo.aircraftType)}</strong>
-                  <small>${escapeHtml(displayPhotoDate(photo))}</small>
-                </span>
-              </button>
-            `;
-          })
-          .join("")}
-      </div>
-    `;
   }
 
   function locationUnitPreviews(photos) {
     const byUnit = new Map();
     photos.forEach((photo) => {
+      if (!photo.squadronName) {
+        return;
+      }
       const squadron = squadronForPhoto(photo);
       const name = squadron ? squadron.name : photo.squadronName;
       const unitType = squadron ? squadron.unitType : photo.unitType;
@@ -1308,9 +2158,9 @@
         const image = photo.thumbnail || photo.image || "";
         return `
           <button class="recent-photo-card" type="button" data-photo-id="${escapeAttr(photo.id)}" data-photo-context="recent">
-            <img src="${escapeAttr(image)}" alt="${escapeAttr(photo.aircraftType)} at ${escapeAttr(photo.locationName)}">
+            <img src="${escapeAttr(image)}" alt="${escapeAttr(`${photoSubjectLabel(photo)} at ${photo.locationName}`)}">
             <span>
-              <strong>${escapeHtml(photo.aircraftType)}</strong>
+              <strong>${escapeHtml(photoSubjectLabel(photo))}</strong>
               <small>${escapeHtml(photo.locationName)} - ${escapeHtml(displayPhotoDate(photo))}</small>
             </span>
           </button>
@@ -1463,7 +2313,7 @@
   }
 
   function renderSquadronsPage() {
-    if (!els.squadronLogoGrid || !els.squadronPageCount || !els.squadronDetail) {
+    if (!els.squadronLogoGrid || !els.squadronPageCount) {
       return;
     }
 
@@ -1476,18 +2326,152 @@
 
     if (!allSquadrons.length) {
       els.squadronLogoGrid.innerHTML = '<div class="empty-state compact">Add squadron entries to populate this page.</div>';
-      els.squadronDetail.innerHTML = '<div class="empty-state">Squadron photos will appear here once entries are added.</div>';
       return;
     }
 
     if (!squadrons.length) {
       els.squadronLogoGrid.innerHTML = '<div class="empty-state compact">No squadrons match this wall filter.</div>';
-      renderSquadronDetail([]);
       return;
     }
 
     els.squadronLogoGrid.innerHTML = renderSquadronCountrySections(squadrons);
-    renderSquadronDetail(squadrons);
+  }
+
+  function renderAirshowsPage() {
+    if (!els.airshowTimeline || !els.airshowPageCount) {
+      return;
+    }
+
+    const airshows = state.data.airshows || [];
+    if (state.selectedAirshowId && !airshows.some((airshow) => airshow.id === state.selectedAirshowId)) {
+      state.selectedAirshowId = null;
+    }
+    els.airshowPageCount.textContent = `${airshows.length} event${airshows.length === 1 ? "" : "s"}`;
+
+    if (!airshows.length) {
+      els.airshowTimeline.innerHTML = '<div class="empty-state">Tag photos with an airshow or event name to build this timeline.</div>';
+      return;
+    }
+
+    els.airshowTimeline.innerHTML = airshows.map(renderAirshowTimelineItem).join("");
+  }
+
+  function renderAirshowTimelineItem(airshow) {
+    const photos = photosForAirshow(airshow);
+    const hero = airshowHeroPhoto(airshow, photos);
+    const otherPhotos = photos.filter((photo) => !hero || photo.id !== hero.id).sort(sortPhotosOldest);
+    const isExpanded = airshow.id === state.selectedAirshowId;
+    const date = airshow.latestDate || airshow.firstDate || "";
+    const cover = hero ? hero.image || hero.thumbnail || "" : "";
+    const latestLabel = date ? formatDisplayDate(date) : "Date unknown";
+    const activeClass = isExpanded ? " is-expanded" : "";
+    const identityMarks = renderAirshowIdentityMarks(photos);
+    const actionLabel = isExpanded ? "Hide event photos" : "Show event photos";
+
+    return `
+      <article class="airshow-timeline-item${activeClass}" id="airshow-${escapeAttr(airshow.id)}">
+        <div class="airshow-timeline-marker" aria-hidden="true">
+          <span></span>
+          <time datetime="${escapeAttr(date)}">${escapeHtml(latestLabel)}</time>
+        </div>
+        <button
+          class="airshow-timeline-card"
+          type="button"
+          data-airshow-id="${escapeAttr(airshow.id)}"
+          aria-expanded="${isExpanded ? "true" : "false"}"
+          aria-controls="airshow-gallery-${escapeAttr(airshow.id)}"
+          aria-label="${escapeAttr(`${airshow.name}: ${photos.length} photo${photos.length === 1 ? "" : "s"}. ${actionLabel}.`)}"
+        >
+          ${cover ? `<img src="${escapeAttr(cover)}" alt="${escapeAttr(`${airshow.name} hero photo`)}">` : '<span class="airshow-timeline-placeholder">No event photo</span>'}
+          <span class="airshow-timeline-scrim" aria-hidden="true"></span>
+          <span class="airshow-timeline-content">
+            <span class="eyebrow">${escapeHtml(latestLabel)}</span>
+            <strong>${escapeHtml(airshow.name)}</strong>
+            <span class="airshow-timeline-meta">
+              <span>${photos.length} photo${photos.length === 1 ? "" : "s"}</span>
+              ${identityMarks}
+            </span>
+          </span>
+        </button>
+        ${
+          isExpanded
+            ? `<section class="airshow-gallery" id="airshow-gallery-${escapeAttr(airshow.id)}">
+                <div class="detail-section-heading">
+                  <div>
+                    <p class="eyebrow">Event archive</p>
+                    <h2>${escapeHtml(airshow.name)}</h2>
+                  </div>
+                  <span class="count-pill">${otherPhotos.length}</span>
+                </div>
+                ${
+                  otherPhotos.length
+                    ? `<div class="photo-grid airshow-photo-grid">${otherPhotos.map((photo) => renderPhotoCard(photo, "airshow")).join("")}</div>`
+                    : '<div class="empty-state compact">The featured hero is the only frame in this event.</div>'
+                }
+              </section>`
+            : ""
+        }
+      </article>
+    `;
+  }
+
+  function photosForAirshow(airshow) {
+    return (airshow.photoIds || []).map((photoId) => state.photoById.get(photoId)).filter(Boolean).sort(sortPhotos);
+  }
+
+  function airshowHeroPhoto(airshow, photos) {
+    return state.photoById.get(airshow.heroPhotoId) || photos[0] || null;
+  }
+
+  function renderAirshowIdentityMarks(photos) {
+    const families = new Map();
+    const squadrons = new Map();
+
+    photos.forEach((photo) => {
+      const family = aircraftFamilyForPhoto(photo);
+      if (family && !families.has(family.id)) {
+        families.set(family.id, family);
+      }
+
+      const squadron = squadronForPhoto(photo);
+      if (!squadron || !squadron.logo) {
+        return;
+      }
+      const squadronId = squadronPageIdForUnit(squadron) || normalizeKey(`${squadron.country || photo.country || ""}-${squadron.name}`);
+      if (!squadrons.has(squadronId)) {
+        squadrons.set(squadronId, squadron);
+      }
+    });
+
+    const familyMarks = Array.from(families.values()).slice(0, 3).map((family) => `
+      <span class="airshow-identity-mark is-family" title="${escapeAttr(family.label)}">
+        <img src="${escapeAttr(family.darkIcon || family.mapIcon || family.icon)}" alt="${escapeAttr(family.label)}">
+      </span>
+    `);
+    const squadronMarks = Array.from(squadrons.values()).slice(0, 6).map((squadron) => `
+      <span class="airshow-identity-mark is-squadron" title="${escapeAttr(`${squadron.name} logo`)}">
+        <img src="${escapeAttr(squadron.logo)}" alt="${escapeAttr(`${squadron.name} logo`)}">
+      </span>
+    `);
+
+    if (!familyMarks.length && !squadronMarks.length) {
+      return "";
+    }
+
+    return `
+      <span class="airshow-identity-marks" aria-label="Aircraft families and squadron logos">
+        ${familyMarks.join("")}
+        ${squadronMarks.join("")}
+      </span>
+    `;
+  }
+
+  function sortPhotosOldest(a, b) {
+    const timeDiff = (a.sortTime || 0) - (b.sortTime || 0);
+    if (timeDiff) {
+      return timeDiff;
+    }
+    return `${photoSubjectLabel(a)} ${a.locationName}`.localeCompare(`${photoSubjectLabel(b)} ${b.locationName}`);
   }
 
   function filterSquadrons(squadrons) {
@@ -1525,8 +2509,8 @@
           .map(
             (group) => `
               <button type="button" data-squadron-country-jump="${escapeAttr(squadronCountryId(group.country))}">
-                <span>${escapeHtml(group.country)}</span>
-                <span>${group.squadrons.length}</span>
+                ${renderCountryLabel(group.country, "squadron-country-nav-label")}
+                <span class="squadron-country-count">${group.squadrons.length}</span>
               </button>
             `
           )
@@ -1542,7 +2526,7 @@
             <div class="group-header squadron-country-header">
               <div>
                 <p class="eyebrow">Country</p>
-                <h2>${escapeHtml(group.country)}</h2>
+                <h2>${renderCountryLabel(group.country)}</h2>
               </div>
               <span class="count-pill">${group.squadrons.length}</span>
             </div>
@@ -1581,33 +2565,40 @@
 
   function collectSquadrons() {
     const byKey = new Map();
+    const addSquadron = (squadron, aircraftType = "") => {
+      if (!isSquadronUnit(squadron)) {
+        return;
+      }
+      const key = normalizeKey(`${squadron.country || ""}-${squadron.name || ""}`);
+      if (!byKey.has(key)) {
+        byKey.set(key, {
+          id: key,
+          name: squadron.name || "Unknown squadron",
+          country: squadron.country || "",
+          logo: squadron.logo || "",
+          heroPhoto: squadron.heroPhoto || null,
+          aircraftTypes: [],
+          photoIds: []
+        });
+      }
+
+      const record = byKey.get(key);
+      if (!record.logo && squadron.logo) {
+        record.logo = squadron.logo;
+      }
+      if (!record.heroPhoto && squadron.heroPhoto) {
+        record.heroPhoto = squadron.heroPhoto;
+      }
+      if (aircraftType) {
+        record.aircraftTypes.push(aircraftType);
+      }
+      record.photoIds.push(...(squadron.photoIds || []));
+    };
+
+    state.data.squadrons.forEach((squadron) => addSquadron(squadron));
     state.data.aircraft.forEach((entry) => {
       (entry.squadrons || []).forEach((squadron) => {
-        if (!isSquadronUnit(squadron)) {
-          return;
-        }
-        const key = normalizeKey(`${squadron.country || ""}-${squadron.name || ""}`);
-        if (!byKey.has(key)) {
-          byKey.set(key, {
-            id: key,
-            name: squadron.name || "Unknown squadron",
-            country: squadron.country || "",
-            logo: squadron.logo || "",
-            heroPhoto: squadron.heroPhoto || null,
-            aircraftTypes: [],
-            photoIds: []
-          });
-        }
-
-        const record = byKey.get(key);
-        if (!record.logo && squadron.logo) {
-          record.logo = squadron.logo;
-        }
-        if (!record.heroPhoto && squadron.heroPhoto) {
-          record.heroPhoto = squadron.heroPhoto;
-        }
-        record.aircraftTypes.push(entry.typeName);
-        record.photoIds.push(...(squadron.photoIds || []));
+        addSquadron(squadron, entry.typeName);
       });
     });
 
@@ -1648,7 +2639,7 @@
         <div class="squadron-logo-body">
           <p class="eyebrow">${escapeHtml(squadron.country || "Country not set")}</p>
           <h2>${escapeHtml(squadron.name)}</h2>
-          <p>${escapeHtml(typePreview || "No aircraft types linked yet")}${extraTypes ? ` + ${extraTypes} more` : ""}</p>
+          <p>${escapeHtml(typePreview || "Squadron-level images")}${extraTypes ? ` + ${extraTypes} more` : ""}</p>
           <span>${squadron.photoIds.length} photo${squadron.photoIds.length === 1 ? "" : "s"} - ${squadron.aircraftTypes.length} type${squadron.aircraftTypes.length === 1 ? "" : "s"}</span>
         </div>
       </button>
@@ -1659,29 +2650,40 @@
     if (squadron.heroPhoto && (squadron.heroPhoto.thumbnail || squadron.heroPhoto.image)) {
       return squadron.heroPhoto;
     }
-    return photosForSquadronRecord(squadron).find((photo) => photo.thumbnail || photo.image) || null;
+    const photos = photosForSquadronRecord(squadron);
+    return photos.find((photo) => photo.tagScope === "squadron" && (photo.thumbnail || photo.image))
+      || photos.find((photo) => photo.thumbnail || photo.image)
+      || null;
   }
 
   function squadronCountryId(country) {
     return `squadron-country-${normalizeKey(country || "unknown")}`;
   }
 
-  function renderSquadronDetail(squadrons = collectSquadrons()) {
+  function renderCountryLabel(country, className = "") {
+    const label = country || "Country not set";
+    const flag = countryFlag(country);
+    const classes = ["country-label", className].filter(Boolean).join(" ");
+    const flagMarkup = flag === "?"
+      ? ""
+      : `<span class="country-flag" aria-hidden="true">${escapeHtml(flag)}</span>`;
+    return `<span class="${classes}">${flagMarkup}<span>${escapeHtml(label)}</span></span>`;
+  }
+
+  function renderSquadronDetail() {
     if (!els.squadronDetail) {
       return;
     }
 
-    if (state.selectedSquadronId && !squadrons.some((squadron) => squadron.id === state.selectedSquadronId)) {
-      state.selectedSquadronId = null;
-    }
-
-    const squadron = squadrons.find((item) => item.id === state.selectedSquadronId);
+    const squadron = collectSquadrons().find((item) => item.id === state.selectedSquadronId);
     if (!squadron) {
-      els.squadronDetail.innerHTML = '<div class="empty-state">Select a squadron emblem to view its aircraft photos.</div>';
+      els.squadronDetail.innerHTML = '<div class="empty-state">Choose a squadron from the directory to open its photo page.</div>';
       return;
     }
 
     const photos = photosForSquadronRecord(squadron);
+    const squadronLevelPhotos = photos.filter((photo) => photo.tagScope === "squadron");
+    const otherPhotos = photos.filter((photo) => photo.tagScope !== "squadron");
     const typePreview = squadron.aircraftTypes.join(", ");
     const hero = squadronCardHero(squadron);
     const heroImage = hero ? hero.image || hero.thumbnail || "" : "";
@@ -1689,34 +2691,162 @@
       ? `<img src="${escapeAttr(squadron.logo)}" alt="${escapeAttr(squadron.name)} logo">`
       : `<span class="squadron-logo-fallback">${escapeHtml(initials(squadron.name))}</span>`;
     els.squadronDetail.innerHTML = `
+      ${renderDetailHero({
+        backView: "squadronsView",
+        backLabel: "All squadrons",
+        eyebrow: squadron.country || "Squadron",
+        title: squadron.name,
+        description: `${photos.length} viewable photo${photos.length === 1 ? "" : "s"}${squadron.aircraftTypes.length ? ` across ${squadron.aircraftTypes.length} aircraft type${squadron.aircraftTypes.length === 1 ? "" : "s"}` : ""}`,
+        image: heroImage,
+        alt: `${squadron.name} hero photo`,
+        mark: logo,
+        className: "squadron-field-guide-hero"
+      })}
+      <section class="detail-summary">
+        <div>
+          <p class="eyebrow">Aircraft types</p>
+          <p class="detail-summary-copy">${escapeHtml(typePreview || "No aircraft types tagged yet.")}</p>
+        </div>
+      </section>
       ${
-        heroImage
-          ? `<div class="squadron-detail-hero">
-              <img src="${escapeAttr(heroImage)}" alt="${escapeAttr(squadron.name)} hero photo">
-              <span class="squadron-detail-logo" aria-hidden="true">${logo}</span>
-            </div>`
+        squadronLevelPhotos.length
+          ? `<section class="detail-photo-section">
+              <div class="detail-section-heading">
+                <div>
+                  <p class="eyebrow">Unit archive</p>
+                  <h2>Squadron-level frames</h2>
+                  <p class="muted">Photos tagged directly to ${escapeHtml(squadron.name)}.</p>
+                </div>
+                <span class="count-pill">${squadronLevelPhotos.length}</span>
+              </div>
+              ${renderDetailPhotoGrid(squadronLevelPhotos, "squadron")}
+            </section>`
           : ""
       }
-      <div class="result-header">
-        <div>
-          <p class="eyebrow">${escapeHtml(squadron.country || "Squadron")}</p>
-          <h2>${escapeHtml(squadron.name)}</h2>
-          <p class="muted">${photos.length} viewable photo${photos.length === 1 ? "" : "s"} across ${squadron.aircraftTypes.length} aircraft type${squadron.aircraftTypes.length === 1 ? "" : "s"}</p>
+      <section class="detail-photo-section">
+        <div class="detail-section-heading">
+          <div>
+            <p class="eyebrow">Aircraft archive</p>
+            <h2>All other images</h2>
+            <p class="muted">Aircraft-tagged frames, newest first.</p>
+          </div>
+          <span class="count-pill">${otherPhotos.length}</span>
         </div>
-      </div>
-      ${typePreview ? `<p class="muted squadron-type-list">${escapeHtml(typePreview)}</p>` : ""}
-      ${renderSquadronPhotoGrid(photos)}
+        ${renderDetailPhotoGrid(otherPhotos, "squadron")}
+      </section>
     `;
   }
 
-  function renderSquadronPhotoGrid(photos) {
+  function renderLocationPage() {
+    if (!els.locationDetail) {
+      return;
+    }
+
+    const pin = state.pinById.get(state.selectedPinId);
+    if (!pin) {
+      els.locationDetail.innerHTML = '<div class="empty-state">Choose a location from the World Map to open its archive.</div>';
+      return;
+    }
+
+    const photos = photosForPin(pin);
+    const profile = locationProfile(pin, photos);
+    const locationPhotos = profile.locationPhotos;
+    const otherPhotos = photos.filter((photo) => photo.tagScope !== "location");
+    const heroImage = profile.heroPhoto
+      ? profile.heroPhoto.image || profile.heroPhoto.thumbnail || ""
+      : profile.heroAsset
+        ? profile.heroAsset.image || profile.heroAsset.thumbnail || ""
+        : "";
+    const typeCount = locationPhotoGroups(pin, photos, "type").length;
+    const unitCount = locationPhotoGroups(pin, photos, "squadron").length;
+
+    els.locationDetail.innerHTML = `
+      ${renderDetailHero({
+        backView: "mapView",
+        backLabel: "World Map",
+        eyebrow: locationKicker(pin),
+        title: pin.name,
+        description: `${photos.length} photo${photos.length === 1 ? "" : "s"} at this location`,
+        image: heroImage,
+        alt: `${pin.name} hero photo`,
+        actions: renderFieldGuideActions("Location field guide")
+      })}
+      <section class="detail-summary location-page-summary">
+        <div>
+          <p class="eyebrow">Location profile</p>
+          <p class="detail-summary-copy">${escapeHtml([pin.country, pin.icao].filter(Boolean).join(" · ") || "Location archive")}</p>
+        </div>
+        ${renderLocationIdentityMarks(profile.families, profile.units)}
+      </section>
+      <div class="entry-stat-grid" aria-label="Location statistics">
+        ${statTile("Photos", photos.length)}
+        ${statTile("Location tags", locationPhotos.length)}
+        ${statTile("Aircraft types", typeCount)}
+        ${statTile("Units", unitCount)}
+      </div>
+      ${
+        locationPhotos.length
+          ? `<section class="detail-photo-section">
+              <div class="detail-section-heading">
+                <div>
+                  <p class="eyebrow">Location archive</p>
+                  <h2>Location-specific frames</h2>
+                  <p class="muted">Photos tagged directly to ${escapeHtml(pin.name)}.</p>
+                </div>
+                <span class="count-pill">${locationPhotos.length}</span>
+              </div>
+              ${renderDetailPhotoGrid(locationPhotos, "location")}
+            </section>`
+          : ""
+      }
+      <section class="detail-photo-section">
+        <div class="detail-section-heading">
+          <div>
+            <p class="eyebrow">Aircraft and unit archive</p>
+            <h2>All other frames</h2>
+            <p class="muted">Aircraft- and squadron-tagged photos, newest first.</p>
+          </div>
+          <span class="count-pill">${otherPhotos.length}</span>
+        </div>
+        ${renderDetailPhotoGrid(otherPhotos, "location")}
+      </section>
+    `;
+  }
+
+  function renderFieldGuideActions(label) {
+    return `
+      <div class="detail-hero-actions" aria-label="${escapeAttr(label)} actions">
+        <button class="detail-hero-action" type="button" data-copy-field-guide="Copy link">Copy link</button>
+        <button class="detail-hero-action" type="button" data-print-field-guide>Print guide</button>
+      </div>
+    `;
+  }
+
+  function renderDetailHero({ backView, backLabel, eyebrow, title, description, image, alt, mark = "", actions = "", className = "" }) {
+    return `
+      <section class="detail-hero${image ? " has-image" : ""}${className ? ` ${escapeAttr(className)}` : ""}">
+        ${image ? `<img src="${escapeAttr(image)}" alt="${escapeAttr(alt)}">` : ""}
+        <div class="detail-hero-scrim" aria-hidden="true"></div>
+        <button class="detail-back-button" type="button" data-detail-back="${escapeAttr(backView)}">← ${escapeHtml(backLabel)}</button>
+        ${actions}
+        <div class="detail-hero-content">
+          <p class="eyebrow">${escapeHtml(eyebrow)}</p>
+          <h1>${escapeHtml(title)}</h1>
+          <p>${escapeHtml(description)}</p>
+        </div>
+        ${mark ? `<span class="detail-hero-mark" aria-hidden="true">${mark}</span>` : ""}
+      </section>
+    `;
+  }
+
+  function renderDetailPhotoGrid(photos, context) {
     if (!photos.length) {
-      return '<div class="empty-state">No viewable photos found for this squadron yet.</div>';
+      return '<div class="empty-state">No photos found for this section yet.</div>';
     }
 
     return `
-      <div class="photo-grid photo-grid-squadron">
-        ${photos.map((photo) => renderPhotoCard(photo, "squadron")).join("")}
+      <div class="photo-grid detail-photo-grid">
+        ${photos.map((photo) => renderPhotoCard(photo, context)).join("")}
       </div>
     `;
   }
@@ -1805,13 +2935,8 @@
       return normalizeText(`${entry.typeName} ${entry.countries.join(" ")} ${squadronText}`).includes(query);
     });
 
-    if (state.selectedAircraftId && !entries.some((entry) => entry.id === state.selectedAircraftId)) {
-      state.selectedAircraftId = null;
-    }
-
     els.dexCount.textContent = `${entries.length} entr${entries.length === 1 ? "y" : "ies"}`;
     renderAircraftGrid(entries);
-    renderDexDetail();
   }
 
   function renderAircraftGrid(entries) {
@@ -1856,10 +2981,14 @@
       .join("");
   }
 
-  function renderDexDetail() {
+  function renderAircraftDetail() {
+    if (!els.aircraftDetail) {
+      return;
+    }
+
     const entry = state.aircraftById.get(state.selectedAircraftId);
     if (!entry) {
-      els.dexDetail.innerHTML = '<div class="empty-state">Select an aircraft entry to expand its photos.</div>';
+      els.aircraftDetail.innerHTML = '<div class="empty-state">Choose an aircraft type from the Aircraft Dex to open its photo page.</div>';
       return;
     }
 
@@ -1868,18 +2997,29 @@
     const unitCount = stats.unitCount;
     const unitLabel = entryUnitNoun(entry, unitCount);
     const unitGroupLabel = photos.length ? photoUnitGroupLabel(photos) : entryUnitNoun(entry, 1, true);
-    els.dexDetail.innerHTML = `
-      <div class="result-header">
+    const cover = state.photoById.get(entry.coverPhoto) || photos[0] || null;
+    const heroImage = cover ? cover.image || cover.thumbnail || "" : "";
+    els.aircraftDetail.innerHTML = `
+      ${renderDetailHero({
+        backView: "dexView",
+        backLabel: "Aircraft Dex",
+        eyebrow: "Aircraft type",
+        title: entry.typeName,
+        description: `${stats.photoCount} photo${stats.photoCount === 1 ? "" : "s"} across ${unitCount} ${unitLabel}`,
+        image: heroImage,
+        alt: `${entry.typeName} hero photo`,
+        actions: renderFieldGuideActions("Aircraft field guide")
+      })}
+      <section class="detail-summary detail-aircraft-summary">
         <div>
-          <p class="eyebrow">Selected entry</p>
-          <h2>${escapeHtml(entry.typeName)}</h2>
-          <p class="muted">${stats.photoCount} photo${stats.photoCount === 1 ? "" : "s"} across ${unitCount} ${unitLabel}</p>
+          <p class="eyebrow">Archive view</p>
+          <p class="detail-summary-copy">Browse this type by ${escapeHtml(unitGroupLabel.toLowerCase())} or location.</p>
         </div>
         <div class="segmented" aria-label="Organize aircraft photos">
           ${segmentButton(unitGroupLabel, "squadron", state.dexGroupMode, "data-dex-group")}
           ${segmentButton("Location", "location", state.dexGroupMode, "data-dex-group")}
         </div>
-      </div>
+      </section>
 
       <div class="entry-stat-grid" aria-label="Aircraft statistics">
         ${statTile("Photos", stats.photoCount)}
@@ -1888,11 +3028,33 @@
         ${statTile("Latest", stats.latestDate ? formatDisplayDate(stats.latestDate) : "No photos")}
       </div>
 
-      <div class="squadron-grid">
-        ${entry.squadrons.map(renderSquadronRow).join("")}
-      </div>
+      ${
+        entry.squadrons.length
+          ? `<section class="detail-unit-section">
+              <div class="detail-section-heading">
+                <div>
+                  <p class="eyebrow">Units</p>
+                  <h2>${escapeHtml(entryUnitNoun(entry, 2, true))}</h2>
+                </div>
+                <span class="count-pill">${entry.squadrons.length}</span>
+              </div>
+              <div class="squadron-grid">
+                ${entry.squadrons.map(renderSquadronRow).join("")}
+              </div>
+            </section>`
+          : ""
+      }
 
-      ${renderPhotoGroups(photos, state.dexGroupMode, "dex")}
+      <section class="detail-photo-section">
+        <div class="detail-section-heading">
+          <div>
+            <p class="eyebrow">Photo archive</p>
+            <h2>All frames</h2>
+          </div>
+          <span class="count-pill">${photos.length}</span>
+        </div>
+        ${renderPhotoGroups(photos, state.dexGroupMode, "dex")}
+      </section>
     `;
   }
 
@@ -1957,10 +3119,10 @@
     const image = photo.thumbnail || photo.image || "";
     return `
       <button class="photo-card" type="button" data-photo-id="${escapeAttr(photo.id)}" data-photo-context="${escapeAttr(context)}">
-        <img src="${escapeAttr(image)}" alt="${escapeAttr(photo.aircraftType)} at ${escapeAttr(photo.locationName)}">
+        <img src="${escapeAttr(image)}" alt="${escapeAttr(`${photoSubjectLabel(photo)} at ${photo.locationName}`)}">
         <span class="photo-body">
-          <strong>${escapeHtml(photo.aircraftType)}</strong>
-          <span>${escapeHtml(photo.squadronName)} - ${escapeHtml(displayPhotoDate(photo))}</span>
+          <strong>${escapeHtml(photoSubjectLabel(photo))}</strong>
+          <span>${escapeHtml(photoContextLabel(photo))} - ${escapeHtml(displayPhotoDate(photo))}</span>
         </span>
       </button>
     `;
@@ -1972,9 +3134,13 @@
   }
 
   function selectPin(pinId, options = {}) {
+    const previousPinId = state.selectedPinId;
     state.selectedPinId = pinId;
+    if (previousPinId !== pinId) {
+      state.expandedLocationGroupKeys.clear();
+    }
     renderLocations();
-    renderPins();
+    updateActiveMapMarker(previousPinId, pinId);
     renderMapResults();
 
     if (options.updateHash !== false) {
@@ -1992,26 +3158,94 @@
     }
   }
 
+  function selectLocationPage(pinId, options = {}) {
+    const pin = state.pinById.get(pinId);
+    if (!pin) {
+      return;
+    }
+    selectPin(pin.id, {
+      updateHash: false,
+      pan: false,
+      openPanel: false,
+      openDossier: false
+    });
+    setActiveTab("locationDetailView", { updateHash: false });
+    renderLocationPage();
+    if (options.updateHash !== false) {
+      updateLocationDetailLink(pin.id);
+    }
+    if (options.scroll !== false) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
+
+  function updateActiveMapMarker(previousPinId, nextPinId) {
+    const updateMarker = (pinId, isActive) => {
+      const marker = state.markersByPinId.get(pinId);
+      if (!marker) {
+        return;
+      }
+      marker.setZIndexOffset(isActive ? 800 : 0);
+      const element = marker.getElement();
+      if (element) {
+        element.classList.toggle("is-active", isActive);
+      }
+    };
+
+    if (previousPinId && previousPinId !== nextPinId) {
+      updateMarker(previousPinId, false);
+    }
+    if (nextPinId) {
+      updateMarker(nextPinId, true);
+    }
+    state.activeMapMarkerId = nextPinId || null;
+  }
+
   function selectAircraft(aircraftId, options = {}) {
     state.selectedAircraftId = aircraftId;
-    renderDex();
+    setActiveTab("aircraftDetailView", { updateHash: false });
+    renderAircraftDetail();
     if (options.updateHash !== false) {
       updateDeepLink("aircraft", aircraftId);
     }
     if (options.scroll !== false) {
-      els.dexDetail.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }
 
   function selectSquadron(squadronId, options = {}) {
     state.selectedSquadronId = squadronId;
-    setActiveTab("squadronsView", { updateHash: false });
-    renderSquadronsPage();
+    setActiveTab("squadronDetailView", { updateHash: false });
+    renderSquadronDetail();
     if (options.updateHash !== false) {
       updateDeepLink("squadron", squadronId);
     }
-    if (els.squadronDetail && options.scroll !== false) {
-      els.squadronDetail.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    if (options.scroll !== false) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
+
+  function selectAirshow(airshowId, options = {}) {
+    const airshow = state.airshowById.get(airshowId);
+    if (!airshow) {
+      return;
+    }
+    const isDeselecting = state.selectedAirshowId === airshowId;
+    state.selectedAirshowId = isDeselecting ? null : airshowId;
+    setActiveTab("airshowsView", { updateHash: false });
+    renderAirshowsPage();
+
+    if (options.updateHash !== false) {
+      if (state.selectedAirshowId) {
+        updateDeepLink("airshow", airshowId);
+      } else {
+        clearDeepLink();
+      }
+    }
+
+    if (state.selectedAirshowId && options.scroll !== false) {
+      const target = document.getElementById(`airshow-${airshowId}`);
+      target?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }
 
@@ -2045,10 +3279,7 @@
   }
 
   function photosForPin(pin) {
-    const pinKey = normalizeKey(pin.name);
-    return state.data.photos
-      .filter((photo) => photo.pinId === pin.id || normalizeKey(photo.locationName) === pinKey)
-      .sort(sortPhotos);
+    return state.photosByPinId.get(pin.id) || EMPTY_PHOTOS;
   }
 
   function photosForAircraft(entry) {
@@ -2095,12 +3326,12 @@
       .slice(0, limit);
   }
 
-  function mapMarkerIcon(pin, isActive, preview, labelPlacement) {
+  function mapMarkerIcon(pin, isActive, preview, callout) {
     return window.L.divIcon({
       className: `spotterdex-marker-shell${isActive ? " is-active" : ""}`,
       html: `
         <span class="spotterdex-marker-dot">${escapeHtml(countryFlag(pin.country))}</span>
-        ${renderMapMarkerLabel(mapPinLabel(pin), preview, labelPlacement)}
+        ${renderMapMarkerLabel(mapPinLabel(pin), preview, callout)}
       `,
       iconSize: [0, 0],
       iconAnchor: [0, 0]
@@ -2111,37 +3342,32 @@
     return pin.name;
   }
 
-  function mapClusterLabel(pins) {
-    const names = unique(pins.map((pin) => pin.name));
-    const fullLabel = names.join(" / ");
-    if (names.length <= 3 && fullLabel.length <= 44) {
-      return fullLabel;
-    }
-
-    const codes = unique(pins.map((pin) => pin.icao || pin.name));
-    if (codes.length <= 4) {
-      return codes.join(" / ");
-    }
-    return `${codes.slice(0, 3).join(" / ")} / +${codes.length - 3}`;
-  }
-
-  function clusterMarkerIcon(cluster, clusterLabel, preview, labelPlacement) {
-    const flags = unique(cluster.pins.map((pin) => countryFlag(pin.country))).slice(0, 3).join("");
+  function mapLeaderIcon(callout) {
     return window.L.divIcon({
-      className: "spotterdex-marker-shell spotterdex-cluster-shell",
-      html: `
-        <span class="spotterdex-marker-dot cluster-dot">
-          <span class="cluster-count">${cluster.pins.length}</span>
-          <span class="cluster-flags">${escapeHtml(flags)}</span>
-        </span>
-        ${renderMapMarkerLabel(clusterLabel, preview, labelPlacement)}
-      `,
+      className: "spotterdex-marker-leader-shell",
+      html: renderMapLeader(callout),
       iconSize: [0, 0],
       iconAnchor: [0, 0]
     });
   }
 
-  function renderMapMarkerLabel(title, preview, placement = "above") {
+  function renderMapLeader(callout) {
+    const { leader } = callout;
+    return `
+      <svg
+        class="spotterdex-marker-leader"
+        aria-hidden="true"
+        width="${leader.width}"
+        height="${leader.height}"
+        viewBox="0 0 ${leader.width} ${leader.height}"
+        style="--leader-left: ${leader.left}px; --leader-top: ${leader.top}px;"
+      >
+        <polyline points="${leader.points}"></polyline>
+      </svg>
+    `;
+  }
+
+  function renderMapMarkerLabel(title, preview, callout) {
     const assets = [
       preview.families.length ? renderMapMarkerFamilies(preview.families) : "",
       preview.families.length && preview.logos.length ? '<span class="map-marker-divider" aria-hidden="true">|</span>' : "",
@@ -2150,7 +3376,10 @@
       .filter(Boolean)
       .join("");
     return `
-      <span class="spotterdex-marker-label${placement === "below" ? " is-below-pin" : ""}">
+      <span
+        class="spotterdex-marker-label"
+        style="--label-left: ${callout.labelLeft}px; --label-top: ${callout.labelTop}px; --label-width: ${callout.width}px; --label-height: ${callout.height}px;"
+      >
         <span class="spotterdex-marker-title">${escapeHtml(title)}</span>
         ${assets ? `<span class="map-marker-assets">${assets}</span>` : ""}
       </span>
@@ -2195,7 +3424,12 @@
   }
 
   function mapLocationPreview(pins) {
-    const photos = pins.flatMap((pin) => photosForPin(pin));
+    const cacheKey = pins.length === 1 ? `${resolvedTheme()}:${pins[0].id}` : "";
+    if (cacheKey && state.mapPreviewCache.has(cacheKey)) {
+      return state.mapPreviewCache.get(cacheKey);
+    }
+
+    const photos = pins.length === 1 ? photosForPin(pins[0]) : pins.flatMap((pin) => photosForPin(pin));
     const logos = [];
     const seenUnits = new Set();
     const familyById = new Map();
@@ -2217,10 +3451,14 @@
       }
     });
 
-    return {
+    const preview = {
       logos: logos.slice(0, 4),
       families: Array.from(familyById.values()).slice(0, 3)
     };
+    if (cacheKey) {
+      state.mapPreviewCache.set(cacheKey, preview);
+    }
+    return preview;
   }
 
   function aircraftFamilyForPhoto(photo) {
@@ -2237,17 +3475,18 @@
     return null;
   }
 
-function aircraftFamilyAsset(id, label) {
-  const variant = resolvedTheme() === "dark" ? "light" : "dark";
-  const extension = id === "helicopter" ? "gif" : "png";
-  const stem = id === "helicopter" ? "aircraft-family-helicopter-top" : `aircraft-family-${id}`;
-  return {
-    id,
-    label,
-    icon: `assets/icons/aircraft-family-${id}.png`,
-    mapIcon: `assets/icons/${stem}-${variant}.${extension}`
-  };
-}
+  function aircraftFamilyAsset(id, label) {
+    const variant = resolvedTheme() === "dark" ? "light" : "dark";
+    const extension = id === "helicopter" ? "gif" : "png";
+    const stem = id === "helicopter" ? "aircraft-family-helicopter-top" : `aircraft-family-${id}`;
+    return {
+      id,
+      label,
+      icon: `assets/icons/aircraft-family-${id}.png`,
+      mapIcon: `assets/icons/${stem}-${variant}.${extension}`,
+      darkIcon: `assets/icons/${stem}-dark.${extension}`
+    };
+  }
 
   function focusMapPin(pinId) {
     if (!state.map) {
@@ -2276,11 +3515,11 @@ function aircraftFamilyAsset(id, label) {
     photos.forEach((photo) => {
       let name = "Unsorted";
       if (mode === "squadron") {
-        name = photo.squadronName || unknownUnitName(photo.unitType);
+        name = photo.squadronName || (photo.tagScope === "location" ? "Location images" : unknownUnitName(photo.unitType));
       } else if (mode === "location") {
         name = photo.locationName || "Unknown location";
       } else {
-        name = photo.aircraftType || "Unknown aircraft";
+        name = photoSubjectLabel(photo);
       }
       if (!groups.has(name)) {
         groups.set(name, []);
@@ -2301,7 +3540,7 @@ function aircraftFamilyAsset(id, label) {
     if (timeDiff) {
       return timeDiff;
     }
-    return `${a.aircraftType} ${a.locationName}`.localeCompare(`${b.aircraftType} ${b.locationName}`);
+    return `${photoSubjectLabel(a)} ${a.locationName}`.localeCompare(`${photoSubjectLabel(b)} ${b.locationName}`);
   }
 
   function fitMapToPins() {
@@ -2310,7 +3549,7 @@ function aircraftFamilyAsset(id, label) {
     }
 
     state.map.invalidateSize({ pan: false });
-    const pins = state.data.pins.filter((pin) => pin.enabled);
+    const pins = state.enabledPins;
     if (!pins.length) {
       state.map.setView([20, 0], 2);
       refreshMapLayout();
@@ -2361,28 +3600,14 @@ function aircraftFamilyAsset(id, label) {
   }
 
   function mapPanelOverlap(panel, mapRect) {
-    if (!panel) {
+    const bounds = mapPanelCalloutBounds(panel, mapRect);
+    if (!bounds) {
       return { left: 0, right: 0 };
     }
-
-    const style = window.getComputedStyle(panel);
-    if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) === 0) {
-      return { left: 0, right: 0 };
+    if (panel === els.mapControlPanel) {
+      return { left: bounds.right, right: 0 };
     }
-
-    const rect = panel.getBoundingClientRect();
-    const verticalOverlap = Math.max(0, Math.min(rect.bottom, mapRect.bottom) - Math.max(rect.top, mapRect.top));
-    const horizontalOverlap = Math.max(0, Math.min(rect.right, mapRect.right) - Math.max(rect.left, mapRect.left));
-    if (!verticalOverlap || !horizontalOverlap) {
-      return { left: 0, right: 0 };
-    }
-
-    const panelCenter = rect.left + rect.width / 2;
-    const mapCenter = mapRect.left + mapRect.width / 2;
-    if (panelCenter < mapCenter) {
-      return { left: Math.max(0, Math.min(rect.right, mapRect.right) - mapRect.left), right: 0 };
-    }
-    return { left: 0, right: Math.max(0, mapRect.right - Math.max(rect.left, mapRect.left)) };
+    return { left: 0, right: mapRect.width - bounds.left };
   }
 
   function openViewer(photoId, context, options = {}) {
@@ -2400,6 +3625,10 @@ function aircraftFamilyAsset(id, label) {
           ? state.statsPhotoIds
         : viewerContext === "squadron"
           ? currentSquadronPhotoIds()
+        : viewerContext === "location"
+            ? currentLocationPhotoIds()
+          : viewerContext === "airshow"
+            ? currentAirshowPhotoIds()
           : viewerContext === "photo"
             ? [photoId]
             : currentMapPhotoIds();
@@ -2421,6 +3650,11 @@ function aircraftFamilyAsset(id, label) {
     if (options.updateHash !== false) {
       updateDeepLink("photo", photoId);
     }
+  }
+
+  function currentAirshowPhotoIds() {
+    const airshow = state.airshowById.get(state.selectedAirshowId);
+    return airshow ? photosForAirshow(airshow).map((photo) => photo.id) : [];
   }
 
   function openStatsPhotoSet(kind, value, label) {
@@ -2515,14 +3749,14 @@ function aircraftFamilyAsset(id, label) {
     if (els.viewerImage.complete && imageSource) {
       window.requestAnimationFrame(() => revealViewerPhoto(renderToken));
     }
-    els.viewerImage.alt = `${photo.aircraftType} photographed at ${photo.locationName}`;
+    els.viewerImage.alt = `${photoSubjectLabel(photo)} photographed at ${photo.locationName}`;
     els.viewerKicker.textContent = state.activePhotoContext === "stats" && state.statsPhotoLabel
       ? `${state.statsPhotoLabel} · ${state.activePhotoIndex + 1} of ${state.activePhotoIds.length}`
       : `${state.activePhotoIndex + 1} of ${state.activePhotoIds.length}`;
-    els.viewerTitle.textContent = photo.title || photo.aircraftType;
+    els.viewerTitle.textContent = photo.title || photoSubjectLabel(photo);
     els.viewerCaption.textContent = [
       photo.caption,
-      `${photo.squadronName} at ${photo.locationName}${photo.year ? `, ${photo.year}` : ""}`
+      [photo.squadronName, photo.locationName].filter(Boolean).join(" at ") + (photo.year ? `, ${photo.year}` : "")
     ]
       .filter(Boolean)
       .join(" ");
@@ -2753,6 +3987,10 @@ function aircraftFamilyAsset(id, label) {
       updateDeepLink("aircraft", state.selectedAircraftId);
     } else if (state.activePhotoContext === "squadron" && state.selectedSquadronId) {
       updateDeepLink("squadron", state.selectedSquadronId);
+    } else if (state.activePhotoContext === "location" && state.selectedPinId) {
+      updateLocationDetailLink(state.selectedPinId);
+    } else if (state.activePhotoContext === "airshow" && state.selectedAirshowId) {
+      updateDeepLink("airshow", state.selectedAirshowId);
     } else if (photo) {
       const pinId = photo.pinId || pinIdFromLocation(photo.locationName);
       if (pinId) {
@@ -2796,16 +4034,19 @@ function aircraftFamilyAsset(id, label) {
       ["ISO", exif.ISO]
     ].filter((row) => row[1]);
 
+    const frameRows = [
+      photo.tagScope === "aircraft" ? ["Aircraft", photo.aircraftType] : ["Tagged as", photoTagScopeLabel(photo.tagScope)],
+      photo.squadronName ? [photo.unitLabel || unitDisplayLabel(photo.unitType), photo.squadronName, squadronLogo] : null,
+      ["Country", photo.country],
+      ["Location", photo.locationName],
+      ["Airshow", photo.airshow],
+      ["Date", exif.DateTimeOriginal ? displayPhotoDate(photo) : photo.year]
+    ].filter((row) => row && row[1]);
+
     return [
       {
         title: "Frame",
-        rows: [
-          ["Aircraft", photo.aircraftType],
-          [photo.unitLabel || unitDisplayLabel(photo.unitType), photo.squadronName, squadronLogo],
-          ["Country", photo.country],
-          ["Location", photo.locationName],
-          ["Date", exif.DateTimeOriginal ? displayPhotoDate(photo) : photo.year]
-        ].filter((row) => row[1])
+        rows: frameRows
       },
       {
         title: "Camera",
@@ -2860,15 +4101,16 @@ function aircraftFamilyAsset(id, label) {
 
   function squadronForPhoto(photo) {
     const entry = state.aircraftById.get(photo.aircraftId);
-    if (!entry || !Array.isArray(entry.squadrons)) {
-      return null;
+    if (entry && Array.isArray(entry.squadrons)) {
+      const matched =
+        entry.squadrons.find((squadron) => squadron.id === photo.squadronId) ||
+        entry.squadrons.find((squadron) => normalizeKey(squadron.name) === normalizeKey(photo.squadronName));
+      if (matched) {
+        return matched;
+      }
     }
-
-    return (
-      entry.squadrons.find((squadron) => squadron.id === photo.squadronId) ||
-      entry.squadrons.find((squadron) => normalizeKey(squadron.name) === normalizeKey(photo.squadronName)) ||
-      null
-    );
+    const squadronKey = squadronPageIdForPhotoFallback(photo);
+    return state.data.squadrons.find((squadron) => squadronPageIdForUnit(squadron) === squadronKey) || null;
   }
 
   function squadronPageIdForUnit(squadron) {
@@ -2883,7 +4125,11 @@ function aircraftFamilyAsset(id, label) {
     if (squadron) {
       return squadronPageIdForUnit(squadron);
     }
-    if (normalizeUnitType(photo.unitType) !== "squadron") {
+    return squadronPageIdForPhotoFallback(photo);
+  }
+
+  function squadronPageIdForPhotoFallback(photo) {
+    if (photo.tagScope === "location" || !photo.squadronName || normalizeUnitType(photo.unitType) !== "squadron") {
       return "";
     }
     return normalizeKey(`${photo.country || ""}-${photo.squadronName || ""}`);
@@ -3008,6 +4254,11 @@ function aircraftFamilyAsset(id, label) {
     return pin ? photosForPin(pin).map((photo) => photo.id) : [];
   }
 
+  function currentLocationPhotoIds() {
+    const pin = state.pinById.get(state.selectedPinId);
+    return pin ? photosForPin(pin).map((photo) => photo.id) : [];
+  }
+
   function currentDexPhotoIds() {
     const entry = state.aircraftById.get(state.selectedAircraftId);
     return entry ? photosForAircraft(entry).map((photo) => photo.id) : [];
@@ -3026,7 +4277,9 @@ function aircraftFamilyAsset(id, label) {
     const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
     const photoId = params.get("photo");
     const squadronId = params.get("squadron");
+    const airshowId = params.get("airshow");
     const locationId = params.get("location");
+    const locationDetail = params.get("detail") === "1";
     const aircraftId = params.get("aircraft");
     const statsSection = params.get("stats");
 
@@ -3048,13 +4301,25 @@ function aircraftFamilyAsset(id, label) {
         }
       }
 
+      if (airshowId) {
+        const airshow = findAirshow(airshowId);
+        if (airshow) {
+          selectAirshow(airshow.id, { updateHash: false, scroll: !options.initial });
+          return;
+        }
+      }
+
       if (locationId) {
         const pin = findPin(locationId);
         if (pin) {
-          setActiveTab("mapView", { updateHash: false });
-          selectPin(pin.id, { updateHash: false, pan: !options.initial });
-          if (options.initial) {
-            focusMapPin(pin.id);
+          if (locationDetail) {
+            selectLocationPage(pin.id, { updateHash: false, scroll: !options.initial });
+          } else {
+            setActiveTab("mapView", { updateHash: false });
+            selectPin(pin.id, { updateHash: false, pan: !options.initial });
+            if (options.initial) {
+              focusMapPin(pin.id);
+            }
           }
           return;
         }
@@ -3107,6 +4372,26 @@ function aircraftFamilyAsset(id, label) {
     if (window.location.hash !== nextHash) {
       window.history.replaceState(null, "", nextHash);
     }
+    updateShareMetadata();
+  }
+
+  function updateLocationDetailLink(pinId) {
+    if (state.isApplyingHash || !pinId) {
+      return;
+    }
+    const nextHash = `#location=${encodeURIComponent(pinId)}&detail=1`;
+    if (window.location.hash !== nextHash) {
+      window.history.replaceState(null, "", nextHash);
+    }
+    updateShareMetadata();
+  }
+
+  function clearDeepLink() {
+    if (state.isApplyingHash || !window.location.hash) {
+      return;
+    }
+    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+    updateShareMetadata();
   }
 
   function findPin(value) {
@@ -3134,6 +4419,14 @@ function aircraftFamilyAsset(id, label) {
         normalizeKey(squadron.name) === key ||
         normalizeKey(`${squadron.country} ${squadron.name}`) === key
       );
+    });
+  }
+
+  function findAirshow(value) {
+    const text = String(value || "");
+    const key = normalizeKey(text);
+    return state.airshowById.get(text) || state.data.airshows.find((airshow) => {
+      return airshow.id === text || normalizeKey(airshow.name) === key;
     });
   }
 
@@ -3192,6 +4485,45 @@ function aircraftFamilyAsset(id, label) {
     return ["organisation", "organization", "org"].includes(key) ? "organisation" : "squadron";
   }
 
+  function normalizePhotoScope(value) {
+    const key = normalizeKey(value || "aircraft");
+    if (key === "squadron" || key === "unit") {
+      return "squadron";
+    }
+    if (key === "location" || key === "pin") {
+      return "location";
+    }
+    return "aircraft";
+  }
+
+  function defaultPhotoSubject(tagScope) {
+    if (tagScope === "squadron") {
+      return "Squadron image";
+    }
+    if (tagScope === "location") {
+      return "Location image";
+    }
+    return "Unknown aircraft";
+  }
+
+  function photoSubjectLabel(photo) {
+    return photo.aircraftType || defaultPhotoSubject(photo.tagScope);
+  }
+
+  function photoContextLabel(photo) {
+    return photo.squadronName || (photo.tagScope === "location" ? photo.locationName : photo.unitLabel || "Unassigned");
+  }
+
+  function photoTagScopeLabel(tagScope) {
+    if (tagScope === "squadron") {
+      return "Squadron-level image";
+    }
+    if (tagScope === "location") {
+      return "Location-level image";
+    }
+    return "Aircraft-level image";
+  }
+
   function unitDisplayLabel(unitType) {
     return normalizeUnitType(unitType) === "organisation" ? "Organisation" : "Squadron";
   }
@@ -3222,7 +4554,12 @@ function aircraftFamilyAsset(id, label) {
   }
 
   function photoUnitGroupLabel(photos) {
-    const unitTypes = unique(photos.map((photo) => normalizeUnitType(photo.unitType)));
+    const unitTypes = unique(
+      photos.filter((photo) => photo.squadronName).map((photo) => normalizeUnitType(photo.unitType))
+    );
+    if (!unitTypes.length) {
+      return "Unit";
+    }
     if (unitTypes.length === 1) {
       return unitNoun(unitTypes[0], 1, true);
     }
@@ -3231,13 +4568,18 @@ function aircraftFamilyAsset(id, label) {
 
   function countryFlag(country) {
     const codes = {
+      australia: "AU",
+      bermuda: "BM",
+      france: "FR",
       "hong kong": "HK",
+      italy: "IT",
       japan: "JP",
       malaysia: "MY",
       singapore: "SG",
       thailand: "TH",
       "united kingdom": "GB",
-      "united states": "US"
+      "united states": "US",
+      vietnam: "VN"
     };
     const code = codes[normalizeText(country)];
     if (!code) {

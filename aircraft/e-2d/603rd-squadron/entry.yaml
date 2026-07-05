@@ -1,0 +1,18 @@
+aircraft_type: E-2D
+squadron_name: 603rd Squadron
+country: Japan
+photos:
+- path: DSC04209.jpg
+  location: Naha Air Base
+  pin_id: naha-air-base
+  caption: An E-2D Hawkeye from the 603rd Squadron, marked 476, taxis on the runway at Naha Air Base.
+  caption_ai_assisted: true
+- path: DSC04372.jpg
+  location: Naha Air Base
+  pin_id: naha-air-base
+  caption: An E-2D Hawkeye from the 603rd Squadron, marked 476, taxis on the runway at Naha Air Base.
+- path: DSC00567.jpg
+  location: Naha Air Base
+  pin_id: naha-air-base
+  caption: An E-2D Hawkeye from the 603rd Squadron, marked 477, on approach for Naha Air Base
+aircraft_family: heavy

@@ -1,35 +1,41 @@
 aircraft_type: Mitsubishi F-2A
 squadron_name: 6th Tactical Fighter Squadron
-squadron_logo: jasdf_6.png
+squadron_logo: logos/jasdf_6.png
 country: Japan
 photos:
 - path: trio_jasdf_6tfs.jpg
   location: Tsuiki Air Base
   caption: A trio of Mitsubishi F-2A from 6th Tactical Fighter Squadron conducting fly-by at Tsuiki Air Base.
   caption_ai_assisted: true
+  airshow: Tsuiki Air Show 2025
 - path: DSC07469-Enhanced-NR.jpeg
   location: Tsuiki Air Base
   pin_id: tsuiki-air-base
   caption: Mitsubishi F-2A from the 6th Tactical Fighter Squadron lands with a drag parachute deployed at Tsuiki Air Base
   caption_ai_assisted: true
+  airshow: Tsuiki Air Show 2023
 - path: DSC07375-Enhanced-NR.jpeg
   location: Tsuiki Air Base
   pin_id: tsuiki-air-base
   caption: Mitsubishi F-2A of the 6th Tactical Fighter Squadron lands at Tsuiki Air Base with a yellow parachute deployed.
   caption_ai_assisted: true
+  airshow: Tsuiki Air Show 2023
 - path: DSC04506-Enhanced-NR.jpeg
   location: Tsuiki Air Base
   pin_id: tsuiki-air-base
   caption: Three Mitsubishi F-2A fighter jets from the 6th Tactical Fighter Squadron in close formation
   caption_ai_assisted: true
+  airshow: Tsuiki Air Show 2023
 - path: DSC04165-Enhanced-NR.jpeg
   location: Tsuiki Air Base
   pin_id: tsuiki-air-base
   caption: Mitsubishi F-2A of the 6th Tactical Fighter Squadron at Tsuiki Air Base
   caption_ai_assisted: true
+  airshow: Tsuiki Air Show 2023
 - path: DSC04151-Enhanced-NR.jpeg
   location: Tsuiki Air Base
   pin_id: tsuiki-air-base
   caption: A Mitsubishi F-2A from the 6th Tactical Fighter Squadron takes off from Tsuiki Air Base
   caption_ai_assisted: true
+  airshow: Tsuiki Air Show 2023
 aircraft_family: fighter

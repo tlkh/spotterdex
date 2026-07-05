@@ -1,0 +1,14 @@
+aircraft_type: Boeing 727
+squadron_name: Malibu Consulting Corp
+country: Bermuda
+unit_type: organisation
+photos:
+- path: DSC03837-Enhanced-NR.jpg
+  location: Narita International Airport
+  pin_id: narita-international-airport
+  caption: Privately-operated Boeing 727 landing at Narita Airport
+- path: DSC03885-Enhanced-NR.jpg
+  location: Narita International Airport
+  pin_id: narita-international-airport
+  caption: Privately-operated Boeing 727 landing at Narita Airport
+aircraft_family: heavy

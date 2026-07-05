@@ -1,7 +1,7 @@
 aircraft_type: Boeing 747-400(F)
 squadron_name: Kalitta Air
 unit_type: organisation
-squadron_logo: Kalitta_Air_Logo.png
+squadron_logo: logos/Kalitta_Air_Logo.png
 country: United States
 photos:
 - path: N742CK.jpg

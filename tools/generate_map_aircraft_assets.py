@@ -97,12 +97,6 @@ def draw_helicopter_frame(color: tuple[int, int, int], angle: float) -> Image.Im
     body.line((tail_center[0] - tail_dx, tail_center[1] - tail_dy, tail_center[0] + tail_dx, tail_center[1] + tail_dy), fill=soft, width=3)
     body.line((tail_center[0] - tail_dy, tail_center[1] + tail_dx, tail_center[0] + tail_dy, tail_center[1] - tail_dx), fill=soft, width=3)
 
-    # Landing skids add recognisable structure while remaining readable at map scale.
-    body.arc((60, 92, 86, 143), start=70, end=290, fill=mid, width=3)
-    body.arc((106, 92, 132, 143), start=250, end=110, fill=mid, width=3)
-    body.line((72, 125, 86, 132), fill=mid, width=2)
-    body.line((120, 125, 106, 132), fill=mid, width=2)
-
     # Rotor mast stays sharp above the animated blade set.
     body.ellipse((89, 75, 103, 89), fill=solid)
     body.ellipse((93, 79, 99, 85), fill=(*color, 120))

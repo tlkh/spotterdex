@@ -2,7 +2,7 @@ country: Singapore
 pins:
   - id: singapore
     name: Singapore
-    icao:
+    icao: SG
     coordinates: [1.3521, 103.8198]
     enabled: true
   - id: changi-airport
@@ -12,7 +12,7 @@ pins:
     enabled: true
   - id: changi-exhibition-centre
     name: Changi Exhibition Center
-    icao:
+    icao: CEC
     coordinates: [1.3631, 104.0229]
     enabled: true
   - id: seletar-airport

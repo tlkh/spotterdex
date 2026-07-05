@@ -10,5 +10,5 @@ photos:
 - path: french_mrtt_2.jpg
   location: Singapore
   caption: French A330 MRTT landing in Singapore
-squadron_logo: 031_EARTS_logo.png
+squadron_logo: logos/031_EARTS_logo.png
 aircraft_family: heavy

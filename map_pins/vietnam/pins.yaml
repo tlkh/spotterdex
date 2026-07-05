@@ -1,0 +1,7 @@
+country: Vietnam
+pins:
+- id: tan-son-nhat-international-airport
+  name: Tan Son Nhat International Airport
+  icao: VVTS
+  coordinates: [10.8189, 106.6519]
+  enabled: true

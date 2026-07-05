@@ -2,7 +2,7 @@ aircraft_type: Grumman C-2A Greyhound
 squadron_name: Fleet Logistics Support Squadron 30 (VRC-30)
 unit_type: squadron
 country: United States
-squadron_logo: vrc_30.png
+squadron_logo: logos/vrc_30.png
 photos:
 - path: c2_vrc30.jpg
   location: Singapore

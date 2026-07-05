@@ -1,10 +1,11 @@
 aircraft_type: Boeing AH-64D Apache Longbow
 squadron_name: 120 Squadron
-squadron_logo: rsaf_120.png
+squadron_logo: logos/rsaf_120.png
 country: Singapore
 photos:
 - path: rsaf_apache_flare.jpg
   year: 2026
   location: Changi Exhibition Center
   caption: RSAF Apache from 120 SQN deploying flares at Singapore Airshow 2026.
+  airshow: Singapore Airshow 2026
 aircraft_family: helicopter

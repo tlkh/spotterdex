@@ -1,0 +1,14 @@
+aircraft_type: Kawasaki UP-3D
+squadron_name: 51st Fleet Air Squadron
+country: Japan
+photos:
+- path: DSC06896-Enhanced-NR.jpeg
+  location: Iruma Air Base
+  pin_id: iruma-air-base
+  caption: A Kawasaki UP-3D from the 51st Fleet Air Squadron, marked 9161, taxiing after landing at Iruma Air Base.
+  caption_ai_assisted: true
+- path: DSC06871-Enhanced-NR.jpeg
+  location: Iruma Air Base
+  pin_id: iruma-air-base
+  caption: A Kawasaki UP-3D from the 51st Fleet Air Squadron, marked 9161, taxiing after landing at Iruma Air Base.
+aircraft_family: heavy

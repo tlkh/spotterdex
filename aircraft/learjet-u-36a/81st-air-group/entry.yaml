@@ -1,0 +1,17 @@
+aircraft_type: Learjet U-36A
+squadron_name: 81st Air Group
+country: Japan
+photos:
+- path: DSC08267-Enhanced-NR.jpeg
+  location: Kisarazu Airfield
+  pin_id: kisarazu-airfield
+  caption: JMSDF U-36A ("Cupid") prepares for takeoff from Kisarazu Airfield
+- path: DSC08272-Enhanced-NR.jpeg
+  location: Kisarazu Airfield
+  pin_id: kisarazu-airfield
+  caption: JMSDF U-36A ("Cupid") prepares for takeoff from Kisarazu Airfield
+- path: DSC07893-Enhanced-NR.jpeg
+  location: Kisarazu Airfield
+  pin_id: kisarazu-airfield
+  caption: JMSDF U-36A ("Cupid") prepares for takeoff from Kisarazu Airfield
+aircraft_family: heavy

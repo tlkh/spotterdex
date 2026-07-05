@@ -1,0 +1,41 @@
+squadron_name: Blue Impulse
+country: Japan
+aircraft_type: Kawasaki T-4
+photos:
+- path: DSC02296.jpg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: Blue Impulse performance during Tsuiki Air Show
+  airshow: Tsuiki Air Show 2025
+- path: DSC02027.jpg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: Blue Impulse performance during Tsuiki Air Show
+  airshow: Tsuiki Air Show 2025
+- path: DSC01957.jpg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: Blue Impulse performance during Tsuiki Air Show
+  airshow: Tsuiki Air Show 2025
+- path: DSC01875.jpg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: Blue Impulse performance during Tsuiki Air Show
+  airshow: Tsuiki Air Show 2025
+- path: DSC01654.jpg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: Blue Impulse performance during Tsuiki Air Show
+  airshow: Tsuiki Air Show 2025
+- path: DSC01808.jpg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: Blue Impulse performance during Tsuiki Air Show
+  airshow: Tsuiki Air Show 2025
+- path: DSC01459.jpg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: Blue Impulse performance during Tsuiki Air Show
+  airshow: Tsuiki Air Show 2025
+squadron_logo: BlueImpulseMark.png
+aircraft_family: fighter

@@ -1,5 +1,25 @@
 aircraft_type: Mitsubishi F-15J Eagle
 squadron_name: 203rd Tactical Fighter Squadron
 country: Japan
-photos: []
+photos:
+- path: DSC08013-Enhanced-NR.jpg
+  location: Chitose Air Base
+  pin_id: chitose-air-base
+  caption: 203 TFS 60th Anniversary Special Livery during an Airshow Rehearsal
+- path: DSC08215-Enhanced-NR.jpg
+  location: Chitose Air Base
+  pin_id: chitose-air-base
+  caption: 203 TFS 60th Anniversary Special Livery during an Airshow Rehearsal
+- path: DSC08164-Enhanced-NR.jpg
+  location: Chitose Air Base
+  pin_id: chitose-air-base
+  caption: 203 TFS 60th Anniversary Special Livery during an Airshow Rehearsal
+- path: DSC05504-Enhanced-NR.jpg
+  location: Chitose Air Base
+  pin_id: chitose-air-base
+  caption: 203 TFS 60th Anniversary Special Livery during an Airshow Rehearsal
+- path: DSC08019-Enhanced-NR.jpg
+  location: Chitose Air Base
+  pin_id: chitose-air-base
+  caption: 203 TFS 60th Anniversary Special Livery during an Airshow Rehearsal
 aircraft_family: fighter

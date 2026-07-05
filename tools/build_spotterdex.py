@@ -28,6 +28,10 @@ except ImportError as exc:  # pragma: no cover - user environment guard
 
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp"}
+FULL_JPEG_QUALITY = 92
+FULL_JPEG_SUBSAMPLING = 0  # 4:4:4 chroma; preserves fine aircraft markings.
+THUMB_JPEG_QUALITY = 90
+THUMB_JPEG_SUBSAMPLING = 2  # 4:2:0 chroma; efficient for 1024px card imagery.
 EXIF_TAGS = {value: key for key, value in ExifTags.TAGS.items()}
 PROGRESS_LINE_MODE = False
 
@@ -107,6 +111,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--map-dir", default="map_pins", help="Directory containing country pin folders.")
     parser.add_argument("--aircraft-dir", default="aircraft", help="Directory containing aircraft/type/squadron folders.")
     parser.add_argument(
+        "--squadron-dir",
+        default="squadrons",
+        help="Directory containing squadron-only entry folders.",
+    )
+    parser.add_argument(
+        "--airshow-dir",
+        default="airshows",
+        help="Directory containing airshow event metadata.",
+    )
+    parser.add_argument(
         "--raw-assets-dir",
         default="raw_assets",
         help="Centralized source directory for original photos to be processed.",
@@ -116,7 +130,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--logo-output", default="assets/logos", help="Published squadron logo output directory.")
     parser.add_argument("--json-output", default="data/spotterdex.json", help="Generated JSON manifest path.")
     parser.add_argument("--js-output", default="data/spotterdex-data.js", help="Generated JS manifest path.")
-    parser.add_argument("--width", type=int, default=2048, help="Processed JPEG width in pixels.")
+    parser.add_argument("--width", type=int, default=2560, help="Processed JPEG width in pixels (default: 2560).")
     parser.add_argument("--thumb-width", type=int, default=1024, help="Generated thumbnail width in pixels.")
     parser.add_argument("--logo-max-size", type=int, default=512, help="Maximum squadron logo width or height in pixels.")
     parser.add_argument("--strict", action="store_true", help="Return a non-zero exit code if validation warnings are found.")
@@ -151,6 +165,8 @@ def main() -> int:
 
     map_dir = root / args.map_dir
     aircraft_dir = root / args.aircraft_dir
+    squadron_dir = root / args.squadron_dir
+    airshow_dir = root / args.airshow_dir
     raw_assets_dir = root / args.raw_assets_dir
     photo_output_dir = root / args.photo_output
     thumb_output_dir = root / args.thumb_output
@@ -188,11 +204,56 @@ def main() -> int:
         warnings=warnings,
         show_progress=show_progress,
     )
+    squadron_entries, squadron_photos = load_squadron_photos(
+        root=root,
+        squadron_dir=squadron_dir,
+        raw_assets_dir=raw_assets_dir,
+        logo_output_dir=logo_output_dir,
+        photo_output_dir=photo_output_dir,
+        thumb_output_dir=thumb_output_dir,
+        target_width=args.width,
+        thumb_width=args.thumb_width,
+        logo_max_size=args.logo_max_size,
+        pin_lookup=pin_lookup,
+        make_demo_images=args.make_demo_images,
+        workers=photo_workers,
+        warnings=warnings,
+        show_progress=show_progress,
+    )
+    location_photos = load_location_photos(
+        root=root,
+        map_dir=map_dir,
+        pins=pins,
+        raw_assets_dir=raw_assets_dir,
+        photo_output_dir=photo_output_dir,
+        thumb_output_dir=thumb_output_dir,
+        target_width=args.width,
+        thumb_width=args.thumb_width,
+        workers=photo_workers,
+        make_demo_images=args.make_demo_images,
+        used_photo_ids={photo["id"] for photo in photos + squadron_photos},
+        warnings=warnings,
+        show_progress=show_progress,
+    )
+    photos.extend(squadron_photos)
+    photos.extend(location_photos)
+    photos.sort(
+        key=lambda item: (
+            item.get("sortDate", ""),
+            item.get("aircraftType", ""),
+            item.get("locationName", ""),
+        ),
+        reverse=True,
+    )
+    apply_squadron_stats(squadron_entries, photos)
+    airshows = load_airshows(root=root, airshow_dir=airshow_dir, photos=photos, warnings=warnings)
 
     manifest = {
         "generatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "pins": pins,
         "aircraft": aircraft_entries,
+        "squadrons": squadron_entries,
+        "airshows": airshows,
         "photos": photos,
     }
 
@@ -205,7 +266,10 @@ def main() -> int:
     js_output.write_text(f"window.SPOTTERDEX_DATA = {json_text};\n", encoding="utf-8")
 
     warnings.print()
-    print(f"Built {len(aircraft_entries)} aircraft entries, {len(photos)} photos, {len(pins)} pins.")
+    print(
+        f"Built {len(aircraft_entries)} aircraft entries, {len(squadron_entries)} squadron-only entries, "
+        f"{len(photos)} photos, {len(pins)} pins."
+    )
     print(f"Wrote {relative_posix(json_output, root)}")
     print(f"Wrote {relative_posix(js_output, root)}")
     if args.strict and warnings.has_warnings():
@@ -546,6 +610,409 @@ def apply_aircraft_stats(aircraft_entries: List[Dict[str, Any]], photos: List[Di
         }
 
 
+def load_squadron_photos(
+    root: Path,
+    squadron_dir: Path,
+    raw_assets_dir: Path,
+    logo_output_dir: Path,
+    photo_output_dir: Path,
+    thumb_output_dir: Path,
+    target_width: int,
+    thumb_width: int,
+    logo_max_size: int,
+    pin_lookup: Dict[str, str],
+    make_demo_images: bool,
+    workers: int,
+    warnings: BuildWarningLog,
+    show_progress: bool = True,
+) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """Load photos owned by a squadron rather than an aircraft type."""
+    if not squadron_dir.exists():
+        return [], []
+
+    yaml_files = sorted(list(squadron_dir.glob("*/entry.yaml")) + list(squadron_dir.glob("*/entry.yml")))
+    entry_sources: List[Tuple[Path, Dict[str, Any]]] = []
+    read_progress = ProgressBar("Reading squadron YAML", len(yaml_files), enabled=show_progress)
+    for yaml_path in yaml_files:
+        data = read_yaml_mapping(yaml_path, warnings)
+        read_progress.advance(relative_posix(yaml_path, root))
+        if data:
+            entry_sources.append((yaml_path, data))
+    read_progress.finish()
+
+    squadrons_by_key: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
+    photo_targets: Dict[int, Dict[str, Any]] = {}
+    photo_jobs: List[Dict[str, Any]] = []
+    used_photo_ids: set[str] = set()
+    skipped_photo_count = 0
+    photo_total = sum(count_photo_items(data) for _, data in entry_sources)
+
+    for yaml_path, data in entry_sources:
+        squadron_data = data.get("squadron") if isinstance(data.get("squadron"), dict) else {}
+        squadron_scalar = data.get("squadron") if not isinstance(data.get("squadron"), dict) else None
+        squadron_name = str(
+            data.get("squadron_name")
+            or data.get("squadron_full_name")
+            or squadron_data.get("name")
+            or squadron_scalar
+            or display_name(yaml_path.parent.name)
+        ).strip()
+        country = str(data.get("country") or squadron_data.get("country") or "").strip()
+        unit_type = read_unit_type(data, squadron_data)
+        if not squadron_name:
+            warnings.add(f"squadron entry is missing squadron_name: {relative_posix(yaml_path, root)}")
+            continue
+        if not country:
+            warnings.add(f"squadron entry is missing country: {relative_posix(yaml_path, root)}")
+
+        squadron_id = slugify(f"{country}-{squadron_name}")
+        squadron_key = (country, squadron_name, unit_type)
+        logo_value = data.get("squadron_logo") or data.get("squadronLogo") or data.get("logo") or squadron_data.get("logo")
+        logo = resolve_squadron_logo(
+            root=root,
+            raw_assets_dir=raw_assets_dir,
+            logo_output_dir=logo_output_dir,
+            yaml_path=yaml_path,
+            logo_value=logo_value,
+            squadron_id=squadron_id,
+            squadron_name=squadron_name,
+            logo_max_size=logo_max_size,
+            warnings=warnings,
+        )
+        hero_value = read_squadron_hero_source(data, squadron_data)
+        hero = process_squadron_hero(
+            root=root,
+            raw_assets_dir=raw_assets_dir,
+            yaml_path=yaml_path,
+            source_value=hero_value,
+            squadron_id=squadron_id,
+            squadron_name=squadron_name,
+            photo_output_dir=photo_output_dir,
+            thumb_output_dir=thumb_output_dir,
+            target_width=target_width,
+            thumb_width=thumb_width,
+            warnings=warnings,
+        ) if hero_value else None
+
+        squadron_entry = squadrons_by_key.get(squadron_key)
+        if not squadron_entry:
+            squadron_entry = {
+                "id": squadron_id,
+                "name": squadron_name,
+                "country": country,
+                "logo": logo,
+                "unitType": unit_type,
+                "unitLabel": unit_display_label(unit_type),
+                "showOnSquadronsPage": unit_type == "squadron",
+                "photoIds": [],
+                "aircraftTypes": [],
+            }
+            if hero:
+                squadron_entry["heroPhoto"] = hero
+            squadrons_by_key[squadron_key] = squadron_entry
+        elif not squadron_entry.get("logo") and logo:
+            squadron_entry["logo"] = logo
+        if not squadron_entry.get("heroPhoto") and hero:
+            squadron_entry["heroPhoto"] = hero
+
+        photo_items = data.get("photos") or []
+        if isinstance(photo_items, dict):
+            photo_items = [photo_items]
+        if not isinstance(photo_items, list):
+            warnings.add(f"photos must be a list in {relative_posix(yaml_path, root)}")
+            continue
+        for index, photo_item in enumerate(photo_items, start=1):
+            photo_label = str(
+                photo_item.get("path") or photo_item.get("file") or photo_item.get("filepath") or f"photo #{index}"
+            ) if isinstance(photo_item, dict) else f"photo #{index}"
+            if not isinstance(photo_item, dict):
+                warnings.add(f"skipping invalid squadron photo #{index} in {relative_posix(yaml_path, root)}")
+                skipped_photo_count += 1
+                continue
+            photo_job = prepare_photo_job(
+                order=len(photo_jobs),
+                label=photo_label,
+                root=root,
+                raw_assets_dir=raw_assets_dir,
+                yaml_path=yaml_path,
+                photo_item=photo_item,
+                index=index,
+                type_name="",
+                aircraft_id="",
+                squadron_name=squadron_name,
+                squadron_id=squadron_id,
+                unit_type=unit_type,
+                country=country,
+                photo_output_dir=photo_output_dir,
+                thumb_output_dir=thumb_output_dir,
+                target_width=target_width,
+                thumb_width=thumb_width,
+                pin_lookup=pin_lookup,
+                make_demo_images=make_demo_images,
+                used_photo_ids=used_photo_ids,
+                warnings=warnings,
+                tag_scope="squadron",
+            )
+            if not photo_job:
+                skipped_photo_count += 1
+                continue
+            photo_targets[photo_job["order"]] = squadron_entry
+            photo_jobs.append(photo_job)
+
+    progress = ProgressBar("Processing squadron photos", photo_total, enabled=show_progress)
+    for _ in range(skipped_photo_count):
+        progress.advance("skipped")
+    photo_results = process_photo_jobs(photo_jobs, workers, progress)
+    photos: List[Dict[str, Any]] = []
+    for order, result in sorted(photo_results.items()):
+        for message in result.get("notes", []):
+            warnings.info(message)
+        for message in result.get("warnings", []):
+            warnings.add(message)
+        record = result.get("record")
+        if not record or order not in photo_targets:
+            continue
+        photos.append(record)
+        photo_targets[order]["photoIds"].append(record["id"])
+
+    return (
+        sorted(squadrons_by_key.values(), key=lambda item: (item["country"], item["name"])),
+        sorted(photos, key=lambda item: (item.get("sortDate", ""), item.get("locationName", "")), reverse=True),
+    )
+
+
+def load_location_photos(
+    root: Path,
+    map_dir: Path,
+    pins: List[Dict[str, Any]],
+    raw_assets_dir: Path,
+    photo_output_dir: Path,
+    thumb_output_dir: Path,
+    target_width: int,
+    thumb_width: int,
+    workers: int,
+    make_demo_images: bool,
+    used_photo_ids: set[str],
+    warnings: BuildWarningLog,
+    show_progress: bool = True,
+) -> List[Dict[str, Any]]:
+    """Load photos stored on map pins, with no aircraft or unit assignment."""
+    if not map_dir.exists():
+        return []
+
+    pins_by_id = {str(pin.get("id") or ""): pin for pin in pins}
+    pin_lookup = {normalize_key(str(pin.get("name") or "")): str(pin.get("id") or "") for pin in pins}
+    sources: List[Tuple[Path, str, Dict[str, Any], int, Dict[str, Any]]] = []
+    yaml_files = sorted(map_dir.glob("*/*.y*ml"))
+    read_progress = ProgressBar("Reading location photos", len(yaml_files), enabled=show_progress)
+    for yaml_path in yaml_files:
+        data = read_yaml_mapping(yaml_path, warnings)
+        read_progress.advance(relative_posix(yaml_path, root))
+        if not data:
+            continue
+        country = str(data.get("country") or display_name(yaml_path.parent.name)).strip()
+        pin_items = data.get("pins") or data.get("locations") or []
+        if isinstance(pin_items, dict):
+            pin_items = [pin_items]
+        if not isinstance(pin_items, list):
+            continue
+        for pin_item in pin_items:
+            if not isinstance(pin_item, dict):
+                continue
+            pin_id = str(pin_item.get("id") or "").strip()
+            pin = pins_by_id.get(pin_id)
+            if not pin:
+                continue
+            photo_items = pin_item.get("photos") or []
+            if isinstance(photo_items, dict):
+                photo_items = [photo_items]
+            if not isinstance(photo_items, list):
+                warnings.add(f"photos must be a list for map pin {pin.get('name')} in {relative_posix(yaml_path, root)}")
+                continue
+            for photo_index, item in enumerate(photo_items):
+                sources.append((yaml_path, country, pin, photo_index, item))
+    read_progress.finish()
+
+    photo_jobs: List[Dict[str, Any]] = []
+    skipped_photo_count = 0
+    for yaml_path, country, pin, photo_index, photo_item in sources:
+        index = photo_index + 1
+        if not isinstance(photo_item, dict):
+            warnings.add(f"skipping invalid location photo in {relative_posix(yaml_path, root)}")
+            skipped_photo_count += 1
+            continue
+        scoped_item = dict(photo_item)
+        scoped_item["location"] = pin["name"]
+        scoped_item["pin_id"] = pin["id"]
+        photo_label = str(scoped_item.get("path") or scoped_item.get("file") or scoped_item.get("filepath") or f"photo #{index}")
+        photo_job = prepare_photo_job(
+            order=len(photo_jobs),
+            label=photo_label,
+            root=root,
+            raw_assets_dir=raw_assets_dir,
+            yaml_path=yaml_path,
+            photo_item=scoped_item,
+            index=index,
+            type_name="",
+            aircraft_id="",
+            squadron_name="",
+            squadron_id="",
+            unit_type="",
+            country=country,
+            photo_output_dir=photo_output_dir,
+            thumb_output_dir=thumb_output_dir,
+            target_width=target_width,
+            thumb_width=thumb_width,
+            pin_lookup=pin_lookup,
+            make_demo_images=make_demo_images,
+            used_photo_ids=used_photo_ids,
+            warnings=warnings,
+            tag_scope="location",
+            source_ref={
+                "scope": "location",
+                "entryPath": relative_posix(yaml_path, root),
+                "targetPinId": pin["id"],
+                "index": photo_index,
+            },
+        )
+        if not photo_job:
+            skipped_photo_count += 1
+            continue
+        photo_jobs.append(photo_job)
+
+    progress = ProgressBar("Processing location photos", len(sources), enabled=show_progress)
+    for _ in range(skipped_photo_count):
+        progress.advance("skipped")
+    results = process_photo_jobs(photo_jobs, workers, progress)
+    photos: List[Dict[str, Any]] = []
+    for _, result in sorted(results.items()):
+        for message in result.get("notes", []):
+            warnings.info(message)
+        for message in result.get("warnings", []):
+            warnings.add(message)
+        if result.get("record"):
+            photos.append(result["record"])
+    return sorted(photos, key=lambda item: (item.get("sortDate", ""), item.get("locationName", "")), reverse=True)
+
+
+def apply_squadron_stats(squadron_entries: List[Dict[str, Any]], photos: List[Dict[str, Any]]) -> None:
+    photos_by_id = {photo["id"]: photo for photo in photos}
+    for squadron in squadron_entries:
+        photo_ids = unique_values(squadron.get("photoIds", []))
+        squadron["photoIds"] = photo_ids
+        squadron["photoCount"] = sum(1 for photo_id in photo_ids if photo_id in photos_by_id)
+
+
+def load_airshows(
+    root: Path,
+    airshow_dir: Path,
+    photos: List[Dict[str, Any]],
+    warnings: BuildWarningLog,
+) -> List[Dict[str, Any]]:
+    """Aggregate tagged photos into event timeline records with optional source-photo heroes."""
+    configured_heroes: Dict[str, Dict[str, Any]] = {}
+    events_path = airshow_dir / "events.yaml"
+    if not events_path.exists():
+        alternate_path = airshow_dir / "events.yml"
+        events_path = alternate_path if alternate_path.exists() else events_path
+
+    if events_path.exists():
+        data = read_yaml_mapping(events_path, warnings)
+        event_items = data.get("events") or data.get("airshows") or []
+        if isinstance(event_items, dict):
+            event_items = [event_items]
+        if not isinstance(event_items, list):
+            warnings.add(f"events must be a list in {relative_posix(events_path, root)}")
+        else:
+            for item in event_items:
+                if not isinstance(item, dict):
+                    warnings.add(f"skipping invalid airshow event in {relative_posix(events_path, root)}")
+                    continue
+                name = str(item.get("name") or item.get("event") or item.get("airshow") or "").strip()
+                if not name:
+                    warnings.add(f"airshow event is missing name in {relative_posix(events_path, root)}")
+                    continue
+                event_key = normalize_key(name)
+                if event_key in configured_heroes:
+                    warnings.add(f"duplicate airshow event metadata: {name}")
+                    continue
+                configured_heroes[event_key] = read_airshow_hero_ref(item)
+
+    photos_by_event: Dict[str, List[Dict[str, Any]]] = {}
+    event_names: Dict[str, str] = {}
+    for photo in photos:
+        name = str(photo.get("airshow") or "").strip()
+        if not name:
+            continue
+        event_key = normalize_key(name)
+        photos_by_event.setdefault(event_key, []).append(photo)
+        event_names.setdefault(event_key, name)
+
+    airshows: List[Dict[str, Any]] = []
+    for event_key, event_photos in photos_by_event.items():
+        ordered_photos = sorted(event_photos, key=lambda photo: (photo.get("sortDate", ""), photo.get("id", "")))
+        dated_photos = [photo for photo in ordered_photos if photo.get("sortDate")]
+        hero_ref = configured_heroes.get(event_key, {})
+        hero_key = source_ref_key(hero_ref) if hero_ref else None
+        hero = next((photo for photo in ordered_photos if source_ref_key(photo.get("sourceRef", {})) == hero_key), None)
+        if hero_ref and not hero:
+            warnings.add(f"airshow hero does not match a tagged photo: {event_names[event_key]}")
+
+        record = {
+            "id": slugify(event_names[event_key]),
+            "name": event_names[event_key],
+            "photoIds": [photo["id"] for photo in ordered_photos],
+            "photoCount": len(ordered_photos),
+            "firstDate": dated_photos[0].get("sortDate", "") if dated_photos else "",
+            "latestDate": dated_photos[-1].get("sortDate", "") if dated_photos else "",
+        }
+        if hero:
+            record["heroPhotoId"] = hero["id"]
+        airshows.append(record)
+
+    return sorted(
+        airshows,
+        key=lambda event: (event.get("latestDate", ""), event.get("name", "")),
+        reverse=True,
+    )
+
+
+def read_airshow_hero_ref(event: Dict[str, Any]) -> Dict[str, Any]:
+    value = event.get("hero_photo") or event.get("heroPhoto") or event.get("hero") or {}
+    if not isinstance(value, dict):
+        return {}
+    try:
+        index = int(value.get("index"))
+    except (TypeError, ValueError):
+        return {}
+    if index < 0:
+        return {}
+    scope = str(value.get("scope") or "").strip()
+    entry_path = str(value.get("entry_path") or value.get("entryPath") or "").strip()
+    pin_id = str(value.get("target_pin_id") or value.get("targetPinId") or "").strip()
+    if not scope or not entry_path:
+        return {}
+    reference = {"scope": scope, "entryPath": entry_path, "index": index}
+    if pin_id:
+        reference["targetPinId"] = pin_id
+    return reference
+
+
+def source_ref_key(reference: Any) -> Tuple[str, str, str, int]:
+    if not isinstance(reference, dict):
+        return ("", "", "", -1)
+    try:
+        index = int(reference.get("index"))
+    except (TypeError, ValueError):
+        index = -1
+    return (
+        str(reference.get("scope") or "").strip(),
+        str(reference.get("entryPath") or reference.get("entry_path") or "").strip(),
+        str(reference.get("targetPinId") or reference.get("target_pin_id") or "").strip(),
+        index,
+    )
+
+
 def format_pin_label(pin: Dict[str, Any]) -> str:
     name = str(pin.get("name") or pin.get("id") or "Unknown location").strip()
     country = str(pin.get("country") or "").strip()
@@ -560,6 +1027,7 @@ def validate_manifest(manifest: Dict[str, Any], root: Path, warnings: BuildWarni
     pins = manifest.get("pins", [])
     photos = manifest.get("photos", [])
     aircraft_entries = manifest.get("aircraft", [])
+    airshows = manifest.get("airshows", [])
 
     pin_ids: set[str] = set()
     pin_name_keys: set[str] = set()
@@ -655,6 +1123,39 @@ def validate_manifest(manifest: Dict[str, Any], root: Path, warnings: BuildWarni
         if hero_photo_pin_id and hero_photo_pin_id != pin_id:
             warnings.add(f"pin heroPhotoId points to a photo from another location: {pin_id} -> {hero_photo_id}")
 
+    airshow_ids: set[str] = set()
+    airshow_names: set[str] = set()
+    for airshow in airshows:
+        airshow_id = str(airshow.get("id") or "")
+        name = str(airshow.get("name") or "")
+        name_key = normalize_key(name)
+        if not name:
+            warnings.add("airshow is missing name")
+        if airshow_id in airshow_ids:
+            warnings.add(f"duplicate airshow id in generated manifest: {airshow_id}")
+        airshow_ids.add(airshow_id)
+        if name_key in airshow_names:
+            warnings.add(f"duplicate airshow name in generated manifest: {name}")
+        airshow_names.add(name_key)
+
+        airshow_photo_ids = [str(photo_id) for photo_id in airshow.get("photoIds", [])]
+        if not airshow_photo_ids:
+            warnings.add(f"airshow has no tagged photos: {name}")
+        for photo_id in airshow_photo_ids:
+            photo = photos_by_id.get(photo_id)
+            if not photo:
+                warnings.add(f"airshow references an unknown photo: {name} -> {photo_id}")
+                continue
+            if normalize_key(str(photo.get("airshow") or "")) != name_key:
+                warnings.add(f"airshow photo has a mismatched event name: {name} -> {photo_id}")
+
+        hero_photo_id = str(airshow.get("heroPhotoId") or "")
+        if hero_photo_id:
+            if hero_photo_id not in airshow_photo_ids:
+                warnings.add(f"airshow hero does not belong to event: {name} -> {hero_photo_id}")
+            elif hero_photo_id not in photo_ids:
+                warnings.add(f"airshow hero references an unknown photo: {name} -> {hero_photo_id}")
+
     for entry in aircraft_entries:
         for squadron in entry.get("squadrons", []):
             hero_photo = squadron.get("heroPhoto")
@@ -712,6 +1213,8 @@ def prepare_photo_job(
     make_demo_images: bool,
     used_photo_ids: set[str],
     warnings: BuildWarningLog,
+    tag_scope: str = "aircraft",
+    source_ref: Optional[Dict[str, Any]] = None,
 ) -> Optional[Dict[str, Any]]:
     source_value = photo_item.get("path") or photo_item.get("file") or photo_item.get("filepath")
     if not source_value:
@@ -728,9 +1231,16 @@ def prepare_photo_job(
         return None
 
     photo_id = unique_id(
-        f"{type_name}-{squadron_name}-{source_path.stem}-{short_hash(relative_posix(source_path, root))}",
+        f"{tag_scope}-{type_name}-{squadron_name}-{source_path.stem}-{short_hash(relative_posix(source_path, root))}",
         used_photo_ids,
     )
+    normalized_source_ref = {
+        "scope": tag_scope,
+        "entryPath": relative_posix(yaml_path, root),
+        "index": max(0, index - 1),
+    }
+    if source_ref:
+        normalized_source_ref.update(source_ref)
     return {
         "order": order,
         "label": label,
@@ -746,6 +1256,8 @@ def prepare_photo_job(
         "squadron_id": squadron_id,
         "unit_type": unit_type,
         "country": country,
+        "tag_scope": tag_scope,
+        "source_ref": normalized_source_ref,
         "target_width": target_width,
         "thumb_width": thumb_width,
         "pin_lookup": pin_lookup,
@@ -829,17 +1341,53 @@ def process_photo_job(job: Dict[str, Any]) -> Dict[str, Any]:
     thumb_path.parent.mkdir(parents=True, exist_ok=True)
 
     try:
+        reuse_existing = (
+            output_path.exists()
+            and thumb_path.exists()
+            and min(output_path.stat().st_mtime_ns, thumb_path.stat().st_mtime_ns) >= source_path.stat().st_mtime_ns
+        )
         with Image.open(source_path) as opened:
             exif = extract_exif(opened)
-            output_exif = normalized_output_exif(opened)
             original_size = f"{opened.width} x {opened.height}"
-            image = ImageOps.exif_transpose(opened)
-            image = image.convert("RGB")
-            processed = resize_to_width(image, int(job["target_width"]))
-            thumbnail = resize_to_width(image, int(job["thumb_width"]))
-            save_kwargs = {"exif": output_exif} if output_exif else {}
-            processed.save(output_path, "JPEG", quality=90, optimize=True, progressive=True, **save_kwargs)
-            thumbnail.save(thumb_path, "JPEG", quality=82, optimize=True, progressive=True, **save_kwargs)
+            if reuse_existing:
+                with Image.open(output_path) as processed_image, Image.open(thumb_path) as thumbnail_image:
+                    processed_size = processed_image.size
+                    thumbnail_size = thumbnail_image.size
+                # A changed build width or thumbnail width requires a fresh output,
+                # even when the source image has not changed.
+                reuse_existing = (
+                    processed_size[0] == int(job["target_width"])
+                    and thumbnail_size[0] == int(job["thumb_width"])
+                )
+            if not reuse_existing:
+                output_exif = normalized_output_exif(opened)
+                image = ImageOps.exif_transpose(opened)
+                image = image.convert("RGB")
+                processed = resize_to_width(image, int(job["target_width"]))
+                thumbnail = resize_to_width(image, int(job["thumb_width"]))
+                save_kwargs = {"exif": output_exif} if output_exif else {}
+                # Lanczos is Pillow's highest-quality resampling filter. Full frames
+                # retain fine aircraft detail, while compact thumbnails load quickly.
+                processed.save(
+                    output_path,
+                    "JPEG",
+                    quality=FULL_JPEG_QUALITY,
+                    subsampling=FULL_JPEG_SUBSAMPLING,
+                    optimize=True,
+                    progressive=True,
+                    **save_kwargs,
+                )
+                thumbnail.save(
+                    thumb_path,
+                    "JPEG",
+                    quality=THUMB_JPEG_QUALITY,
+                    subsampling=THUMB_JPEG_SUBSAMPLING,
+                    optimize=True,
+                    progressive=True,
+                    **save_kwargs,
+                )
+                processed_size = processed.size
+                thumbnail_size = thumbnail.size
     except Exception as exc:  # pragma: no cover - depends on source image
         warnings.append(f"could not process {relative_posix(source_path, root)}: {exc}")
         return {"order": job["order"], "record": None, "warnings": warnings}
@@ -852,6 +1400,7 @@ def process_photo_job(job: Dict[str, Any]) -> Dict[str, Any]:
 
     record = {
         "id": job["photo_id"],
+        "tagScope": job.get("tag_scope", "aircraft"),
         "aircraftId": job["aircraft_id"],
         "aircraftType": type_name,
         "squadronId": job["squadron_id"],
@@ -864,14 +1413,16 @@ def process_photo_job(job: Dict[str, Any]) -> Dict[str, Any]:
         "sortDate": photo_date or (f"{year}-01-01" if year else ""),
         "locationName": location_name,
         "pinId": pin_id,
+        "sourceRef": job.get("source_ref", {}),
+        "airshow": str(photo_item.get("airshow") or photo_item.get("airshow_name") or "").strip(),
         "title": str(photo_item.get("title") or ""),
         "caption": str(photo_item.get("caption") or ""),
         "image": site_path_for(output_path, root),
         "thumbnail": site_path_for(thumb_path, root),
         "source": site_path_for(source_path, root),
         "originalSize": original_size,
-        "processedSize": format_size(processed.size),
-        "thumbnailSize": format_size(thumbnail.size),
+        "processedSize": format_size(processed_size),
+        "thumbnailSize": format_size(thumbnail_size),
         "exif": exif,
     }
     return {"order": job["order"], "record": record, "warnings": warnings}
@@ -934,8 +1485,24 @@ def process_photo(
             processed = resize_to_width(image, target_width)
             thumbnail = resize_to_width(image, thumb_width)
             save_kwargs = {"exif": output_exif} if output_exif else {}
-            processed.save(output_path, "JPEG", quality=90, optimize=True, progressive=True, **save_kwargs)
-            thumbnail.save(thumb_path, "JPEG", quality=82, optimize=True, progressive=True, **save_kwargs)
+            processed.save(
+                output_path,
+                "JPEG",
+                quality=FULL_JPEG_QUALITY,
+                subsampling=FULL_JPEG_SUBSAMPLING,
+                optimize=True,
+                progressive=True,
+                **save_kwargs,
+            )
+            thumbnail.save(
+                thumb_path,
+                "JPEG",
+                quality=THUMB_JPEG_QUALITY,
+                subsampling=THUMB_JPEG_SUBSAMPLING,
+                optimize=True,
+                progressive=True,
+                **save_kwargs,
+            )
     except Exception as exc:  # pragma: no cover - depends on source image
         warnings.add(f"could not process {relative_posix(source_path, root)}: {exc}")
         return None
@@ -960,6 +1527,7 @@ def process_photo(
         "sortDate": photo_date or (f"{year}-01-01" if year else ""),
         "locationName": location_name,
         "pinId": pin_id,
+        "airshow": str(photo_item.get("airshow") or photo_item.get("airshow_name") or "").strip(),
         "title": str(photo_item.get("title") or ""),
         "caption": str(photo_item.get("caption") or ""),
         "image": site_path_for(output_path, root),
@@ -1129,8 +1697,24 @@ def process_custom_hero(
             processed = resize_to_width(image, target_width)
             thumbnail = resize_to_width(image, thumb_width)
             save_kwargs = {"exif": output_exif} if output_exif else {}
-            processed.save(output_path, "JPEG", quality=90, optimize=True, progressive=True, **save_kwargs)
-            thumbnail.save(thumb_path, "JPEG", quality=82, optimize=True, progressive=True, **save_kwargs)
+            processed.save(
+                output_path,
+                "JPEG",
+                quality=FULL_JPEG_QUALITY,
+                subsampling=FULL_JPEG_SUBSAMPLING,
+                optimize=True,
+                progressive=True,
+                **save_kwargs,
+            )
+            thumbnail.save(
+                thumb_path,
+                "JPEG",
+                quality=THUMB_JPEG_QUALITY,
+                subsampling=THUMB_JPEG_SUBSAMPLING,
+                optimize=True,
+                progressive=True,
+                **save_kwargs,
+            )
     except Exception as exc:  # pragma: no cover - depends on source image
         warnings.add(f"could not process {display_label} {relative_posix(source_path, root)}: {exc}")
         return None
@@ -1260,6 +1844,7 @@ def normalize_date_value(value: Any) -> str:
 def resize_to_width(image: Image.Image, width: int) -> Image.Image:
     target_width = max(1, int(width))
     new_height = max(1, round(image.height * (target_width / image.width)))
+    # LANCZOS is Pillow's highest-quality downsampling/upscaling resampler.
     return image.resize((target_width, new_height), Image.Resampling.LANCZOS)
 
 

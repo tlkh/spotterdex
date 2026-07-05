@@ -52,6 +52,7 @@ NVIDIA_CAPTION_ENDPOINT = "https://inference-api.nvidia.com/v1/chat/completions"
 NVIDIA_CAPTION_MODEL = "nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
 NVIDIA_CAPTION_IMAGE_WIDTH = 768
 NVIDIA_CAPTION_TIMEOUT_SECONDS = 75
+MIN_SOURCE_PHOTO_WIDTH = 2048
 
 
 class FlowList(list):
@@ -95,34 +96,47 @@ class SpotterDexManager:
     def __init__(self, root: Path) -> None:
         self.root = root.resolve()
         self.aircraft_dir = self.root / "aircraft"
+        self.squadron_dir = self.root / "squadrons"
         self.map_dir = self.root / "map_pins"
+        self.airshow_dir = self.root / "airshows"
+        self.airshow_events_path = self.airshow_dir / "events.yaml"
         self.raw_assets_dir = self.root / "raw_assets"
         self._exif_date_cache: Dict[str, str] = {}
+        self._image_dimension_cache: Dict[str, Tuple[int, int]] = {}
 
     def get_state(self) -> Dict[str, Any]:
         tag_map: Dict[str, List[Dict[str, Any]]] = {}
         pins, pin_by_id, pin_by_name = self._scan_pins(tag_map)
         aircraft = self._scan_aircraft(tag_map, pin_by_id, pin_by_name)
+        squadrons = self._scan_squadrons(tag_map, pin_by_id, pin_by_name)
+        location_entries = self._location_entries(pins)
+        entries = aircraft + squadrons + location_entries
+        airshow_events = self._load_airshow_events()
         assets = self._scan_assets(tag_map)
         used_count = sum(1 for asset in assets if asset["tags"])
         missing_photo_count = sum(
             1
-            for entry in aircraft
+            for entry in entries
             for photo in entry.get("photos", [])
             if photo.get("exists") is False
         )
         missing_field_photo_count = sum(
             1
-            for entry in aircraft
+            for entry in entries
             for photo in entry.get("photos", [])
             if photo.get("missingFields")
         )
-        missing_entry_field_count = sum(1 for entry in aircraft if entry.get("entryMissingFields"))
+        missing_entry_field_count = sum(1 for entry in entries if entry.get("entryMissingFields"))
+        under_resolution_asset_count = sum(
+            1 for asset in assets if asset.get("isPhotoSource") and asset.get("isUnderResolution")
+        )
 
         return {
             "project": {
                 "root": self.root.as_posix(),
                 "aircraftCount": len(aircraft),
+                "squadronEntryCount": len(squadrons),
+                "locationEntryCount": len(location_entries),
                 "pinCount": len(pins),
                 "assetCount": len(assets),
                 "taggedAssetCount": used_count,
@@ -130,33 +144,84 @@ class SpotterDexManager:
                 "missingPhotoCount": missing_photo_count,
                 "missingFieldPhotoCount": missing_field_photo_count,
                 "missingEntryFieldCount": missing_entry_field_count,
+                "underResolutionAssetCount": under_resolution_asset_count,
+                "minimumSourcePhotoWidth": MIN_SOURCE_PHOTO_WIDTH,
             },
             "aircraft": aircraft,
+            "squadrons": squadrons,
+            "entries": entries,
             "pins": pins,
             "assets": assets,
+            "airshowEvents": airshow_events,
         }
 
-    def append_photos(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        entry_path = self._project_path(payload.get("entryPath") or "")
-        if not entry_path or not entry_path.exists() or entry_path.name not in {"entry.yaml", "entry.yml"}:
-            raise ValueError("Choose an aircraft entry before attaching assets.")
-        if not self._is_within(entry_path, self.aircraft_dir):
-            raise ValueError("Entry path is outside the aircraft directory.")
+    def _photo_target(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        scope = clean_text(payload.get("scope")) or "aircraft"
+        if scope not in {"aircraft", "squadron", "location"}:
+            raise ValueError("Photo scope is invalid.")
 
-        asset_paths = payload.get("assetPaths") or []
-        if not isinstance(asset_paths, list) or not asset_paths:
-            raise ValueError("Select at least one raw asset.")
+        yaml_path = self._project_path(payload.get("entryPath") or "")
+        if not yaml_path or not yaml_path.exists():
+            raise ValueError("Choose a valid photo source.")
+        if scope == "location":
+            if not self._is_within(yaml_path, self.map_dir):
+                raise ValueError("Location source path is outside map_pins.")
+            pin_id = clean_text(payload.get("targetPinId"))
+            if not pin_id:
+                raise ValueError("Location photo source is missing its pin id.")
+            data = read_yaml(yaml_path)
+            pins = data.get("pins") or data.get("locations")
+            if not isinstance(pins, list):
+                raise ValueError(f"pins must be a list in {relative_posix(yaml_path, self.root)}")
+            pin = next((item for item in pins if isinstance(item, dict) and clean_text(item.get("id")) == pin_id), None)
+            if pin is None:
+                raise ValueError("Location pin was not found in its YAML file.")
+            photos = pin.get("photos")
+            if photos is None:
+                photos = []
+                pin["photos"] = photos
+            if not isinstance(photos, list):
+                raise ValueError(f"photos must be a list for map pin {pin_id} in {relative_posix(yaml_path, self.root)}")
+            return {
+                "scope": scope,
+                "yamlPath": yaml_path,
+                "data": data,
+                "photos": photos,
+                "pinId": pin_id,
+                "locationName": clean_text(pin.get("name") or pin.get("full_name")),
+            }
 
-        data = read_yaml(entry_path)
+        allowed_dir = self.squadron_dir if scope == "squadron" else self.aircraft_dir
+        if yaml_path.name not in {"entry.yaml", "entry.yml"} or not self._is_within(yaml_path, allowed_dir):
+            raise ValueError(f"{scope.title()} source path is invalid.")
+        data = read_yaml(yaml_path)
         photos = data.get("photos")
         if photos is None:
             photos = []
             data["photos"] = photos
         if not isinstance(photos, list):
-            raise ValueError(f"photos must be a list in {relative_posix(entry_path, self.root)}")
+            raise ValueError(f"photos must be a list in {relative_posix(yaml_path, self.root)}")
+        return {
+            "scope": scope,
+            "yamlPath": yaml_path,
+            "data": data,
+            "photos": photos,
+            "pinId": "",
+            "locationName": "",
+        }
 
-        location_name = clean_text(payload.get("locationName"))
-        pin_id = clean_text(payload.get("pinId"))
+    def append_photos(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        target = self._photo_target(payload)
+        yaml_path = target["yamlPath"]
+        photos = target["photos"]
+
+        asset_paths = payload.get("assetPaths") or []
+        if not isinstance(asset_paths, list) or not asset_paths:
+            raise ValueError("Select at least one raw asset.")
+
+        location_name = target["locationName"] if target["scope"] == "location" else clean_text(payload.get("locationName"))
+        pin_id = target["pinId"] if target["scope"] == "location" else clean_text(payload.get("pinId"))
+        airshow = clean_text(payload.get("airshow"))
         caption = clean_text(payload.get("caption"))
         caption_ai_assisted = payload.get("captionAiAssisted") is True
         date = clean_text(payload.get("date"))
@@ -181,7 +246,7 @@ class SpotterDexManager:
                 continue
 
             asset_rel = relative_posix(asset_path, self.raw_assets_dir)
-            yaml_photo_path = photo_yaml_path_for_asset(entry_path, self.root, asset_rel)
+            yaml_photo_path = photo_yaml_path_for_asset(yaml_path, self.root, asset_rel)
             if dedupe and yaml_photo_path in existing:
                 skipped.append(f"{asset_rel} (already in entry)")
                 continue
@@ -195,6 +260,8 @@ class SpotterDexManager:
                 item["location"] = location_name
             if pin_id:
                 item["pin_id"] = pin_id
+            if airshow:
+                item["airshow"] = airshow
             if caption:
                 item["caption"] = caption
             if caption_ai_assisted:
@@ -203,7 +270,7 @@ class SpotterDexManager:
             existing.add(yaml_photo_path)
             appended.append(asset_rel)
 
-        write_yaml(entry_path, data)
+        write_yaml(yaml_path, target["data"])
         return {
             "ok": True,
             "message": f"Attached {len(appended)} asset(s).",
@@ -212,13 +279,9 @@ class SpotterDexManager:
         }
 
     def update_photo(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        entry_path = self._project_path(payload.get("entryPath") or "")
+        target = self._photo_target(payload)
         index = int(payload.get("index"))
-        if not entry_path or not entry_path.exists() or not self._is_within(entry_path, self.aircraft_dir):
-            raise ValueError("Entry path is invalid.")
-
-        data = read_yaml(entry_path)
-        photos = data.get("photos")
+        photos = target["photos"]
         if not isinstance(photos, list) or index < 0 or index >= len(photos):
             raise ValueError("Photo index is invalid.")
         existing_photo = photos[index] if isinstance(photos[index], dict) else {}
@@ -233,7 +296,7 @@ class SpotterDexManager:
             raise ValueError("Photo path is required.")
 
         updated: Dict[str, Any] = {"path": path_value}
-        for key in ("date", "year", "location", "pin_id", "title", "caption"):
+        for key in ("date", "year", "location", "pin_id", "airshow", "title", "caption"):
             value = clean_text(incoming.get(key))
             if not value:
                 continue
@@ -241,22 +304,193 @@ class SpotterDexManager:
                 updated[key] = int(value)
             else:
                 updated[key] = value
+        if target["scope"] == "location":
+            updated["location"] = target["locationName"]
+            updated["pin_id"] = target["pinId"]
         if payload_caption_is_ai_assisted(incoming) or photo_caption_is_ai_assisted(existing_photo):
             updated["caption_ai_assisted"] = True
         photos[index] = updated
-        write_yaml(entry_path, data)
+        write_yaml(target["yamlPath"], target["data"])
         return {"ok": True, "message": "Photo updated."}
+
+    def bulk_update_airshow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Set or clear an event tag across an explicit set of source photo records."""
+        photo_refs = payload.get("photos") or []
+        if not isinstance(photo_refs, list) or not photo_refs:
+            raise ValueError("Choose at least one photo to tag.")
+
+        airshow = clean_text(payload.get("airshow"))
+        grouped_refs: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
+        seen_refs: set[Tuple[str, str, str, int]] = set()
+
+        for ref in photo_refs:
+            if not isinstance(ref, dict):
+                raise ValueError("Photo references are invalid.")
+            scope = clean_text(ref.get("scope")) or "aircraft"
+            entry_path = clean_text(ref.get("entryPath"))
+            pin_id = clean_text(ref.get("targetPinId"))
+            try:
+                index = int(ref.get("index"))
+            except (TypeError, ValueError) as exc:
+                raise ValueError("Photo reference index is invalid.") from exc
+            if index < 0:
+                raise ValueError("Photo reference index is invalid.")
+
+            ref_key = (scope, entry_path, pin_id, index)
+            if ref_key in seen_refs:
+                continue
+            seen_refs.add(ref_key)
+            source_key = (scope, entry_path, pin_id)
+            if source_key not in grouped_refs:
+                grouped_refs[source_key] = {
+                    "scope": scope,
+                    "entryPath": entry_path,
+                    "targetPinId": pin_id,
+                    "indices": [],
+                }
+            grouped_refs[source_key]["indices"].append(index)
+
+        updated = 0
+        unchanged = 0
+        for source in grouped_refs.values():
+            target = self._photo_target(source)
+            photos = target["photos"]
+            changed_source = False
+            for index in source["indices"]:
+                if index >= len(photos) or not isinstance(photos[index], dict):
+                    raise ValueError("A selected photo no longer exists in its source YAML.")
+                photo = photos[index]
+                current = clean_text(photo.get("airshow") or photo.get("airshow_name"))
+                if airshow:
+                    needs_update = current != airshow or "airshow_name" in photo
+                    if needs_update:
+                        photo["airshow"] = airshow
+                        photo.pop("airshow_name", None)
+                else:
+                    needs_update = "airshow" in photo or "airshow_name" in photo
+                    if needs_update:
+                        photo.pop("airshow", None)
+                        photo.pop("airshow_name", None)
+
+                if needs_update:
+                    updated += 1
+                    changed_source = True
+                else:
+                    unchanged += 1
+            if changed_source:
+                write_yaml(target["yamlPath"], target["data"])
+
+        action = f"Set event '{airshow}'" if airshow else "Cleared event"
+        detail = f" {unchanged} already matched." if unchanged else ""
+        return {"ok": True, "updated": updated, "unchanged": unchanged, "message": f"{action} on {updated} photo(s).{detail}"}
+
+    def _load_airshow_events(self) -> List[Dict[str, Any]]:
+        if not self.airshow_events_path.exists():
+            return []
+        data = read_yaml(self.airshow_events_path)
+        event_items = data.get("events") or data.get("airshows") or []
+        if isinstance(event_items, dict):
+            event_items = [event_items]
+        if not isinstance(event_items, list):
+            return []
+
+        events: List[Dict[str, Any]] = []
+        for item in event_items:
+            if not isinstance(item, dict):
+                continue
+            name = clean_text(item.get("name") or item.get("event") or item.get("airshow"))
+            if not name:
+                continue
+            hero = normalize_airshow_hero_ref(item.get("hero_photo") or item.get("heroPhoto") or item.get("hero"))
+            events.append({"name": name, "hero": hero})
+        return events
+
+    def set_airshow_hero(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        event_name = clean_text(payload.get("eventName"))
+        if not event_name:
+            raise ValueError("An event name is required.")
+
+        data = read_yaml(self.airshow_events_path) if self.airshow_events_path.exists() else {"events": []}
+        event_items = data.get("events") or []
+        if isinstance(event_items, dict):
+            event_items = [event_items]
+            data["events"] = event_items
+        if not isinstance(event_items, list):
+            raise ValueError("airshows/events.yaml must contain an events list.")
+
+        event_key = normalize_key(event_name)
+        event = next(
+            (
+                item
+                for item in event_items
+                if isinstance(item, dict) and normalize_key(clean_text(item.get("name") or item.get("event") or item.get("airshow"))) == event_key
+            ),
+            None,
+        )
+        hero_payload = payload.get("hero")
+        if hero_payload is None:
+            if event is None:
+                return {"ok": True, "message": "This event has no configured hero photo."}
+            event.pop("hero_photo", None)
+            event.pop("heroPhoto", None)
+            event.pop("hero", None)
+            self.airshow_dir.mkdir(parents=True, exist_ok=True)
+            write_yaml(self.airshow_events_path, data)
+            return {"ok": True, "message": f"Cleared hero photo for {event_name}."}
+
+        if not isinstance(hero_payload, dict):
+            raise ValueError("Hero photo reference is invalid.")
+        try:
+            index = int(hero_payload.get("index"))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("Hero photo index is invalid.") from exc
+        if index < 0:
+            raise ValueError("Hero photo index is invalid.")
+
+        target_payload = {
+            "scope": clean_text(hero_payload.get("scope")) or "aircraft",
+            "entryPath": clean_text(hero_payload.get("entryPath")),
+            "targetPinId": clean_text(hero_payload.get("targetPinId")),
+        }
+        target = self._photo_target(target_payload)
+        photos = target["photos"]
+        if index >= len(photos) or not isinstance(photos[index], dict):
+            raise ValueError("The selected hero photo no longer exists in its source YAML.")
+        tagged_event = clean_text(photos[index].get("airshow") or photos[index].get("airshow_name"))
+        if normalize_key(tagged_event) != event_key:
+            raise ValueError("Choose a photo tagged with this event before setting its hero.")
+
+        hero_ref: Dict[str, Any] = {
+            "scope": target_payload["scope"],
+            "entry_path": target_payload["entryPath"],
+            "index": index,
+        }
+        if target_payload["targetPinId"]:
+            hero_ref["target_pin_id"] = target_payload["targetPinId"]
+        if event is None:
+            event = {"name": event_name}
+            event_items.append(event)
+        else:
+            event["name"] = event_name
+        event["hero_photo"] = hero_ref
+        event.pop("heroPhoto", None)
+        event.pop("hero", None)
+        self.airshow_dir.mkdir(parents=True, exist_ok=True)
+        write_yaml(self.airshow_events_path, data)
+        return {"ok": True, "message": f"Set hero photo for {event_name}."}
 
     def generate_caption(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Generate a non-persistent caption suggestion from a source image."""
-        entry_path = self._project_path(payload.get("entryPath") or "")
-        if not entry_path or not entry_path.exists() or not self._is_within(entry_path, self.aircraft_dir):
-            raise CaptionAssistError("Choose an aircraft entry before generating a caption.")
-
-        entry_data = read_yaml(entry_path)
-        aircraft_type = read_aircraft_type(entry_data, entry_path)
-        squadron_name = read_squadron_name(entry_data, entry_path)
-        location = clean_text(payload.get("locationName"))
+        try:
+            target = self._photo_target(payload)
+        except ValueError as exc:
+            raise CaptionAssistError(str(exc)) from exc
+        entry_path = target["yamlPath"]
+        entry_data = target["data"]
+        aircraft_type = read_aircraft_type(entry_data, entry_path) if target["scope"] == "aircraft" else ""
+        squadron_name = read_squadron_name(entry_data, entry_path) if target["scope"] != "location" else ""
+        location = target["locationName"] if target["scope"] == "location" else clean_text(payload.get("locationName"))
+        airshow = clean_text(payload.get("airshow"))
         source_path: Optional[Path] = None
 
         asset_value = clean_text(payload.get("assetPath"))
@@ -267,7 +501,7 @@ class SpotterDexManager:
                 index = int(payload.get("index"))
             except (TypeError, ValueError) as exc:
                 raise CaptionAssistError("Choose a photo before generating a caption.") from exc
-            photos = entry_data.get("photos")
+            photos = target["photos"]
             if not isinstance(photos, list) or index < 0 or index >= len(photos):
                 raise CaptionAssistError("The selected photo no longer exists in this entry.")
             photo = photos[index]
@@ -276,6 +510,7 @@ class SpotterDexManager:
             source_value = photo.get("path") or photo.get("file") or photo.get("filepath") or ""
             source_path = resolve_photo_source(self.root, self.raw_assets_dir, entry_path, source_value)
             location = location or clean_text(photo.get("location") or photo.get("location_name"))
+            airshow = airshow or clean_text(photo.get("airshow") or photo.get("airshow_name"))
 
         if (
             source_path is None
@@ -294,6 +529,7 @@ class SpotterDexManager:
             aircraft_type=aircraft_type,
             squadron_name=squadron_name,
             location=location,
+            airshow=airshow,
             draft_caption=draft_caption,
         )
         caption = request_nvidia_caption(prompt=prompt, image_url=image_url)
@@ -304,18 +540,14 @@ class SpotterDexManager:
         }
 
     def delete_photo(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        entry_path = self._project_path(payload.get("entryPath") or "")
+        target = self._photo_target(payload)
         index = int(payload.get("index"))
-        if not entry_path or not entry_path.exists() or not self._is_within(entry_path, self.aircraft_dir):
-            raise ValueError("Entry path is invalid.")
-
-        data = read_yaml(entry_path)
-        photos = data.get("photos")
+        photos = target["photos"]
         if not isinstance(photos, list) or index < 0 or index >= len(photos):
             raise ValueError("Photo index is invalid.")
 
         removed = photos.pop(index)
-        write_yaml(entry_path, data)
+        write_yaml(target["yamlPath"], target["data"])
         return {
             "ok": True,
             "message": "Photo removed.",
@@ -324,7 +556,9 @@ class SpotterDexManager:
 
     def update_entry(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         entry_path = self._project_path(payload.get("entryPath") or "")
-        if not entry_path or not entry_path.exists() or not self._is_within(entry_path, self.aircraft_dir):
+        scope = clean_text(payload.get("scope")) or "aircraft"
+        allowed_dir = self.squadron_dir if scope == "squadron" else self.aircraft_dir
+        if scope not in {"aircraft", "squadron"} or not entry_path or not entry_path.exists() or not self._is_within(entry_path, allowed_dir):
             raise ValueError("Entry path is invalid.")
 
         data = read_yaml(entry_path)
@@ -336,9 +570,9 @@ class SpotterDexManager:
         unit_type = clean_text(payload.get("unitType")) or "squadron"
         if unit_type not in {"squadron", "organisation"}:
             unit_type = "squadron"
-        if aircraft_type:
+        if scope == "aircraft" and aircraft_type:
             data["aircraft_type"] = aircraft_type
-        if aircraft_family:
+        if scope == "aircraft" and aircraft_family:
             data["aircraft_family"] = aircraft_family
         if squadron_name:
             data["squadron_name"] = squadron_name
@@ -355,26 +589,31 @@ class SpotterDexManager:
         return {"ok": True, "message": "Entry metadata updated."}
 
     def create_entry(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        scope = clean_text(payload.get("scope")) or "aircraft"
         aircraft_type = clean_text(payload.get("aircraftType"))
         squadron_name = clean_text(payload.get("squadronName"))
         country = clean_text(payload.get("country"))
         unit_type = clean_text(payload.get("unitType")) or "squadron"
-        if not aircraft_type or not squadron_name or not country:
-            raise ValueError("Aircraft type, unit name, and country are required.")
+        if scope not in {"aircraft", "squadron"}:
+            raise ValueError("Entry scope is invalid.")
+        if not squadron_name or not country or (scope == "aircraft" and not aircraft_type):
+            raise ValueError("Aircraft entries require an aircraft type, unit name, and country; squadron entries require a unit name and country.")
         if unit_type not in {"squadron", "organisation"}:
             unit_type = "squadron"
 
-        entry_dir = self.aircraft_dir / slugify(aircraft_type) / slugify(squadron_name)
+        entry_dir = (
+            self.aircraft_dir / slugify(aircraft_type) / slugify(squadron_name)
+            if scope == "aircraft"
+            else self.squadron_dir / slugify(squadron_name)
+        )
         entry_path = entry_dir / "entry.yaml"
         if entry_path.exists():
             raise ValueError(f"Entry already exists: {relative_posix(entry_path, self.root)}")
 
         entry_dir.mkdir(parents=True, exist_ok=True)
-        data: Dict[str, Any] = {
-            "aircraft_type": aircraft_type,
-            "squadron_name": squadron_name,
-            "country": country,
-        }
+        data: Dict[str, Any] = {"squadron_name": squadron_name, "country": country}
+        if scope == "aircraft":
+            data["aircraft_type"] = aircraft_type
         if unit_type == "organisation":
             data["unit_type"] = "organisation"
         data["photos"] = []
@@ -383,6 +622,7 @@ class SpotterDexManager:
             "ok": True,
             "message": "Entry created.",
             "entryPath": relative_posix(entry_path, self.root),
+            "scope": scope,
         }
 
     def create_pin(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -662,7 +902,64 @@ class SpotterDexManager:
                     "heroAssetPath": source_rel,
                     "heroExists": source_exists,
                     "photoCount": 0,
+                    "photos": [],
                 }
+                photo_items = item.get("photos") or []
+                if isinstance(photo_items, dict):
+                    photo_items = [photo_items]
+                if isinstance(photo_items, list):
+                    for photo_index, photo_item in enumerate(photo_items):
+                        if not isinstance(photo_item, dict):
+                            pin["photos"].append({"index": photo_index, "invalid": True, "raw": str(photo_item)})
+                            continue
+                        source_value = photo_item.get("path") or photo_item.get("file") or photo_item.get("filepath") or ""
+                        source_path = resolve_photo_source(self.root, self.raw_assets_dir, yaml_path, source_value)
+                        source_exists = source_path.exists()
+                        source_rel = ""
+                        exif_date = read_image_capture_date(source_path, self._exif_date_cache) if source_exists else ""
+                        source_width, source_height = (
+                            read_image_dimensions(source_path, self._image_dimension_cache) if source_exists else (0, 0)
+                        )
+                        if source_exists and self._is_within(source_path, self.raw_assets_dir):
+                            source_rel = relative_posix(source_path, self.raw_assets_dir)
+                            tag_map.setdefault(source_rel, []).append(
+                                {
+                                    "kind": "location photo",
+                                    "label": name,
+                                    "location": name,
+                                    "path": relative_posix(yaml_path, self.root),
+                                    "index": photo_index,
+                                }
+                            )
+                        missing_fields = missing_photo_fields(
+                            photo_item=photo_item,
+                            source_exists=source_exists,
+                            location=name,
+                            exif_date=exif_date,
+                        )
+                        pin["photos"].append(
+                            {
+                                "index": photo_index,
+                                "path": clean_text(source_value),
+                                "sourceAssetPath": source_rel,
+                                "exists": source_exists,
+                                "sourceWidth": source_width,
+                                "sourceHeight": source_height,
+                                "sourceUnder2048": bool(source_width and source_width < MIN_SOURCE_PHOTO_WIDTH),
+                                "location": name,
+                                "pinId": pin_id,
+                                "date": clean_text(photo_item.get("date")),
+                                "year": clean_text(photo_item.get("year")),
+                                "exifDate": exif_date,
+                                "airshow": clean_text(photo_item.get("airshow") or photo_item.get("airshow_name")),
+                                "title": clean_text(photo_item.get("title")),
+                                "caption": clean_text(photo_item.get("caption")),
+                                "captionAiAssisted": photo_caption_is_ai_assisted(photo_item),
+                                "missingFields": missing_fields,
+                                "missingFieldLabels": [MISSING_FIELD_LABELS[field] for field in missing_fields],
+                            }
+                        )
+                        pin["photoCount"] += 1
                 pins.append(pin)
                 pin_by_id.setdefault(pin_id, pin)
                 if name:
@@ -670,6 +967,32 @@ class SpotterDexManager:
 
         pins.sort(key=lambda item: (item["country"], item["name"]))
         return pins, pin_by_id, pin_by_name
+
+    def _location_entries(self, pins: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        return [
+            {
+                "targetKey": f"location::{pin['key']}",
+                "sourceScope": "location",
+                "entryPath": pin["pinPath"],
+                "pinId": pin["id"],
+                "entryDir": relative_posix(Path(pin["pinPath"]).parent, self.root),
+                "aircraftType": "",
+                "squadronName": "",
+                "country": pin["country"],
+                "unitType": "",
+                "unitLabel": "Location",
+                "aircraftFamily": "",
+                "squadronLogo": "",
+                "squadronLogoExists": False,
+                "entryMissingFields": [],
+                "photoCount": len(pin.get("photos", [])),
+                "missingPhotoCount": sum(1 for photo in pin.get("photos", []) if photo.get("exists") is False),
+                "missingFieldPhotoCount": sum(1 for photo in pin.get("photos", []) if photo.get("missingFields")),
+                "photos": pin.get("photos", []),
+                "locationName": pin["name"],
+            }
+            for pin in pins
+        ]
 
     def _scan_aircraft(
         self,
@@ -707,6 +1030,9 @@ class SpotterDexManager:
                 source_exists = source_path.exists()
                 source_rel = ""
                 exif_date = read_image_capture_date(source_path, self._exif_date_cache) if source_exists else ""
+                source_width, source_height = (
+                    read_image_dimensions(source_path, self._image_dimension_cache) if source_exists else (0, 0)
+                )
                 if source_exists and self._is_within(source_path, self.raw_assets_dir):
                     source_rel = relative_posix(source_path, self.raw_assets_dir)
                     tag_map.setdefault(source_rel, []).append(
@@ -741,11 +1067,15 @@ class SpotterDexManager:
                         "path": clean_text(source_value),
                         "sourceAssetPath": source_rel,
                         "exists": source_exists,
+                        "sourceWidth": source_width,
+                        "sourceHeight": source_height,
+                        "sourceUnder2048": bool(source_width and source_width < MIN_SOURCE_PHOTO_WIDTH),
                         "location": location,
                         "pinId": pin_id,
                         "date": clean_text(item.get("date")),
                         "year": clean_text(item.get("year")),
                         "exifDate": exif_date,
+                        "airshow": clean_text(item.get("airshow") or item.get("airshow_name")),
                         "title": clean_text(item.get("title")),
                         "caption": clean_text(item.get("caption")),
                         "captionAiAssisted": photo_caption_is_ai_assisted(item),
@@ -773,6 +1103,8 @@ class SpotterDexManager:
 
             entries.append(
                 {
+                    "targetKey": relative_posix(entry_path, self.root),
+                    "sourceScope": "aircraft",
                     "entryPath": relative_posix(entry_path, self.root),
                     "entryDir": relative_posix(entry_path.parent, self.root),
                     "aircraftType": aircraft_type,
@@ -794,6 +1126,127 @@ class SpotterDexManager:
         entries.sort(key=lambda item: (item["aircraftType"], item["country"], item["squadronName"]))
         return entries
 
+    def _scan_squadrons(
+        self,
+        tag_map: Dict[str, List[Dict[str, Any]]],
+        pin_by_id: Dict[str, Dict[str, Any]],
+        pin_by_name: Dict[str, Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        entries: List[Dict[str, Any]] = []
+        if not self.squadron_dir.exists():
+            return entries
+
+        for entry_path in sorted(self.squadron_dir.glob("*/entry.y*ml")):
+            data = read_yaml(entry_path)
+            squadron_name = read_squadron_name(data, entry_path)
+            country = clean_text(data.get("country"))
+            unit_type = read_unit_type(data)
+            logo_value = read_squadron_logo_value(data)
+            logo_path = resolve_entry_asset_source(self.root, self.raw_assets_dir, entry_path, logo_value) if logo_value else None
+            logo_exists = bool(logo_path and logo_path.exists())
+            photos = data.get("photos") or []
+            if isinstance(photos, dict):
+                photos = [photos]
+            if not isinstance(photos, list):
+                photos = []
+
+            photo_records: List[Dict[str, Any]] = []
+            for index, item in enumerate(photos):
+                if not isinstance(item, dict):
+                    photo_records.append({"index": index, "invalid": True, "raw": str(item)})
+                    continue
+                source_value = item.get("path") or item.get("file") or item.get("filepath") or ""
+                source_path = resolve_photo_source(self.root, self.raw_assets_dir, entry_path, source_value)
+                source_exists = source_path.exists()
+                source_rel = ""
+                exif_date = read_image_capture_date(source_path, self._exif_date_cache) if source_exists else ""
+                source_width, source_height = (
+                    read_image_dimensions(source_path, self._image_dimension_cache) if source_exists else (0, 0)
+                )
+                if source_exists and self._is_within(source_path, self.raw_assets_dir):
+                    source_rel = relative_posix(source_path, self.raw_assets_dir)
+                    tag_map.setdefault(source_rel, []).append(
+                        {
+                            "kind": "squadron photo",
+                            "label": squadron_name,
+                            "location": clean_text(item.get("location") or item.get("location_name")),
+                            "path": relative_posix(entry_path, self.root),
+                            "index": index,
+                        }
+                    )
+
+                pin = None
+                pin_id = clean_text(item.get("pin_id") or item.get("pin"))
+                location = clean_text(item.get("location") or item.get("location_name"))
+                if pin_id and pin_id in pin_by_id:
+                    pin = pin_by_id[pin_id]
+                elif location:
+                    pin = pin_by_name.get(normalize_key(location))
+                if pin:
+                    pin["photoCount"] += 1
+                missing_fields = missing_photo_fields(item, source_exists, location, exif_date)
+                photo_records.append(
+                    {
+                        "index": index,
+                        "path": clean_text(source_value),
+                        "sourceAssetPath": source_rel,
+                        "exists": source_exists,
+                        "sourceWidth": source_width,
+                        "sourceHeight": source_height,
+                        "sourceUnder2048": bool(source_width and source_width < MIN_SOURCE_PHOTO_WIDTH),
+                        "location": location,
+                        "pinId": pin_id,
+                        "date": clean_text(item.get("date")),
+                        "year": clean_text(item.get("year")),
+                        "exifDate": exif_date,
+                        "airshow": clean_text(item.get("airshow") or item.get("airshow_name")),
+                        "title": clean_text(item.get("title")),
+                        "caption": clean_text(item.get("caption")),
+                        "captionAiAssisted": photo_caption_is_ai_assisted(item),
+                        "missingFields": missing_fields,
+                        "missingFieldLabels": [MISSING_FIELD_LABELS[field] for field in missing_fields],
+                    }
+                )
+
+            for kind, source_value in (("logo", logo_value), ("squadron hero", read_squadron_hero_source(data))):
+                if not source_value:
+                    continue
+                source_path = resolve_entry_asset_source(self.root, self.raw_assets_dir, entry_path, source_value)
+                if source_path.exists() and self._is_within(source_path, self.raw_assets_dir):
+                    source_rel = relative_posix(source_path, self.raw_assets_dir)
+                    tag_map.setdefault(source_rel, []).append(
+                        {
+                            "kind": kind,
+                            "label": squadron_name,
+                            "path": relative_posix(entry_path, self.root),
+                        }
+                    )
+
+            entries.append(
+                {
+                    "targetKey": relative_posix(entry_path, self.root),
+                    "sourceScope": "squadron",
+                    "entryPath": relative_posix(entry_path, self.root),
+                    "entryDir": relative_posix(entry_path.parent, self.root),
+                    "aircraftType": "",
+                    "squadronName": squadron_name,
+                    "country": country,
+                    "unitType": unit_type,
+                    "unitLabel": "Organisation" if unit_type == "organisation" else "Squadron",
+                    "aircraftFamily": "",
+                    "squadronLogo": clean_text(logo_value),
+                    "squadronLogoExists": logo_exists,
+                    "entryMissingFields": missing_entry_fields(data, logo_exists=logo_exists, source_scope="squadron"),
+                    "photoCount": len(photo_records),
+                    "missingPhotoCount": sum(1 for photo in photo_records if photo.get("exists") is False),
+                    "missingFieldPhotoCount": sum(1 for photo in photo_records if photo.get("missingFields")),
+                    "photos": photo_records,
+                }
+            )
+
+        entries.sort(key=lambda item: (item["country"], item["squadronName"]))
+        return entries
+
     def _scan_assets(self, tag_map: Dict[str, List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
         assets: List[Dict[str, Any]] = []
         if not self.raw_assets_dir.exists():
@@ -803,6 +1256,12 @@ class SpotterDexManager:
                 continue
             rel = relative_posix(path, self.raw_assets_dir)
             stat = path.stat()
+            width, height = read_image_dimensions(path, self._image_dimension_cache)
+            tags = tag_map.get(rel, [])
+            photo_kinds = {"photo", "squadron photo", "location photo", "pin hero", "squadron hero"}
+            is_photo_source = any(tag.get("kind") in photo_kinds for tag in tags) or (
+                not tags and path.suffix.lower() in {".jpg", ".jpeg", ".tif", ".tiff", ".webp"}
+            )
             assets.append(
                 {
                     "path": rel,
@@ -811,7 +1270,12 @@ class SpotterDexManager:
                     "size": stat.st_size,
                     "sizeLabel": format_bytes(stat.st_size),
                     "modified": int(stat.st_mtime),
-                    "tags": tag_map.get(rel, []),
+                    "width": width,
+                    "height": height,
+                    "dimensionsLabel": f"{width} x {height}" if width and height else "Unavailable",
+                    "isPhotoSource": is_photo_source,
+                    "isUnderResolution": bool(is_photo_source and width and width < MIN_SOURCE_PHOTO_WIDTH),
+                    "tags": tags,
                 }
             )
         assets.sort(key=lambda item: (bool(item["tags"]), -item["modified"], item["path"]))
@@ -890,6 +1354,8 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
                 "/api/attach": self.context.manager.append_photos,
                 "/api/update-entry": self.context.manager.update_entry,
                 "/api/update-photo": self.context.manager.update_photo,
+                "/api/bulk-airshow": self.context.manager.bulk_update_airshow,
+                "/api/set-airshow-hero": self.context.manager.set_airshow_hero,
                 "/api/generate-caption": self.context.manager.generate_caption,
                 "/api/delete-photo": self.context.manager.delete_photo,
                 "/api/create-entry": self.context.manager.create_entry,
@@ -1086,13 +1552,17 @@ def read_squadron_logo_value(data: Dict[str, Any]) -> Any:
     return data.get("squadron_logo") or data.get("squadronLogo") or data.get("logo") or squadron_data.get("logo")
 
 
-def missing_entry_fields(data: Dict[str, Any], logo_exists: bool = False) -> List[str]:
+def missing_entry_fields(
+    data: Dict[str, Any],
+    logo_exists: bool = False,
+    source_scope: str = "aircraft",
+) -> List[str]:
     missing: List[str] = []
-    if not clean_text(data.get("aircraft_type") or data.get("aircraft_type_name") or data.get("type_name")):
+    if source_scope == "aircraft" and not clean_text(data.get("aircraft_type") or data.get("aircraft_type_name") or data.get("type_name")):
         aircraft_data = data.get("aircraft") if isinstance(data.get("aircraft"), dict) else {}
         if not clean_text(aircraft_data.get("name")):
             missing.append("aircraftType")
-    if not read_aircraft_family(data):
+    if source_scope == "aircraft" and not read_aircraft_family(data):
         missing.append("aircraftFamily")
     if not clean_text(data.get("squadron_name") or data.get("squadron_full_name")):
         squadron_data = data.get("squadron") if isinstance(data.get("squadron"), dict) else {}
@@ -1163,6 +1633,26 @@ def read_image_capture_date(path: Path, cache: Dict[str, str]) -> str:
                     break
     except Exception:
         result = ""
+    cache[cache_key] = result
+    return result
+
+
+def read_image_dimensions(path: Path, cache: Dict[str, Tuple[int, int]]) -> Tuple[int, int]:
+    """Read source dimensions once per unchanged raw image for manager QA."""
+    try:
+        stat = path.stat()
+    except OSError:
+        return (0, 0)
+    cache_key = f"{path.resolve()}|{stat.st_mtime_ns}|{stat.st_size}"
+    if cache_key in cache:
+        return cache[cache_key]
+
+    result = (0, 0)
+    try:
+        with Image.open(path) as opened:
+            result = (int(opened.width), int(opened.height))
+    except Exception:
+        result = (0, 0)
     cache[cache_key] = result
     return result
 
@@ -1352,6 +1842,26 @@ def clean_text(value: Any) -> str:
     return str(value or "").strip()
 
 
+def normalize_airshow_hero_ref(value: Any) -> Dict[str, Any]:
+    if not isinstance(value, dict):
+        return {}
+    try:
+        index = int(value.get("index"))
+    except (TypeError, ValueError):
+        return {}
+    if index < 0:
+        return {}
+    scope = clean_text(value.get("scope"))
+    entry_path = clean_text(value.get("entry_path") or value.get("entryPath"))
+    pin_id = clean_text(value.get("target_pin_id") or value.get("targetPinId"))
+    if not scope or not entry_path:
+        return {}
+    reference: Dict[str, Any] = {"scope": scope, "entryPath": entry_path, "index": index}
+    if pin_id:
+        reference["targetPinId"] = pin_id
+    return reference
+
+
 def photo_caption_is_ai_assisted(photo_item: Dict[str, Any]) -> bool:
     value = photo_item.get("caption_ai_assisted", photo_item.get("captionAiAssisted"))
     return value is True or clean_text(value).lower() in {"1", "true", "yes"}
@@ -1390,6 +1900,7 @@ def build_caption_prompt(
     aircraft_type: str,
     squadron_name: str,
     location: str,
+    airshow: str,
     draft_caption: str,
 ) -> str:
     return "\n".join(
@@ -1404,6 +1915,7 @@ def build_caption_prompt(
             f"Aircraft type: {aircraft_type or 'Not supplied'}",
             f"Squadron or operator: {squadron_name or 'Not supplied'}",
             f"Location: {location or 'Not supplied'}",
+            f"Airshow event: {airshow or 'Not supplied'}",
             f"Existing caption: {draft_caption or 'None'}",
         ]
     )
@@ -1649,12 +2161,21 @@ def read_manifest_counts(root: Path) -> Dict[str, Any]:
         for squadron in entry.get("squadrons", [])
         if isinstance(squadron, dict)
     ]
+    squadrons.extend(item for item in data.get("squadrons", []) if isinstance(item, dict))
+    unit_keys: set[str] = set()
+    unique_squadrons: List[Dict[str, Any]] = []
+    for squadron in squadrons:
+        key = normalize_key(f"{squadron.get('country', '')}-{squadron.get('name', '')}-{squadron.get('unitType', '')}")
+        if key in unit_keys:
+            continue
+        unit_keys.add(key)
+        unique_squadrons.append(squadron)
     return {
         "aircraft": len(aircraft),
         "photos": len(data.get("photos") if isinstance(data.get("photos"), list) else []),
         "pins": len(data.get("pins") if isinstance(data.get("pins"), list) else []),
-        "squadrons": sum(1 for squadron in squadrons if squadron.get("unitType", "squadron") == "squadron"),
-        "organisations": sum(1 for squadron in squadrons if squadron.get("unitType") == "organisation"),
+        "squadrons": sum(1 for squadron in unique_squadrons if squadron.get("unitType", "squadron") == "squadron"),
+        "organisations": sum(1 for squadron in unique_squadrons if squadron.get("unitType") == "organisation"),
         "generatedAt": clean_text(data.get("generatedAt")),
     }
 
@@ -1777,7 +2298,7 @@ def classify_build_line(line: str) -> str:
         return "warning"
     if text.startswith("note:"):
         return "note"
-    if re.match(r"^(loading map pins|reading aircraft yaml|processing photos):", text):
+    if re.match(r"^(loading map pins|reading aircraft yaml|reading squadron yaml|reading location photos|processing(?: .+)? photos):", text):
         return "progress"
     return "log"
 
@@ -1787,7 +2308,7 @@ def recommended_commit_scope(root: Path, changes: Dict[str, Any]) -> Dict[str, A
     source_yaml = [
         path
         for path in changed_files
-        if (path.startswith("aircraft/") or path.startswith("map_pins/")) and path.endswith((".yaml", ".yml"))
+        if (path.startswith("aircraft/") or path.startswith("squadrons/") or path.startswith("map_pins/")) and path.endswith((".yaml", ".yml"))
     ]
     generated_data = [path for path in changed_files if path.startswith("data/")]
     generated_photos = [path for path in changed_files if path.startswith("assets/generated/photos/")]
@@ -1825,6 +2346,7 @@ def recommended_commit_scope(root: Path, changes: Dict[str, Any]) -> Dict[str, A
         "sections": sections,
         "recommendedGlobs": [
             "aircraft/**/entry.yaml",
+            "squadrons/**/entry.yaml",
             "map_pins/**/pins.yaml",
             "data/spotterdex.json",
             "data/spotterdex-data.js",
@@ -2483,6 +3005,45 @@ INDEX_HTML = r"""<!doctype html>
       font-size: 11px;
       font-weight: 850;
     }
+    .quality-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .quality-card {
+      display: grid;
+      grid-template-columns: minmax(120px, 0.28fr) minmax(0, 1fr);
+      gap: 14px;
+      width: 100%;
+      padding: 12px;
+      border: 1px solid color-mix(in srgb, var(--warn) 52%, var(--line));
+      border-radius: 8px;
+      background: #fffdf8;
+      color: var(--ink);
+      text-align: left;
+    }
+    .quality-card:hover {
+      border-color: var(--warn);
+    }
+    .quality-card img {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border-radius: 6px;
+      background: #d8e1e8;
+    }
+    .quality-card-copy {
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+    }
+    .quality-card-copy strong,
+    .quality-card-copy span {
+      overflow-wrap: anywhere;
+    }
+    .quality-card-copy .tag {
+      width: fit-content;
+    }
     .bulk-caption-list {
       display: grid;
       gap: 14px;
@@ -2517,6 +3078,144 @@ INDEX_HTML = r"""<!doctype html>
     }
     .bulk-caption-status.error { color: var(--bad); }
     .bulk-caption-status.ready { color: var(--good); }
+    .bulk-event-list {
+      display: grid;
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .bulk-event-date-card {
+      display: grid;
+      gap: 14px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+    .bulk-event-date-head {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+    .bulk-event-date-head h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+    .bulk-event-date-head p {
+      margin: 3px 0 0;
+    }
+    .bulk-event-photos {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+      gap: 8px;
+    }
+    .bulk-event-photo {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.25;
+    }
+    .bulk-event-photo img,
+    .bulk-event-photo .missing {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border-radius: 6px;
+      background: #d8e1e8;
+    }
+    .bulk-event-photo span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .bulk-event-more {
+      display: grid;
+      min-height: 72px;
+      place-items: center;
+      border: 1px dashed var(--line);
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .airshow-hero-section {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+    .airshow-management-section {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+    .airshow-management-section:first-of-type {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: 0;
+    }
+    .airshow-hero-list {
+      display: grid;
+      gap: 14px;
+    }
+    .airshow-hero-card {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+    .airshow-hero-card h3 {
+      margin: 0;
+      font-size: 15px;
+    }
+    .airshow-hero-card.needs-hero {
+      border-color: color-mix(in srgb, var(--accent) 52%, var(--line));
+      background: color-mix(in srgb, var(--accent) 5%, #fff);
+    }
+    .airshow-hero-picker {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 8px;
+    }
+    .airshow-hero-photo {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+      padding: 5px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 11px;
+      line-height: 1.25;
+      text-align: left;
+    }
+    .airshow-hero-photo.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(20,123,143,0.14);
+      color: var(--ink);
+    }
+    .airshow-hero-photo img,
+    .airshow-hero-photo .missing {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border-radius: 4px;
+      background: #d8e1e8;
+    }
+    .airshow-hero-photo span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .toast {
       position: fixed;
       right: 18px;
@@ -2568,6 +3267,12 @@ INDEX_HTML = r"""<!doctype html>
       }
       .bulk-caption-card {
         grid-template-columns: 1fr;
+      }
+      .quality-card {
+        grid-template-columns: 1fr;
+      }
+      .bulk-event-date-head {
+        flex-direction: column;
       }
     }
     @media (max-width: 640px) {
@@ -2639,7 +3344,9 @@ INDEX_HTML = r"""<!doctype html>
         <nav class="tabs" aria-label="Manager views">
           <button class="tab active" data-tab="attach" type="button">Attach</button>
           <button class="tab" data-tab="bulk-captions" type="button">Bulk Captions</button>
+          <button class="tab" data-tab="airshows" type="button">Airshows</button>
           <button class="tab" data-tab="missing" type="button">Missing</button>
+          <button class="tab" data-tab="quality" type="button">Quality</button>
           <button class="tab" data-tab="entries" type="button">Entries</button>
           <button class="tab" data-tab="locations" type="button">Locations</button>
           <button class="tab" data-tab="build" type="button">Build Log</button>
@@ -2648,16 +3355,20 @@ INDEX_HTML = r"""<!doctype html>
         <section class="view active" id="attachView">
           <div class="form-grid">
             <div class="field wide">
-              <label for="entrySearch">Entry Search</label>
-              <input id="entrySearch" type="search" placeholder="aircraft, unit, country">
+              <label for="entrySearch">Photo Source Search</label>
+              <input id="entrySearch" type="search" placeholder="aircraft, unit, location, country">
             </div>
             <div class="field wide">
-              <label for="entrySelect">Aircraft Entry</label>
+              <label for="entrySelect">Tag Images To</label>
               <select id="entrySelect"></select>
             </div>
             <div class="field">
               <label for="pinSelect">Location</label>
               <select id="pinSelect"></select>
+            </div>
+            <div class="field wide">
+              <label for="airshowInput">Airshow Event (optional)</label>
+              <input id="airshowInput" type="text" placeholder="Singapore Airshow 2026">
             </div>
             <div class="field">
               <label for="photoYear">Year</label>
@@ -2692,7 +3403,7 @@ INDEX_HTML = r"""<!doctype html>
           </div>
           <div class="selected-strip" id="selectedStrip"></div>
           <div class="bar">
-            <h2 class="panel-title">Entry Photos</h2>
+            <h2 class="panel-title">Tagged Photos</h2>
             <button class="btn ghost" id="clearEditorBtn" type="button">Clear Editor</button>
           </div>
           <div class="split">
@@ -2706,6 +3417,10 @@ INDEX_HTML = r"""<!doctype html>
               <div class="field">
                 <label for="editLocation">Location</label>
                 <select id="editLocation"></select>
+              </div>
+              <div class="field wide">
+                <label for="editAirshow">Airshow Event (optional)</label>
+                <input id="editAirshow" type="text">
               </div>
               <div class="field">
                 <label for="editDate">Date</label>
@@ -2751,6 +3466,43 @@ INDEX_HTML = r"""<!doctype html>
           <div class="bulk-caption-list" id="bulkCaptionList"></div>
         </section>
 
+        <section class="view" id="airshowsView">
+          <div class="bar">
+            <div>
+              <h2 class="panel-title">Airshow Manager</h2>
+              <div class="subtle" id="bulkEventSummary">Set event heroes and find photos that need an event tag.</div>
+            </div>
+          </div>
+          <section class="airshow-management-section" aria-labelledby="airshowHeroHeading">
+            <div>
+              <h3 class="panel-title" id="airshowHeroHeading">Event Hero Photos</h3>
+              <div class="subtle" id="airshowHeroSummary">Choose one tagged photo to feature for an event on the Airshows timeline. A hero is optional.</div>
+            </div>
+            <div class="airshow-hero-list" id="airshowHeroList"></div>
+          </section>
+          <section class="airshow-management-section" aria-labelledby="airshowMissingImagesHeading">
+            <div>
+              <h3 class="panel-title" id="airshowMissingImagesHeading">Untagged Photos on Event Days</h3>
+              <div class="subtle" id="airshowMissingImageSummary">New images are surfaced here when their capture date matches an existing event day.</div>
+            </div>
+            <datalist id="airshowEventOptions"></datalist>
+            <div class="bulk-event-list" id="airshowMissingImageList"></div>
+          </section>
+          <section class="airshow-management-section" aria-labelledby="allAirshowDatesHeading">
+            <div>
+              <h3 class="panel-title" id="allAirshowDatesHeading">All Photo Dates</h3>
+              <div class="subtle">For a new event, set or clear the event name across every source photo captured on a date.</div>
+            </div>
+          <div class="form-grid">
+            <div class="field wide">
+              <label for="bulkEventSearch">Filter dates or photos</label>
+              <input id="bulkEventSearch" type="search" placeholder="date, aircraft, unit, location, event, path">
+            </div>
+          </div>
+          <div class="bulk-event-list" id="bulkEventList"></div>
+          </section>
+        </section>
+
         <section class="view" id="missingView">
           <div class="bar">
             <div>
@@ -2789,12 +3541,30 @@ INDEX_HTML = r"""<!doctype html>
           </div>
         </section>
 
+        <section class="view" id="qualityView">
+          <div class="bar">
+            <div>
+              <h2 class="panel-title">Source Image Quality</h2>
+              <div class="subtle" id="qualitySummary">Checking source image dimensions.</div>
+            </div>
+          </div>
+          <div class="subtle">Photos below 2048px wide are flagged before the 2560px publishing resize. Select one to review or replace it in Attach.</div>
+          <div class="quality-list" id="qualityList"></div>
+        </section>
+
         <section class="view" id="entriesView">
           <div class="split">
             <div class="section">
-              <h2>Create Entry</h2>
+              <h2>Create Photo Source</h2>
               <div class="field">
-                <label for="newAircraftType">Aircraft Type</label>
+                <label for="newEntryScope">Tag Level</label>
+                <select id="newEntryScope">
+                  <option value="aircraft">Aircraft</option>
+                  <option value="squadron">Squadron</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="newAircraftType">Aircraft Type (Aircraft only)</label>
                 <input id="newAircraftType" type="text" placeholder="Lockheed C-130R">
               </div>
               <div class="field">
@@ -2933,7 +3703,7 @@ INDEX_HTML = r"""<!doctype html>
 
     function selectedEntry() {
       const value = $("entrySelect").value;
-      return state.data?.aircraft.find((entry) => entry.entryPath === value) || null;
+      return state.data?.entries.find((entry) => entry.targetKey === value) || null;
     }
 
     function selectedPin(selectId = "pinSelect") {
@@ -2947,7 +3717,19 @@ INDEX_HTML = r"""<!doctype html>
     }
 
     function entryOptionLabel(entry) {
-      return `${entry.aircraftType} - ${entry.squadronName} (${entry.country || "Unknown"})`;
+      if (entry.sourceScope === "location") {
+        return `Location - ${entry.locationName} (${entry.country || "Unknown"})`;
+      }
+      const prefix = entry.sourceScope === "squadron" ? "Squadron" : entry.aircraftType;
+      return `${prefix} - ${entry.squadronName} (${entry.country || "Unknown"})`;
+    }
+
+    function entryRequestFields(entry) {
+      return {
+        scope: entry.sourceScope || "aircraft",
+        entryPath: entry.entryPath,
+        targetPinId: entry.sourceScope === "location" ? entry.pinId : ""
+      };
     }
 
     async function readApiJson(response) {
@@ -2995,7 +3777,9 @@ INDEX_HTML = r"""<!doctype html>
       renderEntryCards();
       renderLocationDetails();
       renderMissingFields();
+      renderQualityControl();
       renderBulkCaptions();
+      renderBulkEvents();
     }
 
     function renderStats() {
@@ -3005,10 +3789,13 @@ INDEX_HTML = r"""<!doctype html>
         ["Assets", project.assetCount],
         ["New", project.untaggedAssetCount],
         ["Used", project.taggedAssetCount],
-        ["Entries", project.aircraftCount],
+        ["Aircraft", project.aircraftCount],
+        ["Squadrons", project.squadronEntryCount || 0],
+        ["Locations", project.locationEntryCount || 0],
         ["Pins", project.pinCount],
         ["Missing", project.missingPhotoCount],
-        ["Fields", (project.missingFieldPhotoCount || 0) + (project.missingEntryFieldCount || 0)]
+        ["Fields", (project.missingFieldPhotoCount || 0) + (project.missingEntryFieldCount || 0)],
+        ["<2048px", project.underResolutionAssetCount || 0]
       ].map(([label, value]) => `<span class="pill">${label} <strong>${value}</strong></span>`).join("");
     }
 
@@ -3050,14 +3837,50 @@ INDEX_HTML = r"""<!doctype html>
           ? `<span class="tag">${asset.tags[0].kind}</span>`
           : `<span class="tag warn">new</span>`;
         const title = asset.tags.map((item) => `${item.kind}: ${item.label || item.path || ""}`).join("\n");
+        const resolutionTag = asset.isUnderResolution
+          ? `<span class="tag warn">${escapeHtml(asset.dimensionsLabel)}</span>`
+          : `<span>${escapeHtml(asset.dimensionsLabel)}</span>`;
         return `
           <button class="asset-card${selected}" type="button" data-asset="${escapeHtml(asset.path)}" title="${escapeHtml(title)}">
             <img src="${thumbUrl(asset.path)}" loading="lazy" alt="${escapeHtml(asset.name)}">
             <div class="asset-name">${escapeHtml(asset.name)}</div>
-            <div class="asset-meta"><span>${escapeHtml(asset.sizeLabel)}</span>${tag}</div>
+            <div class="asset-meta"><span>${escapeHtml(asset.sizeLabel)}</span>${resolutionTag}${tag}</div>
           </button>
         `;
       }).join("");
+    }
+
+    function lowResolutionSourceAssets() {
+      return (state.data?.assets || []).filter((asset) => asset.isPhotoSource && asset.isUnderResolution);
+    }
+
+    function renderQualityControl() {
+      const assets = lowResolutionSourceAssets();
+      const allPhotoSources = (state.data?.assets || []).filter((asset) => asset.isPhotoSource);
+      const minimum = state.data?.project?.minimumSourcePhotoWidth || 2048;
+      $("qualitySummary").textContent = `${assets.length} of ${allPhotoSources.length} source photograph(s) below ${minimum}px wide`;
+      if (!assets.length) {
+        $("qualityList").innerHTML = `<div class="empty">All source photographs meet the ${minimum}px minimum width.</div>`;
+        return;
+      }
+      $("qualityList").innerHTML = assets
+        .sort((a, b) => a.width - b.width || a.path.localeCompare(b.path))
+        .map((asset) => {
+          const associations = asset.tags.length
+            ? asset.tags.map((tag) => `${tag.kind}: ${tag.label || tag.path || "Source"}`).join(" · ")
+            : "New raw asset";
+          return `
+            <button class="quality-card" type="button" data-quality-asset="${escapeHtml(asset.path)}">
+              <img src="${thumbUrl(asset.path)}" loading="lazy" alt="${escapeHtml(asset.name)}">
+              <span class="quality-card-copy">
+                <strong>${escapeHtml(asset.path)}</strong>
+                <span class="tag warn">${escapeHtml(asset.dimensionsLabel)} source - below ${minimum}px</span>
+                <span class="mini-meta">${escapeHtml(associations)}</span>
+                <span class="mini-meta">Select to review this source in Attach.</span>
+              </span>
+            </button>
+          `;
+        }).join("");
     }
 
     function renderSelectedStrip() {
@@ -3067,8 +3890,344 @@ INDEX_HTML = r"""<!doctype html>
         : `<div class="empty">No selected assets</div>`;
     }
 
-    function captionPhotoKey(entryPath, index) {
-      return `${entryPath}::${index}`;
+    function effectiveEventDate(photo) {
+      return String(photo.exifDate || photo.date || photo.year || "").trim();
+    }
+
+    function airshowEventKey(value) {
+      return String(value || "").trim().toLowerCase();
+    }
+
+    function taggedAirshowGroups() {
+      const byEvent = new Map();
+      for (const entry of state.data?.entries || []) {
+        for (const photo of entry.photos || []) {
+          if (photo.invalid || !String(photo.airshow || "").trim()) continue;
+          const name = String(photo.airshow).trim();
+          const key = airshowEventKey(name);
+          if (!byEvent.has(key)) byEvent.set(key, {name, photos: []});
+          byEvent.get(key).photos.push({entry, photo});
+        }
+      }
+      return [...byEvent.values()]
+        .map((event) => ({
+          ...event,
+          photos: event.photos.sort((a, b) => effectiveEventDate(b.photo).localeCompare(effectiveEventDate(a.photo)))
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    function configuredAirshowHero(eventName) {
+      const key = airshowEventKey(eventName);
+      return (state.data?.airshowEvents || []).find((event) => airshowEventKey(event.name) === key)?.hero || {};
+    }
+
+    function airshowHeroMatches(hero, entry, photo) {
+      if (!hero || !Object.keys(hero).length) return false;
+      const reference = entryRequestFields(entry);
+      return hero.scope === reference.scope
+        && hero.entryPath === reference.entryPath
+        && (hero.targetPinId || "") === (reference.targetPinId || "")
+        && Number(hero.index) === Number(photo.index);
+    }
+
+    function renderAirshowHeroManager() {
+      const events = taggedAirshowGroups();
+      if (!events.length) {
+        $("airshowHeroSummary").textContent = "Apply an airshow or event tag to photos before choosing an event hero.";
+        $("airshowHeroList").innerHTML = `<div class="empty">Apply an airshow or event tag to photos before choosing an event hero.</div>`;
+        return;
+      }
+
+      const missingHeroCount = events.filter((event) => !Object.keys(configuredAirshowHero(event.name)).length).length;
+      $("airshowHeroSummary").textContent = missingHeroCount
+        ? `${missingHeroCount} of ${events.length} event${events.length === 1 ? "" : "s"} need an explicit hero. Choose any tagged image to feature it on the timeline.`
+        : `All ${events.length} event${events.length === 1 ? "" : "s"} have a selected hero. Choose another image below to replace one.`;
+
+      $("airshowHeroList").innerHTML = events.map((event) => {
+        const hero = configuredAirshowHero(event.name);
+        const heroStatus = Object.keys(hero).length ? "Hero selected" : "No hero selected";
+        const missingClass = Object.keys(hero).length ? "" : " needs-hero";
+        return `
+          <article class="airshow-hero-card${missingClass}">
+            <div class="bulk-event-date-head">
+              <div>
+                <h3>${escapeHtml(event.name)}</h3>
+                <p class="subtle">${event.photos.length} tagged photo${event.photos.length === 1 ? "" : "s"} · ${heroStatus}</p>
+              </div>
+              <button class="btn ghost" type="button" data-airshow-hero-clear="${escapeHtml(event.name)}"${Object.keys(hero).length ? "" : " disabled"}>Clear Hero</button>
+            </div>
+            <div class="airshow-hero-picker">
+              ${event.photos.map(({entry, photo}) => {
+                const selected = airshowHeroMatches(hero, entry, photo) ? " selected" : "";
+                const media = photo.exists && photo.sourceAssetPath
+                  ? `<img src="${thumbUrl(photo.sourceAssetPath)}" loading="lazy" alt="${escapeHtml(photo.path)}">`
+                  : `<div class="missing">Missing source</div>`;
+                const label = [entry.aircraftType || entry.locationName || "Photo", formatEventDate(effectiveEventDate(photo))].filter(Boolean).join(" - ");
+                return `
+                  <button class="airshow-hero-photo${selected}" type="button" data-airshow-hero-event="${escapeHtml(event.name)}" data-airshow-hero-photo="${escapeHtml(captionPhotoKey(entry, photo.index))}">
+                    ${media}
+                    <span>${escapeHtml(label)}</span>
+                  </button>
+                `;
+              }).join("")}
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    async function setAirshowHero(eventName, photoKey = "") {
+      const event = taggedAirshowGroups().find((item) => airshowEventKey(item.name) === airshowEventKey(eventName));
+      if (!event) throw new Error("This event is no longer available. Reload and try again.");
+      const candidate = event.photos.find(({entry, photo}) => captionPhotoKey(entry, photo.index) === photoKey);
+      if (photoKey && !candidate) throw new Error("This event photo is no longer available. Reload and try again.");
+      const result = await api("/api/set-airshow-hero", {
+        eventName: event.name,
+        hero: candidate ? {...entryRequestFields(candidate.entry), index: candidate.photo.index} : null
+      });
+      toast(result.message);
+      await loadState(true);
+    }
+
+    function untaggedAirshowDayGroups() {
+      const eventsByDate = new Map();
+      taggedAirshowGroups().forEach((event) => {
+        event.photos.forEach(({photo}) => {
+          const date = effectiveEventDate(photo);
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+          if (!eventsByDate.has(date)) eventsByDate.set(date, new Set());
+          eventsByDate.get(date).add(event.name);
+        });
+      });
+
+      const missingByDate = new Map();
+      for (const entry of state.data?.entries || []) {
+        for (const photo of entry.photos || []) {
+          const date = effectiveEventDate(photo);
+          if (photo.invalid || String(photo.airshow || "").trim() || !eventsByDate.has(date)) continue;
+          if (!missingByDate.has(date)) missingByDate.set(date, []);
+          missingByDate.get(date).push({entry, photo});
+        }
+      }
+
+      return [...missingByDate.entries()]
+        .map(([date, photos]) => ({
+          date,
+          photos,
+          eventNames: [...(eventsByDate.get(date) || [])].sort((a, b) => a.localeCompare(b))
+        }))
+        .sort((a, b) => b.date.localeCompare(a.date));
+    }
+
+    function missingAirshowInputValue(date) {
+      const node = [...document.querySelectorAll("[data-airshow-missing-input]")]
+        .find((item) => item.dataset.airshowMissingInput === date);
+      return node ? node.value.trim() : "";
+    }
+
+    function renderAirshowMissingImages() {
+      const events = taggedAirshowGroups();
+      const groups = untaggedAirshowDayGroups();
+      const photoCount = groups.reduce((total, group) => total + group.photos.length, 0);
+      $("airshowEventOptions").innerHTML = events
+        .map((event) => `<option value="${escapeHtml(event.name)}"></option>`)
+        .join("");
+      $("airshowMissingImageSummary").textContent = groups.length
+        ? `${photoCount} untagged photo${photoCount === 1 ? "" : "s"} found across ${groups.length} event day${groups.length === 1 ? "" : "s"}. Apply the suggested event or choose another.`
+        : "No untagged photos currently share a capture date with a tagged event.";
+
+      if (!groups.length) {
+        $("airshowMissingImageList").innerHTML = `<div class="empty">No untagged images match a known event day.</div>`;
+        return;
+      }
+
+      $("airshowMissingImageList").innerHTML = groups.map((group) => {
+        const suggestedEvent = group.eventNames.length === 1 ? group.eventNames[0] : "";
+        const eventSummary = group.eventNames.length === 1
+          ? `Suggested event: ${group.eventNames[0]}`
+          : `Events on this day: ${group.eventNames.join(" / ")}`;
+        const preview = group.photos.slice(0, 6).map(({entry, photo}) => {
+          const media = photo.exists && photo.sourceAssetPath
+            ? `<img src="${thumbUrl(photo.sourceAssetPath)}" loading="lazy" alt="${escapeHtml(photo.path)}">`
+            : `<div class="missing">Missing source</div>`;
+          const label = [entry.aircraftType || entry.locationName || "Photo", entry.squadronName || photo.location].filter(Boolean).join(" - ");
+          return `<div class="bulk-event-photo" title="${escapeHtml(`${photo.path}\n${entry.entryPath}`)}">${media}<span>${escapeHtml(label)}</span></div>`;
+        }).join("");
+        const remaining = group.photos.length - 6;
+        return `
+          <article class="bulk-event-date-card">
+            <div class="bulk-event-date-head">
+              <div>
+                <h3>${escapeHtml(formatEventDate(group.date))}</h3>
+                <p class="subtle">${group.photos.length} untagged photo${group.photos.length === 1 ? "" : "s"} · ${escapeHtml(eventSummary)}</p>
+              </div>
+              <span class="pill">${escapeHtml(group.date)}</span>
+            </div>
+            <div class="form-grid">
+              <div class="field wide">
+                <label>Assign these images to</label>
+                <input data-airshow-missing-input="${escapeHtml(group.date)}" list="airshowEventOptions" type="text" value="${escapeHtml(suggestedEvent)}" placeholder="Select or enter an airshow event">
+              </div>
+            </div>
+            <div class="card-actions">
+              <button class="btn primary" type="button" data-airshow-missing-apply="${escapeHtml(group.date)}">Add Event to ${group.photos.length}</button>
+            </div>
+            <div class="bulk-event-photos">
+              ${preview}
+              ${remaining > 0 ? `<div class="bulk-event-more">+${remaining} more</div>` : ""}
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    async function applyMissingAirshowImages(date) {
+      const group = untaggedAirshowDayGroups().find((item) => item.date === date);
+      if (!group) throw new Error("These images are no longer available. Reload and try again.");
+      const airshow = missingAirshowInputValue(date);
+      if (!airshow) throw new Error("Choose or enter an airshow event before adding these images.");
+      const result = await api("/api/bulk-airshow", {
+        airshow,
+        photos: group.photos.map(({entry, photo}) => ({
+          ...entryRequestFields(entry),
+          index: photo.index
+        }))
+      });
+      toast(result.message);
+      await loadState(true);
+    }
+
+    function formatEventDate(value) {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return new Intl.DateTimeFormat(undefined, {
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        }).format(new Date(`${value}T12:00:00`));
+      }
+      if (/^\d{4}$/.test(value)) return value;
+      return "No capture date";
+    }
+
+    function bulkEventGroups() {
+      const byDate = new Map();
+      for (const entry of state.data?.entries || []) {
+        for (const photo of entry.photos || []) {
+          if (photo.invalid) continue;
+          const date = effectiveEventDate(photo) || "undated";
+          if (!byDate.has(date)) byDate.set(date, []);
+          byDate.get(date).push({entry, photo});
+        }
+      }
+      return [...byDate.entries()]
+        .map(([date, photos]) => ({date, photos}))
+        .sort((a, b) => {
+          if (a.date === "undated") return 1;
+          if (b.date === "undated") return -1;
+          return b.date.localeCompare(a.date);
+        });
+    }
+
+    function bulkEventInputValue(date) {
+      const node = [...document.querySelectorAll("[data-bulk-event-input]")]
+        .find((item) => item.dataset.bulkEventInput === date);
+      return node ? node.value.trim() : "";
+    }
+
+    function renderBulkEvents() {
+      if (!state.data) return;
+      renderAirshowHeroManager();
+      renderAirshowMissingImages();
+      const term = $("bulkEventSearch").value.trim().toLowerCase();
+      const allGroups = bulkEventGroups();
+      const groups = allGroups.filter((group) => {
+        if (!term) return true;
+        const haystack = [
+          group.date,
+          formatEventDate(group.date),
+          ...group.photos.flatMap(({entry, photo}) => [
+            entry.aircraftType,
+            entry.squadronName,
+            entry.country,
+            entry.locationName,
+            photo.path,
+            photo.location,
+            photo.airshow
+          ])
+        ].join(" ").toLowerCase();
+        return haystack.includes(term);
+      });
+      const photoCount = allGroups.reduce((total, group) => total + group.photos.length, 0);
+      $("bulkEventSummary").textContent = `${groups.length} of ${allGroups.length} date group(s), ${photoCount} photo record(s). Set an event once to update every source photo on that date.`;
+
+      if (!groups.length) {
+        $("bulkEventList").innerHTML = `<div class="empty">No photo dates match this filter.</div>`;
+        return;
+      }
+
+      $("bulkEventList").innerHTML = groups.map((group) => {
+        const events = [...new Set(group.photos.map(({photo}) => String(photo.airshow || "").trim()).filter(Boolean))];
+        const eventValue = events.length === 1 ? events[0] : "";
+        const eventSummary = events.length === 1
+          ? `Current event: ${events[0]}`
+          : events.length > 1
+            ? `Mixed events: ${events.join(" / ")}`
+            : "No event set";
+        const preview = group.photos.slice(0, 6).map(({entry, photo}) => {
+          const media = photo.exists && photo.sourceAssetPath
+            ? `<img src="${thumbUrl(photo.sourceAssetPath)}" loading="lazy" alt="${escapeHtml(photo.path)}">`
+            : `<div class="missing">Missing source</div>`;
+          const label = [entry.aircraftType || entry.locationName || "Photo", photo.location].filter(Boolean).join(" - ");
+          return `<div class="bulk-event-photo" title="${escapeHtml(`${photo.path}\n${entry.entryPath}`)}">${media}<span>${escapeHtml(label)}</span></div>`;
+        }).join("");
+        const remaining = group.photos.length - 6;
+        return `
+          <article class="bulk-event-date-card">
+            <div class="bulk-event-date-head">
+              <div>
+                <h3>${escapeHtml(formatEventDate(group.date))}</h3>
+                <p class="subtle">${group.photos.length} photo${group.photos.length === 1 ? "" : "s"} · ${escapeHtml(eventSummary)}</p>
+              </div>
+              <span class="pill">${escapeHtml(group.date === "undated" ? "No date" : group.date)}</span>
+            </div>
+            <div class="form-grid">
+              <div class="field wide">
+                <label>Airshow or event for this date</label>
+                <input data-bulk-event-input="${escapeHtml(group.date)}" type="text" value="${escapeHtml(eventValue)}" placeholder="Singapore Airshow 2026">
+              </div>
+            </div>
+            <div class="card-actions">
+              <button class="btn secondary" type="button" data-bulk-event-apply="${escapeHtml(group.date)}">Set Event on ${group.photos.length}</button>
+              <button class="btn ghost" type="button" data-bulk-event-clear="${escapeHtml(group.date)}">Clear Event</button>
+            </div>
+            <div class="bulk-event-photos">
+              ${preview}
+              ${remaining > 0 ? `<div class="bulk-event-more">+${remaining} more</div>` : ""}
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    async function applyBulkEvent(date, clear = false) {
+      const group = bulkEventGroups().find((item) => item.date === date);
+      if (!group) throw new Error("This date group is no longer available. Reload and try again.");
+      const airshow = clear ? "" : bulkEventInputValue(date);
+      if (!clear && !airshow) throw new Error("Enter an airshow or event name, or use Clear Event.");
+      const result = await api("/api/bulk-airshow", {
+        airshow,
+        photos: group.photos.map(({entry, photo}) => ({
+          ...entryRequestFields(entry),
+          index: photo.index
+        }))
+      });
+      toast(result.message);
+      await loadState(true);
+    }
+
+    function captionPhotoKey(entry, index) {
+      return `${entry.targetKey}::${index}`;
     }
 
     function selectedBulkCaptionCandidates() {
@@ -3076,7 +4235,7 @@ INDEX_HTML = r"""<!doctype html>
       let selectedPhotoCount = 0;
       let aiExcludedCount = 0;
       let missingCaptionCount = 0;
-      for (const entry of state.data?.aircraft || []) {
+      for (const entry of state.data?.entries || []) {
         for (const photo of entry.photos || []) {
           if (photo.invalid || !photo.exists || !photo.sourceAssetPath || !state.selectedAssets.has(photo.sourceAssetPath)) continue;
           selectedPhotoCount += 1;
@@ -3089,7 +4248,7 @@ INDEX_HTML = r"""<!doctype html>
             continue;
           }
           candidates.push({
-            key: captionPhotoKey(entry.entryPath, photo.index),
+            key: captionPhotoKey(entry, photo.index),
             entry,
             photo
           });
@@ -3144,7 +4303,7 @@ INDEX_HTML = r"""<!doctype html>
         const result = results[candidate.key] || {status: "ready"};
         const photo = candidate.photo;
         const media = `<img src="${thumbUrl(photo.sourceAssetPath)}" loading="lazy" alt="${escapeHtml(photo.path)}">`;
-        const metadata = [candidate.entry.aircraftType, candidate.entry.squadronName, photo.location || photo.pinId || "No location"].filter(Boolean).join(" / ");
+        const metadata = [candidate.entry.aircraftType, candidate.entry.squadronName, photo.location || photo.pinId || "No location", photo.airshow].filter(Boolean).join(" / ");
         let review = `<div class="bulk-caption-status">Ready to propose</div>`;
         if (result.status === "generating") {
           review = `<div class="bulk-caption-status">Writing a proposed caption...</div>`;
@@ -3202,7 +4361,7 @@ INDEX_HTML = r"""<!doctype html>
           renderBulkCaptions();
           try {
             const result = await api("/api/generate-caption", {
-              entryPath: candidate.entry.entryPath,
+              ...entryRequestFields(candidate.entry),
               index: candidate.photo.index,
               draftCaption: candidate.photo.caption
             });
@@ -3227,7 +4386,7 @@ INDEX_HTML = r"""<!doctype html>
       if (!caption) throw new Error("A caption is required before accepting it.");
       const photo = candidate.photo;
       await api("/api/update-photo", {
-        entryPath: candidate.entry.entryPath,
+        ...entryRequestFields(candidate.entry),
         index: photo.index,
         photo: {
           path: photo.path,
@@ -3235,6 +4394,7 @@ INDEX_HTML = r"""<!doctype html>
           pin_id: photo.pinId || "",
           date: photo.date || "",
           year: photo.year || "",
+          airshow: photo.airshow || "",
           title: photo.title || "",
           caption,
           captionAiAssisted: true
@@ -3256,14 +4416,14 @@ INDEX_HTML = r"""<!doctype html>
     function renderEntryOptions() {
       const search = $("entrySearch").value.trim().toLowerCase();
       const current = $("entrySelect").value;
-      const entries = state.data.aircraft.filter((entry) => {
+      const entries = (state.data.entries || []).filter((entry) => {
         if (!search) return true;
         return entryOptionLabel(entry).toLowerCase().includes(search) || entry.entryPath.toLowerCase().includes(search);
       });
       $("entrySelect").innerHTML = entries.map((entry) => (
-        `<option value="${escapeHtml(entry.entryPath)}">${escapeHtml(entryOptionLabel(entry))}</option>`
+        `<option value="${escapeHtml(entry.targetKey)}">${escapeHtml(entryOptionLabel(entry))}</option>`
       )).join("");
-      if (entries.some((entry) => entry.entryPath === current)) {
+      if (entries.some((entry) => entry.targetKey === current)) {
         $("entrySelect").value = current;
       }
       renderEntryDetail();
@@ -3288,9 +4448,18 @@ INDEX_HTML = r"""<!doctype html>
       if (!entry) {
         $("entrySummary").textContent = "";
         $("photoList").innerHTML = `<div class="empty">No entry selected</div>`;
+        $("pinSelect").disabled = false;
+        $("editLocation").disabled = false;
         return;
       }
+      const isLocationSource = entry.sourceScope === "location";
       $("entrySummary").textContent = `${entry.photoCount} photo(s), ${entry.missingPhotoCount} missing source(s), ${entry.entryPath}`;
+      $("pinSelect").disabled = isLocationSource;
+      $("editLocation").disabled = isLocationSource;
+      if (isLocationSource) {
+        const sourcePin = state.data.pins.find((pin) => pin.id === entry.pinId);
+        if (sourcePin) $("pinSelect").value = sourcePin.key;
+      }
       if (!entry.photos.length) {
         $("photoList").innerHTML = `<div class="empty">Entry has no photos</div>`;
         return;
@@ -3303,11 +4472,12 @@ INDEX_HTML = r"""<!doctype html>
           ? `<img src="${thumbUrl(photo.sourceAssetPath)}" loading="lazy" alt="${escapeHtml(photo.path)}">`
           : `<div class="missing">Missing source</div>`;
         const location = photo.location || photo.pinId || "No location";
+        const airshow = photo.airshow ? `<br>Airshow: ${escapeHtml(photo.airshow)}` : "";
         return `
           <article class="photo-card">
             ${media}
             <div class="mini-title">${escapeHtml(photo.path)}</div>
-            <div class="mini-meta">${escapeHtml(location)}<br>${escapeHtml(photo.year || photo.date || "")}</div>
+            <div class="mini-meta">${escapeHtml(location)}${airshow}<br>${escapeHtml(photo.year || photo.date || "")}</div>
             <div class="card-actions">
               <button class="btn ghost" type="button" data-edit-photo="${photo.index}">Edit</button>
               <button class="btn danger" type="button" data-delete-photo="${photo.index}">Delete</button>
@@ -3319,16 +4489,16 @@ INDEX_HTML = r"""<!doctype html>
 
     function renderEntryCards() {
       const term = $("entryListSearch").value.trim().toLowerCase();
-      const entries = state.data.aircraft.filter((entry) => {
+      const entries = (state.data.entries || []).filter((entry) => {
         if (!term) return true;
         return [entry.aircraftType, entry.squadronName, entry.country, entry.entryPath].join(" ").toLowerCase().includes(term);
       });
       $("entryCards").innerHTML = entries.map((entry) => `
         <article class="photo-card">
-          <div class="mini-title">${escapeHtml(entry.aircraftType)}</div>
-          <div class="mini-meta">${escapeHtml(entry.squadronName)}<br>${escapeHtml(entry.country || "Unknown country")}<br>${escapeHtml(entry.entryPath)}</div>
+          <div class="mini-title">${escapeHtml(entryOptionLabel(entry))}</div>
+          <div class="mini-meta">${escapeHtml(entry.entryPath)}</div>
           <div class="card-actions">
-            <button class="btn ghost" type="button" data-open-entry="${escapeHtml(entry.entryPath)}">Open</button>
+            <button class="btn ghost" type="button" data-open-entry="${escapeHtml(entry.targetKey)}">Open</button>
           </div>
         </article>
       `).join("") || `<div class="empty">No matching entries</div>`;
@@ -3353,10 +4523,10 @@ INDEX_HTML = r"""<!doctype html>
 
     function allMissingIssues() {
       const issues = [];
-      for (const entry of state.data.aircraft) {
+      for (const entry of state.data.entries || []) {
         if (entry.entryMissingFields?.length) {
           issues.push({
-            key: `entry::${entry.entryPath}`,
+            key: `entry::${entry.targetKey}`,
             type: "entry",
             entry,
             missingFields: entry.entryMissingFields,
@@ -3366,7 +4536,7 @@ INDEX_HTML = r"""<!doctype html>
         for (const photo of entry.photos || []) {
           if (photo.invalid || !photo.missingFields?.length) continue;
           issues.push({
-            key: `photo::${entry.entryPath}::${photo.index}`,
+            key: `photo::${entry.targetKey}::${photo.index}`,
             type: "photo",
             entry,
             photo,
@@ -3394,6 +4564,7 @@ INDEX_HTML = r"""<!doctype html>
           issue.entry.entryPath,
           issue.photo?.path,
           issue.photo?.location,
+          issue.photo?.airshow,
           issue.photo?.caption,
           ...issue.labels
         ].join(" ").toLowerCase();
@@ -3510,6 +4681,10 @@ INDEX_HTML = r"""<!doctype html>
             <label for="missingPhotoLocation">Location</label>
             <select id="missingPhotoLocation"><option value="">No location</option>${pinOptions}</select>
           </div>
+          <div class="field wide">
+            <label for="missingPhotoAirshow">Airshow Event (optional)</label>
+            <input id="missingPhotoAirshow" type="text" value="${escapeHtml(issue.photo.airshow || "")}">
+          </div>
           <div class="field">
             <label for="missingPhotoDate">Date</label>
             <input id="missingPhotoDate" type="date" value="${escapeHtml(issue.photo.date || "")}">
@@ -3546,6 +4721,7 @@ INDEX_HTML = r"""<!doctype html>
       $("editPath").value = photo.path || "";
       $("editDate").value = photo.date || "";
       $("editYear").value = photo.year || "";
+      $("editAirshow").value = photo.airshow || "";
       $("editCaption").value = photo.caption || "";
       const matchingPin = state.data.pins.find((pin) => pin.id === photo.pinId || pin.name === photo.location);
       $("editLocation").value = matchingPin ? matchingPin.key : "";
@@ -3557,6 +4733,7 @@ INDEX_HTML = r"""<!doctype html>
       $("editPath").value = "";
       $("editDate").value = "";
       $("editYear").value = "";
+      $("editAirshow").value = "";
       $("editCaption").value = "";
       $("editLocation").value = "";
     }
@@ -3589,9 +4766,10 @@ INDEX_HTML = r"""<!doctype html>
       const pin = selectedPin("pinSelect");
       const [assetPath] = [...state.selectedAssets];
       await populateCaption("generateAttachCaptionBtn", "captionInput", {
-        entryPath: entry.entryPath,
+        ...entryRequestFields(entry),
         assetPath,
         locationName: pin ? pin.name : "",
+        airshow: $("airshowInput").value,
         draftCaption: $("captionInput").value
       });
       state.captionAssist.attachAssetPath = assetPath;
@@ -3603,12 +4781,13 @@ INDEX_HTML = r"""<!doctype html>
       if (!entry || index === "") throw new Error("Choose a photo to edit before generating a caption.");
       const pin = selectedPin("editLocation");
       await populateCaption("generateEditCaptionBtn", "editCaption", {
-        entryPath: entry.entryPath,
+        ...entryRequestFields(entry),
         index: Number(index),
         locationName: pin ? pin.name : "",
+        airshow: $("editAirshow").value,
         draftCaption: $("editCaption").value
       });
-      state.captionAssist.editPhotoKey = captionPhotoKey(entry.entryPath, Number(index));
+      state.captionAssist.editPhotoKey = captionPhotoKey(entry, Number(index));
     }
 
     async function generateMissingCaption() {
@@ -3616,12 +4795,13 @@ INDEX_HTML = r"""<!doctype html>
       if (!issue || issue.type !== "photo") throw new Error("Choose a photo item before generating a caption.");
       const pin = state.data.pins.find((item) => item.key === $("missingPhotoLocation").value);
       await populateCaption("generateMissingCaptionBtn", "missingPhotoCaption", {
-        entryPath: issue.entry.entryPath,
+        ...entryRequestFields(issue.entry),
         index: issue.photo.index,
         locationName: pin ? pin.name : "",
+        airshow: $("missingPhotoAirshow").value,
         draftCaption: $("missingPhotoCaption").value
       });
-      state.captionAssist.missingPhotoKey = captionPhotoKey(issue.entry.entryPath, issue.photo.index);
+      state.captionAssist.missingPhotoKey = captionPhotoKey(issue.entry, issue.photo.index);
     }
 
     async function attachSelected() {
@@ -3634,10 +4814,11 @@ INDEX_HTML = r"""<!doctype html>
         throw new Error("The AI caption belongs to one selected image. Re-select it or generate a new caption before attaching.");
       }
       const payload = {
-        entryPath: entry.entryPath,
+        ...entryRequestFields(entry),
         assetPaths: selectedAssetPaths,
         locationName: pin ? pin.name : "",
         pinId: pin ? pin.id : "",
+        airshow: $("airshowInput").value,
         caption: $("captionInput").value,
         captionAiAssisted: Boolean(aiCaptionAssetPath),
         date: $("photoDate").value,
@@ -3657,7 +4838,7 @@ INDEX_HTML = r"""<!doctype html>
       if (!entry || index === "") throw new Error("Choose a photo to edit.");
       const pin = selectedPin("editLocation");
       const payload = {
-        entryPath: entry.entryPath,
+        ...entryRequestFields(entry),
         index: Number(index),
         photo: {
           path: $("editPath").value,
@@ -3665,8 +4846,9 @@ INDEX_HTML = r"""<!doctype html>
           pin_id: pin ? pin.id : "",
           date: $("editDate").value,
           year: $("editYear").value,
+          airshow: $("editAirshow").value,
           caption: $("editCaption").value,
-          captionAiAssisted: state.captionAssist.editPhotoKey === captionPhotoKey(entry.entryPath, Number(index))
+          captionAiAssisted: state.captionAssist.editPhotoKey === captionPhotoKey(entry, Number(index))
         }
       };
       const result = await api("/api/update-photo", payload);
@@ -3681,7 +4863,7 @@ INDEX_HTML = r"""<!doctype html>
       if (!issue || issue.type !== "photo") throw new Error("Choose a photo item.");
       const pin = state.data.pins.find((item) => item.key === $("missingPhotoLocation").value);
       const result = await api("/api/update-photo", {
-        entryPath: issue.entry.entryPath,
+        ...entryRequestFields(issue.entry),
         index: issue.photo.index,
         photo: {
           path: $("missingPhotoPath").value,
@@ -3689,9 +4871,10 @@ INDEX_HTML = r"""<!doctype html>
           pin_id: pin ? pin.id : "",
           date: $("missingPhotoDate").value,
           year: $("missingPhotoYear").value,
+          airshow: $("missingPhotoAirshow").value,
           title: issue.photo.title || "",
           caption: $("missingPhotoCaption").value,
-          captionAiAssisted: state.captionAssist.missingPhotoKey === captionPhotoKey(issue.entry.entryPath, issue.photo.index)
+          captionAiAssisted: state.captionAssist.missingPhotoKey === captionPhotoKey(issue.entry, issue.photo.index)
         }
       });
       toast(result.message);
@@ -3706,6 +4889,7 @@ INDEX_HTML = r"""<!doctype html>
       if (!issue || issue.type !== "entry") throw new Error("Choose an entry item.");
       const result = await api("/api/update-entry", {
         entryPath: issue.entry.entryPath,
+        scope: issue.entry.sourceScope,
         aircraftType: $("missingEntryAircraftType").value,
         aircraftFamily: $("missingEntryAircraftFamily").value,
         squadronName: $("missingEntrySquadronName").value,
@@ -3722,7 +4906,7 @@ INDEX_HTML = r"""<!doctype html>
     async function deletePhoto(index) {
       const entry = selectedEntry();
       if (!entry) return;
-      const result = await api("/api/delete-photo", {entryPath: entry.entryPath, index});
+      const result = await api("/api/delete-photo", {...entryRequestFields(entry), index});
       toast(result.message);
       clearEditor();
       await loadState(true);
@@ -3730,6 +4914,7 @@ INDEX_HTML = r"""<!doctype html>
 
     async function createEntry() {
       const result = await api("/api/create-entry", {
+        scope: $("newEntryScope").value,
         aircraftType: $("newAircraftType").value,
         squadronName: $("newSquadronName").value,
         country: $("newCountry").value,
@@ -3974,6 +5159,7 @@ INDEX_HTML = r"""<!doctype html>
       $("entryListSearch").addEventListener("input", renderEntryCards);
       $("missingSearch").addEventListener("input", renderMissingFields);
       $("missingFilter").addEventListener("change", renderMissingFields);
+      $("bulkEventSearch").addEventListener("input", renderBulkEvents);
       $("bulkExcludeAiCaptions").addEventListener("change", (event) => {
         state.bulkCaptions.excludeAi = event.target.checked;
         resetBulkCaptionQueue();
@@ -4025,11 +5211,39 @@ INDEX_HTML = r"""<!doctype html>
         renderSelectedStrip();
         renderBulkCaptions();
       });
+      $("qualityList").addEventListener("click", (event) => {
+        const card = event.target.closest("[data-quality-asset]");
+        if (!card) return;
+        state.selectedAssets.clear();
+        state.selectedAssets.add(card.dataset.qualityAsset);
+        resetBulkCaptionQueue();
+        setTab("attach");
+        renderAssetGrid();
+        renderSelectedStrip();
+        renderBulkCaptions();
+        toast("Selected source image for review");
+      });
       $("bulkCaptionList").addEventListener("click", (event) => {
         const accept = event.target.closest("[data-bulk-accept]");
         const reject = event.target.closest("[data-bulk-reject]");
         if (accept) acceptBulkCaption(accept.dataset.bulkAccept).catch((error) => toast(error.message));
         if (reject) rejectBulkCaption(reject.dataset.bulkReject);
+      });
+      $("bulkEventList").addEventListener("click", (event) => {
+        const apply = event.target.closest("[data-bulk-event-apply]");
+        const clear = event.target.closest("[data-bulk-event-clear]");
+        if (apply) applyBulkEvent(apply.dataset.bulkEventApply).catch((error) => toast(error.message));
+        if (clear) applyBulkEvent(clear.dataset.bulkEventClear, true).catch((error) => toast(error.message));
+      });
+      $("airshowHeroList").addEventListener("click", (event) => {
+        const photo = event.target.closest("[data-airshow-hero-photo]");
+        const clear = event.target.closest("[data-airshow-hero-clear]");
+        if (photo) setAirshowHero(photo.dataset.airshowHeroEvent, photo.dataset.airshowHeroPhoto).catch((error) => toast(error.message));
+        if (clear) setAirshowHero(clear.dataset.airshowHeroClear).catch((error) => toast(error.message));
+      });
+      $("airshowMissingImageList").addEventListener("click", (event) => {
+        const apply = event.target.closest("[data-airshow-missing-apply]");
+        if (apply) applyMissingAirshowImages(apply.dataset.airshowMissingApply).catch((error) => toast(error.message));
       });
       $("photoList").addEventListener("click", (event) => {
         const edit = event.target.closest("[data-edit-photo]");

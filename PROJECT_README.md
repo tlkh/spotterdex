@@ -7,14 +7,17 @@ SpotterDex is a static aircraft spotting field guide and aviation photography po
 ```text
 map_pins/<country_name>/pins.yaml
 aircraft/<aircraft_type>/<squadron>/entry.yaml
+squadrons/<squadron>/entry.yaml
 raw_assets/aircraft/<aircraft_type>/<squadron>/photos/
+raw_assets/squadrons/<squadron>/photos/
+raw_assets/map_pins/<country_name>/photos/
 assets/logos/
 assets/generated/photos/
 assets/generated/thumbs/
 data/
 ```
 
-`raw_assets/` is the centralized, gitignored source directory for all original photos to be processed. Keep source files there and mirror each aircraft entry folder under `raw_assets/aircraft/`.
+`raw_assets/` is the centralized, gitignored source directory for all original photos to be processed. Mirror the source YAML layout below it: `aircraft/`, `squadrons/`, or `map_pins/`.
 
 `map_pins/<country_name>/pins.yaml` contains enabled map locations:
 
@@ -26,10 +29,14 @@ pins:
     icao: WSSS
     coordinates: [1.3631, 104.0229]
     hero_photo: photos/changi-showline-hero.jpg
+    photos:
+      - path: photos/ramp-overview.jpg
+        date: 2024-02-24
+        caption: Morning activity on the Changi ramp.
     enabled: true
 ```
 
-Use `icao: XXXX` for airport and air base pins when a code exists. Broad region pins or non-aerodrome locations can leave `icao` empty; the generated manifest preserves the field, and mobile map labels prefer ICAO codes when available. Use `hero_photo`/`hero_image`/`hero.path` to set a custom location hero image from `raw_assets/`; use `hero_photo_id` to point at an existing generated photo record instead. Custom heroes do not remove the newest location photo from the Recent photos strip.
+Use `icao: XXXX` for airport and air base pins when a code exists. Broad region pins or non-aerodrome locations can leave `icao` empty; the generated manifest preserves the field, and mobile map labels prefer ICAO codes when available. `photos:` on a pin creates location-level images: the builder assigns that pin's location and does not require an aircraft or squadron. Use `hero_photo`/`hero_image`/`hero.path` to set a custom location hero image from `raw_assets/`; use `hero_photo_id` to point at an existing generated photo record instead. Custom heroes do not remove the newest location photo from the Recent photos strip.
 
 `aircraft/<type>/<squadron>/entry.yaml` contains the aircraft entry, squadron metadata, and photos:
 
@@ -45,9 +52,40 @@ photos:
     date: 2024-02-24
     year: 2024
     location: Changi Exhibition Centre
+    airshow: Singapore Airshow 2024
 ```
 
-Photo paths in entry YAML are relative to the matching entry folder. The build script reads them from `raw_assets/` first, mirroring the entry path. For example, `photos/f-15sg-changi.jpg` in `aircraft/boeing-f-15sg-strike-eagle/149-squadron/entry.yaml` is loaded from `raw_assets/aircraft/boeing-f-15sg-strike-eagle/149-squadron/photos/f-15sg-changi.jpg`. The `location` value links photos to map pins by matching the pin name, or you can add `pin_id`. Use `unit_type: organisation` for airline/operator entries that should be labelled Organisation instead of Squadron; those entries remain visible in the Dex and photo viewer but are hidden from the Squadrons page. Use `squadron_hero` or nested `squadron.hero.path` for an optional squadron-specific hero image on the Squadrons page. Use `date` in `YYYY-MM-DD` format when known; the recent locations list is ordered by the newest photo at each location. If `date` is omitted, the build script falls back to EXIF capture date, then `year`.
+Photo paths in entry YAML are relative to the matching entry folder. The build script reads them from `raw_assets/` first, mirroring the entry path. For example, `photos/f-15sg-changi.jpg` in `aircraft/boeing-f-15sg-strike-eagle/149-squadron/entry.yaml` is loaded from `raw_assets/aircraft/boeing-f-15sg-strike-eagle/149-squadron/photos/f-15sg-changi.jpg`. The `location` value links photos to map pins by matching the pin name, or you can add `pin_id`. Add `airshow: <event name>` when the frame was taken at an airshow; it is optional, works at every photo tag level, and is displayed in the viewer metadata. Use `unit_type: organisation` for airline/operator entries that should be labelled Organisation instead of Squadron; those entries remain visible in the Dex and photo viewer but are hidden from the Squadrons page. Use `squadron_hero` or nested `squadron.hero.path` for an optional squadron-specific hero image on the Squadrons page. Use `date` in `YYYY-MM-DD` format when known; the recent locations list is ordered by the newest photo at each location. If `date` is omitted, the build script falls back to EXIF capture date, then `year`.
+
+## Airshows
+
+The Airshows tab is a newest-to-oldest event timeline built from photo-level `airshow` tags. An event can optionally feature one of its tagged frames as its hero image. The manager writes that source reference to `airshows/events.yaml`; it never duplicates a photo or points at generated output:
+
+```yaml
+events:
+  - name: Singapore Airshow 2026
+    hero_photo:
+      scope: aircraft
+      entry_path: aircraft/boeing-f-15sg-strike-eagle/149-squadron/entry.yaml
+      index: 0
+```
+
+When an event is expanded, the timeline shows its remaining frames oldest-to-newest. Use the manager's **Airshows** tab to tag all photos from a capture date, choose the optional hero frame, and find newly added photos whose capture date matches a known event day.
+
+Use `squadrons/<squadron>/entry.yaml` when an image belongs to a squadron or organisation but not to one aircraft type. It supports the same squadron metadata and `photos:` list, but omits `aircraft_type`:
+
+```yaml
+squadron_name: 149 Squadron
+unit_type: squadron
+country: Singapore
+photos:
+  - path: photos/squadron-lineup.jpg
+    location: Changi Exhibition Centre
+    date: 2024-02-24
+    caption: 149 Squadron aircraft lined up before the display.
+```
+
+The source image above resolves from `raw_assets/squadrons/149-squadron/photos/squadron-lineup.jpg`. Squadron-level photos remain available in the map, viewer, statistics, and aggregate Squadrons page, but deliberately do not create an Aircraft Dex card. A pin-level `photos:` item resolves from the mirrored `raw_assets/map_pins/<country>/` folder and is displayed as a location-level image.
 
 ## Build
 
@@ -59,17 +97,17 @@ python3 -m pip install -r requirements.txt
 
 ## Local Data Manager
 
-Run the local manager when you want to attach `raw_assets/` images to aircraft entries, add or update location hero images, create new entries or pins, and rebuild the generated site from one browser surface:
+Run the local manager when you want to tag `raw_assets/` images to an aircraft, a squadron, or a location, add or update location hero images, create new sources or pins, and rebuild the generated site from one browser surface:
 
 ```bash
 python3 tools/spotterdex_manager.py
 ```
 
-Open `http://127.0.0.1:8765/`. The manager writes source YAML under `aircraft/` and `map_pins/`, then streams the generator output when you press Build, ending with changed generated files, manifest count deltas, warnings, and commit-scope guidance. Its thumbnail cache lives in `.spotterdex-manager-cache/` and is ignored by git.
+Open `http://127.0.0.1:8765/`. The **Tag Images To** selector includes aircraft sources, squadron-only sources, and every location. Use the optional **Airshow Event** field to apply an event name to selected images. The **Airshows** tab groups existing photos by capture date for mass event tagging, identifies events without a selected hero, and surfaces untagged photos that share a capture date with a known event. The manager writes source YAML under `aircraft/`, `squadrons/`, `map_pins/`, and `airshows/events.yaml`, then streams the generator output when you press Build, ending with changed generated files, manifest count deltas, warnings, and commit-scope guidance. Its thumbnail cache lives in `.spotterdex-manager-cache/` and is ignored by git.
 
 ### AI caption assistance
 
-The manager's **AI Caption** buttons can write or refine the caption for one selected raw image, an existing photo, or a Missing-fields photo. The source image is resized to 768 px wide in the local server process and sent with the aircraft type, squadron/operator, location, and current caption to Nemotron 3 Omni. Suggestions populate the editor only; review and save them normally. Saving an AI-assisted suggestion adds `caption_ai_assisted: true` to the source YAML; this is intentionally absent from the published manifest.
+The manager's **AI Caption** buttons can write or refine the caption for one selected raw image, an existing photo, or a Missing-fields photo. The source image is resized to 768 px wide in the local server process and sent with the aircraft type, squadron/operator, location, airshow event, and current caption to Nemotron 3 Omni. Suggestions populate the editor only; review and save them normally. Saving an AI-assisted suggestion adds `caption_ai_assisted: true` to the source YAML; this is intentionally absent from the published manifest.
 
 Use the **Bulk Captions** tab to polish selected existing captions. It proposes one caption at a time with a 0.5 second pause between requests, excludes previously AI-assisted captions by default, and lets you edit then accept or reject each suggestion. Accepted captions are marked as AI-assisted in source YAML.
 
@@ -82,11 +120,13 @@ python3 tools/spotterdex_manager.py
 
 `NVIDIA_CAPTION_ENDPOINT` can override the default `https://inference-api.nvidia.com/v1/chat/completions`, and `NVIDIA_CAPTION_MODEL` can override the default `nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` deployment. Stop the local manager with `Ctrl+C` when you finish using or testing it.
 
-Build the static data, resize photos to 2048 px wide JPEGs, and generate 1024 px wide thumbnails:
+Build the static data, resize photos to 2560 px wide high-quality JPEGs, and generate 1024 px wide thumbnails:
 
 ```bash
 python3 tools/build_spotterdex.py
 ```
+
+Full-size JPEGs use quality 92 with 4:4:4 chroma for near-lossless aircraft detail; 1024 px thumbnails use quality 90 with 4:2:0 chroma for faster grids.
 
 Photo processing uses multiprocessing by default with one fewer worker than the number of CPU cores. Override it when needed:
 
@@ -118,6 +158,7 @@ Useful deep links:
 
 ```text
 #location=changi-exhibition-centre
+#location=changi-exhibition-centre&detail=1
 #aircraft=boeing-f-15sg-strike-eagle
 ```
 

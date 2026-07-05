@@ -1,6 +1,6 @@
 aircraft_type: Mitsubishi F-15J Eagle
 squadron_name: Air Development and Test Wing
-squadron_logo: jasdf_adtw.png
+squadron_logo: logos/jasdf_adtw.png
 country: Japan
 photos:
 - path: 128928.jpg
@@ -12,19 +12,23 @@ photos:
   location: Gifu Air Base
   pin_id: gifu-air-base
   caption: ADTW F-15J at Gifu Air Base
+  airshow: Gifu Air Show 2023
 - path: DSC07205-Enhanced-NR.jpeg
   location: Gifu Air Base
   pin_id: gifu-air-base
   caption: Mitsubishi F-15J Eagle from the Air Development and Test Wing climbs over Gifu Air Base
   caption_ai_assisted: true
+  airshow: Gifu Air Show 2023
 - path: DSC00354-Enhanced-NR.jpeg
   location: Gifu Air Base
   pin_id: gifu-air-base
   caption: Two Mitsubishi F-15J Eagles from the Air Development and Test Wing break after a formation take-off at Gifu Air Base
   caption_ai_assisted: true
+  airshow: Gifu Air Show 2023
 - path: DSC07295-Enhanced-NR.jpeg
   location: Gifu Air Base
   pin_id: gifu-air-base
   caption: F-15J making low pass over Gifu Air Base during an airshow rehearsal
   caption_ai_assisted: true
+  airshow: Gifu Air Show 2023
 aircraft_family: fighter

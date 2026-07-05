@@ -9,6 +9,18 @@
       name="description"
       content="SpotterDex is an aircraft spotting logbook and aviation photography portfolio."
     >
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="SpotterDex">
+    <meta property="og:title" content="SpotterDex - Timothy's Logbook">
+    <meta property="og:description" content="An aircraft spotting logbook and aviation photography field guide.">
+    <meta property="og:image" content="https://tlkh.github.io/spotterdex/assets/generated/photos/location-hero-gifu-air-base.jpg">
+    <meta property="og:image:alt" content="Aircraft formation over Gifu Air Base in Japan">
+    <meta property="og:url" content="https://tlkh.github.io/spotterdex/">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="SpotterDex - Timothy's Logbook">
+    <meta name="twitter:description" content="An aircraft spotting logbook and aviation photography field guide.">
+    <meta name="twitter:image" content="https://tlkh.github.io/spotterdex/assets/generated/photos/location-hero-gifu-air-base.jpg">
+    <link rel="canonical" href="https://tlkh.github.io/spotterdex/">
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -37,7 +49,7 @@
         </span>
         <span>
           <span class="brand-title">SpotterDex</span>
-          <span class="brand-subtitle">Timothy's Aircraft Spotting Logbook</span>
+          <span class="brand-subtitle">Timothy's Logbook</span>
         </span>
       </a>
 
@@ -77,6 +89,16 @@
           type="button"
           role="tab"
           aria-selected="false"
+          aria-controls="airshowsView"
+          data-tab-target="airshowsView"
+        >
+          Airshows
+        </button>
+        <button
+          class="tab-button"
+          type="button"
+          role="tab"
+          aria-selected="false"
           aria-controls="statsView"
           data-tab-target="statsView"
         >
@@ -88,6 +110,7 @@
         <option value="mapView">World Map</option>
         <option value="dexView">Aircraft Dex</option>
         <option value="squadronsView">Squadrons</option>
+        <option value="airshowsView">Airshows</option>
         <option value="statsView">Stats</option>
       </select>
 
@@ -206,8 +229,6 @@
               </div>
               <div class="aircraft-grid" id="aircraftGrid"></div>
             </section>
-
-            <section class="results-panel" id="dexDetail" aria-live="polite"></section>
           </div>
         </div>
       </section>
@@ -234,9 +255,35 @@
               <div class="squadron-country-list" id="squadronLogoGrid"></div>
             </div>
           </section>
-
-          <section class="results-panel squadron-detail" id="squadronDetail" aria-live="polite"></section>
         </div>
+      </section>
+
+      <section class="view" id="airshowsView" data-view hidden>
+        <div class="airshows-page">
+          <section class="results-panel airshows-intro" aria-label="Airshow archive">
+            <div class="browser-heading">
+              <div>
+                <p class="eyebrow">Event archive</p>
+                <h1>Airshows</h1>
+              </div>
+              <p class="muted" id="airshowPageCount">0 events</p>
+            </div>
+            <p class="lead">A chronological record of aviation events, from the newest visit back through the archive.</p>
+          </section>
+          <section class="airshow-timeline" id="airshowTimeline" aria-live="polite"></section>
+        </div>
+      </section>
+
+      <section class="view detail-view" id="aircraftDetailView" data-view hidden>
+        <article class="detail-page" id="aircraftDetail" aria-live="polite"></article>
+      </section>
+
+      <section class="view detail-view" id="squadronDetailView" data-view hidden>
+        <article class="detail-page" id="squadronDetail" aria-live="polite"></article>
+      </section>
+
+      <section class="view detail-view" id="locationDetailView" data-view hidden>
+        <article class="detail-page" id="locationDetail" aria-live="polite"></article>
       </section>
 
       <section class="view" id="statsView" data-view hidden>

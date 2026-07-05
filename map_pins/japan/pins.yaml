@@ -78,3 +78,13 @@ pins:
   icao: RJCJ
   coordinates: [42.7945, 141.6664]
   enabled: true
+- id: narita-international-airport
+  name: Narita International Airport
+  icao: RJAA
+  coordinates: [35.7719, 140.3875]
+  enabled: true
+- id: okadama-airport
+  name: Okadama Airport
+  icao: RJCO
+  coordinates: [43.1175, 141.3814]
+  enabled: true
