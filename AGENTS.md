@@ -107,7 +107,7 @@ Expect batches of aircraft entries, not one-off code changes. Work entry-by-entr
 - Treat YAML files and `raw_assets/` source photos as source of truth. Regenerate `data/`, `assets/generated/photos/`, and `assets/generated/thumbs/` with the build script after content changes.
 - Store original photos in `raw_assets/`, not under `aircraft/` or in generated output folders.
 - Do not manually edit generated data or resized photos unless debugging a generator issue; fix the source YAML, `raw_assets/` photos, or script instead.
-- Keep full photo output as JPEG at 2560px wide (quality 92, 4:4:4 chroma) and thumbnail output as JPEG at 1024px wide (quality 90, 4:2:0 chroma) unless the user asks for different standards.
+- Keep full photo output as JPEG at 2560px wide (quality 90, 4:4:4 chroma) and thumbnail output as JPEG at 1024px wide (quality 86, 4:2:0 chroma) unless the user asks for different standards.
 - Do not add tile prefetching, offline tile downloads, or hidden map attribution.
 - Maintain accessibility basics: semantic controls, useful alt text, keyboard-operable viewer controls, and no text overlap on mobile.
 - Avoid unrelated edits outside this `spotterdex/` folder.

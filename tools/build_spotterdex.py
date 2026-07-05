@@ -28,10 +28,12 @@ except ImportError as exc:  # pragma: no cover - user environment guard
 
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp"}
-FULL_JPEG_QUALITY = 92
+FULL_JPEG_QUALITY = 90
 FULL_JPEG_SUBSAMPLING = 0  # 4:4:4 chroma; preserves fine aircraft markings.
-THUMB_JPEG_QUALITY = 90
+THUMB_JPEG_QUALITY = 86
 THUMB_JPEG_SUBSAMPLING = 2  # 4:2:0 chroma; efficient for 1024px card imagery.
+FULL_JPEG_PROFILE = f"spotterdex-full-jpeg-v2-q{FULL_JPEG_QUALITY}-s{FULL_JPEG_SUBSAMPLING}"
+THUMB_JPEG_PROFILE = f"spotterdex-thumb-jpeg-v2-q{THUMB_JPEG_QUALITY}-s{THUMB_JPEG_SUBSAMPLING}"
 EXIF_TAGS = {value: key for key, value in ExifTags.TAGS.items()}
 PROGRESS_LINE_MODE = False
 
@@ -1311,6 +1313,36 @@ def process_photo_jobs(
     return results
 
 
+def jpeg_matches_profile(image: Image.Image, profile: str) -> bool:
+    """Return whether a generated JPEG was encoded with the current web profile."""
+    comment = image.info.get("comment", b"")
+    if isinstance(comment, str):
+        comment = comment.encode("ascii", "ignore")
+    return comment == profile.encode("ascii")
+
+
+def save_web_jpeg(
+    image: Image.Image,
+    output_path: Path,
+    *,
+    quality: int,
+    subsampling: int,
+    profile: str,
+    exif: Optional[bytes],
+) -> None:
+    """Save a progressive, optimized JPEG and tag it with its encoding profile."""
+    save_kwargs: Dict[str, Any] = {
+        "quality": quality,
+        "subsampling": subsampling,
+        "optimize": True,
+        "progressive": True,
+        "comment": profile.encode("ascii"),
+    }
+    if exif:
+        save_kwargs["exif"] = exif
+    image.save(output_path, "JPEG", **save_kwargs)
+
+
 def process_photo_job(job: Dict[str, Any]) -> Dict[str, Any]:
     warnings: List[str] = []
     root = Path(job["root"])
@@ -1353,11 +1385,15 @@ def process_photo_job(job: Dict[str, Any]) -> Dict[str, Any]:
                 with Image.open(output_path) as processed_image, Image.open(thumb_path) as thumbnail_image:
                     processed_size = processed_image.size
                     thumbnail_size = thumbnail_image.size
+                    full_profile_matches = jpeg_matches_profile(processed_image, FULL_JPEG_PROFILE)
+                    thumb_profile_matches = jpeg_matches_profile(thumbnail_image, THUMB_JPEG_PROFILE)
                 # A changed build width or thumbnail width requires a fresh output,
                 # even when the source image has not changed.
                 reuse_existing = (
                     processed_size[0] == int(job["target_width"])
                     and thumbnail_size[0] == int(job["thumb_width"])
+                    and full_profile_matches
+                    and thumb_profile_matches
                 )
             if not reuse_existing:
                 output_exif = normalized_output_exif(opened)
@@ -1365,26 +1401,23 @@ def process_photo_job(job: Dict[str, Any]) -> Dict[str, Any]:
                 image = image.convert("RGB")
                 processed = resize_to_width(image, int(job["target_width"]))
                 thumbnail = resize_to_width(image, int(job["thumb_width"]))
-                save_kwargs = {"exif": output_exif} if output_exif else {}
                 # Lanczos is Pillow's highest-quality resampling filter. Full frames
                 # retain fine aircraft detail, while compact thumbnails load quickly.
-                processed.save(
+                save_web_jpeg(
+                    processed,
                     output_path,
-                    "JPEG",
                     quality=FULL_JPEG_QUALITY,
                     subsampling=FULL_JPEG_SUBSAMPLING,
-                    optimize=True,
-                    progressive=True,
-                    **save_kwargs,
+                    profile=FULL_JPEG_PROFILE,
+                    exif=output_exif,
                 )
-                thumbnail.save(
+                save_web_jpeg(
+                    thumbnail,
                     thumb_path,
-                    "JPEG",
                     quality=THUMB_JPEG_QUALITY,
                     subsampling=THUMB_JPEG_SUBSAMPLING,
-                    optimize=True,
-                    progressive=True,
-                    **save_kwargs,
+                    profile=THUMB_JPEG_PROFILE,
+                    exif=output_exif,
                 )
                 processed_size = processed.size
                 thumbnail_size = thumbnail.size
@@ -1484,24 +1517,21 @@ def process_photo(
             image = image.convert("RGB")
             processed = resize_to_width(image, target_width)
             thumbnail = resize_to_width(image, thumb_width)
-            save_kwargs = {"exif": output_exif} if output_exif else {}
-            processed.save(
+            save_web_jpeg(
+                processed,
                 output_path,
-                "JPEG",
                 quality=FULL_JPEG_QUALITY,
                 subsampling=FULL_JPEG_SUBSAMPLING,
-                optimize=True,
-                progressive=True,
-                **save_kwargs,
+                profile=FULL_JPEG_PROFILE,
+                exif=output_exif,
             )
-            thumbnail.save(
+            save_web_jpeg(
+                thumbnail,
                 thumb_path,
-                "JPEG",
                 quality=THUMB_JPEG_QUALITY,
                 subsampling=THUMB_JPEG_SUBSAMPLING,
-                optimize=True,
-                progressive=True,
-                **save_kwargs,
+                profile=THUMB_JPEG_PROFILE,
+                exif=output_exif,
             )
     except Exception as exc:  # pragma: no cover - depends on source image
         warnings.add(f"could not process {relative_posix(source_path, root)}: {exc}")
@@ -1696,24 +1726,21 @@ def process_custom_hero(
             image = image.convert("RGB")
             processed = resize_to_width(image, target_width)
             thumbnail = resize_to_width(image, thumb_width)
-            save_kwargs = {"exif": output_exif} if output_exif else {}
-            processed.save(
+            save_web_jpeg(
+                processed,
                 output_path,
-                "JPEG",
                 quality=FULL_JPEG_QUALITY,
                 subsampling=FULL_JPEG_SUBSAMPLING,
-                optimize=True,
-                progressive=True,
-                **save_kwargs,
+                profile=FULL_JPEG_PROFILE,
+                exif=output_exif,
             )
-            thumbnail.save(
+            save_web_jpeg(
+                thumbnail,
                 thumb_path,
-                "JPEG",
                 quality=THUMB_JPEG_QUALITY,
                 subsampling=THUMB_JPEG_SUBSAMPLING,
-                optimize=True,
-                progressive=True,
-                **save_kwargs,
+                profile=THUMB_JPEG_PROFILE,
+                exif=output_exif,
             )
     except Exception as exc:  # pragma: no cover - depends on source image
         warnings.add(f"could not process {display_label} {relative_posix(source_path, root)}: {exc}")

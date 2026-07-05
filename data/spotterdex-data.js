@@ -1,5 +1,5 @@
 window.SPOTTERDEX_DATA = {
-  "generatedAt": "2026-07-05T12:06:51+00:00",
+  "generatedAt": "2026-07-05T12:49:13+00:00",
   "pins": [
     {
       "id": "hong-kong-international-airport",
@@ -1763,7 +1763,7 @@ window.SPOTTERDEX_DATA = {
           "id": "kawasaki-t-4-blue-impulse",
           "name": "Blue Impulse",
           "country": "Japan",
-          "logo": "",
+          "logo": "assets/logos/kawasaki-t-4-blue-impulse.png",
           "unitType": "squadron",
           "unitLabel": "Squadron",
           "showOnSquadronsPage": true,
