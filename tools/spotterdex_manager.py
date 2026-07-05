@@ -24,6 +24,7 @@ import time
 import traceback
 import unicodedata
 import webbrowser
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -52,7 +53,14 @@ NVIDIA_CAPTION_ENDPOINT = "https://inference-api.nvidia.com/v1/chat/completions"
 NVIDIA_CAPTION_MODEL = "nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
 NVIDIA_CAPTION_IMAGE_WIDTH = 768
 NVIDIA_CAPTION_TIMEOUT_SECONDS = 75
-MIN_SOURCE_PHOTO_WIDTH = 2048
+MIN_SOURCE_PHOTO_WIDTH = 2560
+QUALITY_ANALYSIS_MAX_DIMENSION = 256
+UNDEREXPOSED_MEAN_LUMINANCE = 58
+OVEREXPOSED_MEAN_LUMINANCE = 202
+CLIPPED_SHADOW_RATIO = 0.24
+CLIPPED_HIGHLIGHT_RATIO = 0.24
+NEUTRAL_PIXEL_CHROMA_MAX = 32
+COLOUR_CAST_CHANNEL_SPREAD = 28
 
 
 class FlowList(list):
@@ -103,6 +111,7 @@ class SpotterDexManager:
         self.raw_assets_dir = self.root / "raw_assets"
         self._exif_date_cache: Dict[str, str] = {}
         self._image_dimension_cache: Dict[str, Tuple[int, int]] = {}
+        self._image_quality_cache: Dict[str, Tuple[int, int, Dict[str, Any]]] = {}
 
     def get_state(self) -> Dict[str, Any]:
         tag_map: Dict[str, List[Dict[str, Any]]] = {}
@@ -111,6 +120,7 @@ class SpotterDexManager:
         squadrons = self._scan_squadrons(tag_map, pin_by_id, pin_by_name)
         location_entries = self._location_entries(pins)
         entries = aircraft + squadrons + location_entries
+        squadron_groups = self._squadron_groups(entries)
         airshow_events = self._load_airshow_events()
         assets = self._scan_assets(tag_map)
         used_count = sum(1 for asset in assets if asset["tags"])
@@ -130,6 +140,9 @@ class SpotterDexManager:
         under_resolution_asset_count = sum(
             1 for asset in assets if asset.get("isPhotoSource") and asset.get("isUnderResolution")
         )
+        exposure_issue_asset_count = sum(1 for asset in assets if asset.get("hasExposureIssue"))
+        colour_balance_issue_asset_count = sum(1 for asset in assets if asset.get("hasColourBalanceIssue"))
+        quality_issue_asset_count = sum(1 for asset in assets if asset.get("qualityFlags"))
 
         return {
             "project": {
@@ -145,10 +158,14 @@ class SpotterDexManager:
                 "missingFieldPhotoCount": missing_field_photo_count,
                 "missingEntryFieldCount": missing_entry_field_count,
                 "underResolutionAssetCount": under_resolution_asset_count,
+                "exposureIssueAssetCount": exposure_issue_asset_count,
+                "colourBalanceIssueAssetCount": colour_balance_issue_asset_count,
+                "qualityIssueAssetCount": quality_issue_asset_count,
                 "minimumSourcePhotoWidth": MIN_SOURCE_PHOTO_WIDTH,
             },
             "aircraft": aircraft,
             "squadrons": squadrons,
+            "squadronGroups": squadron_groups,
             "entries": entries,
             "pins": pins,
             "assets": assets,
@@ -285,8 +302,6 @@ class SpotterDexManager:
         if not isinstance(photos, list) or index < 0 or index >= len(photos):
             raise ValueError("Photo index is invalid.")
         existing_photo = photos[index] if isinstance(photos[index], dict) else {}
-        if not isinstance(photos[index], dict):
-            photos[index] = {}
 
         incoming = payload.get("photo") or {}
         if not isinstance(incoming, dict):
@@ -295,10 +310,16 @@ class SpotterDexManager:
         if not path_value:
             raise ValueError("Photo path is required.")
 
-        updated: Dict[str, Any] = {"path": path_value}
+        updated: Dict[str, Any] = dict(existing_photo)
+        for legacy_key in ("file", "filepath", "location_name", "airshow_name"):
+            updated.pop(legacy_key, None)
+        updated["path"] = path_value
         for key in ("date", "year", "location", "pin_id", "airshow", "title", "caption"):
+            if key not in incoming:
+                continue
             value = clean_text(incoming.get(key))
             if not value:
+                updated.pop(key, None)
                 continue
             if key == "year" and value.isdigit():
                 updated[key] = int(value)
@@ -309,9 +330,44 @@ class SpotterDexManager:
             updated["pin_id"] = target["pinId"]
         if payload_caption_is_ai_assisted(incoming) or photo_caption_is_ai_assisted(existing_photo):
             updated["caption_ai_assisted"] = True
-        photos[index] = updated
+
+        destination_path = clean_text(payload.get("tagTargetEntryPath"))
+        if not destination_path:
+            photos[index] = updated
+            write_yaml(target["yamlPath"], target["data"])
+            return {"ok": True, "message": "Photo updated."}
+
+        # Older manager clients only supplied the destination path, so retain the
+        # aircraft default while allowing the editor to move a frame to a
+        # standalone squadron record as well.
+        destination_scope = clean_text(payload.get("tagTargetScope")) or "aircraft"
+        if destination_scope not in {"aircraft", "squadron"}:
+            raise ValueError("Tag Images To supports aircraft and squadron entries only.")
+        destination = self._photo_target({"scope": destination_scope, "entryPath": destination_path})
+        same_target = target["scope"] == destination["scope"] and target["yamlPath"] == destination["yamlPath"]
+        if same_target:
+            photos[index] = updated
+            write_yaml(target["yamlPath"], target["data"])
+            return {"ok": True, "message": "Photo updated."}
+
+        source_path = resolve_photo_source(self.root, self.raw_assets_dir, target["yamlPath"], path_value)
+        if source_path.exists() and self._is_within(source_path, self.raw_assets_dir):
+            asset_rel = relative_posix(source_path, self.raw_assets_dir)
+            updated["path"] = photo_yaml_path_for_asset(destination["yamlPath"], self.root, asset_rel)
+
+        destination_paths = {
+            clean_text(item.get("path") or item.get("file") or item.get("filepath"))
+            for item in destination["photos"]
+            if isinstance(item, dict)
+        }
+        if clean_text(updated.get("path")) in destination_paths:
+            raise ValueError("This photo is already tagged to the selected entry.")
+
+        photos.pop(index)
+        destination["photos"].append(updated)
         write_yaml(target["yamlPath"], target["data"])
-        return {"ok": True, "message": "Photo updated."}
+        write_yaml(destination["yamlPath"], destination["data"])
+        return {"ok": True, "message": f"Photo updated and moved to the selected {destination_scope} entry."}
 
     def bulk_update_airshow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Set or clear an event tag across an explicit set of source photo records."""
@@ -411,7 +467,12 @@ class SpotterDexManager:
             raise ValueError("An event name is required.")
 
         data = read_yaml(self.airshow_events_path) if self.airshow_events_path.exists() else {"events": []}
-        event_items = data.get("events") or []
+        event_items = data.get("events")
+        if event_items is None:
+            event_items = data.get("airshows")
+        if event_items is None:
+            event_items = []
+        data["events"] = event_items
         if isinstance(event_items, dict):
             event_items = [event_items]
             data["events"] = event_items
@@ -478,6 +539,65 @@ class SpotterDexManager:
         self.airshow_dir.mkdir(parents=True, exist_ok=True)
         write_yaml(self.airshow_events_path, data)
         return {"ok": True, "message": f"Set hero photo for {event_name}."}
+
+    def set_squadron_hero(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Select one tagged squadron image as the aggregate squadron-page hero."""
+        hero_payload = payload.get("hero")
+        squadron_name = clean_text(payload.get("squadronName"))
+        country = clean_text(payload.get("country"))
+        selected_path: Optional[Path] = None
+        selected_source = ""
+
+        if hero_payload is not None:
+            if not isinstance(hero_payload, dict):
+                raise ValueError("Squadron hero reference is invalid.")
+            try:
+                index = int(hero_payload.get("index"))
+            except (TypeError, ValueError) as exc:
+                raise ValueError("Squadron hero index is invalid.") from exc
+            target = self._photo_target(
+                {
+                    "scope": clean_text(hero_payload.get("scope")) or "aircraft",
+                    "entryPath": clean_text(hero_payload.get("entryPath")),
+                    "targetPinId": clean_text(hero_payload.get("targetPinId")),
+                }
+            )
+            if target["scope"] not in {"aircraft", "squadron"}:
+                raise ValueError("Choose a squadron or aircraft photo for the squadron hero.")
+            photos = target["photos"]
+            if index < 0 or index >= len(photos) or not isinstance(photos[index], dict):
+                raise ValueError("The selected squadron hero photo no longer exists.")
+            selected_photo = photos[index]
+            selected_source = clean_text(selected_photo.get("path") or selected_photo.get("file") or selected_photo.get("filepath"))
+            if not selected_source:
+                raise ValueError("The selected squadron hero photo has no path.")
+            source_path = resolve_photo_source(self.root, self.raw_assets_dir, target["yamlPath"], selected_source)
+            if not source_path.exists():
+                raise ValueError("The selected squadron hero source image is missing.")
+            selected_path = target["yamlPath"]
+            squadron_name = read_squadron_name(target["data"], selected_path)
+            country = clean_text(target["data"].get("country"))
+
+        if not squadron_name:
+            raise ValueError("Choose a squadron before setting or clearing its hero.")
+
+        entry_paths = sorted(self.aircraft_dir.glob("*/*/entry.y*ml")) + sorted(self.squadron_dir.glob("*/entry.y*ml"))
+        updated = 0
+        for entry_path in entry_paths:
+            data = read_yaml(entry_path)
+            if read_squadron_name(data, entry_path) != squadron_name or clean_text(data.get("country")) != country:
+                continue
+            clear_squadron_hero_fields(data)
+            if selected_path and entry_path.resolve() == selected_path.resolve():
+                data["squadron_hero"] = selected_source
+            write_yaml(entry_path, data)
+            updated += 1
+
+        if not updated:
+            raise ValueError("No matching squadron source entries were found.")
+        if selected_path:
+            return {"ok": True, "message": f"Set hero photo for {squadron_name}."}
+        return {"ok": True, "message": f"Cleared hero photo for {squadron_name}."}
 
     def generate_caption(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Generate a non-persistent caption suggestion from a source image."""
@@ -674,13 +794,17 @@ class SpotterDexManager:
     def set_pin_hero(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         pin_path = self._project_path(payload.get("pinPath") or "")
         pin_id = clean_text(payload.get("pinId"))
-        asset_path = self._raw_asset_path(payload.get("assetPath") or "")
         if not pin_path or not pin_path.exists() or not self._is_within(pin_path, self.map_dir):
             raise ValueError("Choose a map pin first.")
         if not pin_id:
             raise ValueError("Pin id is required.")
-        if not asset_path.exists() or asset_path.suffix.lower() not in IMAGE_EXTENSIONS:
-            raise ValueError("Choose one image asset to use as the location hero.")
+
+        clear_hero = payload.get("clear") is True
+        asset_path: Optional[Path] = None
+        if not clear_hero:
+            asset_path = self._raw_asset_path(payload.get("assetPath") or "")
+            if not asset_path.exists() or asset_path.suffix.lower() not in IMAGE_EXTENSIONS:
+                raise ValueError("Choose one image asset to use as the location hero.")
 
         data = read_yaml(pin_path)
         pins = data.get("pins")
@@ -695,10 +819,15 @@ class SpotterDexManager:
         if target is None:
             raise ValueError("Pin was not found in its YAML file.")
 
-        asset_rel = relative_posix(asset_path, self.raw_assets_dir)
-        target["hero_photo"] = pin_hero_yaml_path_for_asset(pin_path, self.root, asset_rel)
+        if clear_hero:
+            for key in ("hero_photo", "hero_image", "hero_path", "heroPhoto", "heroImage", "heroPath", "hero"):
+                target.pop(key, None)
+        else:
+            assert asset_path is not None
+            asset_rel = relative_posix(asset_path, self.raw_assets_dir)
+            target["hero_photo"] = pin_hero_yaml_path_for_asset(pin_path, self.root, asset_rel)
         write_yaml(pin_path, data)
-        return {"ok": True, "message": "Location hero updated."}
+        return {"ok": True, "message": "Location hero cleared." if clear_hero else "Location hero updated."}
 
     def run_build(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         stdout: List[str] = []
@@ -945,7 +1074,7 @@ class SpotterDexManager:
                                 "exists": source_exists,
                                 "sourceWidth": source_width,
                                 "sourceHeight": source_height,
-                                "sourceUnder2048": bool(source_width and source_width < MIN_SOURCE_PHOTO_WIDTH),
+                                "sourceUnderMinimumWidth": bool(source_width and source_width < MIN_SOURCE_PHOTO_WIDTH),
                                 "location": name,
                                 "pinId": pin_id,
                                 "date": clean_text(photo_item.get("date")),
@@ -994,6 +1123,47 @@ class SpotterDexManager:
             for pin in pins
         ]
 
+    def _squadron_groups(self, entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Aggregate aircraft and standalone records into manager hero-picker groups."""
+        groups: Dict[str, Dict[str, Any]] = {}
+        for entry in entries:
+            if entry.get("sourceScope") == "location" or entry.get("unitType") != "squadron":
+                continue
+            name = clean_text(entry.get("squadronName"))
+            country = clean_text(entry.get("country"))
+            if not name:
+                continue
+            key = normalize_key(f"{country}-{name}")
+            group = groups.setdefault(
+                key,
+                {
+                    "key": key,
+                    "name": name,
+                    "country": country,
+                    "photoCount": 0,
+                    "photos": [],
+                    "hero": {},
+                },
+            )
+            hero_asset_path = clean_text(entry.get("squadronHeroAssetPath"))
+            if hero_asset_path:
+                group["hero"] = {
+                    "entryTargetKey": entry["targetKey"],
+                    "assetPath": hero_asset_path,
+                }
+            for photo in entry.get("photos", []):
+                if not isinstance(photo, dict) or photo.get("invalid"):
+                    continue
+                group["photos"].append(
+                    {
+                        "entryTargetKey": entry["targetKey"],
+                        "index": photo.get("index"),
+                    }
+                )
+                group["photoCount"] += 1
+
+        return sorted(groups.values(), key=lambda item: (item["country"], item["name"]))
+
     def _scan_aircraft(
         self,
         tag_map: Dict[str, List[Dict[str, Any]]],
@@ -1014,6 +1184,13 @@ class SpotterDexManager:
             logo_value = read_squadron_logo_value(data)
             logo_path = resolve_entry_asset_source(self.root, self.raw_assets_dir, entry_path, logo_value) if logo_value else None
             logo_exists = bool(logo_path and logo_path.exists())
+            hero_value = read_squadron_hero_source(data)
+            hero_path = resolve_entry_asset_source(self.root, self.raw_assets_dir, entry_path, hero_value) if hero_value else None
+            hero_asset_path = (
+                relative_posix(hero_path, self.raw_assets_dir)
+                if hero_path and hero_path.exists() and self._is_within(hero_path, self.raw_assets_dir)
+                else ""
+            )
             photos = data.get("photos") or []
             if isinstance(photos, dict):
                 photos = [photos]
@@ -1069,7 +1246,7 @@ class SpotterDexManager:
                         "exists": source_exists,
                         "sourceWidth": source_width,
                         "sourceHeight": source_height,
-                        "sourceUnder2048": bool(source_width and source_width < MIN_SOURCE_PHOTO_WIDTH),
+                        "sourceUnderMinimumWidth": bool(source_width and source_width < MIN_SOURCE_PHOTO_WIDTH),
                         "location": location,
                         "pinId": pin_id,
                         "date": clean_text(item.get("date")),
@@ -1086,7 +1263,7 @@ class SpotterDexManager:
 
             for kind, source_value in (
                 ("logo", logo_value),
-                ("squadron hero", read_squadron_hero_source(data)),
+                ("squadron hero", hero_value),
             ):
                 if not source_value:
                     continue
@@ -1115,6 +1292,8 @@ class SpotterDexManager:
                     "aircraftFamily": aircraft_family,
                     "squadronLogo": clean_text(logo_value),
                     "squadronLogoExists": logo_exists,
+                    "squadronHero": clean_text(hero_value),
+                    "squadronHeroAssetPath": hero_asset_path,
                     "entryMissingFields": missing_entry_fields(data, logo_exists=logo_exists),
                     "photoCount": len(photo_records),
                     "missingPhotoCount": sum(1 for photo in photo_records if photo.get("exists") is False),
@@ -1144,6 +1323,13 @@ class SpotterDexManager:
             logo_value = read_squadron_logo_value(data)
             logo_path = resolve_entry_asset_source(self.root, self.raw_assets_dir, entry_path, logo_value) if logo_value else None
             logo_exists = bool(logo_path and logo_path.exists())
+            hero_value = read_squadron_hero_source(data)
+            hero_path = resolve_entry_asset_source(self.root, self.raw_assets_dir, entry_path, hero_value) if hero_value else None
+            hero_asset_path = (
+                relative_posix(hero_path, self.raw_assets_dir)
+                if hero_path and hero_path.exists() and self._is_within(hero_path, self.raw_assets_dir)
+                else ""
+            )
             photos = data.get("photos") or []
             if isinstance(photos, dict):
                 photos = [photos]
@@ -1193,7 +1379,7 @@ class SpotterDexManager:
                         "exists": source_exists,
                         "sourceWidth": source_width,
                         "sourceHeight": source_height,
-                        "sourceUnder2048": bool(source_width and source_width < MIN_SOURCE_PHOTO_WIDTH),
+                        "sourceUnderMinimumWidth": bool(source_width and source_width < MIN_SOURCE_PHOTO_WIDTH),
                         "location": location,
                         "pinId": pin_id,
                         "date": clean_text(item.get("date")),
@@ -1208,7 +1394,7 @@ class SpotterDexManager:
                     }
                 )
 
-            for kind, source_value in (("logo", logo_value), ("squadron hero", read_squadron_hero_source(data))):
+            for kind, source_value in (("logo", logo_value), ("squadron hero", hero_value)):
                 if not source_value:
                     continue
                 source_path = resolve_entry_asset_source(self.root, self.raw_assets_dir, entry_path, source_value)
@@ -1236,6 +1422,8 @@ class SpotterDexManager:
                     "aircraftFamily": "",
                     "squadronLogo": clean_text(logo_value),
                     "squadronLogoExists": logo_exists,
+                    "squadronHero": clean_text(hero_value),
+                    "squadronHeroAssetPath": hero_asset_path,
                     "entryMissingFields": missing_entry_fields(data, logo_exists=logo_exists, source_scope="squadron"),
                     "photoCount": len(photo_records),
                     "missingPhotoCount": sum(1 for photo in photo_records if photo.get("exists") is False),
@@ -1251,6 +1439,8 @@ class SpotterDexManager:
         assets: List[Dict[str, Any]] = []
         if not self.raw_assets_dir.exists():
             return assets
+        candidates: List[Dict[str, Any]] = []
+        photo_kinds = {"photo", "squadron photo", "location photo", "pin hero", "squadron hero"}
         for path in sorted(self.raw_assets_dir.rglob("*")):
             if not path.is_file() or path.suffix.lower() not in IMAGE_EXTENSIONS:
                 continue
@@ -1258,24 +1448,63 @@ class SpotterDexManager:
             stat = path.stat()
             width, height = read_image_dimensions(path, self._image_dimension_cache)
             tags = tag_map.get(rel, [])
-            photo_kinds = {"photo", "squadron photo", "location photo", "pin hero", "squadron hero"}
             is_photo_source = any(tag.get("kind") in photo_kinds for tag in tags) or (
                 not tags and path.suffix.lower() in {".jpg", ".jpeg", ".tif", ".tiff", ".webp"}
             )
-            assets.append(
+            candidates.append(
                 {
+                    "pathObject": path,
                     "path": rel,
                     "name": path.name,
                     "extension": path.suffix.lower(),
                     "size": stat.st_size,
-                    "sizeLabel": format_bytes(stat.st_size),
                     "modified": int(stat.st_mtime),
                     "width": width,
                     "height": height,
-                    "dimensionsLabel": f"{width} x {height}" if width and height else "Unavailable",
                     "isPhotoSource": is_photo_source,
-                    "isUnderResolution": bool(is_photo_source and width and width < MIN_SOURCE_PHOTO_WIDTH),
                     "tags": tags,
+                }
+            )
+
+        quality_by_path: Dict[str, Dict[str, Any]] = {}
+        photo_candidates = [item for item in candidates if item["isPhotoSource"]]
+        if photo_candidates:
+            worker_count = min(8, len(photo_candidates), max(1, os.cpu_count() or 1))
+            with ThreadPoolExecutor(max_workers=worker_count) as executor:
+                futures = {
+                    executor.submit(analyse_image_quality, item["pathObject"], self._image_quality_cache): item["path"]
+                    for item in photo_candidates
+                }
+                for future, rel in futures.items():
+                    try:
+                        quality_by_path[rel] = future.result()
+                    except Exception:
+                        quality_by_path[rel] = {"flags": []}
+
+        for item in candidates:
+            quality = quality_by_path.get(item["path"], {"flags": []})
+            quality_flags = quality.get("flags") if isinstance(quality.get("flags"), list) else []
+            assets.append(
+                {
+                    "path": item["path"],
+                    "name": item["name"],
+                    "extension": item["extension"],
+                    "size": item["size"],
+                    "sizeLabel": format_bytes(item["size"]),
+                    "modified": item["modified"],
+                    "width": item["width"],
+                    "height": item["height"],
+                    "dimensionsLabel": f"{item['width']} x {item['height']}" if item["width"] and item["height"] else "Unavailable",
+                    "isPhotoSource": item["isPhotoSource"],
+                    "isUnderResolution": bool(item["isPhotoSource"] and item["width"] and item["width"] < MIN_SOURCE_PHOTO_WIDTH),
+                    "qualityFlags": quality_flags,
+                    "hasExposureIssue": any(flag.get("category") == "exposure" for flag in quality_flags if isinstance(flag, dict)),
+                    "hasColourBalanceIssue": any(flag.get("category") == "colour" for flag in quality_flags if isinstance(flag, dict)),
+                    "meanLuminance": quality.get("meanLuminance"),
+                    "shadowClipPercent": quality.get("shadowClipPercent"),
+                    "highlightClipPercent": quality.get("highlightClipPercent"),
+                    "neutralChannelSpread": quality.get("neutralChannelSpread"),
+                    "tags": item["tags"],
                 }
             )
         assets.sort(key=lambda item: (bool(item["tags"]), -item["modified"], item["path"]))
@@ -1356,6 +1585,7 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
                 "/api/update-photo": self.context.manager.update_photo,
                 "/api/bulk-airshow": self.context.manager.bulk_update_airshow,
                 "/api/set-airshow-hero": self.context.manager.set_airshow_hero,
+                "/api/set-squadron-hero": self.context.manager.set_squadron_hero,
                 "/api/generate-caption": self.context.manager.generate_caption,
                 "/api/delete-photo": self.context.manager.delete_photo,
                 "/api/create-entry": self.context.manager.create_entry,
@@ -1657,6 +1887,103 @@ def read_image_dimensions(path: Path, cache: Dict[str, Tuple[int, int]]) -> Tupl
     return result
 
 
+def analyse_image_quality(path: Path, cache: Dict[str, Tuple[int, int, Dict[str, Any]]]) -> Dict[str, Any]:
+    """Return conservative exposure and neutral-colour-cast warnings for a source image."""
+    try:
+        stat = path.stat()
+    except OSError:
+        return {"flags": []}
+    cache_key = str(path.resolve())
+    cached = cache.get(cache_key)
+    if cached and cached[0] == stat.st_mtime_ns and cached[1] == stat.st_size:
+        return cached[2]
+
+    result: Dict[str, Any] = {"flags": []}
+    try:
+        with Image.open(path) as opened:
+            try:
+                opened.draft("RGB", (QUALITY_ANALYSIS_MAX_DIMENSION, QUALITY_ANALYSIS_MAX_DIMENSION))
+            except Exception:
+                pass
+            image = ImageOps.exif_transpose(opened).convert("RGB")
+            image.thumbnail((QUALITY_ANALYSIS_MAX_DIMENSION, QUALITY_ANALYSIS_MAX_DIMENSION), Image.Resampling.LANCZOS)
+            pixels = list(image.getdata())
+    except Exception:
+        cache[cache_key] = (stat.st_mtime_ns, stat.st_size, result)
+        return result
+
+    if not pixels:
+        cache[cache_key] = (stat.st_mtime_ns, stat.st_size, result)
+        return result
+
+    luminance_total = 0.0
+    dark_count = 0
+    bright_count = 0
+    neutral_count = 0
+    neutral_channels = [0, 0, 0]
+    for red, green, blue in pixels:
+        luminance = 0.2126 * red + 0.7152 * green + 0.0722 * blue
+        luminance_total += luminance
+        if luminance <= 10:
+            dark_count += 1
+        if luminance >= 245:
+            bright_count += 1
+        if 36 <= luminance <= 228 and max(red, green, blue) - min(red, green, blue) <= NEUTRAL_PIXEL_CHROMA_MAX:
+            neutral_count += 1
+            neutral_channels[0] += red
+            neutral_channels[1] += green
+            neutral_channels[2] += blue
+
+    pixel_count = len(pixels)
+    mean_luminance = luminance_total / pixel_count
+    shadow_ratio = dark_count / pixel_count
+    highlight_ratio = bright_count / pixel_count
+    flags: List[Dict[str, str]] = []
+    if mean_luminance <= UNDEREXPOSED_MEAN_LUMINANCE and shadow_ratio >= CLIPPED_SHADOW_RATIO:
+        flags.append(
+            {
+                "id": "underexposed",
+                "category": "exposure",
+                "label": "Possible underexposure",
+                "detail": f"Average luminance {round(mean_luminance)} with {round(shadow_ratio * 100)}% deep shadows.",
+            }
+        )
+    elif mean_luminance >= OVEREXPOSED_MEAN_LUMINANCE and highlight_ratio >= CLIPPED_HIGHLIGHT_RATIO:
+        flags.append(
+            {
+                "id": "overexposed",
+                "category": "exposure",
+                "label": "Possible overexposure",
+                "detail": f"Average luminance {round(mean_luminance)} with {round(highlight_ratio * 100)}% bright highlights.",
+            }
+        )
+
+    neutral_minimum = max(120, round(pixel_count * 0.025))
+    channel_spread = 0.0
+    if neutral_count >= neutral_minimum:
+        channel_means = [value / neutral_count for value in neutral_channels]
+        channel_spread = max(channel_means) - min(channel_means)
+        if channel_spread >= COLOUR_CAST_CHANNEL_SPREAD:
+            flags.append(
+                {
+                    "id": "colour-cast",
+                    "category": "colour",
+                    "label": "Possible colour cast",
+                    "detail": f"Neutral-toned pixels differ by {round(channel_spread)} RGB levels on average.",
+                }
+            )
+
+    result = {
+        "flags": flags,
+        "meanLuminance": round(mean_luminance),
+        "shadowClipPercent": round(shadow_ratio * 100),
+        "highlightClipPercent": round(highlight_ratio * 100),
+        "neutralChannelSpread": round(channel_spread),
+    }
+    cache[cache_key] = (stat.st_mtime_ns, stat.st_size, result)
+    return result
+
+
 def exif_tag_id(tag_name: str) -> Optional[int]:
     try:
         from PIL import ExifTags
@@ -1753,6 +2080,15 @@ def read_squadron_hero_source(data: Dict[str, Any]) -> Any:
         elif value:
             return value
     return None
+
+
+def clear_squadron_hero_fields(data: Dict[str, Any]) -> None:
+    for key in ("squadron_hero", "squadron_hero_image", "squadronHero", "squadronHeroImage"):
+        data.pop(key, None)
+    squadron_data = data.get("squadron")
+    if isinstance(squadron_data, dict):
+        for key in ("hero", "hero_image", "heroImage", "hero_photo", "heroPhoto"):
+            squadron_data.pop(key, None)
 
 
 def resolve_photo_source(root: Path, raw_assets_dir: Path, yaml_path: Path, source_value: Any) -> Path:
@@ -3216,6 +3552,50 @@ INDEX_HTML = r"""<!doctype html>
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .hero-photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+      max-height: 58vh;
+      overflow: auto;
+      padding: 2px;
+    }
+    .hero-photo-button {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+      padding: 6px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 11px;
+      line-height: 1.25;
+      text-align: left;
+    }
+    .hero-photo-button:hover,
+    .hero-photo-button.selected {
+      border-color: var(--accent);
+      color: var(--ink);
+    }
+    .hero-photo-button.selected {
+      box-shadow: 0 0 0 3px rgba(20,123,143,0.14);
+    }
+    .hero-photo-button img,
+    .hero-photo-button .missing {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border-radius: 5px;
+      background: #d8e1e8;
+    }
+    .hero-photo-button span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .toast {
       position: fixed;
       right: 18px;
@@ -3348,6 +3728,7 @@ INDEX_HTML = r"""<!doctype html>
           <button class="tab" data-tab="missing" type="button">Missing</button>
           <button class="tab" data-tab="quality" type="button">Quality</button>
           <button class="tab" data-tab="entries" type="button">Entries</button>
+          <button class="tab" data-tab="squadrons" type="button">Squadrons</button>
           <button class="tab" data-tab="locations" type="button">Locations</button>
           <button class="tab" data-tab="build" type="button">Build Log</button>
         </nav>
@@ -3413,6 +3794,11 @@ INDEX_HTML = r"""<!doctype html>
               <div class="field">
                 <label for="editPath">Path</label>
                 <input id="editPath" type="text">
+              </div>
+              <div class="field wide">
+                <label for="editTagTarget">Tag Images To</label>
+                <select id="editTagTarget"></select>
+                <div class="subtle">Choose an aircraft or squadron entry to move this photo while preserving its metadata.</div>
               </div>
               <div class="field">
                 <label for="editLocation">Location</label>
@@ -3548,7 +3934,7 @@ INDEX_HTML = r"""<!doctype html>
               <div class="subtle" id="qualitySummary">Checking source image dimensions.</div>
             </div>
           </div>
-          <div class="subtle">Photos below 2048px wide are flagged before the 2560px publishing resize. Select one to review or replace it in Attach.</div>
+          <div class="subtle">Photos below 2560px wide are flagged before publishing. Conservative checks also surface possible exposure and colour-balance issues; review the image before deciding whether to replace it.</div>
           <div class="quality-list" id="qualityList"></div>
         </section>
 
@@ -3604,7 +3990,12 @@ INDEX_HTML = r"""<!doctype html>
                 <select id="locationSelect"></select>
               </div>
               <div id="locationDetails" class="mini-meta"></div>
-              <button class="btn secondary" id="setHeroBtn" type="button">Set Hero From Selected</button>
+              <div class="subtle">Choose an image below to use as this location's hero.</div>
+              <div class="hero-photo-grid" id="locationHeroList"></div>
+              <div class="card-actions">
+                <button class="btn ghost" id="clearLocationHeroBtn" type="button">Clear Hero</button>
+                <button class="btn secondary" id="setHeroBtn" type="button">Set Hero From Selected Raw Asset</button>
+              </div>
             </div>
             <div class="section">
               <h2>Create Pin</h2>
@@ -3636,6 +4027,24 @@ INDEX_HTML = r"""<!doctype html>
               </div>
               <button class="btn primary" id="createPinBtn" type="button">+ Pin</button>
             </div>
+          </div>
+        </section>
+
+        <section class="view" id="squadronsView">
+          <div class="section">
+            <div class="bar">
+              <div>
+                <h2 class="panel-title">Squadron Hero Photos</h2>
+                <div class="subtle">Review every image tagged to a squadron, then choose the one to feature on its page.</div>
+              </div>
+              <button class="btn ghost" id="clearSquadronHeroBtn" type="button">Clear Hero</button>
+            </div>
+            <div class="field wide">
+              <label for="squadronHeroSelect">Squadron</label>
+              <select id="squadronHeroSelect"></select>
+            </div>
+            <div id="squadronHeroDetails" class="mini-meta"></div>
+            <div class="hero-photo-grid" id="squadronHeroList"></div>
           </div>
         </section>
 
@@ -3771,11 +4180,14 @@ INDEX_HTML = r"""<!doctype html>
       renderStats();
       renderAssetGrid();
       renderEntryOptions();
+      renderEditTagTargetOptions();
       renderPinOptions();
+      renderSquadronHeroOptions();
       renderSelectedStrip();
       renderEntryDetail();
       renderEntryCards();
       renderLocationDetails();
+      renderSquadronHeroManager();
       renderMissingFields();
       renderQualityControl();
       renderBulkCaptions();
@@ -3795,7 +4207,9 @@ INDEX_HTML = r"""<!doctype html>
         ["Pins", project.pinCount],
         ["Missing", project.missingPhotoCount],
         ["Fields", (project.missingFieldPhotoCount || 0) + (project.missingEntryFieldCount || 0)],
-        ["<2048px", project.underResolutionAssetCount || 0]
+        ["<2560px", project.underResolutionAssetCount || 0],
+        ["Exposure", project.exposureIssueAssetCount || 0],
+        ["Colour", project.colourBalanceIssueAssetCount || 0]
       ].map(([label, value]) => `<span class="pill">${label} <strong>${value}</strong></span>`).join("");
     }
 
@@ -3840,41 +4254,50 @@ INDEX_HTML = r"""<!doctype html>
         const resolutionTag = asset.isUnderResolution
           ? `<span class="tag warn">${escapeHtml(asset.dimensionsLabel)}</span>`
           : `<span>${escapeHtml(asset.dimensionsLabel)}</span>`;
+        const qualityTags = (asset.qualityFlags || []).map((flag) => (
+          `<span class="tag warn" title="${escapeHtml(flag.detail || "")}">${escapeHtml(flag.label || "Quality warning")}</span>`
+        )).join("");
         return `
           <button class="asset-card${selected}" type="button" data-asset="${escapeHtml(asset.path)}" title="${escapeHtml(title)}">
             <img src="${thumbUrl(asset.path)}" loading="lazy" alt="${escapeHtml(asset.name)}">
             <div class="asset-name">${escapeHtml(asset.name)}</div>
-            <div class="asset-meta"><span>${escapeHtml(asset.sizeLabel)}</span>${resolutionTag}${tag}</div>
+            <div class="asset-meta"><span>${escapeHtml(asset.sizeLabel)}</span>${resolutionTag}${qualityTags}${tag}</div>
           </button>
         `;
       }).join("");
     }
 
-    function lowResolutionSourceAssets() {
-      return (state.data?.assets || []).filter((asset) => asset.isPhotoSource && asset.isUnderResolution);
-    }
-
     function renderQualityControl() {
-      const assets = lowResolutionSourceAssets();
+      const assets = (state.data?.assets || []).filter((asset) => (
+        asset.isPhotoSource && (asset.isUnderResolution || (asset.qualityFlags || []).length)
+      ));
       const allPhotoSources = (state.data?.assets || []).filter((asset) => asset.isPhotoSource);
-      const minimum = state.data?.project?.minimumSourcePhotoWidth || 2048;
-      $("qualitySummary").textContent = `${assets.length} of ${allPhotoSources.length} source photograph(s) below ${minimum}px wide`;
+      const project = state.data?.project || {};
+      const minimum = project.minimumSourcePhotoWidth || 2560;
+      const belowMinimum = project.underResolutionAssetCount || 0;
+      const exposure = project.exposureIssueAssetCount || 0;
+      const colour = project.colourBalanceIssueAssetCount || 0;
+      $("qualitySummary").textContent = `${assets.length} of ${allPhotoSources.length} source photograph(s) flagged: ${belowMinimum} below ${minimum}px, ${exposure} exposure, ${colour} colour balance.`;
       if (!assets.length) {
-        $("qualityList").innerHTML = `<div class="empty">All source photographs meet the ${minimum}px minimum width.</div>`;
+        $("qualityList").innerHTML = `<div class="empty">All source photographs meet the ${minimum}px requirement with no exposure or colour-balance warnings.</div>`;
         return;
       }
       $("qualityList").innerHTML = assets
-        .sort((a, b) => a.width - b.width || a.path.localeCompare(b.path))
+        .sort((a, b) => (b.qualityFlags || []).length - (a.qualityFlags || []).length || a.width - b.width || a.path.localeCompare(b.path))
         .map((asset) => {
           const associations = asset.tags.length
             ? asset.tags.map((tag) => `${tag.kind}: ${tag.label || tag.path || "Source"}`).join(" · ")
             : "New raw asset";
+          const warnings = [
+            asset.isUnderResolution ? `${asset.dimensionsLabel} source - below ${minimum}px` : "",
+            ...(asset.qualityFlags || []).map((flag) => flag.detail || flag.label || "Quality warning")
+          ].filter(Boolean);
           return `
             <button class="quality-card" type="button" data-quality-asset="${escapeHtml(asset.path)}">
               <img src="${thumbUrl(asset.path)}" loading="lazy" alt="${escapeHtml(asset.name)}">
               <span class="quality-card-copy">
                 <strong>${escapeHtml(asset.path)}</strong>
-                <span class="tag warn">${escapeHtml(asset.dimensionsLabel)} source - below ${minimum}px</span>
+                ${warnings.map((warning) => `<span class="tag warn">${escapeHtml(warning)}</span>`).join("")}
                 <span class="mini-meta">${escapeHtml(associations)}</span>
                 <span class="mini-meta">Select to review this source in Attach.</span>
               </span>
@@ -4429,6 +4852,26 @@ INDEX_HTML = r"""<!doctype html>
       renderEntryDetail();
     }
 
+    function renderEditTagTargetOptions() {
+      const current = $("editTagTarget").value;
+      const targetEntries = (state.data?.entries || []).filter((entry) => (
+        entry.sourceScope === "aircraft" || entry.sourceScope === "squadron"
+      ));
+      const option = (entry) => (
+        `<option value="${escapeHtml(entry.targetKey)}">${escapeHtml(entryOptionLabel(entry))}</option>`
+      );
+      const aircraftEntries = targetEntries.filter((entry) => entry.sourceScope === "aircraft");
+      const squadronEntries = targetEntries.filter((entry) => entry.sourceScope === "squadron");
+      $("editTagTarget").innerHTML = [
+        `<option value="">Keep current photo source</option>`,
+        aircraftEntries.length ? `<optgroup label="Aircraft">${aircraftEntries.map(option).join("")}</optgroup>` : "",
+        squadronEntries.length ? `<optgroup label="Squadrons">${squadronEntries.map(option).join("")}</optgroup>` : ""
+      ].join("");
+      if (targetEntries.some((entry) => entry.targetKey === current)) {
+        $("editTagTarget").value = current;
+      }
+    }
+
     function renderPinOptions() {
       const options = state.data.pins.map((pin) => (
         `<option value="${escapeHtml(pin.key)}">${escapeHtml(pinOptionLabel(pin))}</option>`
@@ -4504,21 +4947,114 @@ INDEX_HTML = r"""<!doctype html>
       `).join("") || `<div class="empty">No matching entries</div>`;
     }
 
+    function entryByTargetKey(targetKey) {
+      return (state.data?.entries || []).find((entry) => entry.targetKey === targetKey) || null;
+    }
+
+    function photoReferenceByKey(key) {
+      for (const entry of state.data?.entries || []) {
+        for (const photo of entry.photos || []) {
+          if (captionPhotoKey(entry, photo.index) === key) return {entry, photo};
+        }
+      }
+      return null;
+    }
+
+    function locationHeroPhotos(pin) {
+      return (state.data?.entries || [])
+        .flatMap((entry) => (entry.photos || []).map((photo) => ({entry, photo})))
+        .filter(({photo}) => !photo.invalid && (photo.pinId === pin.id || photo.location === pin.name))
+        .sort((a, b) => effectiveEventDate(b.photo).localeCompare(effectiveEventDate(a.photo)) || a.photo.path.localeCompare(b.photo.path));
+    }
+
     function renderLocationDetails() {
       const pin = selectedPin("locationSelect");
       if (!pin) {
         $("locationDetails").textContent = "No location selected";
+        $("locationHeroList").innerHTML = `<div class="empty">Choose a location to review its images.</div>`;
+        $("clearLocationHeroBtn").disabled = true;
         return;
       }
       const coord = pin.lat === null || pin.lon === null ? "No coordinates" : `${pin.lat}, ${pin.lon}`;
+      const photos = locationHeroPhotos(pin);
       const hero = pin.heroPhoto ? `Hero: ${pin.heroPhoto}` : "No custom hero";
       $("locationDetails").innerHTML = `
         <strong>${escapeHtml(pin.name)}</strong><br>
         ${escapeHtml(pin.country)} ${pin.icao ? `- ${escapeHtml(pin.icao)}` : ""}<br>
         ${escapeHtml(coord)}<br>
         ${escapeHtml(hero)}<br>
-        ${pin.photoCount} tagged photo(s)
+        ${photos.length} tagged photo(s) available for the hero
       `;
+      $("clearLocationHeroBtn").disabled = !pin.heroPhoto;
+      if (!photos.length) {
+        $("locationHeroList").innerHTML = `<div class="empty">No photos are currently tagged to this location.</div>`;
+        return;
+      }
+      $("locationHeroList").innerHTML = photos.map(({entry, photo}) => {
+        const selected = Boolean(pin.heroAssetPath && photo.sourceAssetPath === pin.heroAssetPath);
+        const media = photo.exists && photo.sourceAssetPath
+          ? `<img src="${thumbUrl(photo.sourceAssetPath)}" loading="lazy" alt="${escapeHtml(photo.path)}">`
+          : `<div class="missing">Missing source</div>`;
+        const label = [entry.aircraftType || entry.squadronName || "Location image", formatEventDate(effectiveEventDate(photo))].filter(Boolean).join(" - ");
+        return `
+          <button class="hero-photo-button${selected ? " selected" : ""}" type="button" data-location-hero-photo="${escapeHtml(captionPhotoKey(entry, photo.index))}">
+            ${media}<span>${escapeHtml(label)}</span>
+          </button>
+        `;
+      }).join("");
+    }
+
+    function selectedSquadronGroup() {
+      const value = $("squadronHeroSelect").value;
+      return (state.data?.squadronGroups || []).find((group) => group.key === value) || null;
+    }
+
+    function renderSquadronHeroOptions() {
+      const current = $("squadronHeroSelect").value;
+      const groups = state.data?.squadronGroups || [];
+      $("squadronHeroSelect").innerHTML = groups.map((group) => (
+        `<option value="${escapeHtml(group.key)}">${escapeHtml(group.name)} (${escapeHtml(group.country || "Unknown")}) - ${group.photoCount} photo(s)</option>`
+      )).join("");
+      if (groups.some((group) => group.key === current)) {
+        $("squadronHeroSelect").value = current;
+      }
+    }
+
+    function renderSquadronHeroManager() {
+      const group = selectedSquadronGroup();
+      if (!group) {
+        $("squadronHeroDetails").textContent = "No squadron photo groups available.";
+        $("squadronHeroList").innerHTML = `<div class="empty">No squadron photos to review.</div>`;
+        $("clearSquadronHeroBtn").disabled = true;
+        return;
+      }
+      const hero = group.hero || {};
+      const photos = (group.photos || [])
+        .map((reference) => {
+          const entry = entryByTargetKey(reference.entryTargetKey);
+          const photo = entry?.photos?.find((item) => Number(item.index) === Number(reference.index));
+          return entry && photo ? {entry, photo} : null;
+        })
+        .filter(Boolean)
+        .sort((a, b) => effectiveEventDate(b.photo).localeCompare(effectiveEventDate(a.photo)) || a.photo.path.localeCompare(b.photo.path));
+      $("squadronHeroDetails").textContent = `${group.name} · ${group.country || "Country not set"} · ${photos.length} image(s)${hero.assetPath ? " · hero selected" : " · no hero selected"}`;
+      $("clearSquadronHeroBtn").disabled = !hero.assetPath;
+      if (!photos.length) {
+        $("squadronHeroList").innerHTML = `<div class="empty">No photos are tagged to this squadron.</div>`;
+        return;
+      }
+      $("squadronHeroList").innerHTML = photos.map(({entry, photo}) => {
+        const selected = hero.entryTargetKey === entry.targetKey && hero.assetPath === photo.sourceAssetPath;
+        const media = photo.exists && photo.sourceAssetPath
+          ? `<img src="${thumbUrl(photo.sourceAssetPath)}" loading="lazy" alt="${escapeHtml(photo.path)}">`
+          : `<div class="missing">Missing source</div>`;
+        const label = [entry.aircraftType || "Squadron image", formatEventDate(effectiveEventDate(photo))].filter(Boolean).join(" - ");
+        return `
+          <button class="hero-photo-button${selected ? " selected" : ""}" type="button" data-squadron-hero-photo="${escapeHtml(captionPhotoKey(entry, photo.index))}">
+            ${media}<span>${escapeHtml(label)}</span>
+          </button>
+        `;
+      }).join("");
     }
 
     function allMissingIssues() {
@@ -4723,6 +5259,7 @@ INDEX_HTML = r"""<!doctype html>
       $("editYear").value = photo.year || "";
       $("editAirshow").value = photo.airshow || "";
       $("editCaption").value = photo.caption || "";
+      $("editTagTarget").value = ["aircraft", "squadron"].includes(entry.sourceScope) ? entry.targetKey : "";
       const matchingPin = state.data.pins.find((pin) => pin.id === photo.pinId || pin.name === photo.location);
       $("editLocation").value = matchingPin ? matchingPin.key : "";
     }
@@ -4735,6 +5272,7 @@ INDEX_HTML = r"""<!doctype html>
       $("editYear").value = "";
       $("editAirshow").value = "";
       $("editCaption").value = "";
+      $("editTagTarget").value = "";
       $("editLocation").value = "";
     }
 
@@ -4837,9 +5375,12 @@ INDEX_HTML = r"""<!doctype html>
       const index = $("editIndex").value;
       if (!entry || index === "") throw new Error("Choose a photo to edit.");
       const pin = selectedPin("editLocation");
+      const tagTarget = entryByTargetKey($("editTagTarget").value);
       const payload = {
         ...entryRequestFields(entry),
         index: Number(index),
+        tagTargetEntryPath: tagTarget?.entryPath || "",
+        tagTargetScope: tagTarget?.sourceScope || "",
         photo: {
           path: $("editPath").value,
           location: pin ? pin.name : "",
@@ -4953,6 +5494,41 @@ INDEX_HTML = r"""<!doctype html>
         pinPath: pin.pinPath,
         pinId: pin.id,
         assetPath
+      });
+      toast(result.message);
+      await loadState(true);
+    }
+
+    async function setLocationHeroFromPhoto(photoKey) {
+      const pin = selectedPin("locationSelect");
+      const reference = photoReferenceByKey(photoKey);
+      if (!pin || !reference?.photo?.sourceAssetPath) throw new Error("Choose an available location photo.");
+      const result = await api("/api/set-pin-hero", {
+        pinPath: pin.pinPath,
+        pinId: pin.id,
+        assetPath: reference.photo.sourceAssetPath
+      });
+      toast(result.message);
+      await loadState(true);
+    }
+
+    async function clearLocationHero() {
+      const pin = selectedPin("locationSelect");
+      if (!pin) throw new Error("Choose a location.");
+      const result = await api("/api/set-pin-hero", {pinPath: pin.pinPath, pinId: pin.id, clear: true});
+      toast(result.message);
+      await loadState(true);
+    }
+
+    async function setSquadronHero(photoKey = "") {
+      const group = selectedSquadronGroup();
+      if (!group) throw new Error("Choose a squadron.");
+      const reference = photoKey ? photoReferenceByKey(photoKey) : null;
+      if (photoKey && !reference) throw new Error("The selected squadron photo is no longer available.");
+      const result = await api("/api/set-squadron-hero", {
+        squadronName: group.name,
+        country: group.country,
+        hero: reference ? {...entryRequestFields(reference.entry), index: reference.photo.index} : null
       });
       toast(result.message);
       await loadState(true);
@@ -5170,6 +5746,7 @@ INDEX_HTML = r"""<!doctype html>
         renderEntryDetail();
       });
       $("locationSelect").addEventListener("change", renderLocationDetails);
+      $("squadronHeroSelect").addEventListener("change", renderSquadronHeroManager);
       $("reloadBtn").addEventListener("click", () => loadState(true).then(() => toast("Reloaded")));
       $("clearSelectionBtn").addEventListener("click", () => {
         state.selectedAssets.clear();
@@ -5186,6 +5763,8 @@ INDEX_HTML = r"""<!doctype html>
       $("createEntryBtn").addEventListener("click", () => createEntry().catch((error) => toast(error.message)));
       $("createPinBtn").addEventListener("click", () => createPin().catch((error) => toast(error.message)));
       $("setHeroBtn").addEventListener("click", () => setLocationHero().catch((error) => toast(error.message)));
+      $("clearLocationHeroBtn").addEventListener("click", () => clearLocationHero().catch((error) => toast(error.message)));
+      $("clearSquadronHeroBtn").addEventListener("click", () => setSquadronHero().catch((error) => toast(error.message)));
       $("refreshBulkCaptionsBtn").addEventListener("click", () => {
         resetBulkCaptionQueue();
         renderBulkCaptions();
@@ -5240,6 +5819,14 @@ INDEX_HTML = r"""<!doctype html>
         const clear = event.target.closest("[data-airshow-hero-clear]");
         if (photo) setAirshowHero(photo.dataset.airshowHeroEvent, photo.dataset.airshowHeroPhoto).catch((error) => toast(error.message));
         if (clear) setAirshowHero(clear.dataset.airshowHeroClear).catch((error) => toast(error.message));
+      });
+      $("locationHeroList").addEventListener("click", (event) => {
+        const photo = event.target.closest("[data-location-hero-photo]");
+        if (photo) setLocationHeroFromPhoto(photo.dataset.locationHeroPhoto).catch((error) => toast(error.message));
+      });
+      $("squadronHeroList").addEventListener("click", (event) => {
+        const photo = event.target.closest("[data-squadron-hero-photo]");
+        if (photo) setSquadronHero(photo.dataset.squadronHeroPhoto).catch((error) => toast(error.message));
       });
       $("airshowMissingImageList").addEventListener("click", (event) => {
         const apply = event.target.closest("[data-airshow-missing-apply]");
