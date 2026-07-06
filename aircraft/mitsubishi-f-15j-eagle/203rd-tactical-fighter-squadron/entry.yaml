@@ -6,14 +6,17 @@ photos:
   location: Chitose Air Base
   pin_id: chitose-air-base
   caption: 203 TFS 60th Anniversary Special Livery during an Airshow Rehearsal
+  airshow: Chitose Air Show 2024 (Rehearsal)
 - path: DSC08215-Enhanced-NR.jpg
   location: Chitose Air Base
   pin_id: chitose-air-base
   caption: 203 TFS 60th Anniversary Special Livery during an Airshow Rehearsal
+  airshow: Chitose Air Show 2024 (Rehearsal)
 - path: DSC08164-Enhanced-NR.jpg
   location: Chitose Air Base
   pin_id: chitose-air-base
   caption: 203 TFS 60th Anniversary Special Livery during an Airshow Rehearsal
+  airshow: Chitose Air Show 2024 (Rehearsal)
 - path: DSC05504-Enhanced-NR.jpg
   location: Chitose Air Base
   pin_id: chitose-air-base
@@ -22,4 +25,6 @@ photos:
   location: Chitose Air Base
   pin_id: chitose-air-base
   caption: 203 TFS 60th Anniversary Special Livery during an Airshow Rehearsal
+  airshow: Chitose Air Show 2024 (Rehearsal)
 aircraft_family: fighter
+squadron_logo: logos/203tfs.png

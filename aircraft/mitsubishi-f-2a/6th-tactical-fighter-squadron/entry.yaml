@@ -38,4 +38,34 @@ photos:
   caption: A Mitsubishi F-2A from the 6th Tactical Fighter Squadron takes off from Tsuiki Air Base
   caption_ai_assisted: true
   airshow: Tsuiki Air Show 2023
+- path: DSC02832.jpg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: A pair of F-2A performing a formation take-off
+  airshow: Tsuiki Air Show 2025
+- path: DSC02809.jpg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: A pair of F-2A performing a formation take-off
+  airshow: Tsuiki Air Show 2025
+- path: DSC03398.jpg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: F-2A from 6 TFS
+  airshow: Tsuiki Air Show 2025
+- path: DSC01142.jpg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: F-2A from 6 TFS
+  airshow: Tsuiki Air Show 2025
+- path: DSC01315.jpg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: F-2A from 6 TFS
+  airshow: Tsuiki Air Show 2025
+- path: DSC00991.jpg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: F-2A from 6 TFS
+  airshow: Tsuiki Air Show 2025
 aircraft_family: fighter

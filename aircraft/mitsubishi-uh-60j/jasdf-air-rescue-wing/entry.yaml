@@ -14,11 +14,13 @@ photos:
   pin_id: kisarazu-airfield
   caption: JASDF Air Rescue UH-60J at Kisarazu Airfield
   caption_ai_assisted: true
+  airshow: Kisazaru Air Show 2023
 - path: DSC09035-Enhanced-NR.jpeg
   location: Kisarazu Airfield
   pin_id: kisarazu-airfield
   caption: A Mitsubishi UH-60J helicopter from the JASDF Air Rescue Wing hovers near the ground at Kisarazu Airfield as three JGSDF personnel in camouflage watch.
   caption_ai_assisted: true
+  airshow: Kisazaru Air Show 2023
 - path: DSC05864-Enhanced-NR.jpeg
   location: Tsuiki Air Base
   pin_id: tsuiki-air-base

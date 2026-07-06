@@ -17,6 +17,7 @@ import mimetypes
 import os
 import queue
 import re
+import shutil
 import subprocess
 import sys
 import threading
@@ -112,6 +113,37 @@ class SpotterDexManager:
         self._exif_date_cache: Dict[str, str] = {}
         self._image_dimension_cache: Dict[str, Tuple[int, int]] = {}
         self._image_quality_cache: Dict[str, Tuple[int, int, Dict[str, Any]]] = {}
+
+    def clear_build_cache(self, _payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Discard manager thumbnails and in-memory image metadata caches."""
+        file_count = 0
+        byte_count = 0
+        if CACHE_DIR.exists():
+            if CACHE_DIR.is_dir():
+                for path in CACHE_DIR.rglob("*"):
+                    if path.is_file():
+                        file_count += 1
+                        byte_count += path.stat().st_size
+                shutil.rmtree(CACHE_DIR)
+            else:
+                file_count = 1
+                byte_count = CACHE_DIR.stat().st_size
+                CACHE_DIR.unlink()
+
+        metadata_count = (
+            len(self._exif_date_cache)
+            + len(self._image_dimension_cache)
+            + len(self._image_quality_cache)
+        )
+        self._exif_date_cache.clear()
+        self._image_dimension_cache.clear()
+        self._image_quality_cache.clear()
+        return {
+            "ok": True,
+            "removedFiles": file_count,
+            "removedBytes": byte_count,
+            "message": f"Cleared {file_count} cached file(s) and reset {metadata_count} image metadata record(s).",
+        }
 
     def get_state(self) -> Dict[str, Any]:
         tag_map: Dict[str, List[Dict[str, Any]]] = {}
@@ -227,14 +259,64 @@ class SpotterDexManager:
             "locationName": "",
         }
 
-    def append_photos(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        target = self._photo_target(payload)
-        yaml_path = target["yamlPath"]
-        photos = target["photos"]
+    def _squadron_photo_target(self, payload: Any) -> Dict[str, Any]:
+        """Create or reuse the standalone source for a squadron-only photo tag."""
+        if not isinstance(payload, dict):
+            raise ValueError("Squadron target is invalid.")
 
+        squadron_name = clean_text(payload.get("squadronName"))
+        country = clean_text(payload.get("country"))
+        unit_type = clean_text(payload.get("unitType")) or "squadron"
+        squadron_logo = clean_text(payload.get("squadronLogo"))
+        if not squadron_name or not country:
+            raise ValueError("Choose a squadron with a country before tagging a squadron-only photo.")
+        if unit_type not in {"squadron", "organisation"}:
+            unit_type = "squadron"
+
+        entry_path = self.squadron_dir / slugify(squadron_name) / "entry.yaml"
+        if entry_path.exists():
+            data = read_yaml(entry_path)
+            existing_name = read_squadron_name(data, entry_path)
+            existing_country = clean_text(data.get("country"))
+            if normalize_key(existing_name) != normalize_key(squadron_name) or normalize_key(existing_country) != normalize_key(country):
+                raise ValueError(
+                    f"Standalone squadron entry already exists at {relative_posix(entry_path, self.root)} with different metadata."
+                )
+        else:
+            data: Dict[str, Any] = {
+                "squadron_name": squadron_name,
+                "country": country,
+                "photos": [],
+            }
+            if unit_type == "organisation":
+                data["unit_type"] = "organisation"
+            if squadron_logo:
+                data["squadron_logo"] = squadron_logo
+            write_yaml(entry_path, data)
+
+        return self._photo_target(
+            {
+                "scope": "squadron",
+                "entryPath": relative_posix(entry_path, self.root),
+            }
+        )
+
+    def append_photos(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         asset_paths = payload.get("assetPaths") or []
         if not isinstance(asset_paths, list) or not asset_paths:
             raise ValueError("Select at least one raw asset.")
+        has_supported_asset = any(
+            self._raw_asset_path(value).exists()
+            and self._raw_asset_path(value).suffix.lower() in IMAGE_EXTENSIONS
+            for value in asset_paths
+        )
+        if not has_supported_asset:
+            raise ValueError("Select at least one existing supported raw asset.")
+
+        squadron_target = payload.get("squadronTarget")
+        target = self._squadron_photo_target(squadron_target) if squadron_target else self._photo_target(payload)
+        yaml_path = target["yamlPath"]
+        photos = target["photos"]
 
         location_name = target["locationName"] if target["scope"] == "location" else clean_text(payload.get("locationName"))
         pin_id = target["pinId"] if target["scope"] == "location" else clean_text(payload.get("pinId"))
@@ -332,18 +414,23 @@ class SpotterDexManager:
             updated["caption_ai_assisted"] = True
 
         destination_path = clean_text(payload.get("tagTargetEntryPath"))
-        if not destination_path:
+        squadron_target = payload.get("tagTargetSquadron")
+        if not destination_path and not squadron_target:
             photos[index] = updated
             write_yaml(target["yamlPath"], target["data"])
             return {"ok": True, "message": "Photo updated."}
 
-        # Older manager clients only supplied the destination path, so retain the
-        # aircraft default while allowing the editor to move a frame to a
-        # standalone squadron record as well.
-        destination_scope = clean_text(payload.get("tagTargetScope")) or "aircraft"
-        if destination_scope not in {"aircraft", "squadron"}:
-            raise ValueError("Tag Images To supports aircraft and squadron entries only.")
-        destination = self._photo_target({"scope": destination_scope, "entryPath": destination_path})
+        if squadron_target:
+            destination_scope = "squadron"
+            destination = self._squadron_photo_target(squadron_target)
+        else:
+            # Older manager clients only supplied the destination path, so retain the
+            # aircraft default while allowing the editor to move a frame to a
+            # standalone squadron record as well.
+            destination_scope = clean_text(payload.get("tagTargetScope")) or "aircraft"
+            if destination_scope not in {"aircraft", "squadron"}:
+                raise ValueError("Tag Images To supports aircraft and squadron entries only.")
+            destination = self._photo_target({"scope": destination_scope, "entryPath": destination_path})
         same_target = target["scope"] == destination["scope"] and target["yamlPath"] == destination["yamlPath"]
         if same_target:
             photos[index] = updated
@@ -601,15 +688,26 @@ class SpotterDexManager:
 
     def generate_caption(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Generate a non-persistent caption suggestion from a source image."""
-        try:
-            target = self._photo_target(payload)
-        except ValueError as exc:
-            raise CaptionAssistError(str(exc)) from exc
-        entry_path = target["yamlPath"]
-        entry_data = target["data"]
-        aircraft_type = read_aircraft_type(entry_data, entry_path) if target["scope"] == "aircraft" else ""
-        squadron_name = read_squadron_name(entry_data, entry_path) if target["scope"] != "location" else ""
-        location = target["locationName"] if target["scope"] == "location" else clean_text(payload.get("locationName"))
+        squadron_target = payload.get("squadronTarget")
+        target: Optional[Dict[str, Any]] = None
+        if squadron_target:
+            if not isinstance(squadron_target, dict):
+                raise CaptionAssistError("Squadron target is invalid.")
+            aircraft_type = ""
+            squadron_name = clean_text(squadron_target.get("squadronName"))
+            if not squadron_name:
+                raise CaptionAssistError("Choose a squadron before generating a caption.")
+            location = clean_text(payload.get("locationName"))
+        else:
+            try:
+                target = self._photo_target(payload)
+            except ValueError as exc:
+                raise CaptionAssistError(str(exc)) from exc
+            entry_path = target["yamlPath"]
+            entry_data = target["data"]
+            aircraft_type = read_aircraft_type(entry_data, entry_path) if target["scope"] == "aircraft" else ""
+            squadron_name = read_squadron_name(entry_data, entry_path) if target["scope"] != "location" else ""
+            location = target["locationName"] if target["scope"] == "location" else clean_text(payload.get("locationName"))
         airshow = clean_text(payload.get("airshow"))
         source_path: Optional[Path] = None
 
@@ -617,6 +715,8 @@ class SpotterDexManager:
         if asset_value:
             source_path = self._raw_asset_path(asset_value)
         else:
+            if target is None:
+                raise CaptionAssistError("Choose a source image before generating a caption.")
             try:
                 index = int(payload.get("index"))
             except (TypeError, ValueError) as exc:
@@ -1591,6 +1691,7 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
                 "/api/create-entry": self.context.manager.create_entry,
                 "/api/create-pin": self.context.manager.create_pin,
                 "/api/set-pin-hero": self.context.manager.set_pin_hero,
+                "/api/clear-build-cache": self.context.manager.clear_build_cache,
                 "/api/build": self.context.manager.run_build,
             }
             handler = routes.get(parsed.path)
@@ -3690,6 +3791,7 @@ INDEX_HTML = r"""<!doctype html>
       <div class="stats" id="stats"></div>
       <div class="actions">
         <button class="btn ghost" id="reloadBtn" type="button">Reload</button>
+        <button class="btn ghost" id="clearBuildCacheBtn" type="button">Clear build cache</button>
         <button class="btn primary" id="buildBtn" type="button">Build</button>
       </div>
     </header>
@@ -3798,7 +3900,7 @@ INDEX_HTML = r"""<!doctype html>
               <div class="field wide">
                 <label for="editTagTarget">Tag Images To</label>
                 <select id="editTagTarget"></select>
-                <div class="subtle">Choose an aircraft or squadron entry to move this photo while preserving its metadata.</div>
+                <div class="subtle">Choose an aircraft source or tag directly to a squadron-only source; photo metadata is preserved.</div>
               </div>
               <div class="field">
                 <label for="editLocation">Location</label>
@@ -4077,6 +4179,7 @@ INDEX_HTML = r"""<!doctype html>
         editPhotoKey: "",
         missingPhotoKey: ""
       },
+      thumbnailCacheNonce: "",
       bulkCaptions: {
         queue: null,
         results: {},
@@ -4107,12 +4210,13 @@ INDEX_HTML = r"""<!doctype html>
     }
 
     function thumbUrl(path) {
-      return `/api/thumb?path=${encodeURIComponent(path)}`;
+      const cache = state.thumbnailCacheNonce ? `&cache=${encodeURIComponent(state.thumbnailCacheNonce)}` : "";
+      return `/api/thumb?path=${encodeURIComponent(path)}${cache}`;
     }
 
     function selectedEntry() {
       const value = $("entrySelect").value;
-      return state.data?.entries.find((entry) => entry.targetKey === value) || null;
+      return entryByTargetKey(value);
     }
 
     function selectedPin(selectId = "pinSelect") {
@@ -4129,6 +4233,9 @@ INDEX_HTML = r"""<!doctype html>
       if (entry.sourceScope === "location") {
         return `Location - ${entry.locationName} (${entry.country || "Unknown"})`;
       }
+      if (entry.sourceScope === "squadron-target") {
+        return `Squadron-only - ${entry.squadronName} (${entry.country || "Unknown"})`;
+      }
       const prefix = entry.sourceScope === "squadron" ? "Squadron" : entry.aircraftType;
       return `${prefix} - ${entry.squadronName} (${entry.country || "Unknown"})`;
     }
@@ -4139,6 +4246,53 @@ INDEX_HTML = r"""<!doctype html>
         entryPath: entry.entryPath,
         targetPinId: entry.sourceScope === "location" ? entry.pinId : ""
       };
+    }
+
+    function squadronOnlyTargets() {
+      const entries = state.data?.entries || [];
+      const standaloneKeys = new Set(entries
+        .filter((entry) => entry.sourceScope === "squadron")
+        .map((entry) => `${String(entry.country || "").trim().toLowerCase()}::${String(entry.squadronName || "").trim().toLowerCase()}`));
+      return (state.data?.squadronGroups || [])
+        .filter((group) => {
+          const key = `${String(group.country || "").trim().toLowerCase()}::${String(group.name || "").trim().toLowerCase()}`;
+          return !standaloneKeys.has(key);
+        })
+        .map((group) => {
+          const source = entries.find((entry) => (
+            entry.sourceScope !== "location"
+            && String(entry.country || "").trim().toLowerCase() === String(group.country || "").trim().toLowerCase()
+            && String(entry.squadronName || "").trim().toLowerCase() === String(group.name || "").trim().toLowerCase()
+          ));
+          return {
+            targetKey: `squadron-target::${group.key}`,
+            sourceScope: "squadron-target",
+            entryPath: "",
+            aircraftType: "",
+            squadronName: group.name,
+            country: group.country,
+            unitType: source?.unitType || "squadron",
+            squadronLogo: "",
+            photoCount: 0,
+            missingPhotoCount: 0,
+            photos: []
+          };
+        });
+    }
+
+    function squadronTargetPayload(entry) {
+      return {
+        squadronName: entry.squadronName,
+        country: entry.country,
+        unitType: entry.unitType || "squadron",
+        squadronLogo: entry.squadronLogo || ""
+      };
+    }
+
+    function attachTargetRequestFields(entry) {
+      return entry?.sourceScope === "squadron-target"
+        ? {squadronTarget: squadronTargetPayload(entry)}
+        : entryRequestFields(entry);
     }
 
     async function readApiJson(response) {
@@ -4839,9 +4993,9 @@ INDEX_HTML = r"""<!doctype html>
     function renderEntryOptions() {
       const search = $("entrySearch").value.trim().toLowerCase();
       const current = $("entrySelect").value;
-      const entries = (state.data.entries || []).filter((entry) => {
+      const entries = [...(state.data.entries || []), ...squadronOnlyTargets()].filter((entry) => {
         if (!search) return true;
-        return entryOptionLabel(entry).toLowerCase().includes(search) || entry.entryPath.toLowerCase().includes(search);
+        return entryOptionLabel(entry).toLowerCase().includes(search) || String(entry.entryPath || "").toLowerCase().includes(search);
       });
       $("entrySelect").innerHTML = entries.map((entry) => (
         `<option value="${escapeHtml(entry.targetKey)}">${escapeHtml(entryOptionLabel(entry))}</option>`
@@ -4857,6 +5011,7 @@ INDEX_HTML = r"""<!doctype html>
       const targetEntries = (state.data?.entries || []).filter((entry) => (
         entry.sourceScope === "aircraft" || entry.sourceScope === "squadron"
       ));
+      const squadronOnlyEntries = squadronOnlyTargets();
       const option = (entry) => (
         `<option value="${escapeHtml(entry.targetKey)}">${escapeHtml(entryOptionLabel(entry))}</option>`
       );
@@ -4865,9 +5020,10 @@ INDEX_HTML = r"""<!doctype html>
       $("editTagTarget").innerHTML = [
         `<option value="">Keep current photo source</option>`,
         aircraftEntries.length ? `<optgroup label="Aircraft">${aircraftEntries.map(option).join("")}</optgroup>` : "",
-        squadronEntries.length ? `<optgroup label="Squadrons">${squadronEntries.map(option).join("")}</optgroup>` : ""
+        squadronEntries.length ? `<optgroup label="Squadron-only sources">${squadronEntries.map(option).join("")}</optgroup>` : "",
+        squadronOnlyEntries.length ? `<optgroup label="Tag directly to squadron">${squadronOnlyEntries.map(option).join("")}</optgroup>` : ""
       ].join("");
-      if (targetEntries.some((entry) => entry.targetKey === current)) {
+      if ([...targetEntries, ...squadronOnlyEntries].some((entry) => entry.targetKey === current)) {
         $("editTagTarget").value = current;
       }
     }
@@ -4893,6 +5049,13 @@ INDEX_HTML = r"""<!doctype html>
         $("photoList").innerHTML = `<div class="empty">No entry selected</div>`;
         $("pinSelect").disabled = false;
         $("editLocation").disabled = false;
+        return;
+      }
+      if (entry.sourceScope === "squadron-target") {
+        $("entrySummary").textContent = `Squadron-only tag: ${entry.squadronName} (${entry.country}). The manager will create or reuse squadrons/${entry.squadronName} without an aircraft type.`;
+        $("pinSelect").disabled = false;
+        $("editLocation").disabled = false;
+        $("photoList").innerHTML = `<div class="empty">Selected raw assets will be attached to this squadron-only source.</div>`;
         return;
       }
       const isLocationSource = entry.sourceScope === "location";
@@ -4948,7 +5111,9 @@ INDEX_HTML = r"""<!doctype html>
     }
 
     function entryByTargetKey(targetKey) {
-      return (state.data?.entries || []).find((entry) => entry.targetKey === targetKey) || null;
+      return (state.data?.entries || []).find((entry) => entry.targetKey === targetKey)
+        || squadronOnlyTargets().find((entry) => entry.targetKey === targetKey)
+        || null;
     }
 
     function photoReferenceByKey(key) {
@@ -5304,7 +5469,7 @@ INDEX_HTML = r"""<!doctype html>
       const pin = selectedPin("pinSelect");
       const [assetPath] = [...state.selectedAssets];
       await populateCaption("generateAttachCaptionBtn", "captionInput", {
-        ...entryRequestFields(entry),
+        ...attachTargetRequestFields(entry),
         assetPath,
         locationName: pin ? pin.name : "",
         airshow: $("airshowInput").value,
@@ -5352,7 +5517,7 @@ INDEX_HTML = r"""<!doctype html>
         throw new Error("The AI caption belongs to one selected image. Re-select it or generate a new caption before attaching.");
       }
       const payload = {
-        ...entryRequestFields(entry),
+        ...attachTargetRequestFields(entry),
         assetPaths: selectedAssetPaths,
         locationName: pin ? pin.name : "",
         pinId: pin ? pin.id : "",
@@ -5379,8 +5544,9 @@ INDEX_HTML = r"""<!doctype html>
       const payload = {
         ...entryRequestFields(entry),
         index: Number(index),
-        tagTargetEntryPath: tagTarget?.entryPath || "",
-        tagTargetScope: tagTarget?.sourceScope || "",
+        tagTargetEntryPath: tagTarget?.sourceScope === "squadron-target" ? "" : tagTarget?.entryPath || "",
+        tagTargetScope: tagTarget?.sourceScope === "squadron-target" ? "" : tagTarget?.sourceScope || "",
+        tagTargetSquadron: tagTarget?.sourceScope === "squadron-target" ? squadronTargetPayload(tagTarget) : null,
         photo: {
           path: $("editPath").value,
           location: pin ? pin.name : "",
@@ -5711,6 +5877,22 @@ INDEX_HTML = r"""<!doctype html>
       });
     }
 
+    async function clearBuildCache() {
+      const button = $("clearBuildCacheBtn");
+      const originalLabel = button.textContent;
+      button.disabled = true;
+      button.textContent = "Clearing...";
+      try {
+        const result = await api("/api/clear-build-cache", {});
+        state.thumbnailCacheNonce = String(Date.now());
+        await loadState(true);
+        toast(result.message || "Build cache cleared.");
+      } finally {
+        button.disabled = false;
+        button.textContent = originalLabel;
+      }
+    }
+
     function setTab(name) {
       state.activeTab = name;
       document.querySelectorAll(".tab").forEach((button) => {
@@ -5748,6 +5930,7 @@ INDEX_HTML = r"""<!doctype html>
       $("locationSelect").addEventListener("change", renderLocationDetails);
       $("squadronHeroSelect").addEventListener("change", renderSquadronHeroManager);
       $("reloadBtn").addEventListener("click", () => loadState(true).then(() => toast("Reloaded")));
+      $("clearBuildCacheBtn").addEventListener("click", () => clearBuildCache().catch((error) => toast(error.message)));
       $("clearSelectionBtn").addEventListener("click", () => {
         state.selectedAssets.clear();
         resetBulkCaptionQueue();

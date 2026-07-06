@@ -1,1 +1,38 @@
-events: []
+events:
+- name: Tsuiki Air Show 2023
+  hero_photo:
+    scope: location
+    entry_path: map_pins/japan/pins.yaml
+    index: 0
+    target_pin_id: tsuiki-air-base
+- name: Wan Dek 2026
+  hero_photo:
+    scope: aircraft
+    entry_path: aircraft/saab-jas-39c-gripen-c/701st-squadron/entry.yaml
+    index: 6
+- name: Singapore Airshow 2026
+  hero_photo:
+    scope: aircraft
+    entry_path: aircraft/boeing-ah-64d-apache-longbow/120-squadron/entry.yaml
+    index: 0
+- name: Komatsu Air Show 2023
+  hero_photo:
+    scope: aircraft
+    entry_path: aircraft/mitsubishi-f-15dj-eagle/tactical-fighter-training-group/entry.yaml
+    index: 15
+- name: Gifu Air Show 2023
+  hero_photo:
+    scope: location
+    entry_path: map_pins/japan/pins.yaml
+    index: 1
+    target_pin_id: gifu-air-base
+- name: Tsuiki Air Show 2025
+  hero_photo:
+    scope: aircraft
+    entry_path: aircraft/mitsubishi-f-2a/8th-tactical-fighter-squadron/entry.yaml
+    index: 0
+- name: Chitose Air Show 2024 (Rehearsal)
+  hero_photo:
+    scope: aircraft
+    entry_path: aircraft/mitsubishi-f-15j-eagle/203rd-tactical-fighter-squadron/entry.yaml
+    index: 4

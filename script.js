@@ -1071,7 +1071,7 @@
       }).addTo(state.mapLeaderLayer);
       const marker = window.L.marker([pin.lat, pin.lon], {
         icon: mapMarkerIcon(pin, pin.id === state.selectedPinId, preview, callout),
-        title: pin.name,
+        title: mapPinLabel(pin),
         zIndexOffset: pin.id === state.selectedPinId ? 800 : 0
       })
         .on("click", () => selectPin(pin.id, { pan: false }));
@@ -1933,7 +1933,7 @@
   }
 
   function renderMapLocationPanel(profile) {
-    const { pin, heroPhoto, heroAsset, families, units, locationPhotos, photos } = profile;
+    const { pin, heroPhoto, heroAsset, families, units, photos } = profile;
     const heroImage = heroPhoto
       ? heroPhoto.image || heroPhoto.thumbnail
       : heroAsset
@@ -1960,9 +1960,8 @@
           <span aria-hidden="true">→</span>
         </button>
         <div class="location-expandable-list">
-          ${locationPhotos.length ? renderLocationExpandableSection(pin, locationPhotos, "location") : ""}
-          ${renderLocationExpandableSection(pin, photos, "type")}
           ${renderLocationExpandableSection(pin, photos, "squadron")}
+          ${renderLocationExpandableSection(pin, photos, "type")}
         </div>
       </section>
     `;
@@ -1975,7 +1974,7 @@
   function renderLocationIdentityMarks(families, units) {
     const familyMarks = (families || []).slice(0, 3).map((family) => `
       <span class="location-identity-mark is-family" title="${escapeAttr(family.label)}">
-        <img src="${escapeAttr(family.mapIcon || family.icon)}" alt="${escapeAttr(family.label)}">
+        <img src="${escapeAttr(family.lightModeIcon || family.darkIcon || family.icon)}" alt="${escapeAttr(family.label)}">
       </span>
     `);
     const unitMarks = (units || []).filter((unit) => unit.logo).slice(0, 6).map((unit) => `
@@ -2036,7 +2035,7 @@
     }
     const labels = {
       location: "Location frames",
-      type: "Aircraft types",
+      type: "Aircraft type",
       squadron: "Squadrons and organisations"
     };
     return `
@@ -2045,10 +2044,53 @@
           <h3>${escapeHtml(labels[kind])}</h3>
           <span class="count-pill">${groups.length}</span>
         </div>
-        <div class="location-expandable-groups">
-          ${groups.map((group) => renderLocationExpandableGroup(pin, group, kind)).join("")}
+        <div class="location-expandable-groups${kind === "type" ? " is-aircraft-types" : ""}">
+          ${groups.map((group) => kind === "type"
+            ? renderLocationAircraftTypeGroup(pin, group)
+            : renderLocationExpandableGroup(pin, group, kind)).join("")}
         </div>
       </section>
+    `;
+  }
+
+  function renderLocationAircraftTypeGroup(pin, group) {
+    const groupKey = `${pin.id}:type:${group.key}`;
+    const isExpanded = state.expandedLocationGroupKeys.has(groupKey);
+    const latest = group.photos[0];
+    const image = latest?.thumbnail || latest?.image || "";
+    const remaining = group.photos.slice(1);
+    const photoCount = `${group.photos.length} photo${group.photos.length === 1 ? "" : "s"}`;
+
+    return `
+      <article class="location-type-group${isExpanded ? " is-expanded" : ""}">
+        <button
+          class="location-type-toggle"
+          type="button"
+          data-location-group-key="${escapeAttr(groupKey)}"
+          aria-expanded="${isExpanded ? "true" : "false"}"
+          aria-controls="location-group-${escapeAttr(slugify(groupKey))}"
+        >
+          <span class="location-type-latest">
+            ${image ? `<img src="${escapeAttr(image)}" alt="${escapeAttr(`${group.title} most recent photo`)}">` : '<span class="location-type-fallback">No photo</span>'}
+          </span>
+          <span class="location-type-copy">
+            <strong>${escapeHtml(group.title)}</strong>
+            <span class="location-type-meta">
+              <span>${escapeHtml(photoCount)}</span>
+              <span aria-hidden="true">${isExpanded ? "−" : "+"}</span>
+            </span>
+          </span>
+        </button>
+        ${
+          isExpanded
+            ? `<div class="location-type-archive" id="location-group-${escapeAttr(slugify(groupKey))}">
+                ${remaining.length
+                  ? `<div class="photo-grid location-group-photo-grid">${remaining.map((photo) => renderPhotoCard(photo, "map")).join("")}</div>`
+                  : '<p class="muted">This is the only frame in the group.</p>'}
+              </div>`
+            : ""
+        }
+      </article>
     `;
   }
 
@@ -2360,6 +2402,7 @@
     const photos = photosForAirshow(airshow);
     const hero = airshowHeroPhoto(airshow, photos);
     const otherPhotos = photos.filter((photo) => !hero || photo.id !== hero.id).sort(sortPhotosOldest);
+    const photoGroups = airshowPhotoGroups(otherPhotos);
     const isExpanded = airshow.id === state.selectedAirshowId;
     const date = airshow.latestDate || airshow.firstDate || "";
     const cover = hero ? hero.image || hero.thumbnail || "" : "";
@@ -2404,8 +2447,8 @@
                   <span class="count-pill">${otherPhotos.length}</span>
                 </div>
                 ${
-                  otherPhotos.length
-                    ? `<div class="photo-grid airshow-photo-grid">${otherPhotos.map((photo) => renderPhotoCard(photo, "airshow")).join("")}</div>`
+                  photoGroups.length
+                    ? renderAirshowPhotoGroups(photoGroups)
                     : '<div class="empty-state compact">The featured hero is the only frame in this event.</div>'
                 }
               </section>`
@@ -2421,6 +2464,79 @@
 
   function airshowHeroPhoto(airshow, photos) {
     return state.photoById.get(airshow.heroPhotoId) || photos[0] || null;
+  }
+
+  function airshowPhotoGroups(photos) {
+    const groups = new Map();
+    const addPhoto = (key, details, photo) => {
+      if (!groups.has(key)) {
+        groups.set(key, { ...details, key, photos: [] });
+      }
+      const group = groups.get(key);
+      if (!group.logo && details.logo) {
+        group.logo = details.logo;
+      }
+      group.photos.push(photo);
+    };
+
+    photos.forEach((photo) => {
+      if (photo.tagScope === "location" || !photo.squadronName) {
+        addPhoto(
+          `location-${photo.pinId || normalizeKey(photo.locationName || "untagged")}`,
+          { title: "Location-tagged frames", eyebrow: "Location tag", logo: "" },
+          photo
+        );
+        return;
+      }
+
+      const squadron = squadronForPhoto(photo);
+      const name = squadron?.name || photo.squadronName;
+      const unitType = squadron?.unitType || photo.unitType;
+      const country = squadron?.country || photo.country || "";
+      addPhoto(
+        `unit-${normalizeKey(`${country}-${name}-${unitType || ""}`)}`,
+        {
+          title: name,
+          eyebrow: squadron?.unitLabel || photo.unitLabel || unitDisplayLabel(unitType),
+          logo: squadron?.logo || ""
+        },
+        photo
+      );
+    });
+
+    return Array.from(groups.values())
+      .map((group) => ({ ...group, photos: group.photos.sort(sortPhotosOldest) }))
+      .sort((a, b) => {
+        const dateDiff = (a.photos[0]?.sortTime || 0) - (b.photos[0]?.sortTime || 0);
+        return dateDiff || a.title.localeCompare(b.title);
+      });
+  }
+
+  function renderAirshowPhotoGroups(groups) {
+    return `
+      <div class="airshow-squadron-groups">
+        ${groups.map((group) => {
+          const logo = group.logo
+            ? `<span class="airshow-squadron-logo"><img src="${escapeAttr(group.logo)}" alt="${escapeAttr(`${group.title} logo`)}"></span>`
+            : "";
+          return `
+            <section class="airshow-squadron-group">
+              <div class="airshow-squadron-heading${logo ? " has-logo" : ""}">
+                ${logo}
+                <div>
+                  <p class="eyebrow">${escapeHtml(group.eyebrow)}</p>
+                  <h3>${escapeHtml(group.title)}</h3>
+                </div>
+                <span class="count-pill">${group.photos.length}</span>
+              </div>
+              <div class="photo-grid airshow-photo-grid">
+                ${group.photos.map((photo) => renderPhotoCard(photo, "airshow")).join("")}
+              </div>
+            </section>
+          `;
+        }).join("")}
+      </div>
+    `;
   }
 
   function renderAirshowIdentityMarks(photos) {
@@ -2769,7 +2885,8 @@
         description: `${photos.length} photo${photos.length === 1 ? "" : "s"} at this location`,
         image: heroImage,
         alt: `${pin.name} hero photo`,
-        actions: renderFieldGuideActions("Location field guide")
+        actions: renderFieldGuideActions("Location field guide"),
+        className: "location-field-guide-hero"
       })}
       <section class="detail-summary location-page-summary">
         <div>
@@ -3339,7 +3456,7 @@
   }
 
   function mapPinLabel(pin) {
-    return pin.name;
+    return isMobileMapLayout() && pin.icao ? pin.icao : pin.name;
   }
 
   function mapLeaderIcon(callout) {
@@ -3484,7 +3601,8 @@
       label,
       icon: `assets/icons/aircraft-family-${id}.png`,
       mapIcon: `assets/icons/${stem}-${variant}.${extension}`,
-      darkIcon: `assets/icons/${stem}-dark.${extension}`
+      darkIcon: `assets/icons/${stem}-dark.${extension}`,
+      lightModeIcon: `assets/icons/${stem}-dark.${extension}`
     };
   }
 

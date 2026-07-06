@@ -443,7 +443,7 @@ img {
   z-index: 2;
   display: grid;
   gap: 7px;
-  max-width: min(680px, 100%);
+  max-width: 100%;
 }
 
 .airshow-timeline-content .eyebrow {
@@ -452,9 +452,13 @@ img {
 }
 
 .airshow-timeline-content strong {
+  display: block;
+  overflow: hidden;
   font-size: clamp(1.55rem, 3.8vw, 3rem);
   letter-spacing: -0.035em;
   line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .airshow-timeline-meta {
@@ -525,6 +529,63 @@ img {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 285px), 1fr));
 }
 
+.airshow-squadron-groups {
+  display: grid;
+  gap: 20px;
+}
+
+.airshow-squadron-group {
+  display: grid;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.airshow-squadron-group:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.airshow-squadron-heading {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.airshow-squadron-heading:not(.has-logo) {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.airshow-squadron-logo {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  overflow: hidden;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-strong);
+}
+
+.airshow-squadron-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.airshow-squadron-heading .eyebrow {
+  margin: 0 0 2px;
+}
+
+.airshow-squadron-heading h3 {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .detail-page {
   display: grid;
   gap: 20px;
@@ -571,6 +632,12 @@ img {
   background:
     linear-gradient(90deg, rgba(0, 0, 0, 0.34) 0%, rgba(0, 0, 0, 0.12) 62%, rgba(0, 0, 0, 0.02) 100%),
     linear-gradient(0deg, rgba(0, 0, 0, 0.2), transparent 65%);
+}
+
+.detail-hero.location-field-guide-hero .detail-hero-scrim {
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.54) 0%, rgba(0, 0, 0, 0.22) 58%, rgba(0, 0, 0, 0.06) 100%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.34), transparent 62%);
 }
 
 .detail-back-button {
@@ -1516,6 +1583,15 @@ h3 {
   cursor: default;
 }
 
+.location-map-panel .location-map-hero {
+  height: auto;
+  aspect-ratio: 16 / 9;
+}
+
+.location-map-panel .location-map-hero > img {
+  object-position: center;
+}
+
 .location-hero > img {
   position: absolute;
   inset: 0;
@@ -1552,6 +1628,20 @@ h3 {
   color: rgba(255, 255, 255, 0.76);
   font-weight: 800;
   text-shadow: 0 1px 12px rgba(0, 0, 0, 0.58);
+}
+
+.location-map-panel .location-hero-overlay {
+  gap: 2px;
+}
+
+.location-map-panel .location-hero-overlay .eyebrow {
+  margin: 0;
+  color: #ffffff;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.58);
+}
+
+.location-map-panel .location-hero-overlay .location-identity-marks {
+  margin-top: 4px;
 }
 
 .location-identity-marks {
@@ -1613,6 +1703,11 @@ h3 {
 .location-expandable-groups {
   display: grid;
   gap: 10px;
+}
+
+.location-expandable-groups.is-aircraft-types {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .location-expandable-section {
@@ -1740,6 +1835,112 @@ h3 {
   font-size: 0.8rem;
 }
 
+.location-type-group {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 82%, var(--surface-strong));
+}
+
+.location-type-toggle {
+  display: grid;
+  width: 100%;
+  grid-template-rows: auto minmax(0, 1fr);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.location-type-toggle:hover {
+  background: color-mix(in srgb, var(--surface) 58%, var(--blue-soft));
+}
+
+.location-type-latest,
+.location-type-latest img,
+.location-type-fallback {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+.location-type-latest {
+  background: var(--surface-strong);
+}
+
+.location-type-latest img {
+  object-fit: cover;
+  transition: transform 260ms ease;
+}
+
+.location-type-toggle:hover .location-type-latest img {
+  transform: scale(1.04);
+}
+
+.location-type-fallback {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.location-type-copy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  padding: 8px;
+}
+
+.location-type-copy strong {
+  overflow: hidden;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.location-type-meta {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.location-type-meta > span:last-child {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.location-type-archive {
+  padding: 0 8px 8px;
+  border-top: 1px solid var(--line);
+}
+
+.location-type-archive .muted {
+  margin: 8px 0 0;
+  font-size: 0.76rem;
+}
+
+.location-type-archive .location-group-photo-grid {
+  grid-template-columns: 1fr;
+  margin-top: 8px;
+}
+
 .location-group-photo-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-top: 10px;
@@ -1861,7 +2062,8 @@ button.location-unit-chip:focus-visible,
 .squadron-logo-link:focus-visible,
 .viewer-squadron-logo-link:focus-visible,
 .location-page-button:focus-visible,
-.location-group-toggle:focus-visible {
+.location-group-toggle:focus-visible,
+.location-type-toggle:focus-visible {
   outline: 2px solid var(--blue);
   outline-offset: 3px;
 }
@@ -2949,9 +3151,13 @@ button.location-unit-chip:focus-visible,
 
 .viewer-stage {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: min(420px, 34vw);
+  bottom: 0;
+  left: 0;
   z-index: 1;
-  display: flex;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
   min-width: 0;
   height: 100vh;
   min-height: 100vh;
@@ -3016,6 +3222,7 @@ button.location-unit-chip:focus-visible,
 .viewer-image-frame {
   position: relative;
   display: grid;
+  grid-row: 1;
   width: 100%;
   height: 100%;
   place-items: center;
@@ -3167,13 +3374,16 @@ button.location-unit-chip:focus-visible,
 }
 
 .viewer-filmstrip {
-  position: absolute;
-  right: 18px;
-  bottom: max(18px, env(safe-area-inset-bottom));
-  left: 18px;
+  position: relative;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  grid-row: 2;
   z-index: 2;
   display: flex;
+  width: calc(100% - 36px);
   min-height: 76px;
+  margin: 0 18px max(18px, env(safe-area-inset-bottom));
   gap: 10px;
   align-items: center;
   overflow-x: auto;
@@ -4313,6 +4523,8 @@ button.location-unit-chip:focus-visible,
   }
 
   .viewer-stage {
+    right: 0;
+    display: flex;
     height: 100svh;
     min-height: 100svh;
     padding: 0;
@@ -4364,9 +4576,12 @@ button.location-unit-chip:focus-visible,
   }
 
   .viewer-filmstrip {
+    position: absolute;
     right: 12px;
     bottom: max(12px, env(safe-area-inset-bottom));
     left: 12px;
+    width: auto;
+    margin: 0;
     min-height: 72px;
   }
 

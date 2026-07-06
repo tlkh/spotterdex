@@ -5,6 +5,7 @@ pins:
   icao: ROAH
   coordinates: [26.1958, 127.6458]
   enabled: true
+  hero_photo: 128925.jpg
 - id: kadena-air-base
   name: Kadena Air Base
   icao: RODN
@@ -21,6 +22,12 @@ pins:
   coordinates: [33.685, 131.04]
   enabled: true
   hero_photo: DSC06176-Enhanced-NR.jpeg
+  photos:
+  - path: DSC04647-Enhanced-NR.jpeg
+    location: Tsuiki Air Base
+    pin_id: tsuiki-air-base
+    caption: Combined formation of F-2A from 6 TFS and 8 TFS
+    airshow: Tsuiki Air Show 2023
 - id: kitakyushu-airport
   name: Kitakyushu Airport
   icao: RJFR
@@ -34,14 +41,31 @@ pins:
 - id: gifu-air-base
   name: Gifu Air Base
   icao: RJNG
-  hero_photo: gifu_formation_2.jpeg
+  hero_photo: DSC00962-Enhanced-NR.jpeg
   coordinates: [35.3939, 136.87]
   enabled: true
+  photos:
+  - path: gifu_formation_1.jpeg
+    location: Gifu Air Base
+    pin_id: gifu-air-base
+    caption: ADTW Formation Fly-by
+    airshow: Gifu Air Show 2023
+  - path: DSC00962-Enhanced-NR.jpeg
+    location: Gifu Air Base
+    pin_id: gifu-air-base
+    caption: ADTW Formation Fly-by
+    airshow: Gifu Air Show 2023
+  - path: gifu_formation_2.jpeg
+    location: Gifu Air Base
+    pin_id: gifu-air-base
+    caption: ADTW Formation Fly-by
+    airshow: Gifu Air Show 2023
 - id: komatsu-air-base
   name: Komatsu Air Base
   icao: RJNK
   coordinates: [36.3933, 136.4067]
   enabled: true
+  hero_photo: DSC03648-Enhanced-NR.jpeg
 - id: yokota-air-base
   name: Yokota Air Base
   icao: RJTY
@@ -73,11 +97,18 @@ pins:
   icao: RJTA
   coordinates: [35.4547, 139.45]
   enabled: true
+  hero_photo: up3c_1.jpeg
 - id: chitose-air-base
   name: Chitose Air Base
   icao: RJCJ
   coordinates: [42.7945, 141.6664]
   enabled: true
+  photos:
+  - path: DSC05932-Enhanced-NR.jpg
+    location: Chitose Air Base
+    pin_id: chitose-air-base
+    caption: F-15J from Chitose Air Base squadrons line up for take-off
+  hero_photo: DSC05932-Enhanced-NR.jpg
 - id: narita-international-airport
   name: Narita International Airport
   icao: RJAA
