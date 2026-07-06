@@ -1174,7 +1174,8 @@ h3 {
   background: #ebe8e1 !important;
 }
 
-.spotterdex-marker-shell {
+.spotterdex-marker-shell,
+.spotterdex-marker-label-shell {
   position: relative;
   display: block !important;
   width: 0 !important;
@@ -1341,7 +1342,7 @@ h3 {
   animation-delay: -1.3s;
 }
 
-.spotterdex-marker-shell.is-active .spotterdex-marker-label {
+.spotterdex-marker-label.is-active {
   border-color: var(--pin-active);
   box-shadow: 0 8px 22px rgba(38, 35, 31, 0.2);
 }
@@ -4167,8 +4168,9 @@ button.location-unit-chip:focus-visible,
     z-index: 3;
   }
 
-  #mapView .spotterdex-marker-label {
-    max-width: 242px;
+  #mapView .spotterdex-marker-label,
+  #mapView .spotterdex-marker-leader {
+    display: none;
   }
 }
 

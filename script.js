@@ -22,6 +22,7 @@
     map: null,
     markerLayer: null,
     mapLeaderLayer: null,
+    mapLabelLayer: null,
     mapTrafficLayer: null,
     mapTrafficInitialized: false,
     mapPreviewCache: new Map(),
@@ -1001,9 +1002,13 @@
     const leaderPane = state.map.createPane("spotterdexLeaderPane");
     leaderPane.style.zIndex = "590";
     leaderPane.style.pointerEvents = "none";
+    const labelPane = state.map.createPane("spotterdexLabelPane");
+    labelPane.style.zIndex = "650";
+    labelPane.style.pointerEvents = "none";
     state.mapTrafficLayer = window.L.layerGroup().addTo(state.map);
     state.mapLeaderLayer = window.L.layerGroup().addTo(state.map);
     state.markerLayer = window.L.layerGroup().addTo(state.map);
+    state.mapLabelLayer = window.L.layerGroup().addTo(state.map);
     state.map.on("zoomstart", () => {
       state.mapZoomInProgress = true;
     });
@@ -1051,12 +1056,13 @@
   }
 
   function renderPins(options = {}) {
-    if (!state.map || !state.markerLayer || !state.mapLeaderLayer || !window.L) {
+    if (!state.map || !state.markerLayer || !state.mapLeaderLayer || !state.mapLabelLayer || !window.L) {
       return;
     }
 
     state.markerLayer.clearLayers();
     state.mapLeaderLayer.clearLayers();
+    state.mapLabelLayer.clearLayers();
     state.markersByPinId = new Map();
     const pins = state.enabledPins;
     const markerLayouts = mapMarkerLayouts(pins);
@@ -1069,8 +1075,14 @@
         keyboard: false,
         pane: "spotterdexLeaderPane"
       }).addTo(state.mapLeaderLayer);
+      window.L.marker([pin.lat, pin.lon], {
+        icon: mapLabelIcon(pin, pin.id === state.selectedPinId, preview, callout),
+        interactive: false,
+        keyboard: false,
+        pane: "spotterdexLabelPane"
+      }).addTo(state.mapLabelLayer);
       const marker = window.L.marker([pin.lat, pin.lon], {
-        icon: mapMarkerIcon(pin, pin.id === state.selectedPinId, preview, callout),
+        icon: mapMarkerIcon(pin, pin.id === state.selectedPinId),
         title: mapPinLabel(pin),
         zIndexOffset: pin.id === state.selectedPinId ? 800 : 0
       })
@@ -3443,13 +3455,10 @@
       .slice(0, limit);
   }
 
-  function mapMarkerIcon(pin, isActive, preview, callout) {
+  function mapMarkerIcon(pin, isActive) {
     return window.L.divIcon({
       className: `spotterdex-marker-shell${isActive ? " is-active" : ""}`,
-      html: `
-        <span class="spotterdex-marker-dot">${escapeHtml(countryFlag(pin.country))}</span>
-        ${renderMapMarkerLabel(mapPinLabel(pin), preview, callout)}
-      `,
+      html: `<span class="spotterdex-marker-dot">${escapeHtml(countryFlag(pin.country))}</span>`,
       iconSize: [0, 0],
       iconAnchor: [0, 0]
     });
@@ -3463,6 +3472,15 @@
     return window.L.divIcon({
       className: "spotterdex-marker-leader-shell",
       html: renderMapLeader(callout),
+      iconSize: [0, 0],
+      iconAnchor: [0, 0]
+    });
+  }
+
+  function mapLabelIcon(pin, isActive, preview, callout) {
+    return window.L.divIcon({
+      className: "spotterdex-marker-label-shell",
+      html: renderMapMarkerLabel(mapPinLabel(pin), preview, callout, isActive),
       iconSize: [0, 0],
       iconAnchor: [0, 0]
     });
@@ -3484,7 +3502,7 @@
     `;
   }
 
-  function renderMapMarkerLabel(title, preview, callout) {
+  function renderMapMarkerLabel(title, preview, callout, isActive = false) {
     const assets = [
       preview.families.length ? renderMapMarkerFamilies(preview.families) : "",
       preview.families.length && preview.logos.length ? '<span class="map-marker-divider" aria-hidden="true">|</span>' : "",
@@ -3494,7 +3512,7 @@
       .join("");
     return `
       <span
-        class="spotterdex-marker-label"
+        class="spotterdex-marker-label${isActive ? " is-active" : ""}"
         style="--label-left: ${callout.labelLeft}px; --label-top: ${callout.labelTop}px; --label-width: ${callout.width}px; --label-height: ${callout.height}px;"
       >
         <span class="spotterdex-marker-title">${escapeHtml(title)}</span>
