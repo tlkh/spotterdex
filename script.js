@@ -461,12 +461,6 @@
       return;
     }
 
-    const printFieldGuideButton = event.target.closest("[data-print-field-guide]");
-    if (printFieldGuideButton) {
-      window.print();
-      return;
-    }
-
     const mapPanelButton = event.target.closest("[data-map-panel-toggle]");
     if (mapPanelButton) {
       toggleMapPanel(mapPanelButton.dataset.mapPanelToggle);
@@ -1004,7 +998,7 @@
     leaderPane.style.pointerEvents = "none";
     const labelPane = state.map.createPane("spotterdexLabelPane");
     labelPane.style.zIndex = "650";
-    labelPane.style.pointerEvents = "none";
+    labelPane.style.pointerEvents = "auto";
     state.mapTrafficLayer = window.L.layerGroup().addTo(state.map);
     state.mapLeaderLayer = window.L.layerGroup().addTo(state.map);
     state.markerLayer = window.L.layerGroup().addTo(state.map);
@@ -1077,10 +1071,12 @@
       }).addTo(state.mapLeaderLayer);
       window.L.marker([pin.lat, pin.lon], {
         icon: mapLabelIcon(pin, pin.id === state.selectedPinId, preview, callout),
-        interactive: false,
-        keyboard: false,
+        title: `Select ${mapPinLabel(pin)}`,
+        keyboard: true,
         pane: "spotterdexLabelPane"
-      }).addTo(state.mapLabelLayer);
+      })
+        .on("click", () => selectPin(pin.id, { pan: false }))
+        .addTo(state.mapLabelLayer);
       const marker = window.L.marker([pin.lat, pin.lon], {
         icon: mapMarkerIcon(pin, pin.id === state.selectedPinId),
         title: mapPinLabel(pin),
@@ -2946,7 +2942,6 @@
     return `
       <div class="detail-hero-actions" aria-label="${escapeAttr(label)} actions">
         <button class="detail-hero-action" type="button" data-copy-field-guide="Copy link">Copy link</button>
-        <button class="detail-hero-action" type="button" data-print-field-guide>Print guide</button>
       </div>
     `;
   }
@@ -3137,7 +3132,8 @@
         description: `${stats.photoCount} photo${stats.photoCount === 1 ? "" : "s"} across ${unitCount} ${unitLabel}`,
         image: heroImage,
         alt: `${entry.typeName} hero photo`,
-        actions: renderFieldGuideActions("Aircraft field guide")
+        actions: renderFieldGuideActions("Aircraft field guide"),
+        className: "aircraft-field-guide-hero"
       })}
       <section class="detail-summary detail-aircraft-summary">
         <div>

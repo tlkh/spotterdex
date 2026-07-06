@@ -640,6 +640,12 @@ img {
     linear-gradient(0deg, rgba(0, 0, 0, 0.34), transparent 62%);
 }
 
+.detail-hero.aircraft-field-guide-hero .detail-hero-scrim {
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.56) 0%, rgba(0, 0, 0, 0.24) 58%, rgba(0, 0, 0, 0.08) 100%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.38), transparent 62%);
+}
+
 .detail-back-button {
   position: absolute;
   top: clamp(14px, 2vw, 24px);
@@ -1185,6 +1191,11 @@ h3 {
   background: transparent !important;
 }
 
+.spotterdex-marker-label-shell {
+  cursor: pointer;
+  pointer-events: auto !important;
+}
+
 .spotterdex-marker-leader-shell {
   display: block !important;
   width: 0 !important;
@@ -1201,8 +1212,8 @@ h3 {
   left: 0;
   z-index: 2;
   display: grid;
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   flex: 0 0 auto;
   place-items: center;
   border: 2px solid var(--surface);
@@ -1210,7 +1221,7 @@ h3 {
   background: var(--pin);
   box-shadow: 0 10px 28px rgba(38, 35, 31, 0.26);
   color: var(--surface);
-  font-size: 0.86rem;
+  font-size: 0.76rem;
   font-weight: 900;
   transform: translate(-50%, -50%);
   transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
@@ -1219,7 +1230,7 @@ h3 {
 .spotterdex-marker-dot::before,
 .spotterdex-marker-dot::after {
   position: absolute;
-  inset: -6px;
+  inset: -5px;
   border: 1px solid color-mix(in srgb, var(--pin) 34%, transparent);
   border-radius: inherit;
   content: "";
