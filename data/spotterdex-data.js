@@ -1,5 +1,5 @@
 window.SPOTTERDEX_DATA = {
-  "generatedAt": "2026-07-06T01:56:30+00:00",
+  "generatedAt": "2026-07-06T06:57:17+00:00",
   "pins": [
     {
       "id": "hong-kong-international-airport",

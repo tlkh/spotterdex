@@ -28,12 +28,14 @@ except ImportError as exc:  # pragma: no cover - user environment guard
 
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp"}
-FULL_JPEG_QUALITY = 90
-FULL_JPEG_SUBSAMPLING = 0  # 4:4:4 chroma; preserves fine aircraft markings.
-THUMB_JPEG_QUALITY = 86
-THUMB_JPEG_SUBSAMPLING = 2  # 4:2:0 chroma; efficient for 1024px card imagery.
-FULL_JPEG_PROFILE = f"spotterdex-full-jpeg-v2-q{FULL_JPEG_QUALITY}-s{FULL_JPEG_SUBSAMPLING}"
-THUMB_JPEG_PROFILE = f"spotterdex-thumb-jpeg-v2-q{THUMB_JPEG_QUALITY}-s{THUMB_JPEG_SUBSAMPLING}"
+# The published site favors fast page loads over archival-grade derivatives. Source
+# images remain untouched in raw_assets; these settings only affect GitHub Pages output.
+FULL_JPEG_QUALITY = 76
+FULL_JPEG_SUBSAMPLING = 2  # 4:2:0 provides a substantial reduction for web viewing.
+THUMB_JPEG_QUALITY = 72
+THUMB_JPEG_SUBSAMPLING = 2
+FULL_JPEG_PROFILE = f"spotterdex-full-jpeg-v3-q{FULL_JPEG_QUALITY}-s{FULL_JPEG_SUBSAMPLING}"
+THUMB_JPEG_PROFILE = f"spotterdex-thumb-jpeg-v3-q{THUMB_JPEG_QUALITY}-s{THUMB_JPEG_SUBSAMPLING}"
 EXIF_TAGS = {value: key for key, value in ExifTags.TAGS.items()}
 PROGRESS_LINE_MODE = False
 
@@ -133,7 +135,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--json-output", default="data/spotterdex.json", help="Generated JSON manifest path.")
     parser.add_argument("--js-output", default="data/spotterdex-data.js", help="Generated JS manifest path.")
     parser.add_argument("--width", type=int, default=2560, help="Processed JPEG width in pixels (default: 2560).")
-    parser.add_argument("--thumb-width", type=int, default=1024, help="Generated thumbnail width in pixels.")
+    parser.add_argument("--thumb-width", type=int, default=1024, help="Generated thumbnail width in pixels (default: 1024).")
     parser.add_argument("--logo-max-size", type=int, default=512, help="Maximum squadron logo width or height in pixels.")
     parser.add_argument("--strict", action="store_true", help="Return a non-zero exit code if validation warnings are found.")
     parser.add_argument("--no-progress", action="store_true", help="Disable terminal progress bars during the build.")
