@@ -6,9 +6,11 @@ photos:
 - path: DSC01755-Enhanced-NR.jpg
   location: Kuala Lumpur International Airport
   pin_id: kuala-lumpur-international-airport
+  livery: Retro livery
   caption: Malaysian Airlines B737 in retro livery, featuring red-and-blue cheatlines and the historic Kelantan wau bulan (moon kite) logo
 - path: DSC01763-Enhanced-NR.jpg
   location: Kuala Lumpur International Airport
   pin_id: kuala-lumpur-international-airport
+  livery: Retro livery
   caption: Malaysian Airlines B737 in retro livery, featuring red-and-blue cheatlines and the historic Kelantan wau bulan (moon kite) logo
-aircraft_family: heavy
+aircraft_family: medium

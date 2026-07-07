@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Build transparent monochrome aircraft overlays for the Leaflet map."""
+"""Build transparent monochrome aircraft overlays for the Leaflet map.
+
+The round PNG badges in ``assets/icons/`` are curated raster sources. This
+script preserves those badges and derives the light/dark map variants from
+their aircraft silhouettes.
+"""
 
 from __future__ import annotations
 
@@ -15,7 +20,7 @@ VARIANTS = {
     "dark": (27, 35, 46),
     "light": (242, 247, 252),
 }
-SOURCE_FAMILIES = ("heavy", "fighter")
+SOURCE_FAMILIES = ("heavy", "fighter", "light", "medium")
 
 
 def silhouette_mask(source: Image.Image) -> Image.Image:
@@ -81,7 +86,10 @@ def draw_helicopter_frame(color: tuple[int, int, int], angle: float) -> Image.Im
 
     # Nose/cockpit, cabin, and engine shoulders. The silhouette stays narrow
     # beneath the main rotor, closer to a utility helicopter's top view.
-    body.polygon(((96, 38), (80, 54), (75, 82), (79, 111), (88, 123), (104, 123), (113, 111), (117, 82), (112, 54)), fill=solid)
+    body.polygon(
+        ((96, 38), (80, 54), (75, 82), (79, 111), (88, 123), (104, 123), (113, 111), (117, 82), (112, 54)),
+        fill=solid,
+    )
     body.ellipse((82, 45, 110, 81), fill=mid)
     body.rounded_rectangle((82, 77, 110, 116), radius=11, fill=solid)
     body.line((96, 49, 96, 116), fill=soft, width=2)
@@ -94,8 +102,16 @@ def draw_helicopter_frame(color: tuple[int, int, int], angle: float) -> Image.Im
     tail_center = (96, 173)
     tail_dx = math.cos(tail_angle) * 12
     tail_dy = math.sin(tail_angle) * 12
-    body.line((tail_center[0] - tail_dx, tail_center[1] - tail_dy, tail_center[0] + tail_dx, tail_center[1] + tail_dy), fill=soft, width=3)
-    body.line((tail_center[0] - tail_dy, tail_center[1] + tail_dx, tail_center[0] + tail_dy, tail_center[1] - tail_dx), fill=soft, width=3)
+    body.line(
+        (tail_center[0] - tail_dx, tail_center[1] - tail_dy, tail_center[0] + tail_dx, tail_center[1] + tail_dy),
+        fill=soft,
+        width=3,
+    )
+    body.line(
+        (tail_center[0] - tail_dy, tail_center[1] + tail_dx, tail_center[0] + tail_dy, tail_center[1] - tail_dx),
+        fill=soft,
+        width=3,
+    )
 
     # Rotor mast stays sharp above the animated blade set.
     body.ellipse((89, 75, 103, 89), fill=solid)

@@ -1,0 +1,20 @@
+squadron_name: Air Development and Test Wing
+country: Japan
+squadron_logo: logos/jasdf_adtw.png
+photos:
+- path: gifu_formation_1.jpeg
+  location: Gifu Air Base
+  pin_id: gifu-air-base
+  caption: ADTW Formation Fly-by
+  airshow: Gifu Air Show 2023
+- path: DSC00962-Enhanced-NR.jpeg
+  location: Gifu Air Base
+  pin_id: gifu-air-base
+  caption: ADTW Formation Fly-by
+  airshow: Gifu Air Show 2023
+- path: gifu_formation_2.jpeg
+  location: Gifu Air Base
+  pin_id: gifu-air-base
+  caption: ADTW Formation Fly-by
+  airshow: Gifu Air Show 2023
+squadron_hero: DSC00962-Enhanced-NR.jpeg

@@ -321,6 +321,7 @@ class SpotterDexManager:
         location_name = target["locationName"] if target["scope"] == "location" else clean_text(payload.get("locationName"))
         pin_id = target["pinId"] if target["scope"] == "location" else clean_text(payload.get("pinId"))
         airshow = clean_text(payload.get("airshow"))
+        livery = clean_text(payload.get("livery"))
         caption = clean_text(payload.get("caption"))
         caption_ai_assisted = payload.get("captionAiAssisted") is True
         date = clean_text(payload.get("date"))
@@ -361,6 +362,8 @@ class SpotterDexManager:
                 item["pin_id"] = pin_id
             if airshow:
                 item["airshow"] = airshow
+            if livery:
+                item["livery"] = livery
             if caption:
                 item["caption"] = caption
             if caption_ai_assisted:
@@ -393,10 +396,13 @@ class SpotterDexManager:
             raise ValueError("Photo path is required.")
 
         updated: Dict[str, Any] = dict(existing_photo)
-        for legacy_key in ("file", "filepath", "location_name", "airshow_name"):
+        legacy_livery = clean_text(existing_photo.get("paint_scheme") or existing_photo.get("paintScheme"))
+        for legacy_key in ("file", "filepath", "location_name", "airshow_name", "paint_scheme", "paintScheme"):
             updated.pop(legacy_key, None)
+        if legacy_livery and "livery" not in incoming:
+            updated["livery"] = legacy_livery
         updated["path"] = path_value
-        for key in ("date", "year", "location", "pin_id", "airshow", "title", "caption"):
+        for key in ("date", "year", "location", "pin_id", "airshow", "livery", "title", "caption"):
             if key not in incoming:
                 continue
             value = clean_text(incoming.get(key))
@@ -709,6 +715,7 @@ class SpotterDexManager:
             squadron_name = read_squadron_name(entry_data, entry_path) if target["scope"] != "location" else ""
             location = target["locationName"] if target["scope"] == "location" else clean_text(payload.get("locationName"))
         airshow = clean_text(payload.get("airshow"))
+        livery = clean_text(payload.get("livery"))
         source_path: Optional[Path] = None
 
         asset_value = clean_text(payload.get("assetPath"))
@@ -731,6 +738,7 @@ class SpotterDexManager:
             source_path = resolve_photo_source(self.root, self.raw_assets_dir, entry_path, source_value)
             location = location or clean_text(photo.get("location") or photo.get("location_name"))
             airshow = airshow or clean_text(photo.get("airshow") or photo.get("airshow_name"))
+            livery = livery or clean_text(photo.get("livery") or photo.get("paint_scheme") or photo.get("paintScheme"))
 
         if (
             source_path is None
@@ -750,6 +758,7 @@ class SpotterDexManager:
             squadron_name=squadron_name,
             location=location,
             airshow=airshow,
+            livery=livery,
             draft_caption=draft_caption,
         )
         caption = request_nvidia_caption(prompt=prompt, image_url=image_url)
@@ -1181,6 +1190,7 @@ class SpotterDexManager:
                                 "year": clean_text(photo_item.get("year")),
                                 "exifDate": exif_date,
                                 "airshow": clean_text(photo_item.get("airshow") or photo_item.get("airshow_name")),
+                                "livery": clean_text(photo_item.get("livery") or photo_item.get("paint_scheme") or photo_item.get("paintScheme")),
                                 "title": clean_text(photo_item.get("title")),
                                 "caption": clean_text(photo_item.get("caption")),
                                 "captionAiAssisted": photo_caption_is_ai_assisted(photo_item),
@@ -1250,6 +1260,7 @@ class SpotterDexManager:
                 group["hero"] = {
                     "entryTargetKey": entry["targetKey"],
                     "assetPath": hero_asset_path,
+                    "sourcePath": clean_text(entry.get("squadronHero")),
                 }
             for photo in entry.get("photos", []):
                 if not isinstance(photo, dict) or photo.get("invalid"):
@@ -1353,6 +1364,7 @@ class SpotterDexManager:
                         "year": clean_text(item.get("year")),
                         "exifDate": exif_date,
                         "airshow": clean_text(item.get("airshow") or item.get("airshow_name")),
+                        "livery": clean_text(item.get("livery") or item.get("paint_scheme") or item.get("paintScheme")),
                         "title": clean_text(item.get("title")),
                         "caption": clean_text(item.get("caption")),
                         "captionAiAssisted": photo_caption_is_ai_assisted(item),
@@ -1486,6 +1498,7 @@ class SpotterDexManager:
                         "year": clean_text(item.get("year")),
                         "exifDate": exif_date,
                         "airshow": clean_text(item.get("airshow") or item.get("airshow_name")),
+                        "livery": clean_text(item.get("livery") or item.get("paint_scheme") or item.get("paintScheme")),
                         "title": clean_text(item.get("title")),
                         "caption": clean_text(item.get("caption")),
                         "captionAiAssisted": photo_caption_is_ai_assisted(item),
@@ -1873,7 +1886,7 @@ def read_aircraft_family(data: Dict[str, Any]) -> str:
         or aircraft_data.get("family")
     )
     key = normalize_key(str(value or ""))
-    if key in {"fighter", "heavy", "helicopter"}:
+    if key in {"fighter", "heavy", "helicopter", "light", "medium"}:
         return key
     return clean_text(value)
 
@@ -2338,6 +2351,7 @@ def build_caption_prompt(
     squadron_name: str,
     location: str,
     airshow: str,
+    livery: str,
     draft_caption: str,
 ) -> str:
     return "\n".join(
@@ -2353,6 +2367,7 @@ def build_caption_prompt(
             f"Squadron or operator: {squadron_name or 'Not supplied'}",
             f"Location: {location or 'Not supplied'}",
             f"Airshow event: {airshow or 'Not supplied'}",
+            f"Livery or paint scheme: {livery or 'Not supplied'}",
             f"Existing caption: {draft_caption or 'None'}",
         ]
     )
@@ -2465,7 +2480,7 @@ def clean_year(value: Any) -> str:
 def normalize_aircraft_family(value: Any) -> str:
     text = clean_text(value)
     key = normalize_key(text)
-    if key in {"fighter", "heavy", "helicopter"}:
+    if key in {"fighter", "heavy", "helicopter", "light", "medium"}:
         return key
     return text
 
@@ -3596,11 +3611,13 @@ INDEX_HTML = r"""<!doctype html>
       padding-top: 0;
       border-top: 0;
     }
-    .airshow-hero-list {
+    .airshow-hero-list,
+    .group-hero-list {
       display: grid;
       gap: 14px;
     }
-    .airshow-hero-card {
+    .airshow-hero-card,
+    .group-hero-card {
       display: grid;
       gap: 12px;
       padding: 14px;
@@ -3608,20 +3625,24 @@ INDEX_HTML = r"""<!doctype html>
       border-radius: 8px;
       background: #fff;
     }
-    .airshow-hero-card h3 {
+    .airshow-hero-card h3,
+    .group-hero-card h3 {
       margin: 0;
       font-size: 15px;
     }
-    .airshow-hero-card.needs-hero {
+    .airshow-hero-card.needs-hero,
+    .group-hero-card.needs-hero {
       border-color: color-mix(in srgb, var(--accent) 52%, var(--line));
       background: color-mix(in srgb, var(--accent) 5%, #fff);
     }
-    .airshow-hero-picker {
+    .airshow-hero-picker,
+    .group-hero-picker {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
       gap: 8px;
     }
-    .airshow-hero-photo {
+    .airshow-hero-photo,
+    .group-hero-photo {
       display: grid;
       gap: 5px;
       min-width: 0;
@@ -3635,20 +3656,31 @@ INDEX_HTML = r"""<!doctype html>
       line-height: 1.25;
       text-align: left;
     }
-    .airshow-hero-photo.selected {
+    .airshow-hero-photo:hover,
+    .airshow-hero-photo:focus-visible,
+    .group-hero-photo:hover,
+    .group-hero-photo:focus-visible,
+    .airshow-hero-photo.selected,
+    .group-hero-photo.selected {
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(20,123,143,0.14);
       color: var(--ink);
     }
+    .airshow-hero-photo.selected,
+    .group-hero-photo.selected {
+      box-shadow: 0 0 0 3px rgba(20,123,143,0.14);
+    }
     .airshow-hero-photo img,
-    .airshow-hero-photo .missing {
+    .airshow-hero-photo .missing,
+    .group-hero-photo img,
+    .group-hero-photo .missing {
       width: 100%;
       aspect-ratio: 4 / 3;
       object-fit: cover;
       border-radius: 4px;
       background: #d8e1e8;
     }
-    .airshow-hero-photo span {
+    .airshow-hero-photo span,
+    .group-hero-photo span {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -3853,6 +3885,10 @@ INDEX_HTML = r"""<!doctype html>
               <label for="airshowInput">Airshow Event (optional)</label>
               <input id="airshowInput" type="text" placeholder="Singapore Airshow 2026">
             </div>
+            <div class="field wide">
+              <label for="liveryInput">Livery (optional)</label>
+              <input id="liveryInput" type="text" placeholder="Retro livery, Pixel Blue, special anniversary scheme">
+            </div>
             <div class="field">
               <label for="photoYear">Year</label>
               <input id="photoYear" type="text" inputmode="numeric" placeholder="2026">
@@ -3909,6 +3945,10 @@ INDEX_HTML = r"""<!doctype html>
               <div class="field wide">
                 <label for="editAirshow">Airshow Event (optional)</label>
                 <input id="editAirshow" type="text">
+              </div>
+              <div class="field wide">
+                <label for="editLivery">Livery (optional)</label>
+                <input id="editLivery" type="text">
               </div>
               <div class="field">
                 <label for="editDate">Date</label>
@@ -4084,70 +4124,68 @@ INDEX_HTML = r"""<!doctype html>
         </section>
 
         <section class="view" id="locationsView">
-          <div class="split">
-            <div class="section">
-              <h2>Location Hero</h2>
-              <div class="field">
-                <label for="locationSelect">Location</label>
-                <select id="locationSelect"></select>
-              </div>
-              <div id="locationDetails" class="mini-meta"></div>
-              <div class="subtle">Choose an image below to use as this location's hero.</div>
-              <div class="hero-photo-grid" id="locationHeroList"></div>
-              <div class="card-actions">
-                <button class="btn ghost" id="clearLocationHeroBtn" type="button">Clear Hero</button>
-                <button class="btn secondary" id="setHeroBtn" type="button">Set Hero From Selected Raw Asset</button>
-              </div>
-            </div>
-            <div class="section">
-              <h2>Create Pin</h2>
-              <div class="form-grid">
-                <div class="field">
-                  <label for="pinCountry">Country</label>
-                  <input id="pinCountry" type="text" placeholder="Japan">
-                </div>
-                <div class="field">
-                  <label for="pinName">Name</label>
-                  <input id="pinName" type="text" placeholder="Atsugi Air Base">
-                </div>
-                <div class="field">
-                  <label for="pinIcao">ICAO</label>
-                  <input id="pinIcao" type="text" maxlength="4" placeholder="RJTA">
-                </div>
-                <div class="field">
-                  <label for="pinId">ID</label>
-                  <input id="pinId" type="text" placeholder="atsugi-air-base">
-                </div>
-                <div class="field">
-                  <label for="pinLat">Latitude</label>
-                  <input id="pinLat" type="text" inputmode="decimal" placeholder="35.4547">
-                </div>
-                <div class="field">
-                  <label for="pinLon">Longitude</label>
-                  <input id="pinLon" type="text" inputmode="decimal" placeholder="139.4500">
-                </div>
-              </div>
-              <button class="btn primary" id="createPinBtn" type="button">+ Pin</button>
+          <div class="bar">
+            <div>
+              <h2 class="panel-title">Location Manager</h2>
+              <div class="subtle" id="locationHeroSummary">Choose a hero photo for each location.</div>
             </div>
           </div>
+          <section class="airshow-management-section" aria-labelledby="locationHeroHeading">
+            <div>
+              <h3 class="panel-title" id="locationHeroHeading">Location Hero Photos</h3>
+              <div class="subtle">Every location is listed below. Click a tagged image to make it the location hero, or use one selected raw asset.</div>
+            </div>
+            <div class="group-hero-list" id="locationHeroList"></div>
+          </section>
+          <section class="airshow-management-section" aria-labelledby="createPinHeading">
+            <div>
+              <h3 class="panel-title" id="createPinHeading">Create Pin</h3>
+              <div class="subtle">Add a location to the map before tagging photos to it.</div>
+            </div>
+            <div class="form-grid">
+              <div class="field">
+                <label for="pinCountry">Country</label>
+                <input id="pinCountry" type="text" placeholder="Japan">
+              </div>
+              <div class="field">
+                <label for="pinName">Name</label>
+                <input id="pinName" type="text" placeholder="Atsugi Air Base">
+              </div>
+              <div class="field">
+                <label for="pinIcao">ICAO</label>
+                <input id="pinIcao" type="text" maxlength="4" placeholder="RJTA">
+              </div>
+              <div class="field">
+                <label for="pinId">ID</label>
+                <input id="pinId" type="text" placeholder="atsugi-air-base">
+              </div>
+              <div class="field">
+                <label for="pinLat">Latitude</label>
+                <input id="pinLat" type="text" inputmode="decimal" placeholder="35.4547">
+              </div>
+              <div class="field">
+                <label for="pinLon">Longitude</label>
+                <input id="pinLon" type="text" inputmode="decimal" placeholder="139.4500">
+              </div>
+            </div>
+            <button class="btn primary" id="createPinBtn" type="button">+ Pin</button>
+          </section>
         </section>
 
         <section class="view" id="squadronsView">
-          <div class="section">
-            <div class="bar">
-              <div>
-                <h2 class="panel-title">Squadron Hero Photos</h2>
-                <div class="subtle">Review every image tagged to a squadron, then choose the one to feature on its page.</div>
-              </div>
-              <button class="btn ghost" id="clearSquadronHeroBtn" type="button">Clear Hero</button>
+          <div class="bar">
+            <div>
+              <h2 class="panel-title">Squadron Hero Photos</h2>
+              <div class="subtle" id="squadronHeroSummary">Review every squadron and select its featured image.</div>
             </div>
-            <div class="field wide">
-              <label for="squadronHeroSelect">Squadron</label>
-              <select id="squadronHeroSelect"></select>
-            </div>
-            <div id="squadronHeroDetails" class="mini-meta"></div>
-            <div class="hero-photo-grid" id="squadronHeroList"></div>
           </div>
+          <section class="airshow-management-section" aria-labelledby="squadronHeroHeading">
+            <div>
+              <h3 class="panel-title" id="squadronHeroHeading">All Squadrons</h3>
+              <div class="subtle">Click a tagged image to feature it on that squadron's page. A squadron may draw images from multiple aircraft entries.</div>
+            </div>
+            <div class="group-hero-list" id="squadronHeroList"></div>
+          </section>
         </section>
 
         <section class="view" id="buildView">
@@ -4336,11 +4374,10 @@ INDEX_HTML = r"""<!doctype html>
       renderEntryOptions();
       renderEditTagTargetOptions();
       renderPinOptions();
-      renderSquadronHeroOptions();
       renderSelectedStrip();
       renderEntryDetail();
       renderEntryCards();
-      renderLocationDetails();
+      renderLocationHeroManager();
       renderSquadronHeroManager();
       renderMissingFields();
       renderQualityControl();
@@ -5032,7 +5069,7 @@ INDEX_HTML = r"""<!doctype html>
       const options = state.data.pins.map((pin) => (
         `<option value="${escapeHtml(pin.key)}">${escapeHtml(pinOptionLabel(pin))}</option>`
       )).join("");
-      const selects = ["pinSelect", "editLocation", "locationSelect"];
+      const selects = ["pinSelect", "editLocation"];
       for (const id of selects) {
         const current = $(id).value;
         $(id).innerHTML = `<option value="">No location</option>${options}`;
@@ -5079,11 +5116,12 @@ INDEX_HTML = r"""<!doctype html>
           : `<div class="missing">Missing source</div>`;
         const location = photo.location || photo.pinId || "No location";
         const airshow = photo.airshow ? `<br>Airshow: ${escapeHtml(photo.airshow)}` : "";
+        const livery = photo.livery ? `<br>Livery: ${escapeHtml(photo.livery)}` : "";
         return `
           <article class="photo-card">
             ${media}
             <div class="mini-title">${escapeHtml(photo.path)}</div>
-            <div class="mini-meta">${escapeHtml(location)}${airshow}<br>${escapeHtml(photo.year || photo.date || "")}</div>
+            <div class="mini-meta">${escapeHtml(location)}${airshow}${livery}<br>${escapeHtml(photo.year || photo.date || "")}</div>
             <div class="card-actions">
               <button class="btn ghost" type="button" data-edit-photo="${photo.index}">Edit</button>
               <button class="btn danger" type="button" data-delete-photo="${photo.index}">Delete</button>
@@ -5125,75 +5163,98 @@ INDEX_HTML = r"""<!doctype html>
       return null;
     }
 
-    function locationHeroPhotos(pin) {
-      return (state.data?.entries || [])
-        .flatMap((entry) => (entry.photos || []).map((photo) => ({entry, photo})))
-        .filter(({photo}) => !photo.invalid && (photo.pinId === pin.id || photo.location === pin.name))
-        .sort((a, b) => effectiveEventDate(b.photo).localeCompare(effectiveEventDate(a.photo)) || a.photo.path.localeCompare(b.photo.path));
+    function managerKey(value) {
+      return String(value || "").trim().toLocaleLowerCase().replace(/\s+/g, " ");
     }
 
-    function renderLocationDetails() {
-      const pin = selectedPin("locationSelect");
-      if (!pin) {
-        $("locationDetails").textContent = "No location selected";
-        $("locationHeroList").innerHTML = `<div class="empty">Choose a location to review its images.</div>`;
-        $("clearLocationHeroBtn").disabled = true;
+    function locationHeroPhotos(pin) {
+      const photos = (state.data?.entries || [])
+        .flatMap((entry) => (entry.photos || []).map((photo) => ({entry, photo})))
+        .filter(({photo}) => !photo.invalid && (
+          managerKey(photo.pinId) === managerKey(pin.id)
+          || managerKey(photo.location) === managerKey(pin.name)
+        ))
+        .sort((a, b) => effectiveEventDate(b.photo).localeCompare(effectiveEventDate(a.photo)) || a.photo.path.localeCompare(b.photo.path));
+      const hasHeroCandidate = photos.some(({photo}) => photo.sourceAssetPath && photo.sourceAssetPath === pin.heroAssetPath);
+      if (pin.heroPhoto && !hasHeroCandidate) {
+        photos.unshift({
+          entry: null,
+          photo: {
+            path: pin.heroPhoto,
+            sourceAssetPath: pin.heroAssetPath,
+            exists: pin.heroExists,
+            customHero: true,
+          },
+        });
+      }
+      return photos;
+    }
+
+    function pinByKey(key) {
+      return (state.data?.pins || []).find((pin) => pin.key === key) || null;
+    }
+
+    function squadronGroupByKey(key) {
+      return (state.data?.squadronGroups || []).find((group) => group.key === key) || null;
+    }
+
+    function renderLocationHeroManager() {
+      const pins = state.data?.pins || [];
+      if (!pins.length) {
+        $("locationHeroSummary").textContent = "Create a map pin before assigning location hero images.";
+        $("locationHeroList").innerHTML = `<div class="empty">No locations are available yet.</div>`;
         return;
       }
-      const coord = pin.lat === null || pin.lon === null ? "No coordinates" : `${pin.lat}, ${pin.lon}`;
-      const photos = locationHeroPhotos(pin);
-      const hero = pin.heroPhoto ? `Hero: ${pin.heroPhoto}` : "No custom hero";
-      $("locationDetails").innerHTML = `
-        <strong>${escapeHtml(pin.name)}</strong><br>
-        ${escapeHtml(pin.country)} ${pin.icao ? `- ${escapeHtml(pin.icao)}` : ""}<br>
-        ${escapeHtml(coord)}<br>
-        ${escapeHtml(hero)}<br>
-        ${photos.length} tagged photo(s) available for the hero
-      `;
-      $("clearLocationHeroBtn").disabled = !pin.heroPhoto;
-      if (!photos.length) {
-        $("locationHeroList").innerHTML = `<div class="empty">No photos are currently tagged to this location.</div>`;
-        return;
-      }
-      $("locationHeroList").innerHTML = photos.map(({entry, photo}) => {
-        const selected = Boolean(pin.heroAssetPath && photo.sourceAssetPath === pin.heroAssetPath);
-        const media = photo.exists && photo.sourceAssetPath
-          ? `<img src="${thumbUrl(photo.sourceAssetPath)}" loading="lazy" alt="${escapeHtml(photo.path)}">`
-          : `<div class="missing">Missing source</div>`;
-        const label = [entry.aircraftType || entry.squadronName || "Location image", formatEventDate(effectiveEventDate(photo))].filter(Boolean).join(" - ");
+
+      const missingHeroCount = pins.filter((pin) => !pin.heroPhoto).length;
+      $("locationHeroSummary").textContent = missingHeroCount
+        ? `${missingHeroCount} of ${pins.length} location${pins.length === 1 ? "" : "s"} need an explicit hero. Click a tagged image to set one.`
+        : `All ${pins.length} location${pins.length === 1 ? "" : "s"} have a selected hero. Click another image to replace one.`;
+
+      $("locationHeroList").innerHTML = pins.map((pin) => {
+        const photos = locationHeroPhotos(pin);
+        const taggedPhotoCount = photos.filter(({photo}) => !photo.customHero).length;
+        const hasHero = Boolean(pin.heroPhoto);
+        const coord = pin.lat === null || pin.lon === null ? "No coordinates" : `${pin.lat}, ${pin.lon}`;
+        const metadata = [pin.country || "Country not set", pin.icao ? `ICAO ${pin.icao}` : "", coord].filter(Boolean).join(" · ");
+        const picker = photos.length
+          ? `<div class="group-hero-picker">${photos.map(({entry, photo}) => {
+              const available = Boolean(photo.exists && photo.sourceAssetPath);
+              const selectable = Boolean(entry && available && !photo.customHero);
+              const selected = Boolean(photo.customHero || (pin.heroAssetPath && photo.sourceAssetPath === pin.heroAssetPath));
+              const media = available
+                ? `<img src="${thumbUrl(photo.sourceAssetPath)}" loading="lazy" alt="${escapeHtml(photo.path)}">`
+                : `<div class="missing">Missing source</div>`;
+              const label = photo.customHero
+                ? "Current custom hero"
+                : [entry.aircraftType || entry.squadronName || "Location image", formatEventDate(effectiveEventDate(photo))].filter(Boolean).join(" - ");
+              return `
+                <button class="group-hero-photo${selected ? " selected" : ""}" type="button"${selectable ? ` data-location-hero-pin="${escapeHtml(pin.key)}" data-location-hero-photo="${escapeHtml(captionPhotoKey(entry, photo.index))}"` : ""} aria-pressed="${selected}"${selectable ? "" : " disabled"}>
+                  ${media}
+                  <span>${escapeHtml(label)}</span>
+                </button>
+              `;
+            }).join("")}</div>`
+          : `<p class="subtle">No photos are currently tagged to this location. Select one raw asset in the left panel to set a custom hero.</p>`;
         return `
-          <button class="hero-photo-button${selected ? " selected" : ""}" type="button" data-location-hero-photo="${escapeHtml(captionPhotoKey(entry, photo.index))}">
-            ${media}<span>${escapeHtml(label)}</span>
-          </button>
+          <article class="group-hero-card${hasHero ? "" : " needs-hero"}">
+            <div class="bulk-event-date-head">
+              <div>
+                <h3>${escapeHtml(pin.name)}</h3>
+                <p class="subtle">${escapeHtml(metadata)} · ${taggedPhotoCount} tagged photo${taggedPhotoCount === 1 ? "" : "s"} · ${hasHero ? "Hero selected" : "No hero selected"}</p>
+              </div>
+              <div class="card-actions">
+                <button class="btn ghost" type="button" data-location-hero-clear="${escapeHtml(pin.key)}"${hasHero ? "" : " disabled"}>Clear Hero</button>
+                <button class="btn secondary" type="button" data-location-hero-asset="${escapeHtml(pin.key)}">Use Selected Raw Asset</button>
+              </div>
+            </div>
+            ${picker}
+          </article>
         `;
       }).join("");
     }
 
-    function selectedSquadronGroup() {
-      const value = $("squadronHeroSelect").value;
-      return (state.data?.squadronGroups || []).find((group) => group.key === value) || null;
-    }
-
-    function renderSquadronHeroOptions() {
-      const current = $("squadronHeroSelect").value;
-      const groups = state.data?.squadronGroups || [];
-      $("squadronHeroSelect").innerHTML = groups.map((group) => (
-        `<option value="${escapeHtml(group.key)}">${escapeHtml(group.name)} (${escapeHtml(group.country || "Unknown")}) - ${group.photoCount} photo(s)</option>`
-      )).join("");
-      if (groups.some((group) => group.key === current)) {
-        $("squadronHeroSelect").value = current;
-      }
-    }
-
-    function renderSquadronHeroManager() {
-      const group = selectedSquadronGroup();
-      if (!group) {
-        $("squadronHeroDetails").textContent = "No squadron photo groups available.";
-        $("squadronHeroList").innerHTML = `<div class="empty">No squadron photos to review.</div>`;
-        $("clearSquadronHeroBtn").disabled = true;
-        return;
-      }
-      const hero = group.hero || {};
+    function squadronGroupPhotos(group) {
       const photos = (group.photos || [])
         .map((reference) => {
           const entry = entryByTargetKey(reference.entryTargetKey);
@@ -5202,22 +5263,71 @@ INDEX_HTML = r"""<!doctype html>
         })
         .filter(Boolean)
         .sort((a, b) => effectiveEventDate(b.photo).localeCompare(effectiveEventDate(a.photo)) || a.photo.path.localeCompare(b.photo.path));
-      $("squadronHeroDetails").textContent = `${group.name} · ${group.country || "Country not set"} · ${photos.length} image(s)${hero.assetPath ? " · hero selected" : " · no hero selected"}`;
-      $("clearSquadronHeroBtn").disabled = !hero.assetPath;
-      if (!photos.length) {
-        $("squadronHeroList").innerHTML = `<div class="empty">No photos are tagged to this squadron.</div>`;
+      const hero = group.hero || {};
+      const hasHeroCandidate = photos.some(({photo}) => photo.sourceAssetPath && photo.sourceAssetPath === hero.assetPath);
+      const heroEntry = entryByTargetKey(hero.entryTargetKey);
+      if (hero.sourcePath && hero.assetPath && heroEntry && !hasHeroCandidate) {
+        photos.unshift({
+          entry: heroEntry,
+          photo: {
+            path: hero.sourcePath,
+            sourceAssetPath: hero.assetPath,
+            exists: true,
+            customHero: true,
+          },
+        });
+      }
+      return photos;
+    }
+
+    function renderSquadronHeroManager() {
+      const groups = state.data?.squadronGroups || [];
+      if (!groups.length) {
+        $("squadronHeroSummary").textContent = "Create a squadron source before assigning a squadron hero image.";
+        $("squadronHeroList").innerHTML = `<div class="empty">No squadron groups are available yet.</div>`;
         return;
       }
-      $("squadronHeroList").innerHTML = photos.map(({entry, photo}) => {
-        const selected = hero.entryTargetKey === entry.targetKey && hero.assetPath === photo.sourceAssetPath;
-        const media = photo.exists && photo.sourceAssetPath
-          ? `<img src="${thumbUrl(photo.sourceAssetPath)}" loading="lazy" alt="${escapeHtml(photo.path)}">`
-          : `<div class="missing">Missing source</div>`;
-        const label = [entry.aircraftType || "Squadron image", formatEventDate(effectiveEventDate(photo))].filter(Boolean).join(" - ");
+
+      const missingHeroCount = groups.filter((group) => !group.hero?.assetPath).length;
+      $("squadronHeroSummary").textContent = missingHeroCount
+        ? `${missingHeroCount} of ${groups.length} squadron${groups.length === 1 ? "" : "s"} need an explicit hero. Click a tagged image to set one.`
+        : `All ${groups.length} squadron${groups.length === 1 ? "" : "s"} have a selected hero. Click another image to replace one.`;
+
+      $("squadronHeroList").innerHTML = groups.map((group) => {
+        const hero = group.hero || {};
+        const photos = squadronGroupPhotos(group);
+        const taggedPhotoCount = photos.filter(({photo}) => !photo.customHero).length;
+        const hasHero = Boolean(hero.assetPath);
+        const picker = photos.length
+          ? `<div class="group-hero-picker">${photos.map(({entry, photo}) => {
+              const available = Boolean(photo.exists && photo.sourceAssetPath);
+              const selectable = Boolean(available && !photo.customHero);
+              const selected = Boolean(photo.customHero || (hero.entryTargetKey === entry.targetKey && hero.assetPath === photo.sourceAssetPath));
+              const media = available
+                ? `<img src="${thumbUrl(photo.sourceAssetPath)}" loading="lazy" alt="${escapeHtml(photo.path)}">`
+                : `<div class="missing">Missing source</div>`;
+              const label = photo.customHero
+                ? "Current custom hero"
+                : [entry.aircraftType || "Squadron image", formatEventDate(effectiveEventDate(photo))].filter(Boolean).join(" - ");
+              return `
+                <button class="group-hero-photo${selected ? " selected" : ""}" type="button"${selectable ? ` data-squadron-hero-group="${escapeHtml(group.key)}" data-squadron-hero-photo="${escapeHtml(captionPhotoKey(entry, photo.index))}"` : ""} aria-pressed="${selected}"${selectable ? "" : " disabled"}>
+                  ${media}
+                  <span>${escapeHtml(label)}</span>
+                </button>
+              `;
+            }).join("")}</div>`
+          : `<p class="subtle">No photos are tagged to this squadron yet.</p>`;
         return `
-          <button class="hero-photo-button${selected ? " selected" : ""}" type="button" data-squadron-hero-photo="${escapeHtml(captionPhotoKey(entry, photo.index))}">
-            ${media}<span>${escapeHtml(label)}</span>
-          </button>
+          <article class="group-hero-card${hasHero ? "" : " needs-hero"}">
+            <div class="bulk-event-date-head">
+              <div>
+                <h3>${escapeHtml(group.name)}</h3>
+                <p class="subtle">${escapeHtml(group.country || "Country not set")} · ${taggedPhotoCount} tagged image${taggedPhotoCount === 1 ? "" : "s"} · ${hasHero ? "Hero selected" : "No hero selected"}</p>
+              </div>
+              <button class="btn ghost" type="button" data-squadron-hero-clear="${escapeHtml(group.key)}"${hasHero ? "" : " disabled"}>Clear Hero</button>
+            </div>
+            ${picker}
+          </article>
         `;
       }).join("");
     }
@@ -5337,6 +5447,8 @@ INDEX_HTML = r"""<!doctype html>
             <select id="missingEntryAircraftFamily">
               <option value="">No family</option>
               <option value="fighter"${issue.entry.aircraftFamily === "fighter" ? " selected" : ""}>Fighter</option>
+              <option value="light"${issue.entry.aircraftFamily === "light" ? " selected" : ""}>Light</option>
+              <option value="medium"${issue.entry.aircraftFamily === "medium" ? " selected" : ""}>Medium</option>
               <option value="heavy"${issue.entry.aircraftFamily === "heavy" ? " selected" : ""}>Heavy</option>
               <option value="helicopter"${issue.entry.aircraftFamily === "helicopter" ? " selected" : ""}>Helicopter</option>
             </select>
@@ -5423,6 +5535,7 @@ INDEX_HTML = r"""<!doctype html>
       $("editDate").value = photo.date || "";
       $("editYear").value = photo.year || "";
       $("editAirshow").value = photo.airshow || "";
+      $("editLivery").value = photo.livery || "";
       $("editCaption").value = photo.caption || "";
       $("editTagTarget").value = ["aircraft", "squadron"].includes(entry.sourceScope) ? entry.targetKey : "";
       const matchingPin = state.data.pins.find((pin) => pin.id === photo.pinId || pin.name === photo.location);
@@ -5436,6 +5549,7 @@ INDEX_HTML = r"""<!doctype html>
       $("editDate").value = "";
       $("editYear").value = "";
       $("editAirshow").value = "";
+      $("editLivery").value = "";
       $("editCaption").value = "";
       $("editTagTarget").value = "";
       $("editLocation").value = "";
@@ -5473,6 +5587,7 @@ INDEX_HTML = r"""<!doctype html>
         assetPath,
         locationName: pin ? pin.name : "",
         airshow: $("airshowInput").value,
+        livery: $("liveryInput").value,
         draftCaption: $("captionInput").value
       });
       state.captionAssist.attachAssetPath = assetPath;
@@ -5488,6 +5603,7 @@ INDEX_HTML = r"""<!doctype html>
         index: Number(index),
         locationName: pin ? pin.name : "",
         airshow: $("editAirshow").value,
+        livery: $("editLivery").value,
         draftCaption: $("editCaption").value
       });
       state.captionAssist.editPhotoKey = captionPhotoKey(entry, Number(index));
@@ -5522,6 +5638,7 @@ INDEX_HTML = r"""<!doctype html>
         locationName: pin ? pin.name : "",
         pinId: pin ? pin.id : "",
         airshow: $("airshowInput").value,
+        livery: $("liveryInput").value,
         caption: $("captionInput").value,
         captionAiAssisted: Boolean(aiCaptionAssetPath),
         date: $("photoDate").value,
@@ -5554,6 +5671,7 @@ INDEX_HTML = r"""<!doctype html>
           date: $("editDate").value,
           year: $("editYear").value,
           airshow: $("editAirshow").value,
+          livery: $("editLivery").value,
           caption: $("editCaption").value,
           captionAiAssisted: state.captionAssist.editPhotoKey === captionPhotoKey(entry, Number(index))
         }
@@ -5649,12 +5767,12 @@ INDEX_HTML = r"""<!doctype html>
       await loadState(true);
     }
 
-    async function setLocationHero() {
+    async function setLocationHero(pinKey) {
       if (state.selectedAssets.size !== 1) {
-        throw new Error("Select exactly one asset.");
+        throw new Error("Select exactly one raw asset first.");
       }
-      const pin = selectedPin("locationSelect");
-      if (!pin) throw new Error("Choose a location.");
+      const pin = pinByKey(pinKey);
+      if (!pin) throw new Error("This location is no longer available. Reload and try again.");
       const [assetPath] = [...state.selectedAssets];
       const result = await api("/api/set-pin-hero", {
         pinPath: pin.pinPath,
@@ -5665,8 +5783,8 @@ INDEX_HTML = r"""<!doctype html>
       await loadState(true);
     }
 
-    async function setLocationHeroFromPhoto(photoKey) {
-      const pin = selectedPin("locationSelect");
+    async function setLocationHeroFromPhoto(pinKey, photoKey) {
+      const pin = pinByKey(pinKey);
       const reference = photoReferenceByKey(photoKey);
       if (!pin || !reference?.photo?.sourceAssetPath) throw new Error("Choose an available location photo.");
       const result = await api("/api/set-pin-hero", {
@@ -5678,17 +5796,17 @@ INDEX_HTML = r"""<!doctype html>
       await loadState(true);
     }
 
-    async function clearLocationHero() {
-      const pin = selectedPin("locationSelect");
-      if (!pin) throw new Error("Choose a location.");
+    async function clearLocationHero(pinKey) {
+      const pin = pinByKey(pinKey);
+      if (!pin) throw new Error("This location is no longer available. Reload and try again.");
       const result = await api("/api/set-pin-hero", {pinPath: pin.pinPath, pinId: pin.id, clear: true});
       toast(result.message);
       await loadState(true);
     }
 
-    async function setSquadronHero(photoKey = "") {
-      const group = selectedSquadronGroup();
-      if (!group) throw new Error("Choose a squadron.");
+    async function setSquadronHero(groupKey, photoKey = "") {
+      const group = squadronGroupByKey(groupKey);
+      if (!group) throw new Error("This squadron is no longer available. Reload and try again.");
       const reference = photoKey ? photoReferenceByKey(photoKey) : null;
       if (photoKey && !reference) throw new Error("The selected squadron photo is no longer available.");
       const result = await api("/api/set-squadron-hero", {
@@ -5927,8 +6045,6 @@ INDEX_HTML = r"""<!doctype html>
         clearEditor();
         renderEntryDetail();
       });
-      $("locationSelect").addEventListener("change", renderLocationDetails);
-      $("squadronHeroSelect").addEventListener("change", renderSquadronHeroManager);
       $("reloadBtn").addEventListener("click", () => loadState(true).then(() => toast("Reloaded")));
       $("clearBuildCacheBtn").addEventListener("click", () => clearBuildCache().catch((error) => toast(error.message)));
       $("clearSelectionBtn").addEventListener("click", () => {
@@ -5945,9 +6061,6 @@ INDEX_HTML = r"""<!doctype html>
       $("generateEditCaptionBtn").addEventListener("click", () => generateEditedCaption().catch((error) => toast(error.message)));
       $("createEntryBtn").addEventListener("click", () => createEntry().catch((error) => toast(error.message)));
       $("createPinBtn").addEventListener("click", () => createPin().catch((error) => toast(error.message)));
-      $("setHeroBtn").addEventListener("click", () => setLocationHero().catch((error) => toast(error.message)));
-      $("clearLocationHeroBtn").addEventListener("click", () => clearLocationHero().catch((error) => toast(error.message)));
-      $("clearSquadronHeroBtn").addEventListener("click", () => setSquadronHero().catch((error) => toast(error.message)));
       $("refreshBulkCaptionsBtn").addEventListener("click", () => {
         resetBulkCaptionQueue();
         renderBulkCaptions();
@@ -6005,11 +6118,17 @@ INDEX_HTML = r"""<!doctype html>
       });
       $("locationHeroList").addEventListener("click", (event) => {
         const photo = event.target.closest("[data-location-hero-photo]");
-        if (photo) setLocationHeroFromPhoto(photo.dataset.locationHeroPhoto).catch((error) => toast(error.message));
+        const clear = event.target.closest("[data-location-hero-clear]");
+        const asset = event.target.closest("[data-location-hero-asset]");
+        if (photo) setLocationHeroFromPhoto(photo.dataset.locationHeroPin, photo.dataset.locationHeroPhoto).catch((error) => toast(error.message));
+        if (clear) clearLocationHero(clear.dataset.locationHeroClear).catch((error) => toast(error.message));
+        if (asset) setLocationHero(asset.dataset.locationHeroAsset).catch((error) => toast(error.message));
       });
       $("squadronHeroList").addEventListener("click", (event) => {
         const photo = event.target.closest("[data-squadron-hero-photo]");
-        if (photo) setSquadronHero(photo.dataset.squadronHeroPhoto).catch((error) => toast(error.message));
+        const clear = event.target.closest("[data-squadron-hero-clear]");
+        if (photo) setSquadronHero(photo.dataset.squadronHeroGroup, photo.dataset.squadronHeroPhoto).catch((error) => toast(error.message));
+        if (clear) setSquadronHero(clear.dataset.squadronHeroClear).catch((error) => toast(error.message));
       });
       $("airshowMissingImageList").addEventListener("click", (event) => {
         const apply = event.target.closest("[data-airshow-missing-apply]");

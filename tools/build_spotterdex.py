@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import html
 import os
 import hashlib
 import json
@@ -15,6 +16,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
+from urllib.parse import quote, urljoin
 
 try:
     import yaml
@@ -28,6 +30,7 @@ except ImportError as exc:  # pragma: no cover - user environment guard
 
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp"}
+AIRCRAFT_FAMILIES = {"fighter", "heavy", "helicopter", "light", "medium"}
 # The published site favors fast page loads over archival-grade derivatives. Source
 # images remain untouched in raw_assets; these settings only affect GitHub Pages output.
 FULL_JPEG_QUALITY = 76
@@ -134,6 +137,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--logo-output", default="assets/logos", help="Published squadron logo output directory.")
     parser.add_argument("--json-output", default="data/spotterdex.json", help="Generated JSON manifest path.")
     parser.add_argument("--js-output", default="data/spotterdex-data.js", help="Generated JS manifest path.")
+    parser.add_argument("--share-output", default="share", help="Generated social preview page directory.")
+    parser.add_argument(
+        "--site-url",
+        default="https://tlkh.github.io/spotterdex/",
+        help="Public site URL used in generated social preview metadata.",
+    )
     parser.add_argument("--width", type=int, default=2560, help="Processed JPEG width in pixels (default: 2560).")
     parser.add_argument("--thumb-width", type=int, default=1024, help="Generated thumbnail width in pixels (default: 1024).")
     parser.add_argument("--logo-max-size", type=int, default=512, help="Maximum squadron logo width or height in pixels.")
@@ -177,6 +186,7 @@ def main() -> int:
     logo_output_dir = root / args.logo_output
     json_output = root / args.json_output
     js_output = root / args.js_output
+    share_output_dir = root / args.share_output
     show_progress = not args.no_progress
     photo_workers = normalize_worker_count(args.workers)
 
@@ -268,6 +278,11 @@ def main() -> int:
     json_text = json.dumps(manifest, indent=2, ensure_ascii=True)
     json_output.write_text(json_text + "\n", encoding="utf-8")
     js_output.write_text(f"window.SPOTTERDEX_DATA = {json_text};\n", encoding="utf-8")
+    share_page_count = write_social_preview_pages(
+        manifest=manifest,
+        output_dir=share_output_dir,
+        site_url=args.site_url,
+    )
 
     warnings.print()
     print(
@@ -276,10 +291,251 @@ def main() -> int:
     )
     print(f"Wrote {relative_posix(json_output, root)}")
     print(f"Wrote {relative_posix(js_output, root)}")
+    print(f"Wrote {share_page_count} social preview pages under {relative_posix(share_output_dir, root)}")
     if args.strict and warnings.has_warnings():
         print("Build completed with validation warnings.", file=sys.stderr)
         return 1
     return 0
+
+
+def write_social_preview_pages(
+    manifest: Dict[str, Any],
+    output_dir: Path,
+    site_url: str,
+) -> int:
+    site_url = str(site_url or "").strip().rstrip("/") + "/"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    kinds = ("photo", "aircraft", "location", "squadron", "airshow")
+    for kind in kinds:
+        kind_dir = output_dir / kind
+        if kind_dir.exists():
+            shutil.rmtree(kind_dir)
+
+    records = social_preview_records(manifest)
+    for record in records:
+        kind = record["kind"]
+        entity_id = slugify(record["id"])
+        page_dir = output_dir / kind / entity_id
+        page_dir.mkdir(parents=True, exist_ok=True)
+        page_dir.joinpath("index.html").write_text(
+            social_preview_document(record, site_url, entity_id),
+            encoding="utf-8",
+        )
+    return len(records)
+
+
+def social_preview_records(manifest: Dict[str, Any]) -> List[Dict[str, Any]]:
+    photos = list(manifest.get("photos", []))
+    photos_by_id = {str(photo.get("id") or ""): photo for photo in photos}
+    fallback_image = {
+        "image": "assets/generated/photos/location-hero-gifu-air-base.jpg",
+        "processedSize": "2560 x 1707",
+    }
+    records: List[Dict[str, Any]] = []
+
+    for photo in photos:
+        photo_id = str(photo.get("id") or "").strip()
+        if not photo_id:
+            continue
+        subject = str(photo.get("title") or photo.get("aircraftType") or "Aviation photograph").strip()
+        location = str(photo.get("locationName") or "").strip()
+        livery = str(photo.get("livery") or "").strip()
+        title = f"{subject}{f' at {location}' if location else ''} | SpotterDex"
+        description = str(photo.get("caption") or "").strip()
+        if not description:
+            description = f"{subject}{f' photographed at {location}' if location else ''}."
+        if livery and livery.lower() not in description.lower():
+            description = f"{description.rstrip('.')} · {livery}."
+        records.append(
+            social_preview_record("photo", photo_id, title, description, photo, f"photo={quote(photo_id)}")
+        )
+
+    for aircraft in manifest.get("aircraft", []):
+        aircraft_id = str(aircraft.get("id") or "").strip()
+        if not aircraft_id:
+            continue
+        photo_ids = [str(value) for value in aircraft.get("photoIds", [])]
+        cover = photos_by_id.get(str(aircraft.get("coverPhoto") or "")) or first_photo(photo_ids, photos_by_id)
+        type_name = str(aircraft.get("typeName") or "Aircraft").strip()
+        description = f"Explore {len(photo_ids)} photographed frame{'s' if len(photo_ids) != 1 else ''} of {type_name}, organised by unit and location."
+        records.append(
+            social_preview_record(
+                "aircraft",
+                aircraft_id,
+                f"{type_name} field guide | SpotterDex",
+                description,
+                cover or fallback_image,
+                f"aircraft={quote(aircraft_id)}",
+            )
+        )
+
+    for pin in manifest.get("pins", []):
+        pin_id = str(pin.get("id") or "").strip()
+        if not pin_id:
+            continue
+        pin_photos = [photo for photo in photos if str(photo.get("pinId") or "") == pin_id]
+        hero = photos_by_id.get(str(pin.get("heroPhotoId") or ""))
+        if not hero and isinstance(pin.get("heroPhoto"), dict):
+            hero = pin["heroPhoto"]
+        hero = hero or (pin_photos[0] if pin_photos else fallback_image)
+        name = str(pin.get("name") or "Spotting location").strip()
+        country = str(pin.get("country") or "").strip()
+        description = f"Explore {len(pin_photos)} aviation photograph{'s' if len(pin_photos) != 1 else ''} from {name}{f', {country}' if country else ''}."
+        records.append(
+            social_preview_record(
+                "location",
+                pin_id,
+                f"{name} field guide | SpotterDex",
+                description,
+                hero,
+                f"location={quote(pin_id)}&detail=1",
+            )
+        )
+
+    for airshow in manifest.get("airshows", []):
+        airshow_id = str(airshow.get("id") or "").strip()
+        if not airshow_id:
+            continue
+        photo_ids = [str(value) for value in airshow.get("photoIds", [])]
+        hero = photos_by_id.get(str(airshow.get("heroPhotoId") or "")) or first_photo(photo_ids, photos_by_id)
+        name = str(airshow.get("name") or "Airshow").strip()
+        description = f"View {len(photo_ids)} photograph{'s' if len(photo_ids) != 1 else ''} from {name}."
+        records.append(
+            social_preview_record(
+                "airshow",
+                airshow_id,
+                f"{name} | SpotterDex",
+                description,
+                hero or fallback_image,
+                f"airshow={quote(airshow_id)}",
+            )
+        )
+
+    for squadron in aggregate_social_squadrons(manifest):
+        photo_ids = squadron["photoIds"]
+        hero = squadron.get("heroPhoto") or first_photo(photo_ids, photos_by_id) or fallback_image
+        name = squadron["name"]
+        country = squadron["country"]
+        description = f"Explore {len(photo_ids)} aviation photograph{'s' if len(photo_ids) != 1 else ''} from {name}{f' in {country}' if country else ''}."
+        records.append(
+            social_preview_record(
+                "squadron",
+                squadron["id"],
+                f"{name} | SpotterDex",
+                description,
+                hero,
+                f"squadron={quote(squadron['id'])}",
+            )
+        )
+
+    return records
+
+
+def aggregate_social_squadrons(manifest: Dict[str, Any]) -> List[Dict[str, Any]]:
+    by_id: Dict[str, Dict[str, Any]] = {}
+
+    def add_unit(unit: Any) -> None:
+        if not isinstance(unit, dict):
+            return
+        unit_type = normalize_key(str(unit.get("unitType") or unit.get("unit_type") or "squadron"))
+        if unit_type == "organisation" or unit.get("showOnSquadronsPage") is False:
+            return
+        name = str(unit.get("name") or unit.get("squadronName") or "").strip()
+        country = str(unit.get("country") or "").strip()
+        if not name:
+            return
+        unit_id = slugify(f"{country}-{name}")
+        record = by_id.setdefault(
+            unit_id,
+            {"id": unit_id, "name": name, "country": country, "photoIds": [], "heroPhoto": None},
+        )
+        record["photoIds"] = unique_values(
+            [*record["photoIds"], *[str(value) for value in unit.get("photoIds", [])]]
+        )
+        if not record["heroPhoto"] and isinstance(unit.get("heroPhoto"), dict):
+            record["heroPhoto"] = unit["heroPhoto"]
+
+    for unit in manifest.get("squadrons", []):
+        add_unit(unit)
+    for aircraft in manifest.get("aircraft", []):
+        for unit in aircraft.get("squadrons", []):
+            add_unit(unit)
+    return sorted(by_id.values(), key=lambda item: (item["country"], item["name"]))
+
+
+def first_photo(photo_ids: Iterable[str], photos_by_id: Dict[str, Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    return next((photos_by_id[photo_id] for photo_id in photo_ids if photo_id in photos_by_id), None)
+
+
+def social_preview_record(
+    kind: str,
+    entity_id: str,
+    title: str,
+    description: str,
+    image: Dict[str, Any],
+    fragment: str,
+) -> Dict[str, Any]:
+    return {
+        "kind": kind,
+        "id": entity_id,
+        "title": title,
+        "description": re.sub(r"\s+", " ", description).strip()[:260],
+        "image": str(image.get("image") or image.get("thumbnail") or ""),
+        "imageSize": str(image.get("processedSize") or image.get("thumbnailSize") or ""),
+        "fragment": fragment,
+    }
+
+
+def social_preview_document(record: Dict[str, Any], site_url: str, entity_id: str) -> str:
+    title = html.escape(record["title"], quote=True)
+    description = html.escape(record["description"], quote=True)
+    image_url = html.escape(urljoin(site_url, record["image"]), quote=True)
+    share_url = html.escape(urljoin(site_url, f"share/{record['kind']}/{entity_id}/"), quote=True)
+    main_url = f"{site_url}#{record['fragment']}"
+    canonical_url = html.escape(main_url, quote=True)
+    redirect_url = f"../../../#{record['fragment']}"
+    width, height = parse_generated_size(record.get("imageSize"))
+    dimension_meta = ""
+    if width and height:
+        dimension_meta = (
+            f'\n    <meta property="og:image:width" content="{width}">'
+            f'\n    <meta property="og:image:height" content="{height}">'
+        )
+    return f"""<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{title}</title>
+    <meta name="description" content="{description}">
+    <meta name="robots" content="noindex,follow">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="SpotterDex">
+    <meta property="og:locale" content="en_SG">
+    <meta property="og:title" content="{title}">
+    <meta property="og:description" content="{description}">
+    <meta property="og:image" content="{image_url}">
+    <meta property="og:image:secure_url" content="{image_url}">
+    <meta property="og:image:alt" content="{title}">{dimension_meta}
+    <meta property="og:url" content="{share_url}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{title}">
+    <meta name="twitter:description" content="{description}">
+    <meta name="twitter:image" content="{image_url}">
+    <meta name="twitter:image:alt" content="{title}">
+    <link rel="canonical" href="{canonical_url}">
+    <script>window.location.replace({json.dumps(redirect_url)});</script>
+  </head>
+  <body>
+    <p><a href="{html.escape(redirect_url, quote=True)}">Open this entry in SpotterDex</a></p>
+  </body>
+</html>
+"""
+
+
+def parse_generated_size(value: Any) -> Tuple[int, int]:
+    match = re.search(r"(\d+)\s*x\s*(\d+)", str(value or ""), re.IGNORECASE)
+    return (int(match.group(1)), int(match.group(2))) if match else (0, 0)
 
 
 def load_pins(
@@ -436,6 +692,7 @@ def load_aircraft(
             or display_name(yaml_path.parent.name)
         ).strip()
         unit_type = read_unit_type(data, squadron_data)
+        aircraft_family = read_aircraft_family(data, aircraft_data)
         country = str(data.get("country") or squadron_data.get("country") or "").strip()
         aircraft_id = slugify(type_name)
         squadron_id = slugify(f"{aircraft_id}-{squadron_name}")
@@ -471,6 +728,7 @@ def load_aircraft(
             {
                 "id": aircraft_id,
                 "typeName": type_name,
+                "aircraftFamily": aircraft_family,
                 "countries": [],
                 "squadrons": [],
                 "photoIds": [],
@@ -538,6 +796,7 @@ def load_aircraft(
                 make_demo_images=make_demo_images,
                 used_photo_ids=used_photo_ids,
                 warnings=warnings,
+                aircraft_family=aircraft_family,
             )
             if not photo_job:
                 skipped_photo_count += 1
@@ -1161,6 +1420,12 @@ def validate_manifest(manifest: Dict[str, Any], root: Path, warnings: BuildWarni
                 warnings.add(f"airshow hero references an unknown photo: {name} -> {hero_photo_id}")
 
     for entry in aircraft_entries:
+        aircraft_family = str(entry.get("aircraftFamily") or "")
+        if aircraft_family not in AIRCRAFT_FAMILIES:
+            warnings.add(
+                f"aircraft entry has an invalid or missing aircraft family: "
+                f"{entry.get('typeName', entry.get('id', 'Unknown aircraft'))} -> {aircraft_family or 'missing'}"
+            )
         for squadron in entry.get("squadrons", []):
             hero_photo = squadron.get("heroPhoto")
             if not hero_photo:
@@ -1219,6 +1484,7 @@ def prepare_photo_job(
     warnings: BuildWarningLog,
     tag_scope: str = "aircraft",
     source_ref: Optional[Dict[str, Any]] = None,
+    aircraft_family: str = "",
 ) -> Optional[Dict[str, Any]]:
     source_value = photo_item.get("path") or photo_item.get("file") or photo_item.get("filepath")
     if not source_value:
@@ -1255,6 +1521,7 @@ def prepare_photo_job(
         "photo_id": photo_id,
         "photo_item": photo_item,
         "type_name": type_name,
+        "aircraft_family": aircraft_family,
         "aircraft_id": aircraft_id,
         "squadron_name": squadron_name,
         "squadron_id": squadron_id,
@@ -1438,6 +1705,7 @@ def process_photo_job(job: Dict[str, Any]) -> Dict[str, Any]:
         "tagScope": job.get("tag_scope", "aircraft"),
         "aircraftId": job["aircraft_id"],
         "aircraftType": type_name,
+        "aircraftFamily": job.get("aircraft_family", ""),
         "squadronId": job["squadron_id"],
         "squadronName": squadron_name,
         "unitType": job["unit_type"],
@@ -1450,6 +1718,12 @@ def process_photo_job(job: Dict[str, Any]) -> Dict[str, Any]:
         "pinId": pin_id,
         "sourceRef": job.get("source_ref", {}),
         "airshow": str(photo_item.get("airshow") or photo_item.get("airshow_name") or "").strip(),
+        "livery": str(
+            photo_item.get("livery")
+            or photo_item.get("paint_scheme")
+            or photo_item.get("paintScheme")
+            or ""
+        ).strip(),
         "title": str(photo_item.get("title") or ""),
         "caption": str(photo_item.get("caption") or ""),
         "image": site_path_for(output_path, root),
@@ -1560,6 +1834,12 @@ def process_photo(
         "locationName": location_name,
         "pinId": pin_id,
         "airshow": str(photo_item.get("airshow") or photo_item.get("airshow_name") or "").strip(),
+        "livery": str(
+            photo_item.get("livery")
+            or photo_item.get("paint_scheme")
+            or photo_item.get("paintScheme")
+            or ""
+        ).strip(),
         "title": str(photo_item.get("title") or ""),
         "caption": str(photo_item.get("caption") or ""),
         "image": site_path_for(output_path, root),
@@ -1820,6 +2100,19 @@ def read_unit_type(data: Dict[str, Any], squadron_data: Dict[str, Any]) -> str:
         if key in {"organisation", "organization", "org"}:
             return "organisation"
     return "squadron"
+
+
+def read_aircraft_family(data: Dict[str, Any], aircraft_data: Dict[str, Any]) -> str:
+    value = (
+        data.get("aircraft_family")
+        or data.get("aircraftFamily")
+        or data.get("family")
+        or data.get("aircraft_type_family")
+        or data.get("aircraftTypeFamily")
+        or aircraft_data.get("family")
+    )
+    key = normalize_key(str(value or ""))
+    return key if key in AIRCRAFT_FAMILIES else str(value or "").strip()
 
 
 def unit_display_label(unit_type: str) -> str:

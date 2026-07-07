@@ -4,6 +4,17 @@
   const RECENT_PHOTO_LIMIT = 8;
   const MAP_LABEL_GAP = 2;
   const MAP_PANEL_GAP = 10;
+  const FOCAL_DISTRIBUTION_MINIMUM = 50;
+  const FOCAL_DISTRIBUTION_MAXIMUM = 850;
+  const FOCAL_DISTRIBUTION_BIN_WIDTH = 50;
+  const AIRCRAFT_FAMILY_DEFINITIONS = [
+    { id: "fighter", label: "Fighter" },
+    { id: "helicopter", label: "Helicopter" },
+    { id: "light", label: "Light" },
+    { id: "medium", label: "Medium" },
+    { id: "heavy", label: "Heavy" }
+  ];
+  const AIRCRAFT_FAMILY_LABELS = new Map(AIRCRAFT_FAMILY_DEFINITIONS.map((family) => [family.id, family.label]));
 
   const state = {
     data: EMPTY_DATA,
@@ -19,6 +30,7 @@
     selectedAirshowId: null,
     expandedLocationGroupKeys: new Set(),
     dexGroupMode: "squadron",
+    dexFamilyFilter: "",
     map: null,
     markerLayer: null,
     mapLeaderLayer: null,
@@ -49,9 +61,13 @@
     viewerPointers: new Map(),
     viewerDragOrigin: null,
     viewerPinchStart: null,
+    viewerHistoryPushed: false,
+    viewerReturnFocus: null,
     mobileMapPanel: null,
     mapControlPanelOpen: true,
     squadronPhotographedOnly: false,
+    renderedViews: new Set(),
+    lastHandledHistoryUrl: "",
     isApplyingHash: false
   };
 
@@ -67,12 +83,17 @@
     state.data = prepareData(await loadData());
     chooseInitialSelections();
     renderAll();
+    const routed = applyDeepLinkFromHash({ initial: true });
+    if (!routed) {
+      setActiveTab("mapView", { updateHash: false });
+    }
     updateShareMetadata();
-    applyDeepLinkFromHash({ initial: true });
   }
 
   function cacheElements() {
     els.root = document.documentElement;
+    els.siteHeader = document.querySelector(".site-header");
+    els.main = document.getElementById("main");
     els.brand = document.querySelector(".brand");
     els.metaDescription = document.querySelector('meta[name="description"]');
     els.ogTitle = document.querySelector('meta[property="og:title"]');
@@ -90,6 +111,7 @@
     els.locationCount = document.getElementById("locationCount");
     els.locationSearch = document.getElementById("locationSearch");
     els.aircraftSearch = document.getElementById("aircraftSearch");
+    els.dexFamilyFilter = document.getElementById("dexFamilyFilter");
     els.locationList = document.getElementById("locationList");
     els.mapWorkspace = document.querySelector("#mapView .map-workspace");
     els.mapControlPanel = document.getElementById("mapControlPanel");
@@ -127,6 +149,8 @@
     els.viewerZoomResetButton = document.getElementById("viewerZoomResetButton");
     els.viewerZoomInButton = document.getElementById("viewerZoomInButton");
     els.viewerCleanButton = document.getElementById("viewerCleanButton");
+    els.viewerShareButton = document.getElementById("viewerShareButton");
+    els.viewerFullscreenButton = document.getElementById("viewerFullscreenButton");
   }
 
   async function loadData() {
@@ -181,6 +205,7 @@
         sortDate: photo.sortDate ? String(photo.sortDate) : deriveSortDate(photo),
         locationName: photo.locationName || photo.location || "Unknown location",
         airshow: photo.airshow || photo.airshowName || photo.airshow_name || "",
+        livery: photo.livery || photo.paintScheme || photo.paint_scheme || "",
         aircraftType: photo.aircraftType || defaultPhotoSubject(tagScope),
         squadronName: photo.squadronName || photo.unitName || (tagScope === "location" ? "" : unknownUnitName(unitType)),
         unitType,
@@ -367,6 +392,8 @@
     els.viewerZoomResetButton.addEventListener("click", resetViewerTransform);
     els.viewerZoomInButton.addEventListener("click", () => setViewerZoom(state.viewerZoom + 0.25));
     els.viewerCleanButton.addEventListener("click", () => setViewerCleanMode(!state.viewerCleanMode));
+    els.viewerShareButton.addEventListener("click", () => shareViewerPhoto());
+    els.viewerFullscreenButton.addEventListener("click", toggleViewerFullscreen);
     els.viewerImage.addEventListener("contextmenu", (event) => event.preventDefault());
     els.viewerImage.setAttribute("draggable", "false");
     els.viewerImage.addEventListener("wheel", handleViewerWheel, { passive: false });
@@ -387,7 +414,9 @@
 
     document.addEventListener("click", handleDocumentClick);
     document.addEventListener("keydown", handleKeydown);
-    window.addEventListener("hashchange", () => applyDeepLinkFromHash());
+    window.addEventListener("popstate", handleHistoryNavigation);
+    window.addEventListener("hashchange", handleHistoryNavigation);
+    document.addEventListener("fullscreenchange", updateViewerFullscreenButton);
     window.addEventListener("resize", debounce(() => {
       updateMapPanelState();
       updateViewerInfoState();
@@ -412,6 +441,21 @@
       state.selectedAirshowId = null;
     }
     setActiveTab(viewId);
+  }
+
+  function handleHistoryNavigation() {
+    const currentUrl = window.location.href;
+    if (state.lastHandledHistoryUrl === currentUrl) {
+      return;
+    }
+    state.lastHandledHistoryUrl = currentUrl;
+    const routed = applyDeepLinkFromHash();
+    if (!routed) {
+      if (!els.photoViewer.hidden) {
+        closeViewer({ updateHash: false, useHistory: false });
+      }
+      setActiveTab("mapView", { updateHash: false });
+    }
   }
 
   function handleLensPointerMove(event) {
@@ -483,6 +527,20 @@
       return;
     }
 
+    const dexFamilyFilterClear = event.target.closest("[data-clear-dex-family-filter]");
+    if (dexFamilyFilterClear) {
+      state.dexFamilyFilter = "";
+      renderDex();
+      els.aircraftSearch?.focus({ preventScroll: true });
+      return;
+    }
+
+    const aircraftFamilyButton = event.target.closest("[data-dex-family-id]");
+    if (aircraftFamilyButton) {
+      openAircraftFamilyDex(aircraftFamilyButton.dataset.dexFamilyId || "");
+      return;
+    }
+
     const statsFilter = event.target.closest("[data-stats-filter-kind]");
     if (statsFilter) {
       openStatsPhotoSet(
@@ -502,6 +560,9 @@
 
     const locationPageButton = event.target.closest("[data-location-page-id]");
     if (locationPageButton) {
+      if (!els.photoViewer.hidden) {
+        closeViewer({ updateHash: false, useHistory: false, restoreFocus: false });
+      }
       selectLocationPage(locationPageButton.dataset.locationPageId);
       return;
     }
@@ -532,6 +593,9 @@
 
     const aircraftButton = event.target.closest("[data-aircraft-id]");
     if (aircraftButton) {
+      if (!els.photoViewer.hidden) {
+        closeViewer({ updateHash: false, useHistory: false, restoreFocus: false });
+      }
       selectAircraft(aircraftButton.dataset.aircraftId);
       return;
     }
@@ -539,7 +603,7 @@
     const squadronButton = event.target.closest("[data-squadron-id]");
     if (squadronButton) {
       if (!els.photoViewer.hidden) {
-        closeViewer({ updateHash: false });
+        closeViewer({ updateHash: false, useHistory: false, restoreFocus: false });
       }
       selectSquadron(squadronButton.dataset.squadronId);
       return;
@@ -547,6 +611,9 @@
 
     const airshowButton = event.target.closest("[data-airshow-id]");
     if (airshowButton) {
+      if (!els.photoViewer.hidden) {
+        closeViewer({ updateHash: false, useHistory: false, restoreFocus: false });
+      }
       selectAirshow(airshowButton.dataset.airshowId);
       return;
     }
@@ -565,7 +632,9 @@
 
   function handleKeydown(event) {
     if (!els.photoViewer.hidden) {
-      if (event.key === "Escape") {
+      if (event.key === "Tab") {
+        trapViewerFocus(event);
+      } else if (event.key === "Escape") {
         if (state.viewerCleanMode) {
           setViewerCleanMode(false);
         } else if (state.viewerInfoOpen && isMobileViewerLayout()) {
@@ -589,9 +658,31 @@
       } else if (event.key.toLowerCase() === "h") {
         event.preventDefault();
         setViewerCleanMode(!state.viewerCleanMode);
+      } else if (event.key.toLowerCase() === "f") {
+        event.preventDefault();
+        toggleViewerFullscreen();
       }
     } else if (event.key === "Escape" && state.mobileMapPanel && isMobileMapLayout()) {
       setMapPanel(null);
+    }
+  }
+
+  function trapViewerFocus(event) {
+    const focusable = Array.from(els.photoViewer.querySelectorAll(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )).filter((element) => !element.hidden && element.getClientRects().length);
+    if (!focusable.length) {
+      event.preventDefault();
+      return;
+    }
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
     }
   }
 
@@ -670,6 +761,8 @@
       els.viewSelect.value = navigationViewId;
     }
 
+    ensureViewRendered(viewId);
+
     if (options.updateHash !== false && !state.isApplyingHash) {
       updateDeepLinkForView(viewId);
     }
@@ -703,6 +796,8 @@
 
   function updateShareMetadata() {
     const activeView = document.querySelector("[data-view].is-active")?.id;
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const activePhoto = state.photoById?.get(hashParams.get("photo"));
     const defaultTitle = "SpotterDex - Timothy's Logbook";
     const defaultDescription = "An aircraft spotting logbook and aviation photography field guide.";
     const defaultImage = "assets/generated/photos/location-hero-gifu-air-base.jpg";
@@ -710,7 +805,11 @@
     let description = defaultDescription;
     let image = defaultImage;
 
-    if (activeView === "aircraftDetailView") {
+    if (activePhoto) {
+      title = `${activePhoto.title || photoSubjectLabel(activePhoto)} | SpotterDex`;
+      description = activePhoto.caption || `${photoSubjectLabel(activePhoto)} photographed at ${activePhoto.locationName}.`;
+      image = activePhoto.image || activePhoto.thumbnail || defaultImage;
+    } else if (activeView === "aircraftDetailView") {
       const aircraft = state.aircraftById?.get(state.selectedAircraftId);
       if (aircraft) {
         const photos = photosForAircraft(aircraft);
@@ -729,9 +828,27 @@
         description = `${photos.length} photographed frame${photos.length === 1 ? "" : "s"} at ${pin.name}${pin.country ? `, ${pin.country}` : ""}.`;
         image = hero?.image || hero?.thumbnail || defaultImage;
       }
+    } else if (activeView === "squadronDetailView") {
+      const squadron = collectSquadrons().find((item) => item.id === state.selectedSquadronId);
+      if (squadron) {
+        const photos = photosForSquadronRecord(squadron);
+        const hero = squadronCardHero(squadron) || photos[0];
+        title = `${squadron.name} | SpotterDex`;
+        description = `${photos.length} aviation photograph${photos.length === 1 ? "" : "s"} from ${squadron.name}${squadron.country ? ` in ${squadron.country}` : ""}.`;
+        image = hero?.image || hero?.thumbnail || defaultImage;
+      }
+    } else if (activeView === "airshowsView" && state.selectedAirshowId) {
+      const airshow = state.airshowById.get(state.selectedAirshowId);
+      if (airshow) {
+        const photos = photosForAirshow(airshow);
+        const hero = airshowHeroPhoto(airshow, photos) || photos[0];
+        title = `${airshow.name} | SpotterDex`;
+        description = `${photos.length} aviation photograph${photos.length === 1 ? "" : "s"} from ${airshow.name}.`;
+        image = hero?.image || hero?.thumbnail || defaultImage;
+      }
     }
 
-    const shareUrl = window.location.href;
+    const shareUrl = shareUrlForCurrentState();
     const canonicalUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`;
     const imageUrl = new URL(image, document.baseURI).href;
     document.title = title;
@@ -747,28 +864,38 @@
   }
 
   async function copyFieldGuideLink(button) {
-    const link = window.location.href;
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(link);
-    } else {
-      const temporaryInput = document.createElement("textarea");
-      temporaryInput.value = link;
-      temporaryInput.setAttribute("readonly", "");
-      temporaryInput.style.position = "fixed";
-      temporaryInput.style.opacity = "0";
-      document.body.appendChild(temporaryInput);
-      temporaryInput.select();
-      const copied = document.execCommand("copy");
-      temporaryInput.remove();
-      if (!copied) {
-        throw new Error("Could not copy link");
-      }
-    }
+    await copyText(shareUrlForCurrentState());
     const originalLabel = button.dataset.copyFieldGuide || "Copy link";
     button.textContent = "Copied";
     window.setTimeout(() => {
       button.textContent = originalLabel;
     }, 1800);
+  }
+
+  function shareUrlForCurrentState() {
+    const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const photoId = params.get("photo");
+    if (photoId && state.photoById.has(photoId)) {
+      return shareUrlForEntity("photo", photoId);
+    }
+    const activeView = document.querySelector("[data-view].is-active")?.id;
+    if (activeView === "aircraftDetailView" && state.selectedAircraftId) {
+      return shareUrlForEntity("aircraft", state.selectedAircraftId);
+    }
+    if (activeView === "squadronDetailView" && state.selectedSquadronId) {
+      return shareUrlForEntity("squadron", state.selectedSquadronId);
+    }
+    if (activeView === "locationDetailView" && state.selectedPinId) {
+      return shareUrlForEntity("location", state.selectedPinId);
+    }
+    if (activeView === "airshowsView" && state.selectedAirshowId) {
+      return shareUrlForEntity("airshow", state.selectedAirshowId);
+    }
+    return window.location.href;
+  }
+
+  function shareUrlForEntity(kind, id) {
+    return new URL(`share/${encodeURIComponent(kind)}/${encodeURIComponent(id)}/`, document.baseURI).href;
   }
 
   function goToMapHome() {
@@ -778,7 +905,7 @@
       selectPin(state.selectedPinId, { updateHash: false, pan: true, openPanel: false });
       updateDeepLink("location", state.selectedPinId);
     } else {
-      window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+      clearDeepLink();
     }
   }
 
@@ -795,8 +922,12 @@
       updateDeepLink("airshow", state.selectedAirshowId);
     } else if (viewId === "statsView") {
       updateDeepLink("stats", "summary");
-    } else if (viewId === "dexView" || viewId === "squadronsView" || viewId === "airshowsView") {
-      clearDeepLink();
+    } else if (viewId === "dexView") {
+      updateDeepLink("view", "dex");
+    } else if (viewId === "squadronsView") {
+      updateDeepLink("view", "squadrons");
+    } else if (viewId === "airshowsView") {
+      updateDeepLink("view", "airshows");
     }
   }
 
@@ -811,8 +942,12 @@
       renderPins({ refreshTraffic: true });
       renderMapResults();
     }
-    renderLocationPage();
-    renderAirshowsPage();
+    if (document.getElementById("locationDetailView")?.classList.contains("is-active")) {
+      renderLocationPage();
+    }
+    if (state.renderedViews.has("airshowsView")) {
+      renderAirshowsPage();
+    }
   }
 
   function resolvedTheme() {
@@ -921,22 +1056,40 @@
 
   function renderAll() {
     renderStats();
-    renderLocations();
     updateMapPanelState();
     updateMapControlPanelState();
     updateMapDossierState();
-    initMap();
-    fitMapToPins();
-    renderPins();
-    renderRecentPhotos();
-    renderMapResults();
-    renderDex();
-    renderAircraftDetail();
-    renderLocationPage();
-    renderStatsDashboard();
-    renderExifDashboard();
-    renderSquadronsPage();
-    renderAirshowsPage();
+  }
+
+  function ensureViewRendered(viewId) {
+    const directoryViews = new Set(["mapView", "dexView", "squadronsView", "airshowsView", "statsView"]);
+    if (!directoryViews.has(viewId)) {
+      return;
+    }
+    const directoryView = viewId;
+    if (state.renderedViews.has(directoryView)) {
+      return;
+    }
+
+    if (directoryView === "mapView") {
+      renderLocations();
+      initMap();
+      fitMapToPins();
+      renderPins();
+      renderMapResults();
+    } else if (directoryView === "dexView") {
+      renderRecentPhotos();
+      renderDex();
+    } else if (directoryView === "squadronsView") {
+      renderSquadronsPage();
+    } else if (directoryView === "airshowsView") {
+      renderAirshowsPage();
+    } else if (directoryView === "statsView") {
+      renderStatsDashboard();
+      renderExifDashboard();
+    }
+
+    state.renderedViews.add(directoryView);
   }
 
   function renderStats() {
@@ -1954,7 +2107,10 @@
         <div class="location-hero location-map-hero${heroStyle}">
           ${
             heroImage
-              ? `<img src="${escapeAttr(heroImage)}" alt="${escapeAttr(locationHeroAlt(pin, heroPhoto))}">`
+              ? renderResponsivePhotoImage(heroPhoto || heroAsset, locationHeroAlt(pin, heroPhoto), {
+                  eager: true,
+                  sizes: "(max-width: 1040px) 100vw, 430px"
+                })
               : '<span class="empty-cover">No location photo</span>'
           }
           <span class="location-hero-overlay">
@@ -2205,10 +2361,11 @@
 
     els.recentPhotosStrip.innerHTML = photos
       .map((photo) => {
-        const image = photo.thumbnail || photo.image || "";
         return `
           <button class="recent-photo-card" type="button" data-photo-id="${escapeAttr(photo.id)}" data-photo-context="recent">
-            <img src="${escapeAttr(image)}" alt="${escapeAttr(`${photoSubjectLabel(photo)} at ${photo.locationName}`)}">
+            ${renderResponsivePhotoImage(photo, `${photoSubjectLabel(photo)} at ${photo.locationName}`, {
+              sizes: "(max-width: 760px) 46vw, 360px"
+            })}
             <span>
               <strong>${escapeHtml(photoSubjectLabel(photo))}</strong>
               <small>${escapeHtml(photo.locationName)} - ${escapeHtml(displayPhotoDate(photo))}</small>
@@ -2250,7 +2407,8 @@
           `${collectionStats.locationCount} enabled map location${collectionStats.locationCount === 1 ? "" : "s"} across ${collectionStats.countryCount} countr${collectionStats.countryCount === 1 ? "y" : "ies"}`
         )}
       </div>
-      <div class="stats-visual-grid stats-visual-grid-single">
+      <div class="stats-visual-grid">
+        ${renderAircraftFamilyCoverage()}
         ${renderCountryDistribution(countryCounts)}
       </div>
     `;
@@ -2269,6 +2427,50 @@
         </div>
         <p>${escapeHtml(detail)}</p>
       </article>
+    `;
+  }
+
+  function renderAircraftFamilyCoverage() {
+    const families = AIRCRAFT_FAMILY_DEFINITIONS.map((family) => ({
+      ...family,
+      count: state.data.aircraft.filter((entry) => aircraftFamilyIdForEntry(entry) === family.id).length
+    }));
+    const total = families.reduce((sum, family) => sum + family.count, 0);
+
+    return `
+      <section class="stats-visual-card aircraft-family-coverage-card">
+        <div class="stats-visual-heading">
+          <div>
+            <p class="eyebrow">Aircraft coverage</p>
+            <h2>Types by family</h2>
+          </div>
+          <span>Open a family</span>
+        </div>
+        <p class="aircraft-family-coverage-summary">${total} aircraft type${total === 1 ? "" : "s"} classified across five families.</p>
+        <div class="aircraft-family-distribution" aria-label="Aircraft types by family">
+          ${families
+            .map((family) => {
+              const asset = aircraftFamilyAsset(family.id, family.label);
+              const typeLabel = `aircraft type${family.count === 1 ? "" : "s"}`;
+              return `
+                <button
+                  class="aircraft-family-segment is-${escapeAttr(family.id)}"
+                  type="button"
+                  data-dex-family-id="${escapeAttr(family.id)}"
+                  aria-label="Open the Aircraft Dex filtered to ${family.count} ${escapeAttr(family.label.toLowerCase())} ${typeLabel}"
+                >
+                  <span class="aircraft-family-segment-icon"><img src="${escapeAttr(asset.icon)}" alt="" aria-hidden="true"></span>
+                  <span class="aircraft-family-segment-body">
+                    <span class="aircraft-family-segment-label">${escapeHtml(family.label)}</span>
+                    <strong>${family.count}</strong>
+                    <small>${typeLabel}</small>
+                  </span>
+                </button>
+              `;
+            })
+            .join("")}
+        </div>
+      </section>
     `;
   }
 
@@ -2354,7 +2556,7 @@
       <div class="exif-dashboard-grid">
         ${renderExifCountList("Camera bodies", cameraCounts, "camera")}
         ${renderExifCountList("Lenses", lensCounts, "lens")}
-        ${renderExifCountList("Focal lengths", focalCounts, "focal")}
+        ${renderFocalLengthDistribution(exifPhotos)}
         ${renderExifCountList("Shutter speeds", shutterCounts, "shutter")}
         ${renderExifCountList("Apertures", apertureCounts, "aperture")}
         ${renderExifCountList("ISO", isoCounts, "iso")}
@@ -2433,7 +2635,9 @@
           aria-controls="airshow-gallery-${escapeAttr(airshow.id)}"
           aria-label="${escapeAttr(`${airshow.name}: ${photos.length} photo${photos.length === 1 ? "" : "s"}. ${actionLabel}.`)}"
         >
-          ${cover ? `<img src="${escapeAttr(cover)}" alt="${escapeAttr(`${airshow.name} hero photo`)}">` : '<span class="airshow-timeline-placeholder">No event photo</span>'}
+          ${cover ? renderResponsivePhotoImage(hero, `${airshow.name} hero photo`, {
+            sizes: "(max-width: 760px) 100vw, 720px"
+          }) : '<span class="airshow-timeline-placeholder">No event photo</span>'}
           <span class="airshow-timeline-scrim" aria-hidden="true"></span>
           <span class="airshow-timeline-content">
             <span class="eyebrow">${escapeHtml(latestLabel)}</span>
@@ -2755,7 +2959,10 @@
     return `
       <button class="squadron-logo-card${activeClass}" type="button" data-squadron-id="${escapeAttr(squadron.id)}" title="${escapeAttr(squadron.name)}">
         <div class="squadron-logo-media${mediaClass}">
-          ${heroImage ? `<img class="squadron-card-hero" src="${escapeAttr(heroImage)}" alt="${escapeAttr(squadron.name)} hero photo">` : ""}
+          ${heroImage ? renderResponsivePhotoImage(hero, `${squadron.name} hero photo`, {
+            className: "squadron-card-hero",
+            sizes: "(max-width: 520px) 50vw, (max-width: 1040px) 33vw, 320px"
+          }) : ""}
           <span class="squadron-card-logo${heroImage ? "" : " is-standalone"}">
             ${logoContent}
           </span>
@@ -2851,8 +3058,7 @@
         <div class="detail-section-heading">
           <div>
             <p class="eyebrow">Aircraft archive</p>
-            <h2>All other images</h2>
-            <p class="muted">Aircraft-tagged frames, newest first.</p>
+            <h2>All images</h2>
           </div>
           <span class="count-pill">${otherPhotos.length}</span>
         </div>
@@ -2915,7 +3121,7 @@
               <div class="detail-section-heading">
                 <div>
                   <p class="eyebrow">Location archive</p>
-                  <h2>Location-specific frames</h2>
+                  <h2>Location-specific images</h2>
                   <p class="muted">Photos tagged directly to ${escapeHtml(pin.name)}.</p>
                 </div>
                 <span class="count-pill">${locationPhotos.length}</span>
@@ -2928,7 +3134,7 @@
         <div class="detail-section-heading">
           <div>
             <p class="eyebrow">Aircraft and unit archive</p>
-            <h2>All other frames</h2>
+            <h2>All other images</h2>
             <p class="muted">Aircraft- and squadron-tagged photos, newest first.</p>
           </div>
           <span class="count-pill">${otherPhotos.length}</span>
@@ -3026,6 +3232,89 @@
     `;
   }
 
+  function renderFocalLengthDistribution(photos) {
+    const focalPhotos = photos
+      .map((photo) => ({ photo, focalLength: statsFocalLengthValue(photo) }))
+      .filter((item) => item.focalLength !== null);
+
+    if (!focalPhotos.length) {
+      return `
+        <section class="exif-stat-card focal-distribution-card">
+          <h3 class="heading-with-icon">${statsIcon("focal")}<span>Focal-length distribution</span></h3>
+          <p class="muted">No focal-length data found.</p>
+        </section>
+      `;
+    }
+
+    const focalLengths = focalPhotos.map((item) => item.focalLength);
+    const bins = focalLengthBins(focalLengths);
+    const peak = Math.max(1, ...bins.map((bin) => bin.count));
+    const teleconverterIncluded = focalPhotos.some(({ photo }) => /teleconverter/i.test((photo.exif || {}).LensModel || (photo.exif || {}).Lens || ""));
+
+    return `
+      <section class="exif-stat-card focal-distribution-card">
+        <h3 class="heading-with-icon">${statsIcon("focal")}<span>Focal-length distribution</span></h3>
+        <p class="focal-distribution-summary">
+          ${escapeHtml(`${formatFocalLength(FOCAL_DISTRIBUTION_MINIMUM)} to ${formatFocalLength(FOCAL_DISTRIBUTION_MAXIMUM)} · ${FOCAL_DISTRIBUTION_BIN_WIDTH}mm bins`)}${teleconverterIncluded ? " · includes teleconverter captures" : ""}
+        </p>
+        <div class="focal-distribution-chart" aria-label="Focal-length distribution from ${escapeAttr(formatFocalLength(FOCAL_DISTRIBUTION_MINIMUM))} to ${escapeAttr(formatFocalLength(FOCAL_DISTRIBUTION_MAXIMUM))} in ${FOCAL_DISTRIBUTION_BIN_WIDTH}mm bins">
+          ${bins
+            .map((bin) => {
+              const height = bin.count ? Math.max(8, Math.round((bin.count / peak) * 100)) : 0;
+              const rangeLabel = formatFocalRange(bin.start, bin.end, bin.includesEnd);
+              const tickLabel = String(Math.round(bin.start));
+              return `
+                <button
+                  class="focal-distribution-column"
+                  type="button"
+                  data-stats-filter-kind="focal-range"
+                  data-stats-filter-value="${bin.start}:${bin.end}:${bin.includesEnd ? "inclusive" : "exclusive"}"
+                  data-stats-filter-label="Focal lengths: ${escapeAttr(rangeLabel)}"
+                  aria-label="Open ${bin.count} photo${bin.count === 1 ? "" : "s"} captured from ${escapeAttr(rangeLabel)}"
+                >
+                  <span class="focal-distribution-plot" aria-hidden="true"><span class="focal-distribution-bar" style="height: ${height}%"></span></span>
+                  <span class="focal-distribution-count">${bin.count}</span>
+                  <span class="focal-distribution-label">${escapeHtml(tickLabel)}</span>
+                </button>
+              `;
+            })
+            .join("")}
+        </div>
+      </section>
+    `;
+  }
+
+  function focalLengthBins(focalLengths) {
+    const minimum = FOCAL_DISTRIBUTION_MINIMUM;
+    const maximum = FOCAL_DISTRIBUTION_MAXIMUM;
+    const width = FOCAL_DISTRIBUTION_BIN_WIDTH;
+    const bins = [];
+
+    for (let start = minimum; start < maximum; start += width) {
+      const end = Math.min(maximum, start + width);
+      const includesEnd = end === maximum;
+      bins.push({
+        start,
+        end,
+        includesEnd,
+        count: focalLengths.filter((focalLength) => focalLength >= start && (includesEnd ? focalLength <= end : focalLength < end)).length
+      });
+    }
+
+    return bins;
+  }
+
+  function formatFocalLength(focalLength) {
+    return `${Math.round(focalLength)}mm`;
+  }
+
+  function formatFocalRange(start, end, includesEnd = true) {
+    if (start === end) {
+      return formatFocalLength(start);
+    }
+    return `${Math.round(start)}-${Math.round(includesEnd ? end : end - 1)}mm`;
+  }
+
   function exifIconForTitle(title) {
     const key = normalizeText(title);
     if (key.includes("camera")) {
@@ -3051,7 +3340,11 @@
 
   function renderDex() {
     const query = normalizeText(els.aircraftSearch.value);
+    const familyFilter = state.dexFamilyFilter;
     const entries = state.data.aircraft.filter((entry) => {
+      if (familyFilter && aircraftFamilyIdForEntry(entry) !== familyFilter) {
+        return false;
+      }
       if (!query) {
         return true;
       }
@@ -3059,8 +3352,62 @@
       return normalizeText(`${entry.typeName} ${entry.countries.join(" ")} ${squadronText}`).includes(query);
     });
 
-    els.dexCount.textContent = `${entries.length} entr${entries.length === 1 ? "y" : "ies"}`;
+    renderDexFamilyFilter();
+    els.dexCount.textContent = `${entries.length} entr${entries.length === 1 ? "y" : "ies"}${familyFilter ? ` in ${AIRCRAFT_FAMILY_LABELS.get(familyFilter) || "selected family"}` : ""}`;
     renderAircraftGrid(entries);
+  }
+
+  function openAircraftFamilyDex(familyId) {
+    const family = normalizeAircraftFamily(familyId);
+    if (!family) {
+      return;
+    }
+
+    state.dexFamilyFilter = family;
+    state.selectedAircraftId = null;
+    if (els.aircraftSearch) {
+      els.aircraftSearch.value = "";
+    }
+    setActiveTab("dexView");
+    renderDex();
+    window.requestAnimationFrame(() => els.aircraftSearch?.focus({ preventScroll: true }));
+  }
+
+  function renderDexFamilyFilter() {
+    if (!els.dexFamilyFilter) {
+      return;
+    }
+
+    const family = state.dexFamilyFilter;
+    const label = AIRCRAFT_FAMILY_LABELS.get(family);
+    if (!label) {
+      els.dexFamilyFilter.hidden = true;
+      els.dexFamilyFilter.innerHTML = "";
+      return;
+    }
+
+    els.dexFamilyFilter.hidden = false;
+    els.dexFamilyFilter.innerHTML = `
+      <span>Family filter</span>
+      <button type="button" data-clear-dex-family-filter aria-label="Clear ${escapeAttr(label)} family filter">
+        ${escapeHtml(label)} <span aria-hidden="true">×</span>
+      </button>
+    `;
+  }
+
+  function normalizeAircraftFamily(value) {
+    const family = normalizeText(value);
+    return AIRCRAFT_FAMILY_LABELS.has(family) ? family : "";
+  }
+
+  function aircraftFamilyIdForEntry(entry) {
+    const configuredFamily = normalizeAircraftFamily(entry?.aircraftFamily);
+    if (configuredFamily) {
+      return configuredFamily;
+    }
+
+    const photo = state.photoById.get(entry?.coverPhoto) || state.photoById.get(entry?.photoIds?.[0]);
+    return aircraftFamilyForPhoto(photo || {})?.id || "";
   }
 
   function renderAircraftGrid(entries) {
@@ -3084,7 +3431,9 @@
             <div class="aircraft-cover">
               ${
                 coverImage
-                  ? `<img src="${escapeAttr(coverImage)}" alt="${escapeAttr(entry.typeName)}">`
+                  ? renderResponsivePhotoImage(cover, entry.typeName, {
+                      sizes: "(max-width: 520px) 50vw, (max-width: 1040px) 33vw, 280px"
+                    })
                   : '<div class="empty-cover">No photo</div>'
               }
             </div>
@@ -3240,13 +3589,50 @@
     `;
   }
 
+  function renderResponsivePhotoImage(photo, alt, options = {}) {
+    if (!photo) {
+      return "";
+    }
+    const source = photo.thumbnail || photo.image || "";
+    if (!source) {
+      return "";
+    }
+
+    const thumbnailSize = parseImageSize(photo.thumbnailSize);
+    const processedSize = parseImageSize(photo.processedSize);
+    const candidates = [];
+    if (photo.thumbnail && thumbnailSize.width) {
+      candidates.push(`${escapeAttr(photo.thumbnail)} ${thumbnailSize.width}w`);
+    }
+    if (photo.image && processedSize.width && photo.image !== photo.thumbnail) {
+      candidates.push(`${escapeAttr(photo.image)} ${processedSize.width}w`);
+    }
+
+    const dimensions = thumbnailSize.width ? thumbnailSize : processedSize;
+    const className = options.className ? ` class="${escapeAttr(options.className)}"` : "";
+    const loading = options.eager ? "eager" : "lazy";
+    const priority = options.eager ? ' fetchpriority="high"' : "";
+    const srcset = candidates.length > 1 ? ` srcset="${candidates.join(", ")}"` : "";
+    const sizes = candidates.length > 1 && options.sizes ? ` sizes="${escapeAttr(options.sizes)}"` : "";
+    const width = dimensions.width ? ` width="${dimensions.width}"` : "";
+    const height = dimensions.height ? ` height="${dimensions.height}"` : "";
+    return `<img${className} src="${escapeAttr(source)}"${srcset}${sizes}${width}${height} loading="${loading}" decoding="async"${priority} alt="${escapeAttr(alt)}">`;
+  }
+
+  function parseImageSize(value) {
+    const match = String(value || "").match(/(\d+)\s*x\s*(\d+)/i);
+    return match ? { width: Number(match[1]), height: Number(match[2]) } : { width: 0, height: 0 };
+  }
+
   function renderPhotoCard(photo, context) {
-    const image = photo.thumbnail || photo.image || "";
     return `
       <button class="photo-card" type="button" data-photo-id="${escapeAttr(photo.id)}" data-photo-context="${escapeAttr(context)}">
-        <img src="${escapeAttr(image)}" alt="${escapeAttr(`${photoSubjectLabel(photo)} at ${photo.locationName}`)}">
+        ${renderResponsivePhotoImage(photo, `${photoSubjectLabel(photo)} at ${photo.locationName}`, {
+          sizes: "(max-width: 520px) 100vw, (max-width: 1040px) 50vw, 360px"
+        })}
         <span class="photo-body">
           <strong>${escapeHtml(photoSubjectLabel(photo))}</strong>
+          ${photo.livery ? `<span class="photo-livery">${escapeHtml(photo.livery)}</span>` : ""}
           <span>${escapeHtml(photoContextLabel(photo))} - ${escapeHtml(displayPhotoDate(photo))}</span>
         </span>
       </button>
@@ -3364,7 +3750,7 @@
       if (state.selectedAirshowId) {
         updateDeepLink("airshow", airshowId);
       } else {
-        clearDeepLink();
+        updateDeepLink("view", "airshows");
       }
     }
 
@@ -3593,6 +3979,11 @@
   }
 
   function aircraftFamilyForPhoto(photo) {
+    const configuredFamily = normalizeAircraftFamily(photo.aircraftFamily);
+    if (configuredFamily) {
+      return aircraftFamilyAsset(configuredFamily, AIRCRAFT_FAMILY_LABELS.get(configuredFamily));
+    }
+
     const type = normalizeText(photo.aircraftType);
     if (/\b(ah|uh|ch|mh|sh)-?\d|apache|helicopter|rotor|uh-60|ah-64/.test(type)) {
       return aircraftFamilyAsset("helicopter", "Helicopter");
@@ -3774,13 +4165,25 @@
     setViewerCleanMode(false);
     resetViewerTransform();
 
+    const wasClosed = els.photoViewer.hidden;
+    if (wasClosed && document.activeElement instanceof HTMLElement) {
+      state.viewerReturnFocus = document.activeElement;
+    }
     els.photoViewer.hidden = false;
     document.body.style.overflow = "hidden";
+    setViewerBackgroundInert(true);
     updateViewerInfoState();
     renderViewerPhoto();
+    if (wasClosed) {
+      window.requestAnimationFrame(() => document.getElementById("closeViewerButton")?.focus());
+    }
 
     if (options.updateHash !== false) {
-      updateDeepLink("photo", photoId);
+      const wasPhotoRoute = new URLSearchParams(window.location.hash.replace(/^#/, "")).has("photo");
+      const changed = updateDeepLink("photo", photoId);
+      state.viewerHistoryPushed = Boolean(changed && !wasPhotoRoute);
+    } else {
+      state.viewerHistoryPushed = false;
     }
   }
 
@@ -3815,6 +4218,17 @@
     if (kind === "focal") {
       return statsFocalLength(photo) === value;
     }
+    if (kind === "focal-range") {
+      const [minimum, maximum, boundary] = String(value || "").split(":");
+      const rangeMinimum = Number(minimum);
+      const rangeMaximum = Number(maximum);
+      const focalLength = statsFocalLengthValue(photo);
+      return Number.isFinite(rangeMinimum)
+        && Number.isFinite(rangeMaximum)
+        && focalLength !== null
+        && focalLength >= rangeMinimum
+        && (boundary === "inclusive" ? focalLength <= rangeMaximum : focalLength < rangeMaximum);
+    }
     if (kind === "shutter") {
       return String(exif.ExposureTime || "") === value;
     }
@@ -3828,15 +4242,41 @@
   }
 
   function closeViewer(options = {}) {
+    const shouldUseHistory = options.useHistory !== false
+      && state.viewerHistoryPushed
+      && new URLSearchParams(window.location.hash.replace(/^#/, "")).has("photo");
     els.photoViewer.hidden = true;
     document.body.style.overflow = "";
+    setViewerBackgroundInert(false);
     setViewerInfoOpen(false);
     setViewerCleanMode(false);
     resetViewerTransform();
+    state.viewerHistoryPushed = false;
+    if (document.fullscreenElement === els.photoViewer) {
+      document.exitFullscreen?.().catch(() => {});
+    }
+
+    if (options.restoreFocus !== false && state.viewerReturnFocus?.isConnected) {
+      state.viewerReturnFocus.focus({ preventScroll: true });
+    }
+    state.viewerReturnFocus = null;
+
+    if (shouldUseHistory) {
+      window.history.back();
+      return;
+    }
 
     if (options.updateHash !== false) {
       updateDeepLinkForViewerContext();
     }
+  }
+
+  function setViewerBackgroundInert(isInert) {
+    [els.siteHeader, els.main].forEach((element) => {
+      if (element) {
+        element.inert = Boolean(isInert);
+      }
+    });
   }
 
   function stepPhoto(offset) {
@@ -3846,7 +4286,7 @@
     state.activePhotoIndex = (state.activePhotoIndex + offset + state.activePhotoIds.length) % state.activePhotoIds.length;
     resetViewerTransform();
     renderViewerPhoto();
-    updateDeepLink("photo", state.activePhotoIds[state.activePhotoIndex]);
+    updateDeepLink("photo", state.activePhotoIds[state.activePhotoIndex], { replace: true });
   }
 
   function selectViewerPhoto(index) {
@@ -3856,7 +4296,7 @@
     state.activePhotoIndex = index;
     resetViewerTransform();
     renderViewerPhoto();
-    updateDeepLink("photo", state.activePhotoIds[state.activePhotoIndex]);
+    updateDeepLink("photo", state.activePhotoIds[state.activePhotoIndex], { replace: true });
   }
 
   function renderViewerPhoto() {
@@ -3898,6 +4338,102 @@
     renderViewerTelemetry(photo);
     renderViewerFilmstrip();
     updateViewerInfoState();
+    prefetchAdjacentViewerPhotos();
+  }
+
+  async function shareViewerPhoto() {
+    const photoId = state.activePhotoIds[state.activePhotoIndex];
+    const photo = state.photoById.get(photoId);
+    if (!photo || !els.viewerShareButton) {
+      return;
+    }
+    const title = photo.title || `${photoSubjectLabel(photo)} | SpotterDex`;
+    const text = photo.caption || `${photoSubjectLabel(photo)} photographed at ${photo.locationName}.`;
+    const url = shareUrlForEntity("photo", photo.id);
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text, url });
+        return;
+      }
+      await copyText(url);
+      showViewerActionStatus(els.viewerShareButton, "Copied");
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        showViewerActionStatus(els.viewerShareButton, "Failed");
+      }
+    }
+  }
+
+  async function copyText(value) {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return;
+    }
+    const temporaryInput = document.createElement("textarea");
+    temporaryInput.value = value;
+    temporaryInput.setAttribute("readonly", "");
+    temporaryInput.style.position = "fixed";
+    temporaryInput.style.opacity = "0";
+    document.body.appendChild(temporaryInput);
+    temporaryInput.select();
+    const copied = document.execCommand("copy");
+    temporaryInput.remove();
+    if (!copied) {
+      throw new Error("Could not copy link");
+    }
+  }
+
+  function showViewerActionStatus(button, label) {
+    const original = button.dataset.originalLabel || button.textContent;
+    button.dataset.originalLabel = original;
+    button.textContent = label;
+    window.setTimeout(() => {
+      button.textContent = original;
+    }, 1800);
+  }
+
+  function toggleViewerFullscreen() {
+    if (document.fullscreenElement === els.photoViewer) {
+      document.exitFullscreen?.().catch(() => {});
+      return;
+    }
+    els.photoViewer.requestFullscreen?.().catch(() => {
+      showViewerActionStatus(els.viewerFullscreenButton, "Unavailable");
+    });
+  }
+
+  function updateViewerFullscreenButton() {
+    if (!els.viewerFullscreenButton) {
+      return;
+    }
+    const isFullscreen = document.fullscreenElement === els.photoViewer;
+    els.viewerFullscreenButton.textContent = isFullscreen ? "Exit full" : "Full";
+    els.viewerFullscreenButton.setAttribute("aria-label", isFullscreen ? "Exit fullscreen" : "Enter fullscreen");
+  }
+
+  function prefetchAdjacentViewerPhotos() {
+    if (navigator.connection?.saveData || state.activePhotoIds.length < 2) {
+      return;
+    }
+    const adjacentIndexes = unique([
+      (state.activePhotoIndex - 1 + state.activePhotoIds.length) % state.activePhotoIds.length,
+      (state.activePhotoIndex + 1) % state.activePhotoIds.length
+    ]);
+    const prefetch = () => {
+      adjacentIndexes.forEach((index) => {
+        const photo = state.photoById.get(state.activePhotoIds[index]);
+        if (photo?.image) {
+          const image = new Image();
+          image.decoding = "async";
+          image.src = photo.image;
+        }
+      });
+    };
+    if (window.requestIdleCallback) {
+      window.requestIdleCallback(prefetch, { timeout: 800 });
+    } else {
+      window.setTimeout(prefetch, 120);
+    }
   }
 
   function revealViewerPhoto(renderToken) {
@@ -3971,6 +4507,7 @@
     const zoom = state.viewerZoom || 1;
     els.viewerImage.style.transform = `translate3d(${state.viewerPanX}px, ${state.viewerPanY}px, 0) scale(${zoom})`;
     els.viewerImage.classList.toggle("is-zoomed", zoom > 1);
+    els.viewerImageFrame?.classList.toggle("is-zoomed", zoom > 1);
     if (els.viewerZoomResetButton) {
       els.viewerZoomResetButton.textContent = `${Math.round(zoom * 100)}%`;
       els.viewerZoomResetButton.setAttribute("aria-label", `Reset photo zoom, currently ${Math.round(zoom * 100)} percent`);
@@ -4095,7 +4632,9 @@
           >
             ${
               image
-                ? `<img src="${escapeAttr(image)}" alt="">`
+                ? renderResponsivePhotoImage(photo, "", {
+                    sizes: "64px"
+                  })
                 : `<span class="viewer-filmstrip-fallback" aria-hidden="true">${index + 1}</span>`
             }
           </button>
@@ -4114,22 +4653,23 @@
   function updateDeepLinkForViewerContext() {
     const photoId = state.activePhotoIds[state.activePhotoIndex];
     const photo = state.photoById.get(photoId);
+    const replace = { replace: true };
 
     if (state.activePhotoContext === "dex" && state.selectedAircraftId) {
-      updateDeepLink("aircraft", state.selectedAircraftId);
+      updateDeepLink("aircraft", state.selectedAircraftId, replace);
     } else if (state.activePhotoContext === "squadron" && state.selectedSquadronId) {
-      updateDeepLink("squadron", state.selectedSquadronId);
+      updateDeepLink("squadron", state.selectedSquadronId, replace);
     } else if (state.activePhotoContext === "location" && state.selectedPinId) {
-      updateLocationDetailLink(state.selectedPinId);
+      updateLocationDetailLink(state.selectedPinId, replace);
     } else if (state.activePhotoContext === "airshow" && state.selectedAirshowId) {
-      updateDeepLink("airshow", state.selectedAirshowId);
+      updateDeepLink("airshow", state.selectedAirshowId, replace);
     } else if (photo) {
       const pinId = photo.pinId || pinIdFromLocation(photo.locationName);
       if (pinId) {
-        updateDeepLink("location", pinId);
+        updateDeepLink("location", pinId, replace);
       }
     } else if (state.selectedPinId) {
-      updateDeepLink("location", state.selectedPinId);
+      updateDeepLink("location", state.selectedPinId, replace);
     }
   }
 
@@ -4157,6 +4697,8 @@
     const camera = [exif.Make, exif.Model].filter(Boolean).join(" ");
     const squadron = squadronForPhoto(photo);
     const squadronLogo = squadron && squadron.logo ? renderViewerSquadronLogo(squadron) : "";
+    const locationId = photo.pinId || pinIdFromLocation(photo.locationName);
+    const airshow = photo.airshow ? findAirshow(photo.airshow) : null;
     const cameraRows = [
       ["Camera", camera],
       ["Lens model", exif.LensModel || exif.Lens],
@@ -4167,11 +4709,14 @@
     ].filter((row) => row[1]);
 
     const frameRows = [
-      photo.tagScope === "aircraft" ? ["Aircraft", photo.aircraftType] : ["Tagged as", photoTagScopeLabel(photo.tagScope)],
+      photo.tagScope === "aircraft"
+        ? ["Aircraft", photo.aircraftType, metadataAction("Open aircraft", "data-aircraft-id", photo.aircraftId)]
+        : ["Tagged as", photoTagScopeLabel(photo.tagScope)],
+      ["Livery", photo.livery],
       photo.squadronName ? [photo.unitLabel || unitDisplayLabel(photo.unitType), photo.squadronName, squadronLogo] : null,
       ["Country", photo.country],
-      ["Location", photo.locationName],
-      ["Airshow", photo.airshow],
+      ["Location", photo.locationName, metadataAction("Open location", "data-location-page-id", locationId)],
+      ["Airshow", photo.airshow, metadataAction("Open airshow", "data-airshow-id", airshow?.id)],
       ["Date", exif.DateTimeOriginal ? displayPhotoDate(photo) : photo.year]
     ].filter((row) => row && row[1]);
 
@@ -4205,6 +4750,13 @@
   function renderMetadataRow(row) {
     const [label, value, detailHtml] = row;
     return `<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}${detailHtml || ""}</dd>`;
+  }
+
+  function metadataAction(label, attribute, value) {
+    if (!value) {
+      return "";
+    }
+    return `<button class="viewer-metadata-link" type="button" ${attribute}="${escapeAttr(value)}">${escapeHtml(label)}</button>`;
   }
 
   function renderViewerSquadronLogo(squadron) {
@@ -4299,16 +4851,24 @@
       return "";
     }
 
-    const focalMm = parseFocalLengthMm(raw);
-    if (focalMm === null) {
+    const focalLength = statsFocalLengthValue(photo);
+    if (focalLength === null) {
       return String(raw).trim();
     }
 
-    if (isSonyRx10M4(exif)) {
-      return `${Math.round(focalMm * RX10M4_FOCAL_LENGTH_MULTIPLIER)}mm`;
+    return formatFocalLength(focalLength);
+  }
+
+  function statsFocalLengthValue(photo) {
+    const exif = photo.exif || {};
+    const focalMm = parseFocalLengthMm(exif.FocalLength);
+    if (focalMm === null || !Number.isFinite(focalMm)) {
+      return null;
     }
 
-    return String(raw).trim();
+    return isSonyRx10M4(exif)
+      ? Math.round(focalMm * RX10M4_FOCAL_LENGTH_MULTIPLIER)
+      : Math.round(focalMm);
   }
 
   function statsLensLabels(photo) {
@@ -4414,14 +4974,20 @@
     const locationDetail = params.get("detail") === "1";
     const aircraftId = params.get("aircraft");
     const statsSection = params.get("stats");
+    const directoryView = params.get("view");
 
     state.isApplyingHash = true;
     try {
+      if (!photoId && !els.photoViewer.hidden) {
+        closeViewer({ updateHash: false, useHistory: false });
+      }
+
       if (photoId) {
         const photo = findPhoto(photoId);
         if (photo) {
           openPhotoDeepLink(photo, options);
-          return;
+          state.viewerHistoryPushed = window.history.state?.spotterdexKind === "photo";
+          return true;
         }
       }
 
@@ -4429,7 +4995,7 @@
         const squadron = findSquadron(squadronId);
         if (squadron) {
           selectSquadron(squadron.id, { updateHash: false });
-          return;
+          return true;
         }
       }
 
@@ -4437,7 +5003,7 @@
         const airshow = findAirshow(airshowId);
         if (airshow) {
           selectAirshow(airshow.id, { updateHash: false, scroll: !options.initial });
-          return;
+          return true;
         }
       }
 
@@ -4453,25 +5019,36 @@
               focusMapPin(pin.id);
             }
           }
-          return;
+          return true;
         }
       }
 
       if (aircraftId) {
         const entry = findAircraft(aircraftId);
         if (entry) {
-          setActiveTab("dexView", { updateHash: false });
           selectAircraft(entry.id, { updateHash: false, scroll: !options.initial });
-          return;
+          return true;
         }
       }
 
       if (statsSection) {
         selectStatsSection(statsSection, { updateHash: false, initial: options.initial });
+        return true;
+      }
+
+      const directoryViews = {
+        dex: "dexView",
+        squadrons: "squadronsView",
+        airshows: "airshowsView"
+      };
+      if (directoryViews[directoryView]) {
+        openDirectoryView(directoryViews[directoryView]);
+        return true;
       }
     } finally {
       state.isApplyingHash = false;
     }
+    return false;
   }
 
   function openPhotoDeepLink(photo, options = {}) {
@@ -4496,34 +5073,54 @@
     openViewer(photo.id, "photo", { updateHash: false });
   }
 
-  function updateDeepLink(kind, id) {
+  function updateDeepLink(kind, id, options = {}) {
     if (state.isApplyingHash || !id) {
-      return;
+      return false;
     }
     const nextHash = `#${kind}=${encodeURIComponent(id)}`;
-    if (window.location.hash !== nextHash) {
-      window.history.replaceState(null, "", nextHash);
-    }
+    const changed = navigateToHash(nextHash, {
+      replace: options.replace,
+      state: { spotterdex: true, spotterdexKind: kind, spotterdexId: String(id) }
+    });
     updateShareMetadata();
+    return changed;
   }
 
-  function updateLocationDetailLink(pinId) {
+  function updateLocationDetailLink(pinId, options = {}) {
     if (state.isApplyingHash || !pinId) {
-      return;
+      return false;
     }
     const nextHash = `#location=${encodeURIComponent(pinId)}&detail=1`;
-    if (window.location.hash !== nextHash) {
-      window.history.replaceState(null, "", nextHash);
-    }
+    const changed = navigateToHash(nextHash, {
+      replace: options.replace,
+      state: { spotterdex: true, spotterdexKind: "location", spotterdexId: String(pinId), detail: true }
+    });
     updateShareMetadata();
+    return changed;
   }
 
-  function clearDeepLink() {
+  function clearDeepLink(options = {}) {
     if (state.isApplyingHash || !window.location.hash) {
-      return;
+      return false;
     }
-    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+    const changed = navigateToHash("", {
+      replace: options.replace,
+      state: { spotterdex: true, spotterdexKind: "map" }
+    });
     updateShareMetadata();
+    return changed;
+  }
+
+  function navigateToHash(hash, options = {}) {
+    const nextUrl = `${window.location.pathname}${window.location.search}${hash}`;
+    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (nextUrl === currentUrl) {
+      return false;
+    }
+    const method = options.replace ? "replaceState" : "pushState";
+    window.history[method](options.state || { spotterdex: true }, "", nextUrl);
+    state.lastHandledHistoryUrl = window.location.href;
+    return true;
   }
 
   function findPin(value) {

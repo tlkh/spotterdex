@@ -9,7 +9,7 @@ Read this section first before making changes.
 - **Source of truth:** `aircraft/**/entry.yaml`, `squadrons/*/entry.yaml`, `map_pins/**/pins.yaml`, `airshows/events.yaml`, and files in `raw_assets/`. Do not hand-edit `data/`, `assets/generated/`, or published logo PNGs in `assets/logos/` except when debugging the build script.
 - **After content changes, rebuild:** run `python3 tools/build_spotterdex.py` from the repo root. If system Python blocks pip, use a local venv: `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt && .venv/bin/python3 tools/build_spotterdex.py`.
 - **Build progress:** `tools/build_spotterdex.py` shows dependency-free terminal progress bars for map pins, aircraft YAML, and photo processing when stderr is interactive. Use `--no-progress` for clean logs.
-- **What gets committed for GitHub Pages:** `data/`, `assets/generated/photos/`, `assets/generated/thumbs/`, and `assets/logos/`. `raw_assets/` is gitignored and stays local.
+- **What gets committed for GitHub Pages:** `data/`, `share/`, `assets/generated/photos/`, `assets/generated/thumbs/`, and `assets/logos/`. `raw_assets/` is gitignored and stays local.
 - **Adding an aircraft entry:** create `aircraft/<aircraft-type-slug>/<squadron-slug>/entry.yaml`. Use slug-style folder names (`boeing-ah-64d-apache-longbow`, `120-squadron`, `air-development-and-test-wing`). The same squadron can appear under multiple aircraft types as separate folders.
 - **Photo tag levels:** aircraft-level photos live in `aircraft/<type>/<squadron>/entry.yaml`; squadron-only photos live in `squadrons/<squadron>/entry.yaml`; location-only photos live in a map pin's `photos:` list. Use the narrowest scope that accurately describes the frame.
 - **Slug conventions:** lowercase ASCII, hyphen-separated. Aircraft folder = manufacturer + model (`kawasaki-up-3c-orion`, `lockheed-c-130r`, `mitsubishi-f-15j-eagle`). Squadron folder = short code when the unit has one (`vx-51`, `vrc-40`, `vr-57`), otherwise a descriptive slug (`air-transport-squadron-61`, `jasdf-electronic-warfare-squadron`, `air-development-and-test-wing`). Copy an existing entry in the same country or operator family when unsure.
@@ -22,7 +22,7 @@ Read this section first before making changes.
 - **Squadron logos and heroes:** optional `squadron_logo: filename.png` resolves from `raw_assets/` the same way as photos. Raster logos are resized to max 512 px and copied to `assets/logos/`. SVG logos can live directly in `assets/logos/` and be referenced with a relative path such as `../../../assets/logos/149-squadron.svg`. Optional `squadron_hero`/`squadron_hero_image` is processed as a web JPEG and displayed on the Squadrons page.
 - **Organisation override:** use `unit_type: organisation` for airline/operator entries that should be labelled Organisation instead of Squadron. These records remain in the Dex and viewer but are excluded from the Squadrons page.
 - **Dex grouping:** the UI groups by `aircraft_type`, not folder name. Multiple squadrons of the same type appear under one Dex card.
-- **Commit scope for content work:** stage new/changed `aircraft/**/entry.yaml`, `squadrons/**/entry.yaml`, `map_pins/**/pins.yaml`, rebuilt `data/`, and new/changed files under `assets/generated/` and `assets/logos/`. Never stage `raw_assets/`.
+- **Commit scope for content work:** stage new/changed `aircraft/**/entry.yaml`, `squadrons/**/entry.yaml`, `map_pins/**/pins.yaml`, rebuilt `data/` and `share/`, and new/changed files under `assets/generated/` and `assets/logos/`. Never stage `raw_assets/`.
 - **Local management app:** run `python3 tools/spotterdex_manager.py` for the local browser editor at `http://127.0.0.1:8765/`. It edits source YAML and can run the existing generator; it is not part of the published GitHub Pages site. Its Airshows tab groups all photos by capture date for mass event tagging, flags events without an explicit hero, and finds untagged photos whose capture date matches a known event day. Stop it with `Ctrl+C` after use or testing; do not leave the management app running.
 - **AI captions in the management app:** the AI Caption buttons send a server-resized 768px-wide source image plus aircraft type, squadron/operator, location, optional airshow event, and the current caption to Nemotron 3 Omni. Set `LLM_API_KEY` only in the manager process environment; never expose it to browser JavaScript, logs, generated data, or commits. Saving an AI-assisted suggestion writes the source-only `caption_ai_assisted: true` metadata marker. The Bulk Captions tab processes selected, existing human-written captions one at a time with a 0.5 second pause, filters prior AI-assisted captions by default, and requires a user to edit, accept, or reject every proposal.
 - **Do not add** frontend frameworks, bundlers, map tile prefetching, or hidden attribution.
@@ -89,10 +89,11 @@ Expect batches of aircraft entries, not one-off code changes. Work entry-by-entr
 - `raw_assets/` is the centralized, gitignored source directory for all original photos to be processed. Mirror each source YAML parent under `raw_assets/`.
 - `data/spotterdex.json` is the generated JSON manifest for debugging or external consumers.
 - `data/spotterdex-data.js` is the generated browser data bundle loaded by `index.html`.
+- `share/` contains generated social preview pages for photo, aircraft, location, squadron, and airshow links. Do not hand-edit these pages.
 - `assets/generated/photos/` contains generated 2560px-wide JPEGs. Do not hand-edit these files.
 - `assets/generated/thumbs/` contains generated thumbnail JPEGs for card and strip views. Do not hand-edit these files.
 - `assets/logos/` contains squadron logo assets served by the site. Logos referenced from entry YAML are resolved from `raw_assets/` when needed, resized to a max width or height of 512 px during build, and published here. Hand-authored SVG logos can also live here directly.
-- `assets/icons/aircraft-family-*.png` contains the small map-label aircraft family icons for heavy, fighter, and helicopter sightings. `assets/icons/spotterdex-app-icon.png` is used for the navbar mark and favicon.
+- `assets/icons/aircraft-family-*.png` contains the small map-label aircraft family icons for fighter, helicopter, light, medium, and heavy sightings. `assets/icons/spotterdex-app-icon.png` is used for the navbar mark and favicon.
 - `map_pins/<country_name>/pins.yaml` contains location pins.
 - `airshows/events.yaml` stores optional event-hero references for the Airshows timeline.
 - `aircraft/<aircraft_type>/<squadron>/entry.yaml` contains aircraft, squadron, logo, and photo metadata.
@@ -151,6 +152,7 @@ photos:
 Common aircraft YAML fields:
 
 - `aircraft_type` - display name and Dex card key
+- `aircraft_family` - required map family: `fighter`, `helicopter`, `light` (single-engine propeller), `medium` (twin-engine narrow-body airliners, business jets, and regional or commuter turboprops), or `heavy` (any large aircraft in the four-engine size class and up: three- and four-engine aircraft, wide-body jets, and large transports, tankers, and maritime-patrol aircraft, including large twin-engine types such as the Kawasaki C-2, Boeing KC-46/KC-767, Airbus A330 MRTT, and Airbus A300-600ST). Size, not engine count, decides `heavy`: a big twin-engine transport or wide-body is `heavy`, while a narrow-body airliner such as the Boeing 737 or Airbus A320 stays `medium`.
 - `squadron_name` - operator or unit name
 - `unit_type` - optional; defaults to `squadron`. Set to `organisation` for airline/operator entries that should use Organisation labels and stay off the Squadrons page.
 - `country` - country shown in the UI
@@ -162,7 +164,7 @@ Squadron-only YAML uses the same unit metadata and `photos` list, but omits `air
 
 Map pins can optionally define a custom location hero. Use `hero_photo`/`hero_image`/`hero.path` for a source image path, resolved first from mirrored `raw_assets/map_pins/<country>/`, then beside the pin YAML, then from the repo root and flat `raw_assets/`. The build script publishes it through the same JPEG/thumbnail pipeline as normal photos. Use `hero_photo_id` when the hero should be an existing generated photo record and remain clickable in the viewer.
 
-Each photo object supports at least `path`. Common optional fields: `date` (`YYYY-MM-DD`), `year`, `location`, `pin_id`, `airshow` (event name), `caption`.
+Each photo object supports at least `path`. Common optional fields: `date` (`YYYY-MM-DD`), `year`, `location`, `pin_id`, `airshow` (event name), `livery` (paint scheme), `caption`.
 
 Airshow event metadata is optional. `airshows/events.yaml` uses the manager-written source reference format below; the selected photo must already be tagged with the same `airshow` name:
 

@@ -3,7 +3,7 @@ events:
   hero_photo:
     scope: location
     entry_path: map_pins/japan/pins.yaml
-    index: 0
+    index: 1
     target_pin_id: tsuiki-air-base
 - name: Wan Dek 2026
   hero_photo:
@@ -22,10 +22,9 @@ events:
     index: 15
 - name: Gifu Air Show 2023
   hero_photo:
-    scope: location
-    entry_path: map_pins/japan/pins.yaml
+    scope: squadron
+    entry_path: squadrons/air-development-and-test-wing/entry.yaml
     index: 1
-    target_pin_id: gifu-air-base
 - name: Tsuiki Air Show 2025
   hero_photo:
     scope: aircraft

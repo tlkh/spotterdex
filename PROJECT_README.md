@@ -42,6 +42,7 @@ Use `icao: XXXX` for airport and air base pins when a code exists. Broad region 
 
 ```yaml
 aircraft_type: Boeing F-15SG Strike Eagle
+aircraft_family: fighter
 squadron_name: 149 Squadron
 unit_type: squadron
 country: Singapore
@@ -53,9 +54,12 @@ photos:
     year: 2024
     location: Changi Exhibition Centre
     airshow: Singapore Airshow 2024
+    livery: RSAF standard grey
 ```
 
-Photo paths in entry YAML are relative to the matching entry folder. The build script reads them from `raw_assets/` first, mirroring the entry path. For example, `photos/f-15sg-changi.jpg` in `aircraft/boeing-f-15sg-strike-eagle/149-squadron/entry.yaml` is loaded from `raw_assets/aircraft/boeing-f-15sg-strike-eagle/149-squadron/photos/f-15sg-changi.jpg`. The `location` value links photos to map pins by matching the pin name, or you can add `pin_id`. Add `airshow: <event name>` when the frame was taken at an airshow; it is optional, works at every photo tag level, and is displayed in the viewer metadata. Use `unit_type: organisation` for airline/operator entries that should be labelled Organisation instead of Squadron; those entries remain visible in the Dex and photo viewer but are hidden from the Squadrons page. Use `squadron_hero` or nested `squadron.hero.path` for an optional squadron-specific hero image on the Squadrons page. Use `date` in `YYYY-MM-DD` format when known; the recent locations list is ordered by the newest photo at each location. If `date` is omitted, the build script falls back to EXIF capture date, then `year`.
+Photo paths in entry YAML are relative to the matching entry folder. The build script reads them from `raw_assets/` first, mirroring the entry path. For example, `photos/f-15sg-changi.jpg` in `aircraft/boeing-f-15sg-strike-eagle/149-squadron/entry.yaml` is loaded from `raw_assets/aircraft/boeing-f-15sg-strike-eagle/149-squadron/photos/f-15sg-changi.jpg`. The `location` value links photos to map pins by matching the pin name, or you can add `pin_id`. Add `airshow: <event name>` when the frame was taken at an airshow; it is optional, works at every photo tag level, and is displayed in the viewer metadata. Add optional `livery` for a standard, retro, commemorative, camouflage, or other identifiable paint scheme; it is published in the manifest and shown on photo cards and in the viewer. Use `unit_type: organisation` for airline/operator entries that should be labelled Organisation instead of Squadron; those entries remain visible in the Dex and photo viewer but are hidden from the Squadrons page. Use `squadron_hero` or nested `squadron.hero.path` for an optional squadron-specific hero image on the Squadrons page. Use `date` in `YYYY-MM-DD` format when known; the recent locations list is ordered by the newest photo at each location. If `date` is omitted, the build script falls back to EXIF capture date, then `year`.
+
+Every aircraft entry must set `aircraft_family` to one of `fighter`, `helicopter`, `light` (single-engine propeller), `medium` (twin-engine narrow-body airliners, business jets, and regional or commuter turboprops), or `heavy` (large aircraft in the four-engine size class and up, including wide-body jets and large twin-engine transports and tankers such as the Kawasaki C-2, Boeing KC-46/KC-767, and Airbus A330 MRTT). Size, not engine count, decides `heavy`: narrow-body airliners like the Boeing 737 and Airbus A320 stay `medium`.
 
 ## Airshows
 
@@ -103,7 +107,7 @@ Run the local manager when you want to tag `raw_assets/` images to an aircraft, 
 python3 tools/spotterdex_manager.py
 ```
 
-Open `http://127.0.0.1:8765/`. The **Tag Images To** selector includes aircraft sources, squadron-only sources, and every location. Use the optional **Airshow Event** field to apply an event name to selected images. The **Airshows** tab groups existing photos by capture date for mass event tagging, identifies events without a selected hero, and surfaces untagged photos that share a capture date with a known event. The manager writes source YAML under `aircraft/`, `squadrons/`, `map_pins/`, and `airshows/events.yaml`, then streams the generator output when you press Build, ending with changed generated files, manifest count deltas, warnings, and commit-scope guidance. Its thumbnail cache lives in `.spotterdex-manager-cache/` and is ignored by git.
+Open `http://127.0.0.1:8765/`. The **Tag Images To** selector includes aircraft sources, squadron-only sources, and every location. Use the optional **Airshow Event** and **Livery** fields to apply event and paint-scheme metadata to selected images. The **Airshows** tab groups existing photos by capture date for mass event tagging, identifies events without a selected hero, and surfaces untagged photos that share a capture date with a known event. The manager writes source YAML under `aircraft/`, `squadrons/`, `map_pins/`, and `airshows/events.yaml`, then streams the generator output when you press Build, ending with changed generated files, manifest count deltas, warnings, and commit-scope guidance. Its thumbnail cache lives in `.spotterdex-manager-cache/` and is ignored by git.
 
 ### AI caption assistance
 
@@ -125,6 +129,8 @@ Build the static data, resize photos to 2560 px wide high-quality JPEGs, and gen
 ```bash
 python3 tools/build_spotterdex.py
 ```
+
+The same build generates entity-specific social preview pages under `share/` for photos, aircraft, locations, squadrons, and airshows. Use `--site-url` when publishing from a different public base URL.
 
 Full-size JPEGs use quality 92 with 4:4:4 chroma for near-lossless aircraft detail; 1024 px thumbnails use quality 90 with 4:2:0 chroma for faster grids.
 
@@ -160,8 +166,11 @@ Useful deep links:
 #location=changi-exhibition-centre
 #location=changi-exhibition-centre&detail=1
 #aircraft=boeing-f-15sg-strike-eagle
+#squadron=singapore-149-squadron
+#airshow=singapore-airshow-2024
+#photo=<generated-photo-id>
 ```
 
 ## Deploy
 
-Commit the generated `data/` files plus `assets/generated/photos/` and `assets/generated/thumbs/`, then enable GitHub Pages from the repository root. Keep original photos in local `raw_assets/`; that directory is gitignored and is not deployed from the repository.
+Commit the generated `data/` files, `share/` preview pages, `assets/generated/photos/`, and `assets/generated/thumbs/`, then enable GitHub Pages from the repository root. Keep original photos in local `raw_assets/`; that directory is gitignored and is not deployed from the repository.

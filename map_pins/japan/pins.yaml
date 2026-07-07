@@ -23,6 +23,11 @@ pins:
   enabled: true
   hero_photo: DSC06176-Enhanced-NR.jpeg
   photos:
+  - path: DSC06176-Enhanced-NR.jpeg
+    location: Tsuiki Air Base
+    pin_id: tsuiki-air-base
+    caption: Row of F-2A on tarmac at Tsuiki Air Base
+    airshow: Tsuiki Air Show 2023
   - path: DSC04647-Enhanced-NR.jpeg
     location: Tsuiki Air Base
     pin_id: tsuiki-air-base
@@ -33,6 +38,7 @@ pins:
   icao: RJFR
   coordinates: [33.8459, 131.035]
   enabled: true
+  hero_photo: DSC07789-Enhanced-NR.jpg
 - id: komaki-air-base
   name: Komaki Air Base
   icao: RJNA
@@ -44,28 +50,12 @@ pins:
   hero_photo: DSC00962-Enhanced-NR.jpeg
   coordinates: [35.3939, 136.87]
   enabled: true
-  photos:
-  - path: gifu_formation_1.jpeg
-    location: Gifu Air Base
-    pin_id: gifu-air-base
-    caption: ADTW Formation Fly-by
-    airshow: Gifu Air Show 2023
-  - path: DSC00962-Enhanced-NR.jpeg
-    location: Gifu Air Base
-    pin_id: gifu-air-base
-    caption: ADTW Formation Fly-by
-    airshow: Gifu Air Show 2023
-  - path: gifu_formation_2.jpeg
-    location: Gifu Air Base
-    pin_id: gifu-air-base
-    caption: ADTW Formation Fly-by
-    airshow: Gifu Air Show 2023
 - id: komatsu-air-base
   name: Komatsu Air Base
   icao: RJNK
   coordinates: [36.3933, 136.4067]
   enabled: true
-  hero_photo: DSC03648-Enhanced-NR.jpeg
+  hero_photo: 728893.jpg
 - id: yokota-air-base
   name: Yokota Air Base
   icao: RJTY
@@ -81,6 +71,7 @@ pins:
   icao: RJTF
   coordinates: [35.6717, 139.528]
   enabled: true
+  hero_photo: DSC08683-Enhanced-NR.jpg
 - id: haneda-airport
   name: Haneda Airport
   icao: RJTT
@@ -91,7 +82,7 @@ pins:
   icao: RJTK
   coordinates: [35.3983, 139.91]
   enabled: true
-  hero_photo: DSC07396-Enhanced-NR.jpeg
+  hero_photo: DSC09035-Enhanced-NR.jpeg
 - id: atsugi-air-base
   name: Atsugi Air Base
   icao: RJTA
