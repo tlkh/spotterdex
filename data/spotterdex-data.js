@@ -1,5 +1,5 @@
 window.SPOTTERDEX_DATA = {
-  "generatedAt": "2026-07-06T08:17:52+00:00",
+  "generatedAt": "2026-07-07T00:32:47+00:00",
   "pins": [
     {
       "id": "hong-kong-international-airport",
@@ -1025,6 +1025,53 @@ window.SPOTTERDEX_DATA = {
         "latestDate": "2024-01-11",
         "countries": [
           "United States"
+        ]
+      }
+    },
+    {
+      "id": "boeing-kc-46-pegasus",
+      "typeName": "Boeing KC-46 Pegasus",
+      "countries": [
+        "Japan"
+      ],
+      "squadrons": [
+        {
+          "id": "boeing-kc-46-pegasus-405th-air-refueling-squadron",
+          "name": "405th Air Refueling Squadron",
+          "country": "Japan",
+          "logo": "assets/logos/boeing-kc-46-pegasus-405th-air-refueling-squadron.png",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc04987-3f87a235",
+            "aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc05042-3467dc47",
+            "aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc05021-790966f7",
+            "aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc05061-8fd6882b"
+          ],
+          "photoCount": 4
+        }
+      ],
+      "photoIds": [
+        "aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc04987-3f87a235",
+        "aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc05042-3467dc47",
+        "aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc05021-790966f7",
+        "aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc05061-8fd6882b"
+      ],
+      "coverPhoto": "aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc04987-3f87a235",
+      "stats": {
+        "photoCount": 4,
+        "unitCount": 1,
+        "squadronCount": 1,
+        "organisationCount": 0,
+        "locationCount": 1,
+        "locations": [
+          "Tsuiki Air Base"
+        ],
+        "firstDate": "2025-11-30",
+        "latestDate": "2025-11-30",
+        "countries": [
+          "Japan"
         ]
       }
     },
@@ -2984,6 +3031,10 @@ window.SPOTTERDEX_DATA = {
         "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc01142-026c7ed1",
         "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc01315-bcd9412b",
         "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-trio-jasdf-6tfs-984ad7be",
+        "aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc04987-3f87a235",
+        "aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc05021-790966f7",
+        "aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc05042-3467dc47",
+        "aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc05061-8fd6882b",
         "aircraft-hawker-u-125a-jasdf-air-rescue-wing-423022-af81ec09",
         "aircraft-hawker-u-125a-jasdf-air-rescue-wing-dsc04723-6d3c2ea4",
         "aircraft-hawker-u-125a-jasdf-air-rescue-wing-dsc04734-1cf3e145",
@@ -3011,7 +3062,7 @@ window.SPOTTERDEX_DATA = {
         "aircraft-mitsubishi-uh-60j-jasdf-air-rescue-wing-dsc04414-bf3b0f08",
         "aircraft-mitsubishi-uh-60j-jasdf-air-rescue-wing-dsc04463-06567e84"
       ],
-      "photoCount": 37,
+      "photoCount": 41,
       "firstDate": "2025-11-29",
       "latestDate": "2025-11-30",
       "heroPhotoId": "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-trio-jasdf-8tfs-4813e2c2"
@@ -3058,9 +3109,11 @@ window.SPOTTERDEX_DATA = {
         "aircraft-mitsubishi-uh-60j-jasdf-air-rescue-wing-dsc05775-enhanced-nr-1-db336c99",
         "aircraft-mitsubishi-uh-60j-jasdf-air-rescue-wing-dsc05813-enhanced-nr-04ef550a",
         "aircraft-mitsubishi-uh-60j-jasdf-air-rescue-wing-dsc05864-enhanced-nr-68a250ef",
-        "location-dsc04647-enhanced-nr-b6ab6a26"
+        "location-dsc04647-enhanced-nr-b6ab6a26",
+        "squadron-jasdf-air-rescue-wing-dsc05672-enhanced-nr-1-2dba6d9c",
+        "squadron-jasdf-air-rescue-wing-dsc05676-enhanced-nr-1-bfbc0f68"
       ],
-      "photoCount": 25,
+      "photoCount": 27,
       "firstDate": "2023-11-26",
       "latestDate": "2023-11-26",
       "heroPhotoId": "location-dsc04647-enhanced-nr-b6ab6a26"
@@ -6144,6 +6197,174 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
+      "id": "aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc04987-3f87a235",
+      "tagScope": "aircraft",
+      "aircraftId": "boeing-kc-46-pegasus",
+      "aircraftType": "Boeing KC-46 Pegasus",
+      "squadronId": "boeing-kc-46-pegasus-405th-air-refueling-squadron",
+      "squadronName": "405th Air Refueling Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2025",
+      "date": "2025-11-30",
+      "sortDate": "2025-11-30",
+      "locationName": "Tsuiki Air Base",
+      "pinId": "tsuiki-air-base",
+      "sourceRef": {
+        "scope": "aircraft",
+        "entryPath": "aircraft/boeing-kc-46-pegasus/405th-air-refueling-squadron/entry.yaml",
+        "index": 0
+      },
+      "airshow": "Tsuiki Air Show 2025",
+      "title": "",
+      "caption": "JASDF KC-46A Pegasus at Tsuiki Air Base",
+      "image": "assets/generated/photos/aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc04987-3f87a235.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc04987-3f87a235.jpg",
+      "source": "raw_assets/DSC04987.jpg",
+      "originalSize": "3333 x 2500",
+      "processedSize": "2560 x 1920",
+      "thumbnailSize": "1024 x 768",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "600mm",
+        "FNumber": "f/8.0",
+        "ExposureTime": "1/2000s",
+        "ISO": "250",
+        "DateTimeOriginal": "2025:11:30 08:35:06",
+        "DateTimeDigitized": "2025:11:30 08:35:06",
+        "DateTime": "2026:07:07 08:20:56"
+      }
+    },
+    {
+      "id": "aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc05042-3467dc47",
+      "tagScope": "aircraft",
+      "aircraftId": "boeing-kc-46-pegasus",
+      "aircraftType": "Boeing KC-46 Pegasus",
+      "squadronId": "boeing-kc-46-pegasus-405th-air-refueling-squadron",
+      "squadronName": "405th Air Refueling Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2025",
+      "date": "2025-11-30",
+      "sortDate": "2025-11-30",
+      "locationName": "Tsuiki Air Base",
+      "pinId": "tsuiki-air-base",
+      "sourceRef": {
+        "scope": "aircraft",
+        "entryPath": "aircraft/boeing-kc-46-pegasus/405th-air-refueling-squadron/entry.yaml",
+        "index": 1
+      },
+      "airshow": "Tsuiki Air Show 2025",
+      "title": "",
+      "caption": "JASDF KC-46A Pegasus at Tsuiki Air Base",
+      "image": "assets/generated/photos/aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc05042-3467dc47.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc05042-3467dc47.jpg",
+      "source": "raw_assets/DSC05042.jpg",
+      "originalSize": "7508 x 5631",
+      "processedSize": "2560 x 1920",
+      "thumbnailSize": "1024 x 768",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "200mm",
+        "FNumber": "f/13.0",
+        "ExposureTime": "1/80s",
+        "ISO": "100",
+        "DateTimeOriginal": "2025:11:30 08:35:43",
+        "DateTimeDigitized": "2025:11:30 08:35:43",
+        "DateTime": "2026:07:07 08:20:58"
+      }
+    },
+    {
+      "id": "aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc05021-790966f7",
+      "tagScope": "aircraft",
+      "aircraftId": "boeing-kc-46-pegasus",
+      "aircraftType": "Boeing KC-46 Pegasus",
+      "squadronId": "boeing-kc-46-pegasus-405th-air-refueling-squadron",
+      "squadronName": "405th Air Refueling Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2025",
+      "date": "2025-11-30",
+      "sortDate": "2025-11-30",
+      "locationName": "Tsuiki Air Base",
+      "pinId": "tsuiki-air-base",
+      "sourceRef": {
+        "scope": "aircraft",
+        "entryPath": "aircraft/boeing-kc-46-pegasus/405th-air-refueling-squadron/entry.yaml",
+        "index": 2
+      },
+      "airshow": "Tsuiki Air Show 2025",
+      "title": "",
+      "caption": "JASDF KC-46A Pegasus at Tsuiki Air Base",
+      "image": "assets/generated/photos/aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc05021-790966f7.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc05021-790966f7.jpg",
+      "source": "raw_assets/DSC05021.jpg",
+      "originalSize": "7289 x 5467",
+      "processedSize": "2560 x 1920",
+      "thumbnailSize": "1024 x 768",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "600mm",
+        "FNumber": "f/8.0",
+        "ExposureTime": "1/2000s",
+        "ISO": "250",
+        "DateTimeOriginal": "2025:11:30 08:35:29",
+        "DateTimeDigitized": "2025:11:30 08:35:29",
+        "DateTime": "2026:07:07 08:20:57"
+      }
+    },
+    {
+      "id": "aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc05061-8fd6882b",
+      "tagScope": "aircraft",
+      "aircraftId": "boeing-kc-46-pegasus",
+      "aircraftType": "Boeing KC-46 Pegasus",
+      "squadronId": "boeing-kc-46-pegasus-405th-air-refueling-squadron",
+      "squadronName": "405th Air Refueling Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2025",
+      "date": "2025-11-30",
+      "sortDate": "2025-11-30",
+      "locationName": "Tsuiki Air Base",
+      "pinId": "tsuiki-air-base",
+      "sourceRef": {
+        "scope": "aircraft",
+        "entryPath": "aircraft/boeing-kc-46-pegasus/405th-air-refueling-squadron/entry.yaml",
+        "index": 3
+      },
+      "airshow": "Tsuiki Air Show 2025",
+      "title": "",
+      "caption": "JASDF KC-46A Pegasus at Tsuiki Air Base",
+      "image": "assets/generated/photos/aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc05061-8fd6882b.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc05061-8fd6882b.jpg",
+      "source": "raw_assets/DSC05061.jpg",
+      "originalSize": "5904 x 4428",
+      "processedSize": "2560 x 1920",
+      "thumbnailSize": "1024 x 768",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-1M2",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "600mm",
+        "FNumber": "f/8.0",
+        "ExposureTime": "1/2000s",
+        "ISO": "250",
+        "DateTimeOriginal": "2025:11:30 08:39:19",
+        "DateTimeDigitized": "2025:11:30 08:39:19",
+        "DateTime": "2026:07:07 08:20:59"
+      }
+    },
+    {
       "id": "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-trio-jasdf-6tfs-984ad7be",
       "tagScope": "aircraft",
       "aircraftId": "mitsubishi-f-2a",
@@ -8726,7 +8947,7 @@ window.SPOTTERDEX_DATA = {
         "entryPath": "squadrons/jasdf-air-rescue-wing/entry.yaml",
         "index": 0
       },
-      "airshow": "",
+      "airshow": "Tsuiki Air Show 2023",
       "title": "",
       "caption": "Air Rescue Squadron U-125A and UH-60J making their iconic entrance",
       "image": "assets/generated/photos/squadron-jasdf-air-rescue-wing-dsc05672-enhanced-nr-1-2dba6d9c.jpg",
@@ -8768,7 +8989,7 @@ window.SPOTTERDEX_DATA = {
         "entryPath": "squadrons/jasdf-air-rescue-wing/entry.yaml",
         "index": 1
       },
-      "airshow": "",
+      "airshow": "Tsuiki Air Show 2023",
       "title": "",
       "caption": "Air Rescue Squadron U-125A and UH-60J making their iconic entrance",
       "image": "assets/generated/photos/squadron-jasdf-air-rescue-wing-dsc05676-enhanced-nr-1-bfbc0f68.jpg",

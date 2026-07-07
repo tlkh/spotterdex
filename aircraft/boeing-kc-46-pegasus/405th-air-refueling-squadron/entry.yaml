@@ -1,0 +1,26 @@
+squadron_name: 405th Air Refueling Squadron
+country: Japan
+aircraft_type: Boeing KC-46 Pegasus
+photos:
+- path: DSC04987.jpg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: JASDF KC-46A Pegasus at Tsuiki Air Base
+  airshow: Tsuiki Air Show 2025
+- path: DSC05042.jpg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: JASDF KC-46A Pegasus at Tsuiki Air Base
+  airshow: Tsuiki Air Show 2025
+- path: DSC05021.jpg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: JASDF KC-46A Pegasus at Tsuiki Air Base
+  airshow: Tsuiki Air Show 2025
+- path: DSC05061.jpg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: JASDF KC-46A Pegasus at Tsuiki Air Base
+  airshow: Tsuiki Air Show 2025
+aircraft_family: heavy
+squadron_logo: logos/405_logo1.png
