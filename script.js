@@ -86,7 +86,6 @@
 
   async function init() {
     cacheElements();
-    setupTheme();
     setupEvents();
 
     state.data = prepareData(await loadData());
@@ -100,7 +99,6 @@
   }
 
   function cacheElements() {
-    els.root = document.documentElement;
     els.siteHeader = document.querySelector(".site-header");
     els.main = document.getElementById("main");
     els.brand = document.querySelector(".brand");
@@ -113,7 +111,6 @@
     els.twitterDescription = document.querySelector('meta[name="twitter:description"]');
     els.twitterImage = document.querySelector('meta[name="twitter:image"]');
     els.canonical = document.querySelector('link[rel="canonical"]');
-    els.themeToggle = document.getElementById("themeToggle");
     els.viewSelect = document.getElementById("viewSelect");
     els.aircraftCount = document.getElementById("aircraftCount");
     els.photoCount = document.getElementById("photoCount");
@@ -388,14 +385,6 @@
     state.selectedAircraftId = null;
   }
 
-  function setupTheme() {
-    const storedTheme = localStorage.getItem("spotterdex-theme");
-    if (storedTheme === "dark" || storedTheme === "light") {
-      els.root.dataset.theme = storedTheme;
-    }
-    updateThemeButton();
-  }
-
   function setupEvents() {
     document.querySelectorAll("[data-tab-target]").forEach((button) => {
       button.addEventListener("click", () => openDirectoryView(button.dataset.tabTarget));
@@ -408,7 +397,6 @@
     }
     els.viewSelect.addEventListener("change", () => openDirectoryView(els.viewSelect.value));
 
-    els.themeToggle.addEventListener("click", toggleTheme);
     document.getElementById("fitPinsButton").addEventListener("click", fitMapToPins);
     document.getElementById("closeViewerButton").addEventListener("click", closeViewer);
     document.getElementById("previousPhotoButton").addEventListener("click", () => stepPhoto(-1));
@@ -961,64 +949,6 @@
     } else if (viewId === "airshowsView") {
       updateDeepLink("view", "airshows");
     }
-  }
-
-  function toggleTheme() {
-    const current = resolvedTheme();
-    const next = current === "dark" ? "light" : "dark";
-    els.root.dataset.theme = next;
-    localStorage.setItem("spotterdex-theme", next);
-    updateThemeButton();
-    if (state.map) {
-      state.mapPreviewCache.clear();
-      renderPins({ refreshTraffic: true });
-      renderMapResults();
-    }
-    if (document.getElementById("locationDetailView")?.classList.contains("is-active")) {
-      renderLocationPage();
-    }
-    if (state.renderedViews.has("airshowsView")) {
-      renderAirshowsPage();
-    }
-  }
-
-  function resolvedTheme() {
-    const explicit = els.root.dataset.theme;
-    if (explicit === "dark" || explicit === "light") {
-      return explicit;
-    }
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  }
-
-  function updateThemeButton() {
-    const isDark = resolvedTheme() === "dark";
-    els.themeToggle.innerHTML = isDark ? themeIcon("sun") : themeIcon("moon");
-    els.themeToggle.title = isDark ? "Switch to light mode" : "Switch to dark mode";
-    els.themeToggle.setAttribute("aria-label", els.themeToggle.title);
-  }
-
-  function themeIcon(name) {
-    if (name === "sun") {
-      return `
-        <svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="4"></circle>
-          <path d="M12 2v2"></path>
-          <path d="M12 20v2"></path>
-          <path d="m4.93 4.93 1.41 1.41"></path>
-          <path d="m17.66 17.66 1.41 1.41"></path>
-          <path d="M2 12h2"></path>
-          <path d="M20 12h2"></path>
-          <path d="m6.34 17.66-1.41 1.41"></path>
-          <path d="m19.07 4.93-1.41 1.41"></path>
-        </svg>
-      `;
-    }
-
-    return `
-      <svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M20.99 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.78 9.79Z"></path>
-      </svg>
-    `;
   }
 
   function statsIcon(name) {
@@ -4359,7 +4289,7 @@
   }
 
   function mapLocationPreview(pins) {
-    const cacheKey = pins.length === 1 ? `${resolvedTheme()}:${pins[0].id}` : "";
+    const cacheKey = pins.length === 1 ? pins[0].id : "";
     if (cacheKey && state.mapPreviewCache.has(cacheKey)) {
       return state.mapPreviewCache.get(cacheKey);
     }
@@ -4416,7 +4346,7 @@
   }
 
   function aircraftFamilyAsset(id, label) {
-    const variant = resolvedTheme() === "dark" ? "light" : "dark";
+    const variant = "light";
     const extension = id === "helicopter" ? "gif" : "png";
     const stem = id === "helicopter" ? "aircraft-family-helicopter-top" : `aircraft-family-${id}`;
     return {

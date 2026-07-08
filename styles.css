@@ -1,28 +1,4 @@
 :root {
-  color-scheme: light;
-  --bg: #f5f4f1;
-  --surface: #fffefa;
-  --surface-strong: #eeece6;
-  --text: #181816;
-  --muted: #6f6a62;
-  --line: #dbd7cf;
-  --line-strong: #bbb5aa;
-  --blue: #4f4b43;
-  --blue-strong: #26231f;
-  --blue-soft: #e7e3db;
-  --cyan: #7c725f;
-  --pin: #2f2d29;
-  --pin-active: #86785f;
-  --shadow: 0 20px 60px rgba(38, 35, 31, 0.13);
-  --portfolio-shadow: 0 28px 90px rgba(24, 24, 22, 0.22);
-  --glass: color-mix(in srgb, var(--surface) 82%, transparent);
-  --glass-strong: color-mix(in srgb, var(--surface) 90%, transparent);
-  --image-overlay: linear-gradient(180deg, rgba(0, 0, 0, 0) 18%, rgba(0, 0, 0, 0.78) 100%);
-  --radius: 8px;
-  --font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
-
-:root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #11100f;
   --surface: #1a1816;
@@ -42,30 +18,8 @@
   --glass: color-mix(in srgb, var(--surface) 72%, transparent);
   --glass-strong: color-mix(in srgb, var(--surface) 84%, transparent);
   --image-overlay: linear-gradient(180deg, rgba(0, 0, 0, 0) 18%, rgba(0, 0, 0, 0.84) 100%);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --bg: #11100f;
-    --surface: #1a1816;
-    --surface-strong: #24211e;
-    --text: #f3f0ea;
-    --muted: #aaa39a;
-    --line: #37322d;
-    --line-strong: #514a42;
-    --blue: #c7c0b4;
-    --blue-strong: #efe9dd;
-    --blue-soft: #2f2b27;
-    --cyan: #b6aa95;
-    --pin: #ded6c8;
-    --pin-active: #b39d75;
-    --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
-    --portfolio-shadow: 0 34px 100px rgba(0, 0, 0, 0.52);
-    --glass: color-mix(in srgb, var(--surface) 72%, transparent);
-    --glass-strong: color-mix(in srgb, var(--surface) 84%, transparent);
-    --image-overlay: linear-gradient(180deg, rgba(0, 0, 0, 0) 18%, rgba(0, 0, 0, 0.84) 100%);
-  }
+  --radius: 8px;
+  --font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 * {
@@ -208,7 +162,6 @@ img {
 }
 
 .tab-button,
-.theme-toggle,
 .plain-button,
 .icon-button,
 .segment-button {
@@ -236,7 +189,6 @@ img {
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
 }
 
-.theme-toggle,
 .plain-button {
   padding: 8px 12px;
   border-color: var(--line);
@@ -245,26 +197,6 @@ img {
   font-weight: 700;
 }
 
-.theme-toggle {
-  display: grid;
-  width: 38px;
-  height: 38px;
-  min-height: 38px;
-  padding: 0;
-  place-items: center;
-}
-
-.theme-icon {
-  width: 18px;
-  height: 18px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2;
-}
-
-.theme-toggle:hover,
 .plain-button:hover,
 .icon-button:hover,
 .segment-button:hover,
@@ -2285,22 +2217,12 @@ h3 {
   transition: filter 180ms ease;
 }
 
-:root[data-theme="dark"] #mapView .map-stage {
+#mapView .map-stage {
   background: #080806;
 }
 
-:root[data-theme="dark"] .leaflet-tile {
+.leaflet-tile {
   filter: brightness(0.62) invert(1) contrast(0.9) hue-rotate(180deg) saturate(0.75);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) #mapView .map-stage {
-    background: #080806;
-  }
-
-  :root:not([data-theme="light"]) .leaflet-tile {
-    filter: brightness(0.62) invert(1) contrast(0.9) hue-rotate(180deg) saturate(0.75);
-  }
 }
 
 .leaflet-control-attribution,
@@ -7388,13 +7310,6 @@ button.location-unit-chip:focus-visible,
 
   .brand-title {
     display: none;
-  }
-
-  .theme-toggle {
-    width: 36px;
-    height: 36px;
-    min-height: 36px;
-    padding: 0;
   }
 
   .tab-button {
