@@ -4274,7 +4274,7 @@ INDEX_HTML = r"""<!doctype html>
       if (entry.sourceScope === "squadron-target") {
         return `Squadron-only - ${entry.squadronName} (${entry.country || "Unknown"})`;
       }
-      const prefix = entry.sourceScope === "squadron" ? "Squadron" : entry.aircraftType;
+      const prefix = entry.sourceScope === "squadron" ? "Squadron-only" : entry.aircraftType;
       return `${prefix} - ${entry.squadronName} (${entry.country || "Unknown"})`;
     }
 
@@ -5034,9 +5034,20 @@ INDEX_HTML = r"""<!doctype html>
         if (!search) return true;
         return entryOptionLabel(entry).toLowerCase().includes(search) || String(entry.entryPath || "").toLowerCase().includes(search);
       });
-      $("entrySelect").innerHTML = entries.map((entry) => (
+      const option = (entry) => (
         `<option value="${escapeHtml(entry.targetKey)}">${escapeHtml(entryOptionLabel(entry))}</option>`
-      )).join("");
+      );
+      const byLabel = (left, right) => entryOptionLabel(left).localeCompare(entryOptionLabel(right));
+      const aircraftEntries = entries.filter((entry) => entry.sourceScope === "aircraft").sort(byLabel);
+      const squadronEntries = entries
+        .filter((entry) => entry.sourceScope === "squadron" || entry.sourceScope === "squadron-target")
+        .sort(byLabel);
+      const locationEntries = entries.filter((entry) => entry.sourceScope === "location").sort(byLabel);
+      $("entrySelect").innerHTML = [
+        aircraftEntries.length ? `<optgroup label="Aircraft sources">${aircraftEntries.map(option).join("")}</optgroup>` : "",
+        squadronEntries.length ? `<optgroup label="Squadron-only sources">${squadronEntries.map(option).join("")}</optgroup>` : "",
+        locationEntries.length ? `<optgroup label="Location sources">${locationEntries.map(option).join("")}</optgroup>` : ""
+      ].join("");
       if (entries.some((entry) => entry.targetKey === current)) {
         $("entrySelect").value = current;
       }
@@ -5167,14 +5178,43 @@ INDEX_HTML = r"""<!doctype html>
       return String(value || "").trim().toLocaleLowerCase().replace(/\s+/g, " ");
     }
 
+    function photoMatchesLocation(photo, pin) {
+      const photoPinId = managerKey(photo.pinId);
+      return photoPinId
+        ? photoPinId === managerKey(pin.id)
+        : managerKey(photo.location) === managerKey(pin.name);
+    }
+
     function locationHeroPhotos(pin) {
-      const photos = (state.data?.entries || [])
-        .flatMap((entry) => (entry.photos || []).map((photo) => ({entry, photo})))
-        .filter(({photo}) => !photo.invalid && (
-          managerKey(photo.pinId) === managerKey(pin.id)
-          || managerKey(photo.location) === managerKey(pin.name)
-        ))
-        .sort((a, b) => effectiveEventDate(b.photo).localeCompare(effectiveEventDate(a.photo)) || a.photo.path.localeCompare(b.photo.path));
+      const photos = [];
+      const seen = new Set();
+      const addMatchingPhotos = (entry) => {
+        for (const photo of entry?.photos || []) {
+          if (photo.invalid || !photoMatchesLocation(photo, pin)) continue;
+          const key = captionPhotoKey(entry, photo.index);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          photos.push({entry, photo});
+        }
+      };
+
+      const entries = state.data?.entries || [];
+      // Keep location-scoped YAML photos at the front of their own picker. This
+      // makes a recently tagged pin photo available even when the location has
+      // many aircraft and squadron frames associated with it.
+      const locationEntries = entries.filter((entry) => (
+        entry.sourceScope === "location"
+        && (managerKey(entry.pinId) === managerKey(pin.id)
+          || managerKey(entry.locationName) === managerKey(pin.name))
+      ));
+      locationEntries.forEach(addMatchingPhotos);
+      entries.filter((entry) => entry.sourceScope !== "location").forEach(addMatchingPhotos);
+      photos.sort((a, b) => {
+        const scopeOrder = Number(a.entry.sourceScope !== "location") - Number(b.entry.sourceScope !== "location");
+        return scopeOrder
+          || effectiveEventDate(b.photo).localeCompare(effectiveEventDate(a.photo))
+          || a.photo.path.localeCompare(b.photo.path);
+      });
       const hasHeroCandidate = photos.some(({photo}) => photo.sourceAssetPath && photo.sourceAssetPath === pin.heroAssetPath);
       if (pin.heroPhoto && !hasHeroCandidate) {
         photos.unshift({
@@ -5227,7 +5267,7 @@ INDEX_HTML = r"""<!doctype html>
                 : `<div class="missing">Missing source</div>`;
               const label = photo.customHero
                 ? "Current custom hero"
-                : [entry.aircraftType || entry.squadronName || "Location image", formatEventDate(effectiveEventDate(photo))].filter(Boolean).join(" - ");
+                : [entry.aircraftType || entry.squadronName || "Location photo", photo.path, formatEventDate(effectiveEventDate(photo))].filter(Boolean).join(" - ");
               return `
                 <button class="group-hero-photo${selected ? " selected" : ""}" type="button"${selectable ? ` data-location-hero-pin="${escapeHtml(pin.key)}" data-location-hero-photo="${escapeHtml(captionPhotoKey(entry, photo.index))}"` : ""} aria-pressed="${selected}"${selectable ? "" : " disabled"}>
                   ${media}

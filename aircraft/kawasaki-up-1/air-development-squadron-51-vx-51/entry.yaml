@@ -1,0 +1,9 @@
+squadron_name: Air Development Squadron 51 (VX-51)
+country: Japan
+aircraft_type: Kawasaki UP-1
+photos:
+- path: DSC00638-Enhanced-NR.jpeg
+  location: Atsugi Air Base
+  pin_id: atsugi-air-base
+  caption: UP-1 (originally XP-1, assigned as the prototype for the Kawasaki P-1) operated by the Air Development Squadron 51 (VX-51) at Atsugi Air Base.
+aircraft_family: heavy

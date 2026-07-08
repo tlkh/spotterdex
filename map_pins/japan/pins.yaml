@@ -55,7 +55,32 @@ pins:
   icao: RJNK
   coordinates: [36.3933, 136.4067]
   enabled: true
-  hero_photo: 728893.jpg
+  photos:
+  - path: DSC09277-Enhanced-NR.jpeg
+    location: Komatsu Air Base
+    pin_id: komatsu-air-base
+    caption: Mixed unit formation fly-by at Komastu Air Base
+    airshow: Komatsu Air Show 2023
+  - path: DSC09299-Enhanced-NR.jpeg
+    location: Komatsu Air Base
+    pin_id: komatsu-air-base
+    caption: Mixed unit formation fly-by at Komastu Air Base
+    airshow: Komatsu Air Show 2023
+  - path: DSC02710-Enhanced-NR.jpeg
+    location: Komatsu Air Base
+    pin_id: komatsu-air-base
+    caption: Mixed unit formation fly-by at Komastu Air Base
+    airshow: Komatsu Air Show 2023
+  - path: DSC02759-Enhanced-NR.jpeg
+    location: Komatsu Air Base
+    pin_id: komatsu-air-base
+    caption: Mixed unit formation fly-by at Komastu Air Base
+    airshow: Komatsu Air Show 2023
+  - path: DSC01185-Enhanced-NR.jpeg
+    location: Komatsu Air Base
+    pin_id: komatsu-air-base
+    caption: Fighter lineup at Komatsu Air Base
+    airshow: Komatsu Air Show 2023
 - id: yokota-air-base
   name: Yokota Air Base
   icao: RJTY
@@ -109,4 +134,9 @@ pins:
   name: Okadama Airport
   icao: RJCO
   coordinates: [43.1175, 141.3814]
+  enabled: true
+- id: hamamatsu-air-base
+  name: Hamamatsu Air Base
+  icao: RJNH
+  coordinates: [34.7503, 137.7031]
   enabled: true

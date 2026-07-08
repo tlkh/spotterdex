@@ -7,5 +7,41 @@ photos:
   location: Singapore
   caption: Republic of Singapore Air Force MRTT (760) from 112 Squadron in flight
   caption_ai_assisted: true
+- path: DSC05189-Enhanced-NR.jpg
+  location: Singapore
+  pin_id: singapore
+  caption: RSAF A330 MRTT landing in Singapore
+- path: DSC05206-Enhanced-NR.jpg
+  location: Singapore
+  pin_id: singapore
+  caption: RSAF A330 MRTT landing in Singapore
+- path: DSC07440-Enhanced-NR.jpg
+  location: Singapore
+  pin_id: singapore
+  caption: RSAF A330 MRTT landing in Singapore
+- path: DSC07450-Enhanced-NR.jpg
+  location: Singapore
+  pin_id: singapore
+  caption: RSAF A330 MRTT landing in Singapore
+- path: DSC00691-Enhanced-NR.jpg
+  location: Singapore
+  pin_id: singapore
+  caption: RSAF A330 MRTT banking after take-off
+- path: DSC00126-Enhanced-NR.jpg
+  location: Singapore
+  pin_id: singapore
+  caption: RSAF A330 MRTT banking after take-off at sunset
+- path: DSC00038-Enhanced-NR.jpg
+  location: Singapore
+  pin_id: singapore
+  caption: RSAF A330 MRTT banking after take-off at sunset
+- path: DSC00014-Enhanced-NR.jpg
+  location: Singapore
+  pin_id: singapore
+  caption: RSAF A330 MRTT banking taking off during golden hour
+- path: DSC00026-Enhanced-NR.jpg
+  location: Singapore
+  pin_id: singapore
+  caption: RSAF A330 MRTT banking taking off during golden hour
 aircraft_family: heavy
 squadron_logo: logos/112_sqn.png

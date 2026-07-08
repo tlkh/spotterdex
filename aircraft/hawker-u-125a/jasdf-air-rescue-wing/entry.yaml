@@ -79,4 +79,19 @@ photos:
   pin_id: gifu-air-base
   caption: U-125A during a SAR demo at Gifu Air Base
   airshow: Gifu Air Show 2023
+- path: DSC05695-Enhanced-NR (1).jpeg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: U-125A from Ashiya Air Rescue detachment at Tsuiki Air Base
+  airshow: Tsuiki Air Show 2023
+- path: DSC06010-Enhanced-NR.jpeg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: U-125A from Ashiya Air Rescue detachment at Tsuiki Air Base
+  airshow: Tsuiki Air Show 2023
+- path: DSC06065-Enhanced-NR.jpeg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: U-125A from Ashiya Air Rescue detachment at Tsuiki Air Base
+  airshow: Tsuiki Air Show 2023
 aircraft_family: medium

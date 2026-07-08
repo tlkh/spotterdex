@@ -1,0 +1,16 @@
+squadron_name: 403rd Tactical Airlift Squadron
+country: Japan
+aircraft_type: Kawasaki C-2
+photos:
+- path: DSC01693-Enhanced-NR (1).jpeg
+  location: Komatsu Air Base
+  pin_id: komatsu-air-base
+  caption: C-2 at Komatsu Air Base
+  airshow: Komatsu Air Show 2023
+- path: DSC01681-Enhanced-NR.jpeg
+  location: Komatsu Air Base
+  pin_id: komatsu-air-base
+  caption: C-2 at Komatsu Air Base
+  airshow: Komatsu Air Show 2023
+aircraft_family: heavy
+squadron_logo: logos/403_logo.png

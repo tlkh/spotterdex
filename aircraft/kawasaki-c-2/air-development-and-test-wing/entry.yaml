@@ -7,4 +7,24 @@ photos:
   location: Gifu Air Base
   caption: Kawasaki C-2 08-1201 from ADTW landing at Gifu Air Base
   caption_ai_assisted: true
+- path: DSC01119-Enhanced-NR.jpeg
+  location: Gifu Air Base
+  pin_id: gifu-air-base
+  caption: Kawasaki C-2 from ADTW performing a fly-by
+  airshow: Gifu Air Show 2023
+- path: DSC01085-Enhanced-NR.jpeg
+  location: Gifu Air Base
+  pin_id: gifu-air-base
+  caption: Kawasaki C-2 from ADTW performing a fly-by
+  airshow: Gifu Air Show 2023
+- path: DSC01092-Enhanced-NR.jpeg
+  location: Gifu Air Base
+  pin_id: gifu-air-base
+  caption: Kawasaki C-2 from ADTW performing a fly-by
+  airshow: Gifu Air Show 2023
+- path: DSC01140-Enhanced-NR.jpeg
+  location: Gifu Air Base
+  pin_id: gifu-air-base
+  caption: ADTW C-2 fly-by at Gifu Air Base
+  airshow: Gifu Air Show 2023
 aircraft_family: heavy

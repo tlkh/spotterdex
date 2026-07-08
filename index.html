@@ -193,89 +193,114 @@
       </section>
 
       <section class="view" id="dexView" data-view hidden>
-        <div class="workspace dex-workspace">
-          <aside class="control-panel" aria-label="Aircraft Dex filters">
-            <p class="eyebrow">Collected aircraft</p>
-            <h1>Aircraft Dex</h1>
-            <p class="lead">
-              Alphabetical entries for every aircraft type in the collection.
-            </p>
+        <div class="dex-experience">
+          <section class="dex-hero" aria-labelledby="dexTitle">
+            <div class="dex-hero-media" id="dexHeroMedia" aria-hidden="true"></div>
+            <div class="dex-hero-scrim" aria-hidden="true"></div>
+            <div class="dex-hero-content">
+              <p class="eyebrow">Visual aircraft field guide</p>
+              <h1 id="dexTitle">Aircraft<br>Dex</h1>
+              <p class="dex-hero-lead">An evolving archive of airframes, operators, and the places they were photographed.</p>
+              <button class="dex-hero-action" id="dexHeroAction" type="button" hidden></button>
+            </div>
+            <div class="dex-hero-feature" id="dexHeroFeature" aria-live="polite"></div>
+            <dl class="dex-hero-stats" aria-label="Aircraft collection overview">
+              <div><dt>Types</dt><dd id="dexHeroAircraftCount">0</dd></div>
+              <div><dt>Frames</dt><dd id="dexHeroPhotoCount">0</dd></div>
+              <div><dt>Countries</dt><dd id="dexHeroCountryCount">0</dd></div>
+            </dl>
+            <span class="dex-scroll-cue" aria-hidden="true">Scroll to explore <i></i></span>
+          </section>
 
-            <label class="field-label" for="aircraftSearch">Find an aircraft</label>
-            <input
-              class="search-input"
-              id="aircraftSearch"
-              type="search"
-              autocomplete="off"
-              placeholder="Search type, unit, country"
-            >
-            <div class="dex-family-filter" id="dexFamilyFilter" aria-live="polite" hidden></div>
+          <section class="dex-command-bar" aria-label="Aircraft Dex filters">
+            <label class="dex-search" for="aircraftSearch">
+              <span class="field-label">Search the archive</span>
+              <span class="dex-search-control">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m16 16 4 4"></path></svg>
+                <input
+                  class="search-input"
+                  id="aircraftSearch"
+                  type="search"
+                  autocomplete="off"
+                  placeholder="Aircraft, unit, or country"
+                >
+              </span>
+            </label>
+            <div class="dex-family-filter" id="dexFamilyFilter" aria-live="polite"></div>
+            <p class="dex-count" id="dexCount">0 entries</p>
+          </section>
 
-            <p class="muted dex-count" id="dexCount">0 entries</p>
+          <section class="dex-recent" aria-label="Recent photos">
+            <div class="dex-strip-heading">
+              <p class="eyebrow">Latest sightings</p>
+              <p id="recentPhotosCount">0 photos</p>
+            </div>
+            <div class="recent-photo-strip" id="recentPhotosStrip"></div>
+          </section>
 
-            <section class="recent-photos-panel sidebar-recent-photos" aria-label="Recent photos">
-              <div class="browser-heading">
-                <div>
-                  <p class="eyebrow">Latest frames</p>
-                  <h2>Recent Photos</h2>
-                </div>
-                <p class="muted" id="recentPhotosCount">0 photos</p>
-              </div>
-              <div class="recent-photo-strip" id="recentPhotosStrip"></div>
-            </section>
-          </aside>
-
-          <div class="dex-column">
-            <section class="dex-browser" aria-label="Aircraft entries">
-              <div class="browser-heading">
-                <div>
-                  <p class="eyebrow">Alphabetical index</p>
-                  <h2>Entries</h2>
-                </div>
-              </div>
-              <div class="aircraft-grid" id="aircraftGrid"></div>
-            </section>
-          </div>
+          <section class="dex-browser" aria-label="Aircraft entries">
+            <div class="dex-browser-heading">
+              <p class="eyebrow">The collection</p>
+              <p>Open an entry for its complete visual record.</p>
+            </div>
+            <div class="aircraft-grid" id="aircraftGrid"></div>
+          </section>
         </div>
       </section>
 
       <section class="view" id="squadronsView" data-view hidden>
-        <div class="squadrons-page">
-          <section class="results-panel squadrons-hero" aria-label="Squadron logo gallery">
-            <div class="browser-heading">
-              <div>
-                <p class="eyebrow">Unit markings</p>
-                <h1>Squadrons</h1>
-              </div>
-              <p class="muted" id="squadronPageCount">0 squadrons</p>
+        <div class="squadrons-experience">
+          <section class="squadron-archive-hero" aria-labelledby="squadronsTitle">
+            <div class="squadron-archive-media" id="squadronHeroMedia" aria-hidden="true"></div>
+            <div class="squadron-archive-scrim" aria-hidden="true"></div>
+            <div class="squadron-archive-copy">
+              <p class="eyebrow">Unit markings archive</p>
+              <h1 id="squadronsTitle">Squadrons</h1>
+              <p>Insignia, aircraft, and photographic records from units across the collection.</p>
             </div>
-            <p class="lead">
-              Browse squadrons by insignia, aircraft types, countries, and archived photos.
-            </p>
-            <div class="squadron-filter-bar" id="squadronFilters" aria-label="Filter squadron wall"></div>
-            <div class="squadron-explorer">
-              <aside class="squadron-country-rail" aria-label="Jump to country">
-                <p class="eyebrow">Jump to country</p>
+            <dl class="squadron-archive-stats" aria-label="Squadron collection overview">
+              <div><dt>Units</dt><dd id="squadronPageCount">0</dd></div>
+              <div><dt>Countries</dt><dd id="squadronHeroCountryCount">0</dd></div>
+              <div><dt>Frames</dt><dd id="squadronHeroPhotoCount">0</dd></div>
+            </dl>
+          </section>
+
+          <section class="squadron-directory" aria-label="Squadron logo gallery">
+            <div class="squadron-command-bar">
+              <div class="squadron-country-rail" aria-label="Jump to country">
+                <p class="eyebrow">Country</p>
                 <nav id="squadronCountryRail" class="squadron-country-nav"></nav>
-              </aside>
-              <div class="squadron-country-list" id="squadronLogoGrid"></div>
+              </div>
             </div>
+            <div class="squadron-country-list" id="squadronLogoGrid"></div>
           </section>
         </div>
       </section>
 
       <section class="view" id="airshowsView" data-view hidden>
-        <div class="airshows-page">
-          <section class="results-panel airshows-intro" aria-label="Airshow archive">
-            <div class="browser-heading">
-              <div>
-                <p class="eyebrow">Event archive</p>
-                <h1>Airshows</h1>
-              </div>
-              <p class="muted" id="airshowPageCount">0 events</p>
+        <div class="airshows-experience">
+          <section class="airshow-archive-hero" aria-labelledby="airshowsTitle">
+            <div class="airshow-archive-media" id="airshowHeroMedia" aria-hidden="true"></div>
+            <div class="airshow-archive-scrim" aria-hidden="true"></div>
+            <div class="airshow-archive-copy">
+              <p class="eyebrow">Event photography archive</p>
+              <h1 id="airshowsTitle">Airshows</h1>
+              <p>Chronological field reports from displays, rehearsals, and aviation gatherings.</p>
             </div>
+            <dl class="airshow-archive-stats" aria-label="Airshow collection overview">
+              <div><dt>Events</dt><dd id="airshowPageCount">0</dd></div>
+              <div><dt>Frames</dt><dd id="airshowHeroPhotoCount">0</dd></div>
+              <div><dt>Locations</dt><dd id="airshowHeroLocationCount">0</dd></div>
+            </dl>
           </section>
-          <section class="airshow-timeline" id="airshowTimeline" aria-live="polite"></section>
+
+          <section class="airshow-directory" aria-label="Airshow archive">
+            <div class="airshow-command-bar">
+              <p class="eyebrow">Event chronology</p>
+              <p id="airshowYearRange">Archive dates unavailable</p>
+            </div>
+            <section class="airshow-timeline" id="airshowTimeline" aria-live="polite"></section>
+          </section>
         </div>
       </section>
 
@@ -291,24 +316,46 @@
         <article class="detail-page" id="locationDetail" aria-live="polite"></article>
       </section>
 
+      <section class="view detail-view" id="airshowDetailView" data-view hidden>
+        <article class="detail-page" id="airshowDetail" aria-live="polite"></article>
+      </section>
+
       <section class="view" id="statsView" data-view hidden>
-        <div class="stats-page">
-          <section class="results-panel stats-hero" aria-label="Collection statistics">
-            <p class="eyebrow">Collection telemetry</p>
-            <h1 class="heading-with-icon">
-              <svg class="heading-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M4 19V5"></path>
-                <path d="M4 19h16"></path>
-                <path d="M8 16v-5"></path>
-                <path d="M12 16V8"></path>
-                <path d="M16 16v-9"></path>
-              </svg>
-              <span>Stats Dashboard</span>
-            </h1>
-            <div class="stats-dashboard-grid" id="statsDashboard"></div>
+        <div class="stats-experience">
+          <section class="stats-archive-hero" aria-labelledby="statsArchiveTitle">
+            <div class="stats-archive-media" id="statsHeroMedia" aria-hidden="true"></div>
+            <div class="stats-archive-scrim" aria-hidden="true"></div>
+            <div class="stats-archive-copy">
+              <p class="eyebrow">Collection telemetry</p>
+              <h1 id="statsArchiveTitle">Stats</h1>
+              <p>A live reading of the airframes, places, and camera settings behind the archive.</p>
+            </div>
+            <dl class="stats-archive-metrics" aria-label="Collection totals">
+              <div>
+                <dt>Frames</dt>
+                <dd id="statsHeroPhotoCount">0</dd>
+              </div>
+              <div>
+                <dt>Types</dt>
+                <dd id="statsHeroAircraftCount">0</dd>
+              </div>
+              <div>
+                <dt>Locations</dt>
+                <dd id="statsHeroLocationCount">0</dd>
+              </div>
+            </dl>
           </section>
 
-          <section class="results-panel exif-dashboard" id="exifDashboard" aria-live="polite"></section>
+          <div class="stats-directory">
+            <header class="stats-directory-heading">
+              <p class="eyebrow">Archive overview</p>
+              <p>Live from the generated collection manifest</p>
+            </header>
+            <section class="stats-hero" aria-label="Collection statistics">
+              <div class="stats-dashboard-grid" id="statsDashboard"></div>
+            </section>
+            <section class="exif-dashboard" id="exifDashboard" aria-live="polite"></section>
+          </div>
         </div>
       </section>
     </main>
@@ -316,7 +363,11 @@
     <div class="photo-viewer" id="photoViewer" role="dialog" aria-modal="true" aria-label="Photo viewer" hidden>
       <div class="viewer-ambient" aria-hidden="true"></div>
       <div class="viewer-stage">
-        <button class="viewer-button close" type="button" id="closeViewerButton" aria-label="Close viewer">x</button>
+        <button class="viewer-button close" type="button" id="closeViewerButton" aria-label="Close viewer" title="Close viewer">
+          <svg class="viewer-control-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="m6 6 12 12M18 6 6 18"></path>
+          </svg>
+        </button>
         <button
           class="viewer-button info-toggle"
           type="button"
@@ -331,8 +382,18 @@
           <button class="viewer-button viewer-tool viewer-zoom-readout" type="button" id="viewerZoomResetButton" aria-label="Reset photo zoom">1×</button>
           <button class="viewer-button viewer-tool" type="button" id="viewerZoomInButton" aria-label="Zoom in">+</button>
           <button class="viewer-button viewer-tool viewer-clean-toggle" type="button" id="viewerCleanButton" aria-pressed="false">Clean</button>
-          <button class="viewer-button viewer-tool viewer-action" type="button" id="viewerShareButton" aria-label="Share photo">Share</button>
-          <button class="viewer-button viewer-tool viewer-action" type="button" id="viewerFullscreenButton" aria-label="Enter fullscreen">Full</button>
+          <button class="viewer-button viewer-tool viewer-action" type="button" id="viewerShareButton" aria-label="Share photo" title="Share photo">
+            <svg class="viewer-control-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M12 16V3"></path>
+              <path d="m7 8 5-5 5 5"></path>
+              <path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"></path>
+            </svg>
+          </button>
+          <button class="viewer-button viewer-tool viewer-action" type="button" id="viewerFullscreenButton" aria-label="Enter fullscreen" title="Enter fullscreen" aria-pressed="false">
+            <svg class="viewer-control-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M8 3H3v5M16 3h5v5M21 16v5h-5M3 16v5h5"></path>
+            </svg>
+          </button>
         </div>
         <div class="viewer-image-frame">
           <button class="viewer-button previous" type="button" id="previousPhotoButton" aria-label="Previous photo">◀</button>

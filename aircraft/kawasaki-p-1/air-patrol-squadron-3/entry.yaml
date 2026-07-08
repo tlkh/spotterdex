@@ -14,4 +14,18 @@ photos:
   location: Atsugi Air Base
   caption: JMSDF Kawasaki P-1 from Air Patrol Squadron 3 at Atsugi Air Base
   caption_ai_assisted: true
+- path: DSC00503-Enhanced-NR.jpeg
+  location: Atsugi Air Base
+  pin_id: atsugi-air-base
+  caption: P-1 MPA taking off from Atsugi Air Base
+- path: DSC00528-Enhanced-NR (1).jpeg
+  location: Atsugi Air Base
+  pin_id: atsugi-air-base
+  caption: P-1 MPA taking off from Atsugi Air Base
+- path: DSC01604-Enhanced-NR.jpeg
+  location: Komatsu Air Base
+  pin_id: komatsu-air-base
+  caption: P-1 MPA from Atsugi Air Base landing at Komatsu
+  airshow: Komatsu Air Show 2023
 aircraft_family: heavy
+squadron_hero: p1_1.jpeg

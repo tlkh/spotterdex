@@ -35,3 +35,8 @@ events:
     scope: aircraft
     entry_path: aircraft/mitsubishi-f-15j-eagle/203rd-tactical-fighter-squadron/entry.yaml
     index: 4
+- name: Kisazaru Air Show 2023
+  hero_photo:
+    scope: aircraft
+    entry_path: aircraft/mitsubishi-uh-60j/jasdf-air-rescue-wing/entry.yaml
+    index: 2

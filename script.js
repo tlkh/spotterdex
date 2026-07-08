@@ -2,7 +2,15 @@
   const EMPTY_DATA = { generatedAt: null, pins: [], aircraft: [], squadrons: [], airshows: [], photos: [] };
   const EMPTY_PHOTOS = Object.freeze([]);
   const RECENT_PHOTO_LIMIT = 8;
-  const MAP_LABEL_GAP = 2;
+  const MAP_LABEL_GAP_DESKTOP = 6;
+  const MAP_LABEL_GAP_COMPACT = 4;
+  const MAP_CLUSTER_SCREEN_DISTANCE_DESKTOP = 120;
+  const MAP_CLUSTER_SCREEN_DISTANCE_COMPACT = 88;
+  const MAP_CLUSTER_DISTANCE_KM = 250;
+  const MAP_LEADER_PREFERRED_DESKTOP = 180;
+  const MAP_LEADER_PREFERRED_COMPACT = 120;
+  const MAP_LEADER_MAXIMUM_DESKTOP = 220;
+  const MAP_LEADER_MAXIMUM_COMPACT = 140;
   const MAP_PANEL_GAP = 10;
   const FOCAL_DISTRIBUTION_MINIMUM = 50;
   const FOCAL_DISTRIBUTION_MAXIMUM = 850;
@@ -31,6 +39,8 @@
     expandedLocationGroupKeys: new Set(),
     dexGroupMode: "squadron",
     dexFamilyFilter: "",
+    recentPhotoLimit: RECENT_PHOTO_LIMIT,
+    recentPhotoResizeObserver: null,
     map: null,
     markerLayer: null,
     mapLeaderLayer: null,
@@ -65,7 +75,6 @@
     viewerReturnFocus: null,
     mobileMapPanel: null,
     mapControlPanelOpen: true,
-    squadronPhotographedOnly: false,
     renderedViews: new Set(),
     lastHandledHistoryUrl: "",
     isApplyingHash: false
@@ -121,19 +130,36 @@
     els.mapResults = document.getElementById("mapResults");
     els.recentPhotosStrip = document.getElementById("recentPhotosStrip");
     els.recentPhotosCount = document.getElementById("recentPhotosCount");
+    els.dexHeroMedia = document.getElementById("dexHeroMedia");
+    els.dexHeroFeature = document.getElementById("dexHeroFeature");
+    els.dexHeroAction = document.getElementById("dexHeroAction");
+    els.dexHeroAircraftCount = document.getElementById("dexHeroAircraftCount");
+    els.dexHeroPhotoCount = document.getElementById("dexHeroPhotoCount");
+    els.dexHeroCountryCount = document.getElementById("dexHeroCountryCount");
     els.aircraftGrid = document.getElementById("aircraftGrid");
     els.aircraftDetail = document.getElementById("aircraftDetail");
     els.dexCount = document.getElementById("dexCount");
+    els.statsHeroMedia = document.getElementById("statsHeroMedia");
+    els.statsHeroPhotoCount = document.getElementById("statsHeroPhotoCount");
+    els.statsHeroAircraftCount = document.getElementById("statsHeroAircraftCount");
+    els.statsHeroLocationCount = document.getElementById("statsHeroLocationCount");
     els.statsDashboard = document.getElementById("statsDashboard");
     els.exifDashboard = document.getElementById("exifDashboard");
     els.squadronLogoGrid = document.getElementById("squadronLogoGrid");
-    els.squadronFilters = document.getElementById("squadronFilters");
     els.squadronCountryRail = document.getElementById("squadronCountryRail");
+    els.squadronHeroMedia = document.getElementById("squadronHeroMedia");
+    els.squadronHeroCountryCount = document.getElementById("squadronHeroCountryCount");
+    els.squadronHeroPhotoCount = document.getElementById("squadronHeroPhotoCount");
     els.squadronDetail = document.getElementById("squadronDetail");
     els.locationDetail = document.getElementById("locationDetail");
     els.squadronPageCount = document.getElementById("squadronPageCount");
     els.airshowTimeline = document.getElementById("airshowTimeline");
     els.airshowPageCount = document.getElementById("airshowPageCount");
+    els.airshowHeroMedia = document.getElementById("airshowHeroMedia");
+    els.airshowHeroPhotoCount = document.getElementById("airshowHeroPhotoCount");
+    els.airshowHeroLocationCount = document.getElementById("airshowHeroLocationCount");
+    els.airshowYearRange = document.getElementById("airshowYearRange");
+    els.airshowDetail = document.getElementById("airshowDetail");
     els.photoViewer = document.getElementById("photoViewer");
     els.viewerImageFrame = document.querySelector(".viewer-image-frame");
     els.viewerImage = document.getElementById("viewerImage");
@@ -421,6 +447,7 @@
       updateMapPanelState();
       updateViewerInfoState();
       refreshMapLayout();
+      updateRecentPhotoLimit();
     }, 150));
 
     if (
@@ -511,13 +538,6 @@
       return;
     }
 
-    const squadronPhotoToggle = event.target.closest("[data-squadron-photographed-toggle]");
-    if (squadronPhotoToggle) {
-      state.squadronPhotographedOnly = !state.squadronPhotographedOnly;
-      renderSquadronsPage();
-      return;
-    }
-
     const countryJump = event.target.closest("[data-squadron-country-jump]");
     if (countryJump) {
       const target = document.getElementById(countryJump.dataset.squadronCountryJump || "");
@@ -569,6 +589,11 @@
 
     const locationGroupButton = event.target.closest("[data-location-group-key]");
     if (locationGroupButton) {
+      const singlePhotoId = locationGroupButton.dataset.locationSinglePhotoId;
+      if (singlePhotoId) {
+        openViewer(singlePhotoId, "map");
+        return;
+      }
       const key = locationGroupButton.dataset.locationGroupKey;
       if (state.expandedLocationGroupKeys.has(key)) {
         state.expandedLocationGroupKeys.delete(key);
@@ -739,6 +764,10 @@
     return window.matchMedia("(max-width: 1040px)").matches;
   }
 
+  function isDenseDesktopMapLayout() {
+    return window.matchMedia("(min-width: 1041px) and (max-width: 1500px)").matches;
+  }
+
   function isMobileViewerLayout() {
     return window.matchMedia("(max-width: 1040px)").matches;
   }
@@ -791,6 +820,9 @@
     if (viewId === "locationDetailView") {
       return "mapView";
     }
+    if (viewId === "airshowDetailView") {
+      return "airshowsView";
+    }
     return viewId;
   }
 
@@ -837,7 +869,7 @@
         description = `${photos.length} aviation photograph${photos.length === 1 ? "" : "s"} from ${squadron.name}${squadron.country ? ` in ${squadron.country}` : ""}.`;
         image = hero?.image || hero?.thumbnail || defaultImage;
       }
-    } else if (activeView === "airshowsView" && state.selectedAirshowId) {
+    } else if (activeView === "airshowDetailView" && state.selectedAirshowId) {
       const airshow = state.airshowById.get(state.selectedAirshowId);
       if (airshow) {
         const photos = photosForAirshow(airshow);
@@ -888,7 +920,7 @@
     if (activeView === "locationDetailView" && state.selectedPinId) {
       return shareUrlForEntity("location", state.selectedPinId);
     }
-    if (activeView === "airshowsView" && state.selectedAirshowId) {
+    if (activeView === "airshowDetailView" && state.selectedAirshowId) {
       return shareUrlForEntity("airshow", state.selectedAirshowId);
     }
     return window.location.href;
@@ -918,7 +950,7 @@
       updateDeepLink("aircraft", state.selectedAircraftId);
     } else if (viewId === "squadronDetailView" && state.selectedSquadronId) {
       updateDeepLink("squadron", state.selectedSquadronId);
-    } else if (viewId === "airshowsView" && state.selectedAirshowId) {
+    } else if (viewId === "airshowDetailView" && state.selectedAirshowId) {
       updateDeepLink("airshow", state.selectedAirshowId);
     } else if (viewId === "statsView") {
       updateDeepLink("stats", "summary");
@@ -1078,6 +1110,7 @@
       renderPins();
       renderMapResults();
     } else if (directoryView === "dexView") {
+      renderDexHero();
       renderRecentPhotos();
       renderDex();
     } else if (directoryView === "squadronsView") {
@@ -1085,6 +1118,7 @@
     } else if (directoryView === "airshowsView") {
       renderAirshowsPage();
     } else if (directoryView === "statsView") {
+      renderStatsArchiveHero();
       renderStatsDashboard();
       renderExifDashboard();
     }
@@ -1224,15 +1258,16 @@
       }).addTo(state.mapLeaderLayer);
       window.L.marker([pin.lat, pin.lon], {
         icon: mapLabelIcon(pin, pin.id === state.selectedPinId, preview, callout),
-        title: `Select ${mapPinLabel(pin)}`,
+        title: `Select ${pin.name}`,
         keyboard: true,
-        pane: "spotterdexLabelPane"
+        pane: "spotterdexLabelPane",
+        zIndexOffset: pin.id === state.selectedPinId ? 900 : 0
       })
         .on("click", () => selectPin(pin.id, { pan: false }))
         .addTo(state.mapLabelLayer);
       const marker = window.L.marker([pin.lat, pin.lon], {
         icon: mapMarkerIcon(pin, pin.id === state.selectedPinId),
-        title: mapPinLabel(pin),
+        title: pin.name,
         zIndexOffset: pin.id === state.selectedPinId ? 800 : 0
       })
         .on("click", () => selectPin(pin.id, { pan: false }));
@@ -1296,35 +1331,36 @@
         // layout in the map container's coordinate system. Layer points drift when
         // Leaflet translates a pane during a resize or pan.
         point: state.map.latLngToContainerPoint([pin.lat, pin.lon]),
+        labelText: mapPinLabel(pin),
         labelSize: mapLabelSize(mapPinLabel(pin), preview),
         callout: null
       };
     });
-    assignPreferredCalloutLanes(layouts, mapSize, margin);
-    layouts.forEach((layout) => {
+    const reachableLayouts = layouts.filter((layout) => mapLayoutCanReachViewport(layout, mapSize));
+    const offscreenLayouts = layouts.filter((layout) => !reachableLayouts.includes(layout));
+    assignLocalCalloutFans(reachableLayouts, mapSize, margin);
+    reachableLayouts.forEach((layout) => {
       layout.candidates = mapLabelCandidates(layout, mapSize);
     });
-    const markerPoints = layouts.map((layout) => layout.point);
-    const occupied = [];
-    layouts
-      .slice()
-      .sort((a, b) => mapLabelLayoutPriority(a, b))
-      .forEach((layout) => {
-        const { candidates } = layout;
-        const available = candidates.find((candidate) => (
-          !candidateOverlapsLabels(candidate.bounds, occupied) &&
-          !candidateBreaksVerticalStack(candidate.bounds, layout, occupied) &&
-          !candidateOverlapsBlockedBounds(candidate.bounds, blockedBounds) &&
-          !candidateOverlapsMarkers(candidate.bounds, markerPoints, markerRadius)
-        ));
-        const chosen = available || candidates
-          .slice()
-          .sort((a, b) => mapLabelCandidateScore(a, layout, occupied, markerPoints, markerRadius, blockedBounds) - mapLabelCandidateScore(b, layout, occupied, markerPoints, markerRadius, blockedBounds))[0];
-
-        layout.bounds = chosen.bounds;
-        occupied.push({ layout, bounds: chosen.bounds });
-      });
-    resolveMapLabelCollisions(layouts, markerPoints, markerRadius, blockedBounds);
+    const markerPoints = layouts
+      .map((layout) => layout.point)
+      .filter((point) => (
+        point.x >= -markerRadius && point.x <= mapSize.x + markerRadius &&
+        point.y >= -markerRadius && point.y <= mapSize.y + markerRadius
+      ));
+    const order = reachableLayouts.slice().sort((a, b) => mapSelectedFirstOrder(a, b, mapLayoutScreenOrder));
+    const bestArrangement = mapLabelArrangement(order, markerPoints, markerRadius, blockedBounds);
+    reachableLayouts.forEach((layout) => {
+      layout.bounds = bestArrangement.bounds.get(layout);
+    });
+    resolveMapLabelCollisions(reachableLayouts, markerPoints, markerRadius, blockedBounds);
+    resolveMapLabelObstructions(reachableLayouts, markerPoints, markerRadius, blockedBounds);
+    resolveMapLabelCollisions(reachableLayouts, markerPoints, markerRadius, blockedBounds);
+    offscreenLayouts.forEach((layout) => {
+      layout.calloutClusterId = -1;
+      layout.calloutClusterSize = 1;
+      layout.bounds = mapOffscreenLabelBounds(layout, mapSize);
+    });
     layouts.forEach((layout) => {
       layout.callout = mapCalloutForBounds(layout, layout.bounds);
     });
@@ -1332,225 +1368,269 @@
     return layouts;
   }
 
-  function mapLabelSize(title, preview) {
-    const isMobile = isMobileMapLayout();
-    const maxWidth = isMobile ? 236 : 292;
-    const characterWidth = isMobile ? 6.8 : 7.25;
-    const hasAssets = preview.families.length || preview.logos.length;
-    return {
-      width: Math.min(maxWidth, Math.max(108, Math.ceil(title.length * characterWidth + 22))),
-      height: hasAssets ? 45 : 28
-    };
+  function mapLayoutCanReachViewport(layout, mapSize) {
+    const reach = mapLeaderMaximumLength();
+    return (
+      layout.point.x >= -reach && layout.point.x <= mapSize.x + reach &&
+      layout.point.y >= -reach && layout.point.y <= mapSize.y + reach
+    );
   }
 
-  function mapLabelLayoutPriority(a, b) {
+  function mapOffscreenLabelBounds(layout, mapSize) {
+    const { width, height } = layout.labelSize;
+    const offset = isMobileMapLayout() ? 20 : 28;
+    const placeLeft = layout.point.x > mapSize.x / 2;
+    const left = placeLeft
+      ? layout.point.x - offset - width
+      : layout.point.x + offset;
+    const top = Math.round(layout.point.y - height / 2);
+    return { left, right: left + width, top, bottom: top + height };
+  }
+
+  function mapSelectedFirstOrder(a, b, fallbackComparator) {
     const aSelected = a.pin.id === state.selectedPinId;
     const bSelected = b.pin.id === state.selectedPinId;
     if (aSelected !== bSelected) {
       return aSelected ? -1 : 1;
     }
-    const areaDifference = (b.labelSize.width * b.labelSize.height) - (a.labelSize.width * a.labelSize.height);
-    if (areaDifference) {
-      return areaDifference;
+    return fallbackComparator(a, b);
+  }
+
+  function mapLabelArrangement(order, markerPoints, markerRadius, blockedBounds) {
+    const occupied = [];
+    const bounds = new Map();
+    order.forEach((layout) => {
+      const available = layout.candidates.find((candidate) => (
+        !candidateOverlapsLabels(candidate.bounds, occupied) &&
+        !candidateOverlapsBlockedBounds(candidate.bounds, blockedBounds) &&
+        !candidateOverlapsMarkers(candidate.bounds, markerPoints, markerRadius) &&
+        !candidateCrossesOccupiedLeaders(candidate, layout, occupied)
+      ));
+      const chosen = available || layout.candidates
+        .slice()
+        .sort((a, b) => (
+          mapLabelCandidateScore(a, layout, occupied, markerPoints, markerRadius, blockedBounds) -
+          mapLabelCandidateScore(b, layout, occupied, markerPoints, markerRadius, blockedBounds)
+        ))[0];
+      bounds.set(layout, chosen.bounds);
+      occupied.push({ layout, bounds: chosen.bounds });
+    });
+    return { bounds };
+  }
+
+  function mapLabelSize(title, preview) {
+    const isCompact = isMobileMapLayout();
+    if (isCompact) {
+      return {
+        width: Math.min(132, Math.max(54, Math.ceil(title.length * 7.2 + 14))),
+        height: 24
+      };
     }
-    if (a.point.y !== b.point.y) {
-      return a.point.y - b.point.y;
+
+    const hasAssets = preview.families.length || preview.logos.length;
+    if (isDenseDesktopMapLayout()) {
+      return {
+        width: Math.min(252, Math.max(82, Math.ceil(title.length * 6 + 12))),
+        height: hasAssets ? 38 : 25
+      };
     }
-    return a.point.x - b.point.x;
+    return {
+      width: Math.min(280, Math.max(88, Math.ceil(title.length * 6.65 + 14))),
+      height: hasAssets ? 45 : 28
+    };
+  }
+
+  function mapLabelGap() {
+    return isMobileMapLayout() ? MAP_LABEL_GAP_COMPACT : MAP_LABEL_GAP_DESKTOP;
+  }
+
+  function mapLeaderPreferredLength() {
+    return isMobileMapLayout() ? MAP_LEADER_PREFERRED_COMPACT : MAP_LEADER_PREFERRED_DESKTOP;
+  }
+
+  function mapLeaderMaximumLength() {
+    return isMobileMapLayout() ? MAP_LEADER_MAXIMUM_COMPACT : MAP_LEADER_MAXIMUM_DESKTOP;
   }
 
   function mapLabelCandidates(layout, mapSize) {
-    const { width, height } = layout.labelSize;
     const margin = isMobileMapLayout() ? 8 : 12;
     const candidates = [];
-    const maxHorizontalDistance = isMobileMapLayout() ? 240 : 280;
-    const stackRows = mapCalloutStackRows(layout, mapSize, margin);
-    const shallowLimit = Math.max(64, height + 22);
-    const shallowRows = stackRows.filter((row) => Math.abs(row.centerY - layout.point.y) <= shallowLimit);
-    const steepRows = stackRows.filter((row) => Math.abs(row.centerY - layout.point.y) > shallowLimit);
+    const preferredDirection = layout.preferredFan?.direction || "right";
+    const alternateDirection = preferredDirection === "right" ? "left" : "right";
 
-    // Nearby labels enter shared left/right lanes. Filling a lane from top to
-    // bottom prevents adjacent labels from forming horizontal rows.
     if (layout.calloutClusterSize === 1) {
-      const directLeaderLength = isMobileMapLayout() ? 24 : 28;
-      appendDirectMapLabelCandidate(candidates, layout, mapSize, margin, "right", directLeaderLength);
-      appendDirectMapLabelCandidate(candidates, layout, mapSize, margin, "left", directLeaderLength);
-    }
-    const sharedDirection = layout.preferredStackLane ? layout.preferredStackLane.direction : "right";
-    const alternateDirection = sharedDirection === "right" ? "left" : "right";
-    appendStackedMapLabelCandidates(candidates, layout, mapSize, margin, sharedDirection, shallowRows, maxHorizontalDistance, "shared");
-    appendStackedMapLabelCandidates(candidates, layout, mapSize, margin, sharedDirection, steepRows, maxHorizontalDistance, "shared");
-    appendStackedMapLabelCandidates(candidates, layout, mapSize, margin, alternateDirection, shallowRows, maxHorizontalDistance);
-    appendStackedMapLabelCandidates(candidates, layout, mapSize, margin, alternateDirection, steepRows, maxHorizontalDistance);
-    appendStackedMapLabelCandidates(candidates, layout, mapSize, margin, sharedDirection, shallowRows, maxHorizontalDistance, "fallback");
-    appendStackedMapLabelCandidates(candidates, layout, mapSize, margin, sharedDirection, steepRows, maxHorizontalDistance, "fallback");
-
-    if (candidates.length) {
-      return candidates;
+      appendCompassMapLabelCandidates(candidates, layout, mapSize, margin, 0);
     }
 
+    appendLocalFanCandidates(candidates, layout, mapSize, margin, preferredDirection, true);
+    appendLocalFanCandidates(candidates, layout, mapSize, margin, alternateDirection, false);
+
+    if (layout.calloutClusterSize > 1) {
+      appendCompassMapLabelCandidates(candidates, layout, mapSize, margin, 72);
+    }
+    appendLocalGridMapLabelCandidates(candidates, layout, mapSize, margin);
+
+    const deduped = Array.from(new Map(candidates.map((candidate) => [
+      `${candidate.bounds.left}:${candidate.bounds.top}:${candidate.bounds.right}:${candidate.bounds.bottom}`,
+      candidate
+    ])).values())
+      .sort((a, b) => (
+        a.baseScore - b.baseScore ||
+        a.bounds.top - b.bounds.top ||
+        a.bounds.left - b.bounds.left
+      ));
+
+    if (deduped.length) {
+      return deduped;
+    }
+
+    const { width, height } = layout.labelSize;
+    const offset = isMobileMapLayout() ? 20 : 28;
+    const placeRight = layout.point.x <= mapSize.x / 2;
     const left = Math.max(margin, Math.min(mapSize.x - margin - width, layout.point.x - width / 2));
     const top = Math.max(margin, Math.min(mapSize.y - margin - height, layout.point.y - height / 2));
+    const fallbackLeft = Math.max(margin, Math.min(
+      mapSize.x - margin - width,
+      placeRight ? layout.point.x + offset : layout.point.x - offset - width
+    ));
+    const bounds = {
+      left: Number.isFinite(fallbackLeft) ? fallbackLeft : left,
+      right: (Number.isFinite(fallbackLeft) ? fallbackLeft : left) + width,
+      top,
+      bottom: top + height
+    };
     return [{
-      bounds: { left, right: left + width, top, bottom: top + height },
-      distance: 0
+      bounds,
+      direction: placeRight ? "right" : "left",
+      leaderPoints: mapLeaderAbsolutePoints(layout, bounds),
+      leaderLength: mapLeaderLength(mapLeaderAbsolutePoints(layout, bounds)),
+      distance: 0,
+      baseScore: 10000
     }];
   }
 
-  function mapCalloutStackRows(layout, mapSize, margin) {
-    const rowHeight = 4;
-    const rows = [];
-    for (let top = margin; top <= mapSize.y - margin - layout.labelSize.height; top += rowHeight) {
-      rows.push({
-        top,
-        centerY: top + layout.labelSize.height / 2
-      });
-    }
-    return rows.sort((a, b) => (
-      Math.abs(a.centerY - layout.point.y) - Math.abs(b.centerY - layout.point.y)
-    ));
-  }
-
-  function assignPreferredCalloutLanes(layouts, mapSize, margin) {
+  function assignLocalCalloutFans(layouts, mapSize, margin) {
     const clusters = mapCalloutClusters(layouts, mapSize);
     clusters.forEach((cluster, clusterId) => {
-      const direction = mapPreferredCalloutDirection(cluster, clusters);
-      const lanes = mapBalancedCalloutLanes(cluster, mapSize, margin, direction);
+      const lanes = mapLocalFanLanes(cluster, mapSize, margin);
+      const defaultDirection = mapLocalFanDefaultDirection(cluster, lanes, mapSize);
+      const assignments = mapLocalFanAssignments(cluster, lanes, defaultDirection);
+      const rowTops = mapLocalFanRowTops(assignments, mapSize, margin);
       cluster.forEach((layout) => {
         layout.calloutClusterId = clusterId;
         layout.calloutClusterSize = cluster.length;
-        layout.preferredStackLane = lanes.get(layout) || null;
+        layout.localFanLanes = lanes;
+        const direction = assignments.get(layout) || defaultDirection;
+        layout.preferredFan = {
+          direction,
+          anchor: lanes[direction]?.anchor ?? null,
+          top: rowTops.get(layout) ?? Math.round(layout.point.y - layout.labelSize.height / 2)
+        };
       });
     });
   }
 
-  function mapBalancedCalloutLanes(cluster, mapSize, margin, defaultDirection) {
-    const country = cluster[0] && cluster[0].pin.country;
-    const isDenseCountryCluster = Boolean(
-      country &&
-      cluster.length >= 5 &&
-      cluster.every((layout) => layout.pin.country === country)
-    );
+  function mapLocalFanLanes(cluster, mapSize, margin) {
+    const offset = isMobileMapLayout() ? 20 : 28;
+    const maximumWidth = Math.max(...cluster.map((layout) => layout.labelSize.width));
+    const minimumX = Math.min(...cluster.map((layout) => layout.point.x));
+    const maximumX = Math.max(...cluster.map((layout) => layout.point.x));
+    const leftAnchor = Math.round(minimumX - offset);
+    const rightAnchor = Math.round(maximumX + offset);
+    const maximumLeader = mapLeaderMaximumLength();
 
-    // A dense group such as the Tokyo-area Japan pins is easier to scan when
-    // it fans into two short, vertical rails instead of forming one very tall
-    // stack on the side chosen for the broader country region. Keep the broad
-    // region preference as the first choice, then alternate by accumulated
-    // label height so both sides remain visually balanced as names vary.
-    const layoutsByDirection = new Map([
-      ["left", []],
-      ["right", []]
-    ]);
-    if (isDenseCountryCluster) {
-      const alternateDirection = defaultDirection === "right" ? "left" : "right";
-      const sideHeights = { left: 0, right: 0 };
-      cluster
-        .slice()
-        .sort((a, b) => a.point.y - b.point.y || a.point.x - b.point.x)
-        .forEach((layout) => {
-          const direction = sideHeights[defaultDirection] <= sideHeights[alternateDirection]
-            ? defaultDirection
-            : alternateDirection;
-          layoutsByDirection.get(direction).push(layout);
-          sideHeights[direction] += layout.labelSize.height + MAP_LABEL_GAP;
-        });
-    } else {
-      layoutsByDirection.get(defaultDirection).push(...cluster);
+    const leftValid = leftAnchor - maximumWidth >= margin && cluster.every((layout) => (
+      layout.point.x - leftAnchor <= maximumLeader
+    ));
+    const rightValid = rightAnchor + maximumWidth <= mapSize.x - margin && cluster.every((layout) => (
+      rightAnchor - layout.point.x <= maximumLeader
+    ));
+
+    return {
+      left: leftValid ? { direction: "left", anchor: leftAnchor } : null,
+      right: rightValid ? { direction: "right", anchor: rightAnchor } : null
+    };
+  }
+
+  function mapLocalFanDefaultDirection(cluster, lanes, mapSize) {
+    const centerX = cluster.reduce((total, layout) => total + layout.point.x, 0) / cluster.length;
+    const outwardDirection = centerX <= mapSize.x / 2 ? "left" : "right";
+    if (lanes[outwardDirection]) {
+      return outwardDirection;
+    }
+    const alternateDirection = outwardDirection === "right" ? "left" : "right";
+    return lanes[alternateDirection] ? alternateDirection : outwardDirection;
+  }
+
+  function mapLocalFanAssignments(cluster, lanes, defaultDirection) {
+    const assignments = new Map();
+    const alternateDirection = defaultDirection === "right" ? "left" : "right";
+    const canSplit = cluster.length >= 5 && lanes.left && lanes.right;
+    const fallbackDirection = lanes[defaultDirection]
+      ? defaultDirection
+      : lanes[alternateDirection]
+        ? alternateDirection
+        : defaultDirection;
+
+    if (!canSplit) {
+      cluster.forEach((layout) => assignments.set(layout, fallbackDirection));
+      return assignments;
     }
 
-    const lanes = new Map();
-    layoutsByDirection.forEach((sideLayouts, direction) => {
-      if (!sideLayouts.length) {
+    const sideHeights = { left: 0, right: 0 };
+    cluster
+      .slice()
+      .sort(mapLayoutScreenOrder)
+      .forEach((layout) => {
+        const direction = sideHeights[defaultDirection] <= sideHeights[alternateDirection]
+          ? defaultDirection
+          : alternateDirection;
+        assignments.set(layout, direction);
+        sideHeights[direction] += layout.labelSize.height + mapLabelGap();
+      });
+    return assignments;
+  }
+
+  function mapLocalFanRowTops(assignments, mapSize, margin) {
+    const tops = new Map();
+    ["left", "right"].forEach((direction) => {
+      const layouts = Array.from(assignments.entries())
+        .filter(([, assignedDirection]) => assignedDirection === direction)
+        .map(([layout]) => layout)
+        .sort(mapLayoutScreenOrder);
+      if (!layouts.length) {
         return;
       }
-      const lane = preferredCalloutLane(sideLayouts, mapSize, margin, direction);
-      sideLayouts.forEach((layout) => lanes.set(layout, lane));
+
+      let previousBottom = -Infinity;
+      layouts.forEach((layout) => {
+        const idealTop = Math.round(layout.point.y - layout.labelSize.height / 2);
+        const top = Math.max(idealTop, previousBottom + mapLabelGap());
+        tops.set(layout, top);
+        previousBottom = top + layout.labelSize.height;
+      });
+
+      const firstTop = tops.get(layouts[0]);
+      const lastLayout = layouts[layouts.length - 1];
+      const lastBottom = tops.get(lastLayout) + lastLayout.labelSize.height;
+      const shiftDown = Math.max(0, margin - firstTop);
+      const shiftUp = Math.max(0, lastBottom + shiftDown - (mapSize.y - margin));
+      const shift = shiftDown - shiftUp;
+      if (shift) {
+        layouts.forEach((layout) => tops.set(layout, tops.get(layout) + shift));
+      }
     });
-    return lanes;
+    return tops;
   }
 
-  function mapPreferredCalloutDirection(cluster, clusters) {
-    const country = cluster[0] && cluster[0].pin.country;
-    const isCountryRegion = country && cluster.length > 1 && cluster.every((layout) => layout.pin.country === country);
-    if (!isCountryRegion) {
-      return "right";
-    }
-
-    const countryRegions = clusters.filter((candidate) => (
-      candidate.length > 1 && candidate.every((layout) => layout.pin.country === country)
-    ));
-    if (countryRegions.length < 2) {
-      return "right";
-    }
-
-    const centerLongitude = cluster.reduce((total, layout) => total + layout.pin.lon, 0) / cluster.length;
-    const easternmostLongitude = Math.max(...countryRegions.map((candidate) => (
-      candidate.reduce((total, layout) => total + layout.pin.lon, 0) / candidate.length
-    )));
-    return centerLongitude < easternmostLongitude ? "left" : "right";
+  function mapLayoutScreenOrder(a, b) {
+    return a.point.y - b.point.y || a.point.x - b.point.x || a.pin.id.localeCompare(b.pin.id);
   }
 
-  function mapCalloutClusters(layouts, mapSize) {
+  function mapCalloutClusters(layouts) {
     const threshold = isMobileMapLayout()
-      ? 160
-      : Math.min(284, Math.max(200, mapSize.x * 0.18));
-    const stableClusters = mapStableCountryClusters(layouts);
-    const assigned = new Set(stableClusters.flat());
-    const remaining = new Set(layouts.filter((layout) => !assigned.has(layout)));
-    const clusters = stableClusters.slice();
-
-    while (remaining.size) {
-      const candidates = Array.from(remaining);
-      // Use a compact, density-first group rather than a transitive chain.
-      // A label group should be one local neighborhood, not every pin linked
-      // by a series of short hops across the map.
-      const anchor = candidates
-        .map((layout) => ({
-          layout,
-          nearby: candidates.filter((candidate) => (
-            mapPinsShareCalloutCluster(candidate, layout, threshold)
-          )).length
-        }))
-        .sort((a, b) => (
-          b.nearby - a.nearby ||
-          a.layout.point.y - b.layout.point.y ||
-          a.layout.point.x - b.layout.point.x
-        ))[0].layout;
-      const cluster = candidates.filter((candidate) => (
-        mapPinsShareCalloutCluster(candidate, anchor, threshold)
-      ));
-      cluster.forEach((layout) => remaining.delete(layout));
-
-      clusters.push(cluster);
-    }
-
-    return clusters;
-  }
-
-  function mapPinsShareCalloutCluster(first, second, screenThreshold) {
-    const screenDistance = Math.hypot(first.point.x - second.point.x, first.point.y - second.point.y);
-    return screenDistance <= screenThreshold && mapPinDistanceKm(first.pin, second.pin) <= 1600;
-  }
-
-  function mapStableCountryClusters(layouts) {
-    const byCountry = new Map();
-    layouts.forEach((layout) => {
-      const country = layout.pin.country || "";
-      const group = byCountry.get(country) || [];
-      group.push(layout);
-      byCountry.set(country, group);
-    });
-
-    return Array.from(byCountry.values())
-      .filter((group) => group.length >= 8)
-      .flatMap((group) => mapGeographicClusters(group));
-  }
-
-  function mapGeographicClusters(layouts) {
-    // Dense countries use compact regional groups. This keeps the Nagoya /
-    // Hokuriku rail distinct from Tokyo while keeping Okinawa independent at
-    // every zoom level.
-    const regionThresholdKm = 200;
+      ? MAP_CLUSTER_SCREEN_DISTANCE_COMPACT
+      : MAP_CLUSTER_SCREEN_DISTANCE_DESKTOP;
     const remaining = new Set(layouts);
     const clusters = [];
 
@@ -1560,22 +1640,26 @@
         .map((layout) => ({
           layout,
           nearby: candidates.filter((candidate) => (
-            mapPinDistanceKm(candidate.pin, layout.pin) <= regionThresholdKm
+            mapPinsShareCalloutCluster(candidate, layout, threshold)
           )).length
         }))
         .sort((a, b) => (
           b.nearby - a.nearby ||
-          a.layout.pin.lat - b.layout.pin.lat ||
-          a.layout.pin.lon - b.layout.pin.lon
+          mapLayoutScreenOrder(a.layout, b.layout)
         ))[0].layout;
       const cluster = candidates.filter((candidate) => (
-        mapPinDistanceKm(candidate.pin, anchor.pin) <= regionThresholdKm
-      ));
+        mapPinsShareCalloutCluster(candidate, anchor, threshold)
+      )).sort(mapLayoutScreenOrder);
       cluster.forEach((layout) => remaining.delete(layout));
       clusters.push(cluster);
     }
 
     return clusters;
+  }
+
+  function mapPinsShareCalloutCluster(first, second, screenThreshold) {
+    const screenDistance = Math.hypot(first.point.x - second.point.x, first.point.y - second.point.y);
+    return screenDistance <= screenThreshold && mapPinDistanceKm(first.pin, second.pin) <= MAP_CLUSTER_DISTANCE_KM;
   }
 
   function mapPinDistanceKm(first, second) {
@@ -1590,159 +1674,191 @@
     return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
-  function preferredCalloutLane(cluster, mapSize, margin, direction) {
-    const maximumWidth = Math.max(...cluster.map((layout) => layout.labelSize.width));
-    const anchors = mapCalloutLaneAnchors(mapSize, margin, direction, maximumWidth);
-    const minimumDistance = isMobileMapLayout() ? 24 : 28;
-    const maximumDistance = mapCalloutSharedRailMaximumDistance();
-    const viable = anchors.filter((anchor) => cluster.every((layout) => {
+  function appendLocalFanCandidates(candidates, layout, mapSize, margin, direction, isPreferred) {
+    const { width, height } = layout.labelSize;
+    const lane = layout.localFanLanes?.[direction];
+    if (!lane) {
+      return;
+    }
+
+    const verticalStep = isMobileMapLayout() ? 8 : 12;
+    const maximumVerticalOffset = isMobileMapLayout() ? 112 : 168;
+    const verticalOffsets = [0];
+    for (let offset = verticalStep; offset <= maximumVerticalOffset; offset += verticalStep) {
+      verticalOffsets.push(-offset, offset);
+    }
+    const laneStep = isMobileMapLayout() ? 20 : 28;
+    const preferredTop = isPreferred
+      ? layout.preferredFan.top
+      : Math.round(layout.point.y - height / 2);
+
+    for (let laneIndex = 0; laneIndex < 4; laneIndex += 1) {
+      const anchor = lane.anchor + (direction === "right" ? laneIndex * laneStep : -laneIndex * laneStep);
       const horizontalDistance = direction === "right"
         ? anchor - layout.point.x
         : layout.point.x - anchor;
-      return horizontalDistance >= minimumDistance && horizontalDistance <= maximumDistance;
-    }));
-    const ranked = (viable.length ? viable : anchors)
-      .map((anchor) => {
-        const distances = cluster.map((layout) => direction === "right"
-          ? anchor - layout.point.x
-          : layout.point.x - anchor);
-        const validCount = distances.filter((distance) => (
-          distance >= minimumDistance && distance <= maximumDistance
-        )).length;
-        return {
-          anchor,
-          validCount,
-          averageDistance: distances.reduce((total, distance) => total + Math.abs(distance), 0) / distances.length
+      if (horizontalDistance < 0 || horizontalDistance > mapLeaderMaximumLength()) {
+        continue;
+      }
+
+      verticalOffsets.forEach((verticalOffset, verticalIndex) => {
+        const top = preferredTop + verticalOffset;
+        const left = direction === "right" ? anchor : anchor - width;
+        const bounds = {
+          left,
+          right: left + width,
+          top,
+          bottom: top + height
         };
-      })
-      .sort((a, b) => b.validCount - a.validCount || a.averageDistance - b.averageDistance);
-
-    return ranked.length ? { direction, anchor: ranked[0].anchor } : null;
-  }
-
-  function mapCalloutSharedRailMaximumDistance() {
-    // A shared rail may extend slightly beyond an ordinary callout. This keeps
-    // a regional stack aligned without broadly allowing long leaders.
-    return isMobileMapLayout() ? 264 : 320;
-  }
-
-  function mapCalloutLaneAnchors(mapSize, margin, direction, maximumWidth) {
-    const spacing = isMobileMapLayout() ? 48 : 64;
-    const anchors = [];
-    if (direction === "right") {
-      const maximumLeft = mapSize.x - margin - maximumWidth;
-      for (let left = margin; left <= maximumLeft; left += spacing) {
-        anchors.push(left);
-      }
-      if (maximumLeft >= margin && anchors[anchors.length - 1] !== maximumLeft) {
-        anchors.push(maximumLeft);
-      }
-    } else {
-      const minimumRight = margin + maximumWidth;
-      for (let right = mapSize.x - margin; right >= minimumRight; right -= spacing) {
-        anchors.push(right);
-      }
-      if (minimumRight <= mapSize.x - margin && anchors[anchors.length - 1] !== minimumRight) {
-        anchors.push(minimumRight);
-      }
+        appendMapLabelCandidate(
+          candidates,
+          layout,
+          bounds,
+          direction,
+          mapSize,
+          margin,
+          (isPreferred ? 0 : 42) + laneIndex * 18 + verticalIndex * 9
+        );
+      });
     }
-    return anchors;
   }
 
-  function appendDirectMapLabelCandidate(candidates, layout, mapSize, margin, direction, leaderLength) {
+  function appendCompassMapLabelCandidates(candidates, layout, mapSize, margin, preferencePenalty) {
     const { width, height } = layout.labelSize;
-    const isRight = direction === "right";
-    const left = Math.round(isRight
-      ? layout.point.x + leaderLength
-      : layout.point.x - leaderLength - width);
-    const top = Math.round(layout.point.y - height / 2);
-    const bounds = {
-      left,
-      right: left + width,
-      top,
-      bottom: top + height
-    };
-    if (bounds.left < margin || bounds.right > mapSize.x - margin || bounds.top < margin || bounds.bottom > mapSize.y - margin) {
+    const offset = isMobileMapLayout() ? 20 : 28;
+    const preferredDirection = layout.preferredFan?.direction || "right";
+    const right = layout.point.x + offset;
+    const left = layout.point.x - offset - width;
+    const above = layout.point.y - offset - height;
+    const below = layout.point.y + offset;
+    const centeredLeft = Math.round(layout.point.x - width / 2);
+    const centeredTop = Math.round(layout.point.y - height / 2);
+    const positions = preferredDirection === "right"
+      ? [
+          [right, centeredTop, "right"],
+          [right, above, "right"],
+          [right, below, "right"],
+          [centeredLeft, above, "top"],
+          [centeredLeft, below, "bottom"],
+          [left, above, "left"],
+          [left, below, "left"],
+          [left, centeredTop, "left"]
+        ]
+      : [
+          [left, centeredTop, "left"],
+          [left, above, "left"],
+          [left, below, "left"],
+          [centeredLeft, above, "top"],
+          [centeredLeft, below, "bottom"],
+          [right, above, "right"],
+          [right, below, "right"],
+          [right, centeredTop, "right"]
+        ];
+
+    positions.forEach(([candidateLeft, candidateTop, direction], index) => {
+      appendMapLabelCandidate(
+        candidates,
+        layout,
+        {
+          left: Math.round(candidateLeft),
+          right: Math.round(candidateLeft + width),
+          top: Math.round(candidateTop),
+          bottom: Math.round(candidateTop + height)
+        },
+        direction,
+        mapSize,
+        margin,
+        preferencePenalty + index * 5
+      );
+    });
+  }
+
+  function appendLocalGridMapLabelCandidates(candidates, layout, mapSize, margin) {
+    const { width, height } = layout.labelSize;
+    const minimumOffset = isMobileMapLayout() ? 20 : 28;
+    const horizontalStep = isMobileMapLayout() ? 24 : 36;
+    const verticalStep = isMobileMapLayout() ? 10 : 18;
+    const maximumLength = mapLeaderMaximumLength();
+    let laneIndex = 0;
+
+    for (let horizontalOffset = minimumOffset; horizontalOffset <= maximumLength; horizontalOffset += horizontalStep) {
+      ["left", "right"].forEach((direction) => {
+        const anchor = direction === "right"
+          ? layout.point.x + horizontalOffset
+          : layout.point.x - horizontalOffset;
+        const left = direction === "right" ? anchor : anchor - width;
+
+        for (let verticalOffset = -maximumLength; verticalOffset <= maximumLength; verticalOffset += verticalStep) {
+          const top = Math.round(layout.point.y - height / 2 + verticalOffset);
+          appendMapLabelCandidate(
+            candidates,
+            layout,
+            { left, right: left + width, top, bottom: top + height },
+            direction,
+            mapSize,
+            margin,
+            120 + laneIndex * 4 + Math.abs(verticalOffset) * 0.2
+          );
+        }
+      });
+      laneIndex += 1;
+    }
+  }
+
+  function appendMapLabelCandidate(candidates, layout, bounds, direction, mapSize, margin, preferencePenalty) {
+    if (
+      bounds.left < margin ||
+      bounds.right > mapSize.x - margin ||
+      bounds.top < margin ||
+      bounds.bottom > mapSize.y - margin
+    ) {
       return;
     }
-    candidates.push({
-      bounds,
-      distance: leaderLength + width / 2
-    });
-  }
 
-  function appendStackedMapLabelCandidates(candidates, layout, mapSize, margin, direction, rows, maxHorizontalDistance, laneMode = "all") {
-    const { width, height } = layout.labelSize;
-    const lanes = mapCalloutStackLanes(layout, mapSize, margin, direction, maxHorizontalDistance)
-      .filter((lane) => {
-        const isSharedRail = isPreferredStackLane(layout, direction, lane);
-        return laneMode === "shared" ? isSharedRail : laneMode === "fallback" ? !isSharedRail : true;
-      });
-    lanes.forEach((lane) => {
-      rows.forEach((row) => {
-        const bounds = {
-          left: lane.left,
-          right: lane.left + width,
-          top: row.top,
-          bottom: row.top + height
-        };
-        candidates.push({
-          bounds,
-          distance: Math.hypot(row.centerY - layout.point.y, lane.horizontalDistance)
-        });
-      });
-    });
-  }
-
-  function mapCalloutStackLanes(layout, mapSize, margin, direction, maxHorizontalDistance) {
-    const { width } = layout.labelSize;
-    const isRight = direction === "right";
-    const minimumDistance = isMobileMapLayout() ? 24 : 28;
-    const laneSpacing = isMobileMapLayout() ? 48 : 64;
-    const sharedRailMaximumDistance = mapCalloutSharedRailMaximumDistance();
-    const lanes = [];
-
-    if (isRight) {
-      for (let left = margin; left <= mapSize.x - margin - width; left += laneSpacing) {
-        const horizontalDistance = left - layout.point.x;
-        const isSharedRail = layout.preferredStackLane &&
-          layout.preferredStackLane.direction === direction &&
-          layout.preferredStackLane.anchor === left;
-        if (horizontalDistance >= minimumDistance && (
-          horizontalDistance <= maxHorizontalDistance ||
-          (isSharedRail && horizontalDistance <= sharedRailMaximumDistance)
-        )) {
-          lanes.push({ left, horizontalDistance, anchor: left });
-        }
-      }
-    } else {
-      for (let right = mapSize.x - margin; right >= margin + width; right -= laneSpacing) {
-        const horizontalDistance = layout.point.x - right;
-        const isSharedRail = layout.preferredStackLane &&
-          layout.preferredStackLane.direction === direction &&
-          layout.preferredStackLane.anchor === right;
-        if (horizontalDistance >= minimumDistance && (
-          horizontalDistance <= maxHorizontalDistance ||
-          (isSharedRail && horizontalDistance <= sharedRailMaximumDistance)
-        )) {
-          lanes.push({ left: right - width, horizontalDistance, anchor: right });
-        }
-      }
+    const leaderPoints = mapLeaderAbsolutePoints(layout, bounds);
+    const leaderLength = mapLeaderLength(leaderPoints);
+    if (leaderLength > mapLeaderMaximumLength()) {
+      return;
     }
 
-    return lanes.sort((a, b) => {
-      const aPreferred = isPreferredStackLane(layout, direction, a);
-      const bPreferred = isPreferredStackLane(layout, direction, b);
-      if (aPreferred !== bPreferred) {
-        return aPreferred ? -1 : 1;
-      }
-      return a.horizontalDistance - b.horizontalDistance;
+    const verticalDisplacement = Math.abs((bounds.top + bounds.bottom) / 2 - layout.point.y);
+    const excessLength = Math.max(0, leaderLength - mapLeaderPreferredLength());
+    candidates.push({
+      bounds,
+      direction,
+      leaderPoints,
+      leaderLength,
+      distance: leaderLength,
+      baseScore: leaderLength + verticalDisplacement * 0.7 + excessLength * 8 + preferencePenalty
     });
   }
 
-  function isPreferredStackLane(layout, direction, lane) {
-    const preferred = layout.preferredStackLane;
-    return Boolean(preferred && preferred.direction === direction && preferred.anchor === lane.anchor);
+  function mapLeaderAbsolutePoints(layout, bounds) {
+    const labelLeft = bounds.left - layout.point.x;
+    const labelTop = bounds.top - layout.point.y;
+    const labelRight = bounds.right - layout.point.x;
+    const labelBottom = bounds.bottom - layout.point.y;
+    const endpoint = {
+      x: Math.max(labelLeft, Math.min(0, labelRight)),
+      y: Math.max(labelTop, Math.min(0, labelBottom))
+    };
+    const isHorizontalEdge = endpoint.x === labelLeft || endpoint.x === labelRight;
+    const bend = isHorizontalEdge
+      ? { x: Math.round(endpoint.x * 0.58), y: endpoint.y }
+      : { x: endpoint.x, y: Math.round(endpoint.y * 0.58) };
+    return [
+      { x: layout.point.x, y: layout.point.y },
+      { x: layout.point.x + bend.x, y: layout.point.y + bend.y },
+      { x: layout.point.x + endpoint.x, y: layout.point.y + endpoint.y }
+    ];
+  }
+
+  function mapLeaderLength(points) {
+    let length = 0;
+    for (let index = 1; index < points.length; index += 1) {
+      length += Math.hypot(points[index].x - points[index - 1].x, points[index].y - points[index - 1].y);
+    }
+    return length;
   }
 
   function mapCalloutBlockedBounds() {
@@ -1785,21 +1901,24 @@
   }
 
   function mapPanelShouldReserveSpace(panel) {
+    if (isMobileMapLayout()) {
+      return false;
+    }
     if (panel === els.mapControlPanel) {
-      return isMobileMapLayout() ? state.mobileMapPanel === "locations" : state.mapControlPanelOpen;
+      return state.mapControlPanelOpen;
     }
     if (panel === els.mapResults) {
-      return isMobileMapLayout() ? state.mobileMapPanel === "results" : state.mapDossierOpen;
+      return state.mapDossierOpen;
     }
     return false;
   }
 
   function candidateOverlapsLabels(bounds, occupied) {
-    return occupied.some((other) => rectsOverlap(bounds, other.bounds || other, MAP_LABEL_GAP));
+    return occupied.some((other) => rectsOverlap(bounds, other.bounds || other, mapLabelGap()));
   }
 
   function candidateOverlapsBlockedBounds(bounds, blockedBounds) {
-    return blockedBounds.some((blocked) => rectsOverlap(bounds, blocked, MAP_LABEL_GAP));
+    return blockedBounds.some((blocked) => rectsOverlap(bounds, blocked, mapLabelGap()));
   }
 
   function candidateOverlapsMarkers(bounds, markerPoints, radius) {
@@ -1811,33 +1930,63 @@
     ));
   }
 
-  function candidateBreaksVerticalStack(bounds, layout, occupied) {
-    if (layout.calloutClusterSize <= 1) {
-      return false;
-    }
+  function candidateCrossesOccupiedLeaders(candidate, layout, occupied) {
+    const candidatePoints = candidate.leaderPoints || mapLeaderAbsolutePoints(layout, candidate.bounds);
     return occupied.some((other) => (
-      other.layout.calloutClusterId === layout.calloutClusterId &&
-      verticalBandsOverlap(bounds, other.bounds)
+      mapPolylinesCross(candidatePoints, mapLeaderAbsolutePoints(other.layout, other.bounds))
     ));
   }
 
-  function verticalBandsOverlap(a, b) {
-    return !(a.bottom + MAP_LABEL_GAP <= b.top || a.top - MAP_LABEL_GAP >= b.bottom);
+  function mapPolylinesCross(firstPoints, secondPoints) {
+    for (let firstIndex = 1; firstIndex < firstPoints.length; firstIndex += 1) {
+      for (let secondIndex = 1; secondIndex < secondPoints.length; secondIndex += 1) {
+        if (mapSegmentsCross(
+          firstPoints[firstIndex - 1],
+          firstPoints[firstIndex],
+          secondPoints[secondIndex - 1],
+          secondPoints[secondIndex]
+        )) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  function mapSegmentsCross(firstStart, firstEnd, secondStart, secondEnd) {
+    const samePoint = (first, second) => (
+      Math.abs(first.x - second.x) < 0.5 && Math.abs(first.y - second.y) < 0.5
+    );
+    if (
+      samePoint(firstStart, secondStart) ||
+      samePoint(firstStart, secondEnd) ||
+      samePoint(firstEnd, secondStart) ||
+      samePoint(firstEnd, secondEnd)
+    ) {
+      return false;
+    }
+
+    const cross = (origin, first, second) => (
+      (first.x - origin.x) * (second.y - origin.y) -
+      (first.y - origin.y) * (second.x - origin.x)
+    );
+    const firstSide = cross(firstStart, firstEnd, secondStart);
+    const secondSide = cross(firstStart, firstEnd, secondEnd);
+    const thirdSide = cross(secondStart, secondEnd, firstStart);
+    const fourthSide = cross(secondStart, secondEnd, firstEnd);
+    return firstSide * secondSide < 0 && thirdSide * fourthSide < 0;
   }
 
   function mapLabelCandidateScore(candidate, layout, occupied, markerPoints, radius, blockedBounds) {
-    const labelOverlap = occupied.reduce((total, other) => total + rectOverlapArea(candidate.bounds, other.bounds || other, MAP_LABEL_GAP), 0);
+    const labelOverlap = occupied.reduce((total, other) => total + rectOverlapArea(candidate.bounds, other.bounds || other, mapLabelGap()), 0);
     const blockedOverlap = blockedBounds.reduce((total, blocked) => (
-      total + rectOverlapArea(candidate.bounds, blocked, MAP_LABEL_GAP)
+      total + rectOverlapArea(candidate.bounds, blocked, mapLabelGap())
     ), 0);
-    const stackConflicts = occupied.reduce((total, other) => (
-      total + (
-        other.layout &&
-        other.layout.calloutClusterId === layout.calloutClusterId &&
-        verticalBandsOverlap(candidate.bounds, other.bounds)
-          ? 1
-          : 0
-      )
+    const leaderCrossings = occupied.reduce((total, other) => (
+      total + (mapPolylinesCross(
+        candidate.leaderPoints || mapLeaderAbsolutePoints(layout, candidate.bounds),
+        mapLeaderAbsolutePoints(other.layout, other.bounds)
+      ) ? 1 : 0)
     ), 0);
     const markerOverlap = markerPoints.reduce((total, point) => {
       const overlaps = (
@@ -1848,43 +1997,87 @@
       );
       return total + (overlaps ? 1 : 0);
     }, 0);
-    return candidate.distance + labelOverlap * 1000 + stackConflicts * 10000 + markerOverlap * 100000 + blockedOverlap * 100000;
+    return (
+      (candidate.baseScore || candidate.distance) +
+      leaderCrossings * 4000 +
+      labelOverlap * 1000 +
+      markerOverlap * 100000 +
+      blockedOverlap * 100000
+    );
   }
 
   function resolveMapLabelCollisions(layouts, markerPoints, radius, blockedBounds) {
     const maximumPasses = layouts.length * layouts.length;
     for (let pass = 0; pass < maximumPasses; pass += 1) {
-      const pair = firstOverlappingLabelPair(layouts);
-      if (!pair) {
+      const pairs = overlappingLabelPairs(layouts);
+      if (!pairs.length) {
         return;
       }
 
-      const [first, second] = pair;
-      const otherLayouts = layouts.filter((layout) => layout !== first && layout !== second);
-      const firstAlternative = mapLabelAlternative(first, second, otherLayouts, markerPoints, radius, blockedBounds);
-      const secondAlternative = mapLabelAlternative(second, first, otherLayouts, markerPoints, radius, blockedBounds);
+      let moved = false;
+      for (const [first, second] of pairs) {
+        const otherLayouts = layouts.filter((layout) => layout !== first && layout !== second);
+        const firstSelected = first.pin.id === state.selectedPinId;
+        const secondSelected = second.pin.id === state.selectedPinId;
+        const firstAlternative = firstSelected && !secondSelected
+          ? null
+          : mapLabelAlternative(first, second, otherLayouts, markerPoints, radius, blockedBounds);
+        const secondAlternative = secondSelected && !firstSelected
+          ? null
+          : mapLabelAlternative(second, first, otherLayouts, markerPoints, radius, blockedBounds);
 
-      if (firstAlternative) {
-        first.bounds = firstAlternative.bounds;
-        continue;
+        if (firstAlternative || secondAlternative) {
+          const useFirst = firstAlternative && (!secondAlternative || firstAlternative.baseScore <= secondAlternative.baseScore);
+          const target = useFirst ? first : second;
+          const alternative = useFirst ? firstAlternative : secondAlternative;
+          target.bounds = alternative.bounds;
+          moved = true;
+          break;
+        }
       }
-      if (secondAlternative) {
-        second.bounds = secondAlternative.bounds;
-        continue;
+      if (!moved) {
+        return;
       }
-      return;
     }
   }
 
-  function firstOverlappingLabelPair(layouts) {
+  function resolveMapLabelObstructions(layouts, markerPoints, radius, blockedBounds) {
+    const maximumPasses = layouts.length * 2;
+    for (let pass = 0; pass < maximumPasses; pass += 1) {
+      const obstructed = layouts.find((layout) => (
+        candidateOverlapsBlockedBounds(layout.bounds, blockedBounds) ||
+        candidateOverlapsMarkers(layout.bounds, markerPoints, radius)
+      ));
+      if (!obstructed) {
+        return;
+      }
+
+      const occupied = layouts
+        .filter((layout) => layout !== obstructed)
+        .map((layout) => ({ layout, bounds: layout.bounds }));
+      const alternative = obstructed.candidates.find((candidate) => (
+        !sameRect(candidate.bounds, obstructed.bounds) &&
+        !candidateOverlapsLabels(candidate.bounds, occupied) &&
+        !candidateOverlapsBlockedBounds(candidate.bounds, blockedBounds) &&
+        !candidateOverlapsMarkers(candidate.bounds, markerPoints, radius)
+      ));
+      if (!alternative) {
+        return;
+      }
+      obstructed.bounds = alternative.bounds;
+    }
+  }
+
+  function overlappingLabelPairs(layouts) {
+    const pairs = [];
     for (let index = 0; index < layouts.length; index += 1) {
       for (let comparison = index + 1; comparison < layouts.length; comparison += 1) {
-        if (rectsOverlap(layouts[index].bounds, layouts[comparison].bounds, MAP_LABEL_GAP)) {
-          return [layouts[index], layouts[comparison]];
+        if (rectsOverlap(layouts[index].bounds, layouts[comparison].bounds, mapLabelGap())) {
+          pairs.push([layouts[index], layouts[comparison]]);
         }
       }
     }
-    return null;
+    return pairs;
   }
 
   function mapLabelAlternative(layout, pairedLayout, otherLayouts, markerPoints, radius, blockedBounds) {
@@ -1892,14 +2085,33 @@
       layout: otherLayout,
       bounds: otherLayout.bounds
     }));
-    return layout.candidates.find((candidate) => (
+    const allOccupied = occupied.concat({ layout: pairedLayout, bounds: pairedLayout.bounds });
+    const viable = layout.candidates.filter((candidate) => (
       !sameRect(candidate.bounds, layout.bounds) &&
-      !candidateOverlapsLabels(candidate.bounds, occupied) &&
-      !candidateBreaksVerticalStack(candidate.bounds, layout, occupied) &&
       !candidateOverlapsBlockedBounds(candidate.bounds, blockedBounds) &&
-      !rectsOverlap(candidate.bounds, pairedLayout.bounds, MAP_LABEL_GAP) &&
       !candidateOverlapsMarkers(candidate.bounds, markerPoints, radius)
     ));
+    const clear = viable.find((candidate) => !candidateOverlapsLabels(candidate.bounds, allOccupied));
+    if (clear) {
+      return clear;
+    }
+
+    const currentPenalty = mapCandidateOverlapPenalty(layout.bounds, allOccupied);
+    const best = viable
+      .map((candidate) => ({
+        candidate,
+        penalty: mapCandidateOverlapPenalty(candidate.bounds, allOccupied)
+      }))
+      .filter(({ penalty }) => penalty < currentPenalty)
+      .sort((a, b) => a.penalty - b.penalty || a.candidate.baseScore - b.candidate.baseScore)[0];
+    return best ? best.candidate : null;
+  }
+
+  function mapCandidateOverlapPenalty(bounds, occupied) {
+    return occupied.reduce((total, other) => {
+      const area = rectOverlapArea(bounds, other.bounds || other, mapLabelGap());
+      return total + (area > 0 ? 1000000 + area * 1000 : 0);
+    }, 0);
   }
 
   function sameRect(a, b) {
@@ -2224,15 +2436,17 @@
     const image = latest?.thumbnail || latest?.image || "";
     const remaining = group.photos.slice(1);
     const photoCount = `${group.photos.length} photo${group.photos.length === 1 ? "" : "s"}`;
+    const singlePhotoId = group.photos.length === 1 && latest?.id ? latest.id : "";
 
     return `
-      <article class="location-type-group${isExpanded ? " is-expanded" : ""}">
+      <article class="location-type-group${isExpanded && !singlePhotoId ? " is-expanded" : ""}">
         <button
           class="location-type-toggle"
           type="button"
           data-location-group-key="${escapeAttr(groupKey)}"
-          aria-expanded="${isExpanded ? "true" : "false"}"
-          aria-controls="location-group-${escapeAttr(slugify(groupKey))}"
+          ${singlePhotoId
+            ? `data-location-single-photo-id="${escapeAttr(singlePhotoId)}" aria-label="Open ${escapeAttr(`${group.title} photo`)}"`
+            : `aria-expanded="${isExpanded ? "true" : "false"}" aria-controls="location-group-${escapeAttr(slugify(groupKey))}"`}
         >
           <span class="location-type-latest">
             ${image ? `<img src="${escapeAttr(image)}" alt="${escapeAttr(`${group.title} most recent photo`)}">` : '<span class="location-type-fallback">No photo</span>'}
@@ -2241,12 +2455,12 @@
             <strong>${escapeHtml(group.title)}</strong>
             <span class="location-type-meta">
               <span>${escapeHtml(photoCount)}</span>
-              <span aria-hidden="true">${isExpanded ? "−" : "+"}</span>
+              <span aria-hidden="true">${singlePhotoId ? "↗" : (isExpanded ? "−" : "+")}</span>
             </span>
           </span>
         </button>
         ${
-          isExpanded
+          isExpanded && !singlePhotoId
             ? `<div class="location-type-archive" id="location-group-${escapeAttr(slugify(groupKey))}">
                 ${remaining.length
                   ? `<div class="photo-grid location-group-photo-grid">${remaining.map((photo) => renderPhotoCard(photo, "map")).join("")}</div>`
@@ -2264,6 +2478,7 @@
     const latest = group.photos[0];
     const image = latest?.thumbnail || latest?.image || "";
     const remaining = group.photos.slice(1);
+    const singlePhotoId = group.photos.length === 1 && latest?.id ? latest.id : "";
     const logo = group.logo
       ? `<img class="location-group-logo" src="${escapeAttr(group.logo)}" alt="${escapeAttr(`${group.title} logo`)}">`
       : "";
@@ -2273,8 +2488,9 @@
           class="location-group-toggle"
           type="button"
           data-location-group-key="${escapeAttr(groupKey)}"
-          aria-expanded="${isExpanded ? "true" : "false"}"
-          aria-controls="location-group-${escapeAttr(slugify(groupKey))}"
+          ${singlePhotoId
+            ? `data-location-single-photo-id="${escapeAttr(singlePhotoId)}" aria-label="Open ${escapeAttr(`${group.title} photo`)}"`
+            : `aria-expanded="${isExpanded ? "true" : "false"}" aria-controls="location-group-${escapeAttr(slugify(groupKey))}"`}
         >
           <span class="location-group-latest">
             ${image ? `<img src="${escapeAttr(image)}" alt="${escapeAttr(`${group.title} most recent photo`)}">` : '<span class="location-group-fallback">No photo</span>'}
@@ -2285,7 +2501,7 @@
             <span>${escapeHtml(displayPhotoDate(latest))} · ${group.photos.length} photo${group.photos.length === 1 ? "" : "s"}</span>
           </span>
           ${logo}
-          <span class="location-group-chevron" aria-hidden="true">${isExpanded ? "−" : "+"}</span>
+          <span class="location-group-chevron" aria-hidden="true">${singlePhotoId ? "↗" : (isExpanded ? "−" : "+")}</span>
         </button>
         ${
           isExpanded
@@ -2351,8 +2567,9 @@
       return;
     }
 
-    const photos = recentPhotos(RECENT_PHOTO_LIMIT);
+    const photos = recentPhotos(state.recentPhotoLimit);
     els.recentPhotosCount.textContent = `${photos.length} photo${photos.length === 1 ? "" : "s"}`;
+    els.recentPhotosStrip.style.setProperty("--recent-columns", String(Math.max(1, photos.length)));
 
     if (!photos.length) {
       els.recentPhotosStrip.innerHTML = '<div class="empty-state compact">Add dated photos to populate recent frames.</div>';
@@ -2360,11 +2577,17 @@
     }
 
     els.recentPhotosStrip.innerHTML = photos
-      .map((photo) => {
+      .map((photo, index) => {
         return `
-          <button class="recent-photo-card" type="button" data-photo-id="${escapeAttr(photo.id)}" data-photo-context="recent">
+          <button
+            class="recent-photo-card"
+            type="button"
+            data-photo-id="${escapeAttr(photo.id)}"
+            data-photo-context="recent"
+            style="--dex-delay: ${Math.min(index, 7) * 55}ms"
+          >
             ${renderResponsivePhotoImage(photo, `${photoSubjectLabel(photo)} at ${photo.locationName}`, {
-              sizes: "(max-width: 760px) 46vw, 360px"
+              sizes: "(max-width: 520px) 50vw, (max-width: 900px) 33vw, 20vw"
             })}
             <span>
               <strong>${escapeHtml(photoSubjectLabel(photo))}</strong>
@@ -2374,6 +2597,75 @@
         `;
       })
       .join("");
+
+    ensureRecentPhotoSizing();
+  }
+
+  function ensureRecentPhotoSizing() {
+    if (!els.recentPhotosStrip) {
+      return;
+    }
+
+    if (!state.recentPhotoResizeObserver && "ResizeObserver" in window) {
+      state.recentPhotoResizeObserver = new ResizeObserver(() => updateRecentPhotoLimit());
+      state.recentPhotoResizeObserver.observe(els.recentPhotosStrip);
+    }
+    window.requestAnimationFrame(updateRecentPhotoLimit);
+  }
+
+  function updateRecentPhotoLimit() {
+    if (!els.recentPhotosStrip || els.recentPhotosStrip.offsetParent === null) {
+      return;
+    }
+
+    const width = els.recentPhotosStrip.getBoundingClientRect().width;
+    if (!width) {
+      return;
+    }
+
+    const minimumCardWidth = width < 520 ? 155 : width < 820 ? 190 : 230;
+    const gap = 8;
+    const nextLimit = Math.max(1, Math.min(RECENT_PHOTO_LIMIT, Math.floor((width + gap) / (minimumCardWidth + gap))));
+    if (nextLimit === state.recentPhotoLimit) {
+      return;
+    }
+
+    state.recentPhotoLimit = nextLimit;
+    renderRecentPhotos();
+  }
+
+  function renderDexHero() {
+    if (!els.dexHeroMedia || !els.dexHeroFeature) {
+      return;
+    }
+
+    const latest = recentPhotos(1)[0] || null;
+    const countryCount = unique(state.data.aircraft.flatMap((entry) => entry.countries || [])).length;
+    els.dexHeroAircraftCount.textContent = String(state.data.aircraft.length);
+    els.dexHeroPhotoCount.textContent = String(state.data.photos.length);
+    els.dexHeroCountryCount.textContent = String(countryCount);
+
+    if (!latest) {
+      els.dexHeroMedia.innerHTML = '<span class="dex-hero-media-fallback"></span>';
+      els.dexHeroFeature.innerHTML = '<p>No dated frames yet</p>';
+      els.dexHeroAction.hidden = true;
+      return;
+    }
+
+    els.dexHeroMedia.innerHTML = renderResponsivePhotoImage(latest, "", {
+      sizes: "100vw",
+      eager: true
+    });
+    els.dexHeroFeature.innerHTML = `
+      <span>Newest in the archive</span>
+      <strong>${escapeHtml(photoSubjectLabel(latest))}</strong>
+      <small>${escapeHtml(latest.locationName)} · ${escapeHtml(displayPhotoDate(latest))}</small>
+    `;
+    els.dexHeroAction.hidden = false;
+    els.dexHeroAction.dataset.photoId = latest.id;
+    els.dexHeroAction.dataset.photoContext = "recent";
+    els.dexHeroAction.innerHTML = 'View latest frame <span aria-hidden="true">↗</span>';
+    els.dexHeroAction.setAttribute("aria-label", `Open latest frame: ${photoSubjectLabel(latest)} at ${latest.locationName}`);
   }
 
   function renderStatsDashboard() {
@@ -2412,6 +2704,24 @@
         ${renderCountryDistribution(countryCounts)}
       </div>
     `;
+  }
+
+  function renderStatsArchiveHero() {
+    if (!els.statsHeroMedia) {
+      return;
+    }
+
+    const collectionStats = collectionStatsSummary();
+    const sortedPhotos = recentPhotos(state.data.photos.length)
+      .filter((photo) => photo.image || photo.thumbnail);
+    const heroPhoto = sortedPhotos[2] || sortedPhotos[0] || null;
+
+    els.statsHeroPhotoCount.textContent = String(collectionStats.photoCount);
+    els.statsHeroAircraftCount.textContent = String(collectionStats.aircraftTypeCount);
+    els.statsHeroLocationCount.textContent = String(collectionStats.locationCount);
+    els.statsHeroMedia.innerHTML = heroPhoto
+      ? renderResponsivePhotoImage(heroPhoto, "", { sizes: "100vw", eager: true })
+      : '<span class="stats-archive-media-fallback"></span>';
   }
 
   function statsDashboardPair(primaryLabel, primaryValue, secondaryLabel, secondaryValue, detail) {
@@ -2569,24 +2879,41 @@
       return;
     }
 
-    const allSquadrons = collectSquadrons();
-    const squadrons = filterSquadrons(allSquadrons);
-    const countLabel = `${squadrons.length} of ${allSquadrons.length} squadron${allSquadrons.length === 1 ? "" : "s"}`;
-    els.squadronPageCount.textContent = countLabel;
-    renderSquadronFilters(allSquadrons, squadrons);
+    const squadrons = collectSquadrons();
+    renderSquadronArchiveHero(squadrons);
     renderSquadronCountryRail(squadrons);
 
-    if (!allSquadrons.length) {
+    if (!squadrons.length) {
       els.squadronLogoGrid.innerHTML = '<div class="empty-state compact">Add squadron entries to populate this page.</div>';
       return;
     }
 
-    if (!squadrons.length) {
-      els.squadronLogoGrid.innerHTML = '<div class="empty-state compact">No squadrons match this wall filter.</div>';
+    els.squadronLogoGrid.innerHTML = renderSquadronCountrySections(squadrons);
+  }
+
+  function renderSquadronArchiveHero(squadrons) {
+    if (!els.squadronHeroMedia) {
       return;
     }
 
-    els.squadronLogoGrid.innerHTML = renderSquadronCountrySections(squadrons);
+    const rankedSquadronPhotos = state.data.photos
+      .filter((photo) => photo.squadronName && normalizeUnitType(photo.unitType) === "squadron" && (photo.image || photo.thumbnail))
+      .sort(sortPhotos);
+    const latest = rankedSquadronPhotos[1]
+      || rankedSquadronPhotos[0]
+      || squadrons.map(squadronCardHero).find(Boolean)
+      || null;
+    const countryCount = unique(squadrons.map((squadron) => squadron.country || "Country not set")).length;
+    const photoCount = unique(squadrons.flatMap((squadron) => squadron.photoIds || [])).length;
+
+    els.squadronPageCount.textContent = String(squadrons.length);
+    els.squadronPageCount.setAttribute("aria-label", `${squadrons.length} squadrons`);
+    els.squadronHeroCountryCount.textContent = String(countryCount);
+    els.squadronHeroPhotoCount.textContent = String(photoCount);
+
+    els.squadronHeroMedia.innerHTML = latest
+      ? renderResponsivePhotoImage(latest, "", { sizes: "100vw", eager: true })
+      : '<span class="squadron-archive-media-fallback"></span>';
   }
 
   function renderAirshowsPage() {
@@ -2598,7 +2925,7 @@
     if (state.selectedAirshowId && !airshows.some((airshow) => airshow.id === state.selectedAirshowId)) {
       state.selectedAirshowId = null;
     }
-    els.airshowPageCount.textContent = `${airshows.length} event${airshows.length === 1 ? "" : "s"}`;
+    renderAirshowArchiveHero(airshows);
 
     if (!airshows.length) {
       els.airshowTimeline.innerHTML = '<div class="empty-state">Tag photos with an airshow or event name to build this timeline.</div>';
@@ -2608,21 +2935,57 @@
     els.airshowTimeline.innerHTML = airshows.map(renderAirshowTimelineItem).join("");
   }
 
-  function renderAirshowTimelineItem(airshow) {
+  function renderAirshowArchiveHero(airshows) {
+    if (!els.airshowHeroMedia) {
+      return;
+    }
+
+    const eventPhotoSets = airshows.map((airshow) => ({ airshow, photos: photosForAirshow(airshow) }));
+    const eventHeroIds = new Set(
+      eventPhotoSets
+        .map(({ airshow, photos: eventPhotos }) => airshowHeroPhoto(airshow, eventPhotos)?.id)
+        .filter(Boolean)
+    );
+    const photos = unique(airshows.flatMap((airshow) => airshow.photoIds || []))
+      .map((photoId) => state.photoById.get(photoId))
+      .filter(Boolean);
+    const hero = photos
+      .filter((photo) => !eventHeroIds.has(photo.id) && (photo.image || photo.thumbnail))
+      .sort(sortPhotos)[0]
+      || eventPhotoSets.map(({ airshow, photos: eventPhotos }) => airshowHeroPhoto(airshow, eventPhotos)).find(Boolean)
+      || null;
+    const locationCount = unique(photos.map((photo) => photo.pinId || photo.locationName)).length;
+    const years = airshows
+      .flatMap((airshow) => [airshow.firstDate, airshow.latestDate])
+      .map((date) => Number(String(date || "").slice(0, 4)))
+      .filter((year) => Number.isFinite(year) && year > 0)
+      .sort((a, b) => a - b);
+    const yearRange = years.length
+      ? years[0] === years[years.length - 1]
+        ? String(years[0])
+        : `${years[0]} - ${years[years.length - 1]}`
+      : "Archive dates unavailable";
+
+    els.airshowPageCount.textContent = String(airshows.length);
+    els.airshowPageCount.setAttribute("aria-label", `${airshows.length} airshow events`);
+    els.airshowHeroPhotoCount.textContent = String(photos.length);
+    els.airshowHeroLocationCount.textContent = String(locationCount);
+    els.airshowYearRange.textContent = `${yearRange} · Newest first`;
+    els.airshowHeroMedia.innerHTML = hero
+      ? renderResponsivePhotoImage(hero, "", { sizes: "100vw", eager: true })
+      : '<span class="airshow-archive-media-fallback"></span>';
+  }
+
+  function renderAirshowTimelineItem(airshow, index = 0) {
     const photos = photosForAirshow(airshow);
     const hero = airshowHeroPhoto(airshow, photos);
-    const otherPhotos = photos.filter((photo) => !hero || photo.id !== hero.id).sort(sortPhotosOldest);
-    const photoGroups = airshowPhotoGroups(otherPhotos);
-    const isExpanded = airshow.id === state.selectedAirshowId;
     const date = airshow.latestDate || airshow.firstDate || "";
     const cover = hero ? hero.image || hero.thumbnail || "" : "";
     const latestLabel = date ? formatDisplayDate(date) : "Date unknown";
-    const activeClass = isExpanded ? " is-expanded" : "";
     const identityMarks = renderAirshowIdentityMarks(photos);
-    const actionLabel = isExpanded ? "Hide event photos" : "Show event photos";
 
     return `
-      <article class="airshow-timeline-item${activeClass}" id="airshow-${escapeAttr(airshow.id)}">
+      <article class="airshow-timeline-item" id="airshow-${escapeAttr(airshow.id)}">
         <div class="airshow-timeline-marker" aria-hidden="true">
           <span></span>
           <time datetime="${escapeAttr(date)}">${escapeHtml(latestLabel)}</time>
@@ -2631,14 +2994,14 @@
           class="airshow-timeline-card"
           type="button"
           data-airshow-id="${escapeAttr(airshow.id)}"
-          aria-expanded="${isExpanded ? "true" : "false"}"
-          aria-controls="airshow-gallery-${escapeAttr(airshow.id)}"
-          aria-label="${escapeAttr(`${airshow.name}: ${photos.length} photo${photos.length === 1 ? "" : "s"}. ${actionLabel}.`)}"
+          aria-label="${escapeAttr(`Open ${airshow.name}: ${photos.length} photo${photos.length === 1 ? "" : "s"}.`)}"
+          style="--airshow-delay: ${Math.min(index, 8) * 55}ms"
         >
           ${cover ? renderResponsivePhotoImage(hero, `${airshow.name} hero photo`, {
-            sizes: "(max-width: 760px) 100vw, 720px"
+            sizes: "(max-width: 760px) 100vw, 50vw"
           }) : '<span class="airshow-timeline-placeholder">No event photo</span>'}
           <span class="airshow-timeline-scrim" aria-hidden="true"></span>
+          <span class="airshow-card-index" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
           <span class="airshow-timeline-content">
             <span class="eyebrow">${escapeHtml(latestLabel)}</span>
             <strong>${escapeHtml(airshow.name)}</strong>
@@ -2648,25 +3011,66 @@
             </span>
           </span>
         </button>
-        ${
-          isExpanded
-            ? `<section class="airshow-gallery" id="airshow-gallery-${escapeAttr(airshow.id)}">
-                <div class="detail-section-heading">
-                  <div>
-                    <p class="eyebrow">Event archive</p>
-                    <h2>${escapeHtml(airshow.name)}</h2>
-                  </div>
-                  <span class="count-pill">${otherPhotos.length}</span>
-                </div>
-                ${
-                  photoGroups.length
-                    ? renderAirshowPhotoGroups(photoGroups)
-                    : '<div class="empty-state compact">The featured hero is the only frame in this event.</div>'
-                }
-              </section>`
-            : ""
-        }
       </article>
+    `;
+  }
+
+  function renderAirshowDetail() {
+    if (!els.airshowDetail) {
+      return;
+    }
+
+    const airshow = state.airshowById.get(state.selectedAirshowId);
+    if (!airshow) {
+      els.airshowDetail.innerHTML = '<div class="empty-state">Choose an event from the Airshows archive to open its field report.</div>';
+      return;
+    }
+
+    const photos = photosForAirshow(airshow);
+    const hero = airshowHeroPhoto(airshow, photos) || photos[0] || null;
+    const heroImage = hero ? hero.image || hero.thumbnail || "" : "";
+    const dateStart = airshow.firstDate || airshow.latestDate || "";
+    const dateEnd = airshow.latestDate || airshow.firstDate || "";
+    const dateLabel = dateStart && dateEnd && dateStart !== dateEnd
+      ? `${formatDisplayDate(dateStart)} - ${formatDisplayDate(dateEnd)}`
+      : dateStart
+        ? formatDisplayDate(dateStart)
+        : "Date unknown";
+    const locations = unique(photos.map((photo) => photo.locationName));
+    const units = unique(photos.map((photo) => photo.squadronName));
+    const countries = unique(photos.map((photo) => photo.country));
+    const groups = airshowPhotoGroups(photos);
+
+    els.airshowDetail.innerHTML = `
+      ${renderDetailHero({
+        backView: "airshowsView",
+        backLabel: "Airshows",
+        eyebrow: "Event field report",
+        title: airshow.name,
+        description: `${dateLabel} · ${photos.length} photographed frame${photos.length === 1 ? "" : "s"}`,
+        image: heroImage,
+        alt: `${airshow.name} hero photo`,
+        actions: renderFieldGuideActions("Airshow field report"),
+        className: "airshow-field-guide-hero"
+      })}
+
+      <div class="entry-stat-grid" aria-label="Airshow statistics">
+        ${statTile("Photos", photos.length)}
+        ${statTile("Locations", locations.length)}
+        ${statTile("Units", units.length)}
+        ${statTile("Countries", countries.length)}
+      </div>
+
+      <section class="detail-photo-section airshow-detail-archive">
+        <div class="detail-section-heading">
+          <div>
+            <p class="eyebrow">Complete event archive</p>
+            <h2>All frames</h2>
+          </div>
+          <span class="count-pill">${photos.length}</span>
+        </div>
+        ${groups.length ? renderAirshowPhotoGroups(groups) : '<div class="empty-state">No event photos found.</div>'}
+      </section>
     `;
   }
 
@@ -2802,31 +3206,6 @@
     return `${photoSubjectLabel(a)} ${a.locationName}`.localeCompare(`${photoSubjectLabel(b)} ${b.locationName}`);
   }
 
-  function filterSquadrons(squadrons) {
-    return squadrons.filter((squadron) => {
-      const photos = photosForSquadronRecord(squadron);
-      return !state.squadronPhotographedOnly || photos.length > 0;
-    });
-  }
-
-  function renderSquadronFilters(allSquadrons, filteredSquadrons) {
-    if (!els.squadronFilters) {
-      return;
-    }
-    els.squadronFilters.innerHTML = `
-      <button
-        class="squadron-photo-filter${state.squadronPhotographedOnly ? " is-active" : ""}"
-        type="button"
-        data-squadron-photographed-toggle
-        aria-pressed="${state.squadronPhotographedOnly ? "true" : "false"}"
-      >
-        <span aria-hidden="true">◉</span>
-        Photographed only
-      </button>
-      <span class="squadron-filter-count">${filteredSquadrons.length} shown</span>
-    `;
-  }
-
   function renderSquadronCountryRail(squadrons) {
     if (!els.squadronCountryRail) {
       return;
@@ -2945,7 +3324,7 @@
       });
   }
 
-  function renderSquadronLogoCard(squadron) {
+  function renderSquadronLogoCard(squadron, index = 0) {
     const logoContent = squadron.logo
       ? `<img src="${escapeAttr(squadron.logo)}" alt="${escapeAttr(squadron.name)} logo">`
       : `<span class="squadron-logo-fallback">${escapeHtml(initials(squadron.name))}</span>`;
@@ -2957,16 +3336,24 @@
     const mediaClass = heroImage ? " has-hero" : "";
 
     return `
-      <button class="squadron-logo-card${activeClass}" type="button" data-squadron-id="${escapeAttr(squadron.id)}" title="${escapeAttr(squadron.name)}">
+      <button
+        class="squadron-logo-card${activeClass}"
+        type="button"
+        data-squadron-id="${escapeAttr(squadron.id)}"
+        style="--squadron-delay: ${Math.min(index, 10) * 44}ms"
+        aria-label="Open ${escapeAttr(squadron.name)} squadron record"
+        title="${escapeAttr(squadron.name)}"
+      >
         <div class="squadron-logo-media${mediaClass}">
           ${heroImage ? renderResponsivePhotoImage(hero, `${squadron.name} hero photo`, {
             className: "squadron-card-hero",
-            sizes: "(max-width: 520px) 50vw, (max-width: 1040px) 33vw, 320px"
+            sizes: "(max-width: 760px) 100vw, (max-width: 1040px) 50vw, 33vw"
           }) : ""}
           <span class="squadron-card-logo${heroImage ? "" : " is-standalone"}">
             ${logoContent}
           </span>
         </div>
+        <span class="squadron-card-index" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
         <div class="squadron-logo-body">
           <p class="eyebrow">${escapeHtml(squadron.country || "Country not set")}</p>
           <h2>${escapeHtml(squadron.name)}</h2>
@@ -3379,19 +3766,28 @@
     }
 
     const family = state.dexFamilyFilter;
-    const label = AIRCRAFT_FAMILY_LABELS.get(family);
-    if (!label) {
-      els.dexFamilyFilter.hidden = true;
-      els.dexFamilyFilter.innerHTML = "";
-      return;
-    }
-
     els.dexFamilyFilter.hidden = false;
     els.dexFamilyFilter.innerHTML = `
-      <span>Family filter</span>
-      <button type="button" data-clear-dex-family-filter aria-label="Clear ${escapeAttr(label)} family filter">
-        ${escapeHtml(label)} <span aria-hidden="true">×</span>
-      </button>
+      <span class="dex-family-label">Airframe class</span>
+      <span class="dex-family-options">
+        <button
+          class="${family ? "" : "is-active"}"
+          type="button"
+          data-clear-dex-family-filter
+          aria-pressed="${family ? "false" : "true"}"
+        >All <small>${state.data.aircraft.length}</small></button>
+        ${AIRCRAFT_FAMILY_DEFINITIONS.map((definition) => {
+          const count = state.data.aircraft.filter((entry) => aircraftFamilyIdForEntry(entry) === definition.id).length;
+          return `
+            <button
+              class="${family === definition.id ? "is-active" : ""}"
+              type="button"
+              data-dex-family-id="${escapeAttr(definition.id)}"
+              aria-pressed="${family === definition.id ? "true" : "false"}"
+            >${escapeHtml(definition.label)} <small>${count}</small></button>
+          `;
+        }).join("")}
+      </span>
     `;
   }
 
@@ -3417,7 +3813,7 @@
     }
 
     els.aircraftGrid.innerHTML = entries
-      .map((entry) => {
+      .map((entry, index) => {
         const cover = state.photoById.get(entry.coverPhoto);
         const stats = aircraftStats(entry);
         const countries = unique(entry.countries).slice(0, 3);
@@ -3425,27 +3821,45 @@
         const coverImage = cover ? cover.thumbnail || cover.image : "";
         const unitCount = stats.unitCount;
         const unitLabel = entryUnitNoun(entry, unitCount);
+        const familyId = aircraftFamilyIdForEntry(entry);
+        const familyLabel = AIRCRAFT_FAMILY_LABELS.get(familyId) || "Aircraft";
+        const layoutClass = index === 0
+          ? " is-feature"
+          : index % 11 === 5 || index % 11 === 8
+            ? " is-wide"
+            : "";
+        const catalogueNumber = String(index + 1).padStart(3, "0");
 
         return `
-          <button class="aircraft-card${activeClass}" type="button" data-aircraft-id="${escapeAttr(entry.id)}">
+          <button
+            class="aircraft-card${layoutClass}${activeClass}"
+            type="button"
+            data-aircraft-id="${escapeAttr(entry.id)}"
+            style="--dex-delay: ${Math.min(index, 12) * 42}ms"
+            aria-label="Open ${escapeAttr(entry.typeName)} field guide"
+          >
             <div class="aircraft-cover">
               ${
                 coverImage
                   ? renderResponsivePhotoImage(cover, entry.typeName, {
-                      sizes: "(max-width: 520px) 50vw, (max-width: 1040px) 33vw, 280px"
+                      sizes: "(max-width: 620px) 100vw, (max-width: 1040px) 50vw, 34vw"
                     })
                   : '<div class="empty-cover">No photo</div>'
               }
             </div>
+            <span class="aircraft-card-index">${catalogueNumber}</span>
             <div class="aircraft-body">
-              <strong class="aircraft-title">${escapeHtml(entry.typeName)}</strong>
-              <span>${unitCount} ${unitLabel} - ${stats.photoCount} photo${stats.photoCount === 1 ? "" : "s"}</span>
-              <span class="aircraft-stat-row">
-                <span><strong>${stats.locationCount}</strong> Locations</span>
-                <span><strong>${escapeHtml(stats.latestDate ? formatDisplayDate(stats.latestDate) : "None")}</strong> Latest</span>
+              <span class="aircraft-card-kicker">
+                <span>${escapeHtml(familyLabel)}</span>
+                <span>${stats.photoCount} frame${stats.photoCount === 1 ? "" : "s"}</span>
               </span>
-              <span class="badge-row">
-                ${countries.map((country) => `<span class="badge">${escapeHtml(country)}</span>`).join("")}
+              <strong class="aircraft-title">${formatAircraftCardTitle(entry.typeName)}</strong>
+              <span class="aircraft-card-meta">
+                ${unitCount} ${unitLabel} · ${stats.locationCount} location${stats.locationCount === 1 ? "" : "s"}
+              </span>
+              <span class="aircraft-card-footer">
+                <span>${countries.map((country) => escapeHtml(country)).join(" / ") || "Country not set"}</span>
+                <span aria-hidden="true">↗</span>
               </span>
             </div>
           </button>
@@ -3741,22 +4155,16 @@
     if (!airshow) {
       return;
     }
-    const isDeselecting = state.selectedAirshowId === airshowId;
-    state.selectedAirshowId = isDeselecting ? null : airshowId;
-    setActiveTab("airshowsView", { updateHash: false });
-    renderAirshowsPage();
+    state.selectedAirshowId = airshowId;
+    setActiveTab("airshowDetailView", { updateHash: false });
+    renderAirshowDetail();
 
     if (options.updateHash !== false) {
-      if (state.selectedAirshowId) {
-        updateDeepLink("airshow", airshowId);
-      } else {
-        updateDeepLink("view", "airshows");
-      }
+      updateDeepLink("airshow", airshowId);
     }
 
-    if (state.selectedAirshowId && options.scroll !== false) {
-      const target = document.getElementById(`airshow-${airshowId}`);
-      target?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (options.scroll !== false) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }
 
@@ -3847,7 +4255,14 @@
   }
 
   function mapPinLabel(pin) {
-    return isMobileMapLayout() && pin.icao ? pin.icao : pin.name;
+    if (!isMobileMapLayout()) {
+      return pin.name;
+    }
+    if (pin.icao) {
+      return pin.icao;
+    }
+    const name = String(pin.name || "Location");
+    return name.length > 18 ? `${name.slice(0, 15)}...` : name;
   }
 
   function mapLeaderIcon(callout) {
@@ -3862,7 +4277,7 @@
   function mapLabelIcon(pin, isActive, preview, callout) {
     return window.L.divIcon({
       className: "spotterdex-marker-label-shell",
-      html: renderMapMarkerLabel(mapPinLabel(pin), preview, callout, isActive),
+      html: renderMapMarkerLabel(mapPinLabel(pin), pin.name, preview, callout, isActive),
       iconSize: [0, 0],
       iconAnchor: [0, 0]
     });
@@ -3884,18 +4299,21 @@
     `;
   }
 
-  function renderMapMarkerLabel(title, preview, callout, isActive = false) {
-    const assets = [
-      preview.families.length ? renderMapMarkerFamilies(preview.families) : "",
-      preview.families.length && preview.logos.length ? '<span class="map-marker-divider" aria-hidden="true">|</span>' : "",
-      preview.logos.length ? renderMapMarkerLogos(preview.logos) : ""
-    ]
-      .filter(Boolean)
-      .join("");
+  function renderMapMarkerLabel(title, fullTitle, preview, callout, isActive = false) {
+    const assets = isMobileMapLayout()
+      ? ""
+      : [
+          preview.families.length ? renderMapMarkerFamilies(preview.families) : "",
+          preview.families.length && preview.logos.length ? '<span class="map-marker-divider" aria-hidden="true">|</span>' : "",
+          preview.logos.length ? renderMapMarkerLogos(preview.logos) : ""
+        ]
+          .filter(Boolean)
+          .join("");
     return `
       <span
         class="spotterdex-marker-label${isActive ? " is-active" : ""}"
         style="--label-left: ${callout.labelLeft}px; --label-top: ${callout.labelTop}px; --label-width: ${callout.width}px; --label-height: ${callout.height}px;"
+        title="${escapeAttr(fullTitle)}"
       >
         <span class="spotterdex-marker-title">${escapeHtml(title)}</span>
         ${assets ? `<span class="map-marker-assets">${assets}</span>` : ""}
@@ -4384,12 +4802,20 @@
   }
 
   function showViewerActionStatus(button, label) {
-    const original = button.dataset.originalLabel || button.textContent;
-    button.dataset.originalLabel = original;
-    button.textContent = label;
-    window.setTimeout(() => {
-      button.textContent = original;
-    }, 1800);
+    const originalLabel = button.dataset.originalAriaLabel || button.getAttribute("aria-label") || "";
+    button.dataset.originalAriaLabel = originalLabel;
+    button.setAttribute("aria-label", label);
+    button.setAttribute("title", label);
+    button.dataset.statusLabel = label;
+    button.classList.add("has-status");
+    window.clearTimeout(Number(button.dataset.statusTimer) || 0);
+    button.dataset.statusTimer = String(window.setTimeout(() => {
+      button.setAttribute("aria-label", originalLabel);
+      button.setAttribute("title", originalLabel);
+      button.classList.remove("has-status");
+      delete button.dataset.statusLabel;
+      delete button.dataset.statusTimer;
+    }, 1800));
   }
 
   function toggleViewerFullscreen() {
@@ -4407,8 +4833,10 @@
       return;
     }
     const isFullscreen = document.fullscreenElement === els.photoViewer;
-    els.viewerFullscreenButton.textContent = isFullscreen ? "Exit full" : "Full";
-    els.viewerFullscreenButton.setAttribute("aria-label", isFullscreen ? "Exit fullscreen" : "Enter fullscreen");
+    const label = isFullscreen ? "Exit fullscreen" : "Enter fullscreen";
+    els.viewerFullscreenButton.setAttribute("aria-label", label);
+    els.viewerFullscreenButton.setAttribute("title", label);
+    els.viewerFullscreenButton.setAttribute("aria-pressed", String(isFullscreen));
   }
 
   function prefetchAdjacentViewerPhotos() {
@@ -5407,6 +5835,12 @@
       };
       return replacements[char];
     });
+  }
+
+  function formatAircraftCardTitle(value) {
+    // Aircraft designations are units (for example, "E-4B"), so keep them
+    // intact while still allowing the title to wrap naturally at spaces.
+    return escapeHtml(value).replace(/-/g, "\u2011");
   }
 
   function escapeAttr(value) {

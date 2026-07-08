@@ -1,0 +1,56 @@
+squadron_name: 1st Attack Helicopter Squadron
+country: Japan
+aircraft_type: Boeing AH-64DJP Apache
+photos:
+- path: DSC05612-Enhanced-NR.jpeg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: AH-64DJP Apache at Tsuiki Air Base
+  airshow: Tsuiki Air Show 2023
+- path: DSC05534-Enhanced-NR.jpeg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: AH-64DJP Apache at Tsuiki Air Base
+  airshow: Tsuiki Air Show 2023
+- path: DSC05489-Enhanced-NR.jpeg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: AH-64DJP Apache at Tsuiki Air Base
+  airshow: Tsuiki Air Show 2023
+- path: DSC05377-Enhanced-NR.jpeg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: AH-64DJP Apache at Tsuiki Air Base
+  airshow: Tsuiki Air Show 2023
+- path: DSC05412-Enhanced-NR.jpeg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: AH-64DJP Apache at Tsuiki Air Base
+  airshow: Tsuiki Air Show 2023
+- path: DSC05398-Enhanced-NR.jpeg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: AH-64DJP Apache at Tsuiki Air Base
+  airshow: Tsuiki Air Show 2023
+- path: DSC05455-Enhanced-NR.jpeg
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
+  caption: AH-64DJP Apache at Tsuiki Air Base
+  airshow: Tsuiki Air Show 2023
+- path: DSC05490-Enhanced-NR.jpeg
+  location: Chitose Air Base
+  pin_id: chitose-air-base
+  caption: AH-64DJP Apache at Tsuiki Air Base
+  airshow: Tsuiki Air Show 2023
+- path: DSC05622-Enhanced-NR.jpeg
+  location: Chitose Air Base
+  pin_id: chitose-air-base
+  caption: AH-64DJP Apache at Tsuiki Air Base
+  airshow: Tsuiki Air Show 2023
+- path: DSC05547-Enhanced-NR.jpeg
+  location: Chitose Air Base
+  pin_id: chitose-air-base
+  caption: AH-64DJP Apache at Tsuiki Air Base
+  airshow: Tsuiki Air Show 2023
+aircraft_family: helicopter
+squadron_logo: logos/1stbattleheliunit.png

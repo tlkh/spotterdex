@@ -12,6 +12,10 @@ photos:
   pin_id: tsuiki-air-base
   caption: KC-767J on the ground at Tsuiki Air Base
   airshow: Tsuiki Air Show 2023
+- path: DSC09753-Enhanced-NR.jpeg
+  location: Gifu Air Base
+  pin_id: gifu-air-base
+  caption: KC-767J landing at Gifu Air Base
 aircraft_family: heavy
 squadron_logo: logos/404_logo.png
 squadron_hero: DSC09722-Enhanced-NR.jpeg
