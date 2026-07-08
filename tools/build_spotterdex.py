@@ -33,12 +33,13 @@ IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp"}
 AIRCRAFT_FAMILIES = {"fighter", "heavy", "helicopter", "light", "medium"}
 # The published site favors fast page loads over archival-grade derivatives. Source
 # images remain untouched in raw_assets; these settings only affect GitHub Pages output.
-FULL_JPEG_QUALITY = 76
+FULL_JPEG_QUALITY = 72
 FULL_JPEG_SUBSAMPLING = 2  # 4:2:0 provides a substantial reduction for web viewing.
-THUMB_JPEG_QUALITY = 72
+THUMB_JPEG_QUALITY = 64
 THUMB_JPEG_SUBSAMPLING = 2
-FULL_JPEG_PROFILE = f"spotterdex-full-jpeg-v3-q{FULL_JPEG_QUALITY}-s{FULL_JPEG_SUBSAMPLING}"
-THUMB_JPEG_PROFILE = f"spotterdex-thumb-jpeg-v3-q{THUMB_JPEG_QUALITY}-s{THUMB_JPEG_SUBSAMPLING}"
+LOGO_PNG_COLORS = 256
+FULL_JPEG_PROFILE = f"spotterdex-full-jpeg-v4-q{FULL_JPEG_QUALITY}-s{FULL_JPEG_SUBSAMPLING}"
+THUMB_JPEG_PROFILE = f"spotterdex-thumb-jpeg-v4-q{THUMB_JPEG_QUALITY}-s{THUMB_JPEG_SUBSAMPLING}"
 EXIF_TAGS = {value: key for key, value in ExifTags.TAGS.items()}
 PROGRESS_LINE_MODE = False
 
@@ -2197,7 +2198,15 @@ def publish_squadron_logo(
                 image.save(output_path, "JPEG", quality=90, optimize=True)
             elif suffix == ".png" or image.mode == "RGBA":
                 output_path = dest_path.with_suffix(".png")
-                image.save(output_path, "PNG", optimize=True)
+                # Logos have relatively few visually significant colors. An adaptive
+                # palette retains transparency and native dimensions while avoiding
+                # the much larger true-color RGBA representation on the published site.
+                palette_image = image.convert("RGBA").quantize(
+                    colors=LOGO_PNG_COLORS,
+                    method=Image.Quantize.FASTOCTREE,
+                    dither=Image.Dither.FLOYDSTEINBERG,
+                )
+                palette_image.save(output_path, "PNG", optimize=True, compress_level=9)
             else:
                 output_path = dest_path.with_suffix(suffix)
                 image.save(output_path, optimize=True)
