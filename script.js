@@ -1227,7 +1227,9 @@
     leaderPane.style.pointerEvents = "none";
     const labelPane = state.map.createPane("spotterdexLabelPane");
     labelPane.style.zIndex = "650";
-    labelPane.style.pointerEvents = "auto";
+    // Let map gestures pass through the full-size pane. Individual label
+    // icons opt back into pointer events via .spotterdex-marker-label-shell.
+    labelPane.style.pointerEvents = "none";
     state.mapTrafficLayer = window.L.layerGroup().addTo(state.map);
     state.mapLeaderLayer = window.L.layerGroup().addTo(state.map);
     state.markerLayer = window.L.layerGroup().addTo(state.map);

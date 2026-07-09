@@ -2270,6 +2270,10 @@ h3 {
   pointer-events: auto !important;
 }
 
+.leaflet-spotterdexLabel-pane {
+  pointer-events: none;
+}
+
 .spotterdex-marker-leader-shell {
   display: block !important;
   width: 0 !important;
