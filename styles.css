@@ -8002,4 +8002,19 @@ button.location-unit-chip:focus-visible,
   #mapView .map-workspace.is-results-open #mapResults {
     visibility: visible;
   }
+
+  #mapView .leaflet-spotterdexLeader-pane,
+  #mapView .leaflet-spotterdexLabel-pane {
+    transition: opacity 100ms linear;
+  }
+
+  #mapView .world-map.is-map-zooming .leaflet-spotterdexLeader-pane,
+  #mapView .world-map.is-map-zooming .leaflet-spotterdexLabel-pane {
+    visibility: hidden;
+    opacity: 0;
+  }
+
+  #mapView .world-map.is-map-zooming .spotterdex-marker-label-shell {
+    pointer-events: none !important;
+  }
 }

@@ -73,6 +73,8 @@
     mapImageObserver: null,
     mapRefreshHandle: null,
     mapRefreshTimer: null,
+    mapCalloutRefreshHandle: null,
+    mapCalloutRefreshTimer: null,
     mapResultsRenderHandle: null,
     activePhotoIds: [],
     activePhotoIndex: 0,
@@ -1238,16 +1240,18 @@
       scrollWheelZoom: true,
       zoomControl: true,
       fadeAnimation: !mobileLayout,
-      zoomAnimation: !mobileLayout,
-      markerZoomAnimation: !mobileLayout,
-      inertia: !mobileLayout
+      zoomAnimation: true,
+      markerZoomAnimation: true,
+      zoomAnimationThreshold: 4,
+      inertia: true
     });
 
     window.L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
       keepBuffer: mobileLayout ? 1 : 2,
       updateWhenIdle: mobileLayout,
-      updateWhenZooming: !mobileLayout,
+      updateWhenZooming: true,
+      updateInterval: mobileLayout ? 180 : 200,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(state.map);
 
@@ -1265,11 +1269,27 @@
     state.mapLabelLayer = window.L.layerGroup().addTo(state.map);
     state.map.on("zoomstart", () => {
       state.mapZoomInProgress = true;
+      if (isMobileMapLayout()) {
+        window.cancelAnimationFrame(state.mapCalloutRefreshHandle);
+        window.clearTimeout(state.mapCalloutRefreshTimer);
+        els.worldMap.classList.add("is-map-zooming");
+      }
+    });
+    state.map.on("zoomend", () => {
+      state.mapZoomInProgress = false;
+      if (isMobileMapLayout()) {
+        scheduleMapCalloutRefresh();
+      } else {
+        refreshMapLayout();
+      }
     });
     state.map.on("moveend", () => {
-      const needsReflow = state.mapZoomInProgress || (!isMobileMapLayout() && mapCalloutsNeedReflow());
-      state.mapZoomInProgress = false;
-      if (needsReflow) {
+      if (state.mapZoomInProgress) {
+        return;
+      }
+      if (isMobileMapLayout()) {
+        scheduleMapCalloutRefresh();
+      } else if (mapCalloutsNeedReflow()) {
         refreshMapLayout();
       }
     });
@@ -1356,6 +1376,20 @@
     });
   }
 
+  function scheduleMapCalloutRefresh(delay = 160) {
+    if (!state.map || !Number.isFinite(state.map.getZoom())) {
+      return;
+    }
+    window.cancelAnimationFrame(state.mapCalloutRefreshHandle);
+    window.clearTimeout(state.mapCalloutRefreshTimer);
+    state.mapCalloutRefreshTimer = window.setTimeout(() => {
+      state.mapCalloutRefreshHandle = window.requestAnimationFrame(() => {
+        renderMapCallouts();
+        els.worldMap?.classList.remove("is-map-zooming");
+      });
+    }, delay);
+  }
+
   function renderPins(options = {}) {
     if (
       !state.map ||
@@ -1368,24 +1402,57 @@
       return;
     }
 
+    ensureMapPinMarkers();
+    renderMapCallouts();
+    renderMapTraffic(options.refreshTraffic);
+    if (!performance.getEntriesByName("spotterdex-map-ready").length) {
+      performance.mark("spotterdex-map-ready");
+    }
+  }
+
+  function ensureMapPinMarkers() {
+    const pins = state.enabledPins;
+    const hasEveryPin = state.markersByPinId.size === pins.length
+      && pins.every((pin) => state.markersByPinId.has(pin.id));
+    if (hasEveryPin) {
+      return;
+    }
+
     state.markerLayer.clearLayers();
+    state.markersByPinId = new Map();
+    pins.forEach((pin) => {
+      const marker = window.L.marker([pin.lat, pin.lon], {
+        icon: mapMarkerIcon(pin, pin.id === state.selectedPinId),
+        title: pin.name,
+        zIndexOffset: pin.id === state.selectedPinId ? 800 : 0
+      })
+        .on("click", () => selectPin(pin.id, { pan: false }))
+        .addTo(state.markerLayer);
+      state.markersByPinId.set(pin.id, marker);
+    });
+    state.activeMapMarkerId = state.selectedPinId;
+  }
+
+  function renderMapCallouts() {
     state.mapLeaderLayer.clearLayers();
     state.mapLabelLayer.clearLayers();
-    state.markersByPinId = new Map();
     state.mapLabelsByPinId = new Map();
-    const pins = state.enabledPins;
+    const pins = mapPinsForCallouts();
     const markerLayouts = mapMarkerLayouts(pins);
+    const combineMobileCallouts = isMobileMapLayout();
 
     markerLayouts.forEach((layout) => {
       const { pin, preview, callout } = layout;
-      window.L.marker([pin.lat, pin.lon], {
-        icon: mapLeaderIcon(callout),
-        interactive: false,
-        keyboard: false,
-        pane: "spotterdexLeaderPane"
-      }).addTo(state.mapLeaderLayer);
+      if (!combineMobileCallouts) {
+        window.L.marker([pin.lat, pin.lon], {
+          icon: mapLeaderIcon(callout),
+          interactive: false,
+          keyboard: false,
+          pane: "spotterdexLeaderPane"
+        }).addTo(state.mapLeaderLayer);
+      }
       const labelMarker = window.L.marker([pin.lat, pin.lon], {
-        icon: mapLabelIcon(pin, pin.id === state.selectedPinId, preview, callout),
+        icon: mapLabelIcon(pin, pin.id === state.selectedPinId, preview, callout, combineMobileCallouts),
         title: `Select ${pin.name}`,
         keyboard: true,
         pane: "spotterdexLabelPane",
@@ -1394,27 +1461,53 @@
         .on("click", () => selectPin(pin.id, { pan: false }))
         .addTo(state.mapLabelLayer);
       state.mapLabelsByPinId.set(pin.id, labelMarker);
-      const marker = window.L.marker([pin.lat, pin.lon], {
-        icon: mapMarkerIcon(pin, pin.id === state.selectedPinId),
-        title: pin.name,
-        zIndexOffset: pin.id === state.selectedPinId ? 800 : 0
-      })
-        .on("click", () => selectPin(pin.id, { pan: false }));
-
-      marker.addTo(state.markerLayer);
-      state.markersByPinId.set(pin.id, marker);
     });
     state.mapCalloutLayouts = markerLayouts.map((layout) => ({
       pinId: layout.pin.id,
       point: { x: layout.point.x, y: layout.point.y },
       bounds: layout.bounds
     }));
-    state.activeMapMarkerId = state.selectedPinId;
+  }
 
-    renderMapTraffic(options.refreshTraffic);
-    if (!performance.getEntriesByName("spotterdex-map-ready").length) {
-      performance.mark("spotterdex-map-ready");
+  function mapPinsForCallouts() {
+    if (!isMobileMapLayout() || !state.map) {
+      return state.enabledPins;
     }
+
+    const visibleBounds = state.map.getBounds().pad(0.22);
+    const pins = state.enabledPins.filter((pin) => visibleBounds.contains([pin.lat, pin.lon]));
+    const selectedPin = state.pinById.get(state.selectedPinId);
+    if (selectedPin && !pins.some((pin) => pin.id === selectedPin.id)) {
+      pins.push(selectedPin);
+    }
+    return declutterMobileCalloutPins(pins);
+  }
+
+  function declutterMobileCalloutPins(pins) {
+    const zoom = state.map.getZoom();
+    const minimumSeparation = zoom <= 3 ? 72 : zoom <= 5 ? 54 : zoom <= 7 ? 34 : 0;
+    if (!minimumSeparation) {
+      return pins;
+    }
+
+    const prioritized = pins.slice().sort((a, b) => {
+      if (a.id === state.selectedPinId) return -1;
+      if (b.id === state.selectedPinId) return 1;
+      const aTime = photosForPin(a)[0]?.sortTime || 0;
+      const bTime = photosForPin(b)[0]?.sortTime || 0;
+      return bTime - aTime || a.name.localeCompare(b.name);
+    });
+    const accepted = [];
+    const acceptedPoints = [];
+    prioritized.forEach((pin) => {
+      const point = state.map.latLngToContainerPoint([pin.lat, pin.lon]);
+      const overlaps = acceptedPoints.some((other) => Math.hypot(point.x - other.x, point.y - other.y) < minimumSeparation);
+      if (!overlaps || pin.id === state.selectedPinId) {
+        accepted.push(pin);
+        acceptedPoints.push(point);
+      }
+    });
+    return accepted;
   }
 
   function mapSizeKey() {
@@ -4259,6 +4352,7 @@
       refreshMapLayout();
     } else if (els.mapResults) {
       delete els.mapResults.dataset.pinId;
+      scheduleMapCalloutRefresh(120);
     }
 
     if (options.updateHash !== false) {
@@ -4489,10 +4583,10 @@
     });
   }
 
-  function mapLabelIcon(pin, isActive, preview, callout) {
+  function mapLabelIcon(pin, isActive, preview, callout, includeLeader = false) {
     return window.L.divIcon({
       className: "spotterdex-marker-label-shell",
-      html: renderMapMarkerLabel(mapPinLabel(pin), pin.name, preview, callout, isActive),
+      html: `${includeLeader ? renderMapLeader(callout) : ""}${renderMapMarkerLabel(mapPinLabel(pin), pin.name, preview, callout, isActive)}`,
       iconSize: [0, 0],
       iconAnchor: [0, 0]
     });
