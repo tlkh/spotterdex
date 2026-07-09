@@ -7958,6 +7958,10 @@ button.location-unit-chip:focus-visible,
     transition: none;
   }
 
+  body[data-page-view="mapView"] .leaflet-tile-pane {
+    filter: brightness(0.62) invert(1) contrast(0.9) hue-rotate(180deg) saturate(0.75);
+  }
+
   #mapView .map-workspace::after {
     display: none;
   }

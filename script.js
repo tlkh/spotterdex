@@ -1485,7 +1485,7 @@
 
   function declutterMobileCalloutPins(pins) {
     const zoom = state.map.getZoom();
-    const minimumSeparation = zoom <= 3 ? 72 : zoom <= 5 ? 54 : zoom <= 7 ? 34 : 0;
+    const minimumSeparation = zoom <= 3 ? 18 : zoom <= 5 ? 16 : zoom <= 7 ? 12 : 0;
     if (!minimumSeparation) {
       return pins;
     }
