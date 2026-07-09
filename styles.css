@@ -6107,8 +6107,9 @@ button.location-unit-chip:focus-visible,
   --map-archive-muted: rgba(245, 241, 233, 0.64);
   --map-archive-line: rgba(255, 255, 255, 0.14);
   --map-archive-gold: #d2b77c;
-  --map-archive-panel: rgba(13, 15, 16, 0.86);
+  --map-archive-panel: rgba(7, 7, 7, 0.8);
   --map-archive-panel-strong: rgba(13, 15, 16, 0.94);
+  --map-archive-panel-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
   color: var(--map-archive-ink);
 }
 
@@ -6129,9 +6130,10 @@ button.location-unit-chip:focus-visible,
   border: 1px solid var(--map-archive-line);
   border-radius: 2px;
   background: var(--map-archive-panel);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+  box-shadow: var(--map-archive-panel-shadow);
   color: var(--map-archive-ink);
-  backdrop-filter: blur(24px) saturate(0.86);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
 }
 
 #mapView .control-panel .eyebrow,
@@ -6327,7 +6329,7 @@ button.location-unit-chip:focus-visible,
   border-radius: 6px;
   outline: 1px solid rgba(5, 7, 8, 0.38);
   outline-offset: 1px;
-  background: rgba(13, 15, 16, 0.56);
+  background: rgba(13, 15, 16, 0.52);
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
   color: var(--map-archive-ink);
   backdrop-filter: blur(12px) saturate(0.85);
@@ -6341,7 +6343,7 @@ button.location-unit-chip:focus-visible,
 
 #mapView .spotterdex-marker-label:hover {
   border-color: rgba(255, 255, 255, 0.34);
-  background: rgba(13, 15, 16, 0.66);
+  background: rgba(13, 15, 16, 0.62);
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.26);
   transform: translateY(-2px) scale(1.015);
 }
@@ -6362,7 +6364,7 @@ button.location-unit-chip:focus-visible,
 
 #mapView .spotterdex-marker-label.is-active:hover {
   border-color: var(--map-archive-gold);
-  background: rgba(13, 15, 16, 0.7);
+  background: rgba(13, 15, 16, 0.66);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.38);
 }
 
@@ -7840,7 +7842,7 @@ button.location-unit-chip:focus-visible,
   border-color: var(--map-archive-line);
   border-radius: 2px;
   background: var(--map-archive-panel);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+  box-shadow: var(--map-archive-panel-shadow);
   color: var(--map-archive-ink);
 }
 
@@ -7967,7 +7969,7 @@ button.location-unit-chip:focus-visible,
   }
 
   #mapView .spotterdex-marker-label {
-    background: rgba(13, 15, 16, 0.92);
+    background: rgba(13, 15, 16, 0.88);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
     backdrop-filter: none;
     transition: none;
@@ -7992,7 +7994,11 @@ button.location-unit-chip:focus-visible,
   }
 
   #mapView .control-panel,
-  #mapView #mapResults,
+  #mapView #mapResults {
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+  }
+
   #mapView .map-panel-toggle {
     backdrop-filter: none;
   }
