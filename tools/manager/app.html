@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SpotterDex Manager</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand">
+        <img class="brand-mark" src="/favicon.ico" alt="">
+        <div>
+          <h1>SpotterDex Manager</h1>
+          <div class="subtle" id="projectRoot"></div>
+        </div>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="actions">
+        <button class="btn ghost" id="reloadBtn" type="button">Reload</button>
+        <button class="btn ghost" id="clearBuildCacheBtn" type="button">Clear build cache</button>
+        <button class="btn primary" id="buildBtn" type="button">Build</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2 class="panel-title">Raw Assets</h2>
+            <div class="subtle" id="selectedCount">0 selected</div>
+          </div>
+          <button class="btn ghost" id="clearSelectionBtn" type="button">Clear</button>
+        </div>
+        <div class="asset-tools">
+          <div class="field">
+            <label for="assetSearch">Search</label>
+            <input id="assetSearch" type="search" placeholder="filename, folder, tag">
+          </div>
+          <div class="field">
+            <label>Filter</label>
+            <div class="segmented" id="assetFilter">
+              <button type="button" data-filter="untagged" class="active">New</button>
+              <button type="button" data-filter="all">All</button>
+              <button type="button" data-filter="tagged">Used</button>
+            </div>
+          </div>
+        </div>
+        <div class="asset-grid" id="assetGrid"></div>
+      </section>
+
+      <section class="panel workspace">
+        <nav class="tabs" aria-label="Manager views">
+          <button class="tab active" data-tab="attach" type="button">Attach</button>
+          <button class="tab" data-tab="bulk-captions" type="button">Bulk Captions</button>
+          <button class="tab" data-tab="airshows" type="button">Airshows</button>
+          <button class="tab" data-tab="missing" type="button">Missing</button>
+          <button class="tab" data-tab="quality" type="button">Quality</button>
+          <button class="tab" data-tab="entries" type="button">Entries</button>
+          <button class="tab" data-tab="squadrons" type="button">Squadrons</button>
+          <button class="tab" data-tab="locations" type="button">Locations</button>
+          <button class="tab" data-tab="build" type="button">Build Log</button>
+        </nav>
+
+        <section class="view active" id="attachView">
+          <div class="form-grid">
+            <div class="field wide">
+              <label for="entrySearch">Photo Source Search</label>
+              <input id="entrySearch" type="search" placeholder="aircraft, unit, location, country">
+            </div>
+            <div class="field wide">
+              <label for="entrySelect">Tag Images To</label>
+              <select id="entrySelect"></select>
+            </div>
+            <div class="field">
+              <label for="pinSelect">Location</label>
+              <select id="pinSelect"></select>
+            </div>
+            <div class="field wide">
+              <label for="airshowInput">Airshow Event (optional)</label>
+              <input id="airshowInput" type="text" placeholder="Singapore Airshow 2026">
+            </div>
+            <div class="field wide">
+              <label for="liveryInput">Livery (optional)</label>
+              <input id="liveryInput" type="text" placeholder="Retro livery, Pixel Blue, special anniversary scheme">
+            </div>
+            <div class="field">
+              <label for="photoYear">Year</label>
+              <input id="photoYear" type="text" inputmode="numeric" placeholder="2026">
+            </div>
+            <div class="field">
+              <label for="photoDate">Date</label>
+              <input id="photoDate" type="date">
+            </div>
+            <div class="field">
+              <label for="dedupeSelect">Duplicate Paths</label>
+              <select id="dedupeSelect">
+                <option value="skip">Skip existing</option>
+                <option value="allow">Allow duplicates</option>
+              </select>
+            </div>
+            <div class="field wide">
+              <label for="captionInput">Caption</label>
+              <textarea id="captionInput" placeholder="Caption for attached photos"></textarea>
+              <div class="caption-actions">
+                <span class="subtle">Uses the one selected image; review before attaching.</span>
+                <button class="btn ghost" id="generateAttachCaptionBtn" type="button">AI Caption</button>
+              </div>
+            </div>
+          </div>
+          <div class="bar">
+            <div>
+              <strong id="attachSummary">No assets selected</strong>
+              <div class="subtle" id="entrySummary"></div>
+            </div>
+            <button class="btn primary" id="attachBtn" type="button">Attach Selected</button>
+          </div>
+          <div class="selected-strip" id="selectedStrip"></div>
+          <div class="bar">
+            <h2 class="panel-title">Tagged Photos</h2>
+            <button class="btn ghost" id="clearEditorBtn" type="button">Clear Editor</button>
+          </div>
+          <div class="split">
+            <div class="section">
+              <h2>Edit Photo</h2>
+              <input id="editIndex" type="hidden">
+              <div class="field">
+                <label for="editPath">Path</label>
+                <input id="editPath" type="text">
+              </div>
+              <div class="field wide">
+                <label for="editTagTarget">Tag Images To</label>
+                <select id="editTagTarget"></select>
+                <div class="subtle">Choose an aircraft source or tag directly to a squadron-only source; photo metadata is preserved.</div>
+              </div>
+              <div class="field">
+                <label for="editLocation">Location</label>
+                <select id="editLocation"></select>
+              </div>
+              <div class="field wide">
+                <label for="editAirshow">Airshow Event (optional)</label>
+                <input id="editAirshow" type="text">
+              </div>
+              <div class="field wide">
+                <label for="editLivery">Livery (optional)</label>
+                <input id="editLivery" type="text">
+              </div>
+              <div class="field">
+                <label for="editDate">Date</label>
+                <input id="editDate" type="date">
+              </div>
+              <div class="field">
+                <label for="editYear">Year</label>
+                <input id="editYear" type="text" inputmode="numeric">
+              </div>
+              <div class="field">
+                <label for="editCaption">Caption</label>
+                <textarea id="editCaption"></textarea>
+                <div class="caption-actions">
+                  <span class="subtle">Uses Nemotron 3 Omni; review before saving.</span>
+                  <button class="btn ghost" id="generateEditCaptionBtn" type="button">AI Caption</button>
+                </div>
+              </div>
+              <button class="btn secondary" id="savePhotoBtn" type="button">Save Photo</button>
+            </div>
+            <div>
+              <div class="photo-list" id="photoList"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="bulk-captionsView">
+          <div class="bar">
+            <div>
+              <h2 class="panel-title">Bulk Update Captions</h2>
+              <div class="subtle" id="bulkCaptionSummary">Select existing photo assets to build a review queue.</div>
+            </div>
+            <div class="card-actions">
+              <button class="btn ghost" id="refreshBulkCaptionsBtn" type="button">Refresh Selection</button>
+              <button class="btn primary" id="runBulkCaptionsBtn" type="button">Propose Captions</button>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field wide">
+              <label><input id="bulkExcludeAiCaptions" type="checkbox" checked> Exclude captions already assisted by AI</label>
+              <div class="subtle">Only selected source images linked to an existing caption are eligible. Suggestions run one at a time with a 0.5 second pause between images.</div>
+            </div>
+          </div>
+          <div class="bulk-caption-list" id="bulkCaptionList"></div>
+        </section>
+
+        <section class="view" id="airshowsView">
+          <div class="bar">
+            <div>
+              <h2 class="panel-title">Airshow Manager</h2>
+              <div class="subtle" id="bulkEventSummary">Set event heroes and find photos that need an event tag.</div>
+            </div>
+          </div>
+          <section class="airshow-management-section" aria-labelledby="airshowHeroHeading">
+            <div>
+              <h3 class="panel-title" id="airshowHeroHeading">Event Hero Photos</h3>
+              <div class="subtle" id="airshowHeroSummary">Choose one tagged photo to feature for an event on the Airshows timeline. A hero is optional.</div>
+            </div>
+            <div class="airshow-hero-list" id="airshowHeroList"></div>
+          </section>
+          <section class="airshow-management-section" aria-labelledby="airshowMissingImagesHeading">
+            <div>
+              <h3 class="panel-title" id="airshowMissingImagesHeading">Untagged Photos on Event Days</h3>
+              <div class="subtle" id="airshowMissingImageSummary">New images are surfaced here when their capture date matches an existing event day.</div>
+            </div>
+            <datalist id="airshowEventOptions"></datalist>
+            <div class="bulk-event-list" id="airshowMissingImageList"></div>
+          </section>
+          <section class="airshow-management-section" aria-labelledby="allAirshowDatesHeading">
+            <div>
+              <h3 class="panel-title" id="allAirshowDatesHeading">All Photo Dates</h3>
+              <div class="subtle">For a new event, set or clear the event name across every source photo captured on a date.</div>
+            </div>
+          <div class="form-grid">
+            <div class="field wide">
+              <label for="bulkEventSearch">Filter dates or photos</label>
+              <input id="bulkEventSearch" type="search" placeholder="date, aircraft, unit, location, event, path">
+            </div>
+          </div>
+          <div class="bulk-event-list" id="bulkEventList"></div>
+          </section>
+        </section>
+
+        <section class="view" id="missingView">
+          <div class="bar">
+            <div>
+              <h2 class="panel-title">Missing Fields</h2>
+              <div class="subtle" id="missingSummary">0 items</div>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="missingSearch">Search</label>
+              <input id="missingSearch" type="search" placeholder="aircraft, unit, path, field">
+            </div>
+            <div class="field">
+              <label for="missingFilter">Field</label>
+              <select id="missingFilter">
+                <option value="">All</option>
+                <option value="entry">Entry metadata</option>
+                <option value="aircraftFamily">Aircraft family</option>
+                <option value="squadronLogo">Squadron logo</option>
+                <option value="source">Source image</option>
+                <option value="location">Location</option>
+                <option value="caption">Caption</option>
+                <option value="captureDate">Date or EXIF</option>
+              </select>
+            </div>
+          </div>
+          <div class="split" style="margin-top: 14px;">
+            <div class="section">
+              <h2>Queue</h2>
+              <div class="issue-list" id="missingList"></div>
+            </div>
+            <div class="section">
+              <h2>Fix</h2>
+              <div id="missingEditor"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="qualityView">
+          <div class="bar">
+            <div>
+              <h2 class="panel-title">Source Image Quality</h2>
+              <div class="subtle" id="qualitySummary">Checking source image dimensions.</div>
+            </div>
+          </div>
+          <div class="subtle">Photos below 2560px wide are flagged before publishing. Conservative checks also surface possible exposure and colour-balance issues; review the image before deciding whether to replace it.</div>
+          <div class="quality-list" id="qualityList"></div>
+        </section>
+
+        <section class="view" id="entriesView">
+          <div class="split">
+            <div class="section">
+              <h2>Create Photo Source</h2>
+              <div class="field">
+                <label for="newEntryScope">Tag Level</label>
+                <select id="newEntryScope">
+                  <option value="aircraft">Aircraft</option>
+                  <option value="squadron">Squadron</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="newAircraftType">Aircraft Type (Aircraft only)</label>
+                <input id="newAircraftType" type="text" placeholder="Lockheed C-130R">
+              </div>
+              <div class="field">
+                <label for="newSquadronName">Unit Name</label>
+                <input id="newSquadronName" type="text" placeholder="Air Transport Squadron 61">
+              </div>
+              <div class="field">
+                <label for="newCountry">Country</label>
+                <input id="newCountry" type="text" placeholder="Japan">
+              </div>
+              <div class="field">
+                <label for="newUnitType">Unit Type</label>
+                <select id="newUnitType">
+                  <option value="squadron">Squadron</option>
+                  <option value="organisation">Organisation</option>
+                </select>
+              </div>
+              <button class="btn primary" id="createEntryBtn" type="button">+ Entry</button>
+            </div>
+            <div class="section">
+              <h2>Entries</h2>
+              <div class="field">
+                <label for="entryListSearch">Search</label>
+                <input id="entryListSearch" type="search" placeholder="aircraft, unit, country">
+              </div>
+              <div class="photo-list" id="entryCards"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="locationsView">
+          <div class="bar">
+            <div>
+              <h2 class="panel-title">Location Manager</h2>
+              <div class="subtle" id="locationHeroSummary">Choose a hero photo for each location.</div>
+            </div>
+          </div>
+          <section class="airshow-management-section" aria-labelledby="locationHeroHeading">
+            <div>
+              <h3 class="panel-title" id="locationHeroHeading">Location Hero Photos</h3>
+              <div class="subtle">Every location is listed below. Click a tagged image to make it the location hero, or use one selected raw asset.</div>
+            </div>
+            <div class="group-hero-list" id="locationHeroList"></div>
+          </section>
+          <section class="airshow-management-section" aria-labelledby="createPinHeading">
+            <div>
+              <h3 class="panel-title" id="createPinHeading">Create Pin</h3>
+              <div class="subtle">Add a location to the map before tagging photos to it.</div>
+            </div>
+            <div class="form-grid">
+              <div class="field">
+                <label for="pinCountry">Country</label>
+                <input id="pinCountry" type="text" placeholder="Japan">
+              </div>
+              <div class="field">
+                <label for="pinName">Name</label>
+                <input id="pinName" type="text" placeholder="Atsugi Air Base">
+              </div>
+              <div class="field">
+                <label for="pinIcao">ICAO</label>
+                <input id="pinIcao" type="text" maxlength="4" placeholder="RJTA">
+              </div>
+              <div class="field">
+                <label for="pinId">ID</label>
+                <input id="pinId" type="text" placeholder="atsugi-air-base">
+              </div>
+              <div class="field">
+                <label for="pinLat">Latitude</label>
+                <input id="pinLat" type="text" inputmode="decimal" placeholder="35.4547">
+              </div>
+              <div class="field">
+                <label for="pinLon">Longitude</label>
+                <input id="pinLon" type="text" inputmode="decimal" placeholder="139.4500">
+              </div>
+            </div>
+            <button class="btn primary" id="createPinBtn" type="button">+ Pin</button>
+          </section>
+        </section>
+
+        <section class="view" id="squadronsView">
+          <div class="bar">
+            <div>
+              <h2 class="panel-title">Squadron Hero Photos</h2>
+              <div class="subtle" id="squadronHeroSummary">Review every squadron and select its featured image.</div>
+            </div>
+          </div>
+          <section class="airshow-management-section" aria-labelledby="squadronHeroHeading">
+            <div>
+              <h3 class="panel-title" id="squadronHeroHeading">All Squadrons</h3>
+              <div class="subtle">Click a tagged image to feature it on that squadron's page. A squadron may draw images from multiple aircraft entries.</div>
+            </div>
+            <div class="group-hero-list" id="squadronHeroList"></div>
+          </section>
+        </section>
+
+        <section class="view" id="buildView">
+          <div class="bar">
+            <div>
+              <h2 class="panel-title">Build Output</h2>
+              <div class="subtle" id="buildStatus">Ready</div>
+            </div>
+            <button class="btn primary" id="buildBtn2" type="button">Build</button>
+          </div>
+          <pre class="console" id="buildLog"></pre>
+          <div class="build-summary" id="buildSummary"></div>
+          <section class="orphan-section" aria-labelledby="orphanHeading">
+            <div class="bar">
+              <div>
+                <h2 class="panel-title" id="orphanHeading">Orphaned Generated Files</h2>
+                <div class="subtle" id="orphanSummary">Generated JPEGs under assets/generated/ that the current manifest no longer references. Build first, then scan.</div>
+              </div>
+              <div class="card-actions">
+                <button class="btn ghost" id="findOrphansBtn" type="button">Find Orphans</button>
+                <button class="btn danger" id="deleteOrphansBtn" type="button" disabled>Delete All</button>
+              </div>
+            </div>
+            <div class="orphan-list" id="orphanList"></div>
+          </section>
+        </section>
+      </section>
+    </main>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

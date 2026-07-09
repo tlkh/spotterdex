@@ -43,6 +43,60 @@ THUMB_JPEG_PROFILE = f"spotterdex-thumb-jpeg-v4-q{THUMB_JPEG_QUALITY}-s{THUMB_JP
 EXIF_TAGS = {value: key for key, value in ExifTags.TAGS.items()}
 PROGRESS_LINE_MODE = False
 
+# Attribution used in structured data (JSON-LD) on generated share pages.
+SITE_AUTHOR = "Timothy Liu"
+SITE_NAME = "SpotterDex"
+# Top-level pages included in the generated sitemap, with a relative importance hint.
+SITEMAP_TOP_PAGES = (
+    ("", "1.0"),
+    ("aircraft-dex.html", "0.9"),
+    ("squadrons.html", "0.9"),
+    ("airshows.html", "0.8"),
+    ("stats.html", "0.7"),
+)
+SHARE_CTA_LABELS = {
+    "photo": "Open in SpotterDex",
+    "aircraft": "View all frames",
+    "location": "Explore this location",
+    "squadron": "View squadron archive",
+    "airshow": "View event gallery",
+}
+SHARE_EYEBROWS = {
+    "photo": "Photograph",
+    "aircraft": "Aircraft field guide",
+    "location": "Spotting location",
+    "squadron": "Unit markings",
+    "airshow": "Airshow",
+}
+SHARE_PAGE_CSS = (
+    ":root{color-scheme:dark}"
+    "*{box-sizing:border-box}"
+    "body{margin:0;background:#11100f;color:#f3f0ea;"
+    "font:16px/1.55 ui-sans-serif,system-ui,-apple-system,\"Segoe UI\",sans-serif}"
+    "a{color:inherit}"
+    ".sp-head{display:flex;align-items:center;padding:16px 20px;border-bottom:1px solid #37322d}"
+    ".sp-brand{display:inline-flex;align-items:center;gap:10px;text-decoration:none;"
+    "font-weight:600;letter-spacing:.02em}"
+    ".sp-brand img{border-radius:6px}"
+    ".sp-main{max-width:1040px;margin:0 auto;padding:24px 20px 64px}"
+    ".sp-figure{margin:0 0 24px;background:#1a1816;border:1px solid #37322d;"
+    "border-radius:8px;overflow:hidden}"
+    ".sp-hero{display:block;width:100%;height:auto}"
+    ".sp-eyebrow{margin:0 0 6px;text-transform:uppercase;letter-spacing:.14em;"
+    "font-size:12px;color:#aaa39a}"
+    ".sp-title{margin:0 0 12px;font-size:clamp(1.5rem,3.5vw,2.25rem);line-height:1.15}"
+    ".sp-desc{margin:0 0 20px;color:#cfc9bf;max-width:60ch}"
+    ".sp-meta{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;margin:0 0 24px;"
+    "font-size:14px}"
+    ".sp-meta dt{color:#aaa39a}"
+    ".sp-meta dd{margin:0}"
+    ".sp-cta{display:inline-block;background:#efe9dd;color:#11100f;text-decoration:none;"
+    "font-weight:600;padding:12px 22px;border-radius:8px}"
+    ".sp-cta:hover{background:#fff}"
+    ".sp-note{margin:20px 0 0;font-size:14px}"
+    ".sp-note a{color:#aaa39a}"
+)
+
 
 class BuildWarningLog:
     def __init__(self) -> None:
@@ -144,6 +198,8 @@ def parse_args() -> argparse.Namespace:
         help="Minified map-page JS manifest path.",
     )
     parser.add_argument("--share-output", default="share", help="Generated social preview page directory.")
+    parser.add_argument("--sitemap-output", default="sitemap.xml", help="Generated sitemap path (relative to root).")
+    parser.add_argument("--robots-output", default="robots.txt", help="Generated robots.txt path (relative to root).")
     parser.add_argument(
         "--site-url",
         default="https://tlkh.github.io/spotterdex/",
@@ -194,6 +250,8 @@ def main() -> int:
     js_output = root / args.js_output
     map_js_output = root / args.map_js_output
     share_output_dir = root / args.share_output
+    sitemap_output = root / args.sitemap_output
+    robots_output = root / args.robots_output
     show_progress = not args.no_progress
     photo_workers = normalize_worker_count(args.workers)
 
@@ -288,10 +346,19 @@ def main() -> int:
     json_output.write_text(json_text + "\n", encoding="utf-8")
     js_output.write_text(f"window.SPOTTERDEX_DATA = {json_text};\n", encoding="utf-8")
     map_js_output.write_text(f"window.SPOTTERDEX_DATA={map_json_text};\n", encoding="utf-8")
+    share_records = social_preview_records(manifest)
     share_page_count = write_social_preview_pages(
-        manifest=manifest,
+        records=share_records,
         output_dir=share_output_dir,
         site_url=args.site_url,
+    )
+    sitemap_path, robots_path, sitemap_url_count = write_seo_files(
+        root=root,
+        site_url=args.site_url,
+        manifest=manifest,
+        share_records=share_records,
+        sitemap_output=sitemap_output,
+        robots_output=robots_output,
     )
 
     warnings.print()
@@ -303,6 +370,8 @@ def main() -> int:
     print(f"Wrote {relative_posix(js_output, root)}")
     print(f"Wrote {relative_posix(map_js_output, root)}")
     print(f"Wrote {share_page_count} social preview pages under {relative_posix(share_output_dir, root)}")
+    print(f"Wrote {relative_posix(sitemap_path, root)} ({sitemap_url_count} URLs)")
+    print(f"Wrote {relative_posix(robots_path, root)}")
     if args.strict and warnings.has_warnings():
         print("Build completed with validation warnings.", file=sys.stderr)
         return 1
@@ -373,7 +442,7 @@ def map_page_manifest(manifest: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def write_social_preview_pages(
-    manifest: Dict[str, Any],
+    records: List[Dict[str, Any]],
     output_dir: Path,
     site_url: str,
 ) -> int:
@@ -385,10 +454,9 @@ def write_social_preview_pages(
         if kind_dir.exists():
             shutil.rmtree(kind_dir)
 
-    records = social_preview_records(manifest)
     for record in records:
         kind = record["kind"]
-        entity_id = slugify(record["id"])
+        entity_id = record["slug"]
         page_dir = output_dir / kind / entity_id
         page_dir.mkdir(parents=True, exist_ok=True)
         page_dir.joinpath("index.html").write_text(
@@ -396,6 +464,67 @@ def write_social_preview_pages(
             encoding="utf-8",
         )
     return len(records)
+
+
+def write_seo_files(
+    root: Path,
+    site_url: str,
+    manifest: Dict[str, Any],
+    share_records: List[Dict[str, Any]],
+    sitemap_output: Path,
+    robots_output: Path,
+) -> Tuple[Path, Path, int]:
+    site_url = str(site_url or "").strip().rstrip("/") + "/"
+    generated_at = str(manifest.get("generatedAt") or "")
+    default_lastmod = (
+        generated_at[:10]
+        if re.match(r"^\d{4}-\d{2}-\d{2}", generated_at)
+        else datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    )
+
+    entries: List[Tuple[str, str, str]] = []
+    for page, priority in SITEMAP_TOP_PAGES:
+        entries.append((urljoin(site_url, page), default_lastmod, priority))
+    for record in share_records:
+        # Skip empty placeholder collection pages so the sitemap only advertises
+        # URLs with real content. Photo pages always carry a single image.
+        if record["kind"] != "photo" and not _count_label(record.get("count")):
+            continue
+        loc = urljoin(site_url, f"share/{record['kind']}/{record['slug']}/")
+        record_date = str(record.get("date") or "")
+        lastmod = (
+            record_date
+            if record["kind"] == "photo" and re.match(r"^\d{4}-\d{2}-\d{2}$", record_date)
+            else default_lastmod
+        )
+        priority = "0.6" if record["kind"] == "photo" else "0.7"
+        entries.append((loc, lastmod, priority))
+
+    lines = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ]
+    for loc, lastmod, priority in entries:
+        lines.append("  <url>")
+        lines.append(f"    <loc>{html.escape(loc, quote=True)}</loc>")
+        lines.append(f"    <lastmod>{lastmod}</lastmod>")
+        lines.append(f"    <priority>{priority}</priority>")
+        lines.append("  </url>")
+    lines.append("</urlset>")
+    sitemap_output.parent.mkdir(parents=True, exist_ok=True)
+    sitemap_output.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    sitemap_url = urljoin(site_url, relative_posix(sitemap_output, root))
+    robots_lines = [
+        "User-agent: *",
+        "Allow: /",
+        "",
+        f"Sitemap: {sitemap_url}",
+        "",
+    ]
+    robots_output.parent.mkdir(parents=True, exist_ok=True)
+    robots_output.write_text("\n".join(robots_lines), encoding="utf-8")
+    return sitemap_output, robots_output, len(entries)
 
 
 def social_preview_records(manifest: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -420,8 +549,27 @@ def social_preview_records(manifest: Dict[str, Any]) -> List[Dict[str, Any]]:
             description = f"{subject}{f' photographed at {location}' if location else ''}."
         if livery and livery.lower() not in description.lower():
             description = f"{description.rstrip('.')} · {livery}."
+        heading = f"{subject}{f' at {location}' if location else ''}"
         records.append(
-            social_preview_record("photo", photo_id, title, description, photo, f"photo={quote(photo_id)}")
+            social_preview_record(
+                "photo",
+                photo_id,
+                title,
+                description,
+                photo,
+                f"photo={quote(photo_id)}",
+                extra={
+                    "heading": heading,
+                    "date": str(photo.get("date") or ""),
+                    "year": str(photo.get("year") or ""),
+                    "locationName": location,
+                    "country": str(photo.get("country") or ""),
+                    "aircraftType": str(photo.get("aircraftType") or ""),
+                    "unit": str(photo.get("squadronName") or ""),
+                    "unitLabel": str(photo.get("unitLabel") or ""),
+                    "airshow": str(photo.get("airshow") or ""),
+                },
+            )
         )
 
     for aircraft in manifest.get("aircraft", []):
@@ -431,6 +579,7 @@ def social_preview_records(manifest: Dict[str, Any]) -> List[Dict[str, Any]]:
         photo_ids = [str(value) for value in aircraft.get("photoIds", [])]
         cover = photos_by_id.get(str(aircraft.get("coverPhoto") or "")) or first_photo(photo_ids, photos_by_id)
         type_name = str(aircraft.get("typeName") or "Aircraft").strip()
+        countries = [str(value).strip() for value in aircraft.get("countries", []) if str(value).strip()]
         description = f"Explore {len(photo_ids)} photographed frame{'s' if len(photo_ids) != 1 else ''} of {type_name}, organised by unit and location."
         records.append(
             social_preview_record(
@@ -440,6 +589,11 @@ def social_preview_records(manifest: Dict[str, Any]) -> List[Dict[str, Any]]:
                 description,
                 cover or fallback_image,
                 f"aircraft={quote(aircraft_id)}",
+                extra={
+                    "heading": type_name,
+                    "count": len(photo_ids),
+                    "countries": countries,
+                },
             )
         )
 
@@ -463,6 +617,12 @@ def social_preview_records(manifest: Dict[str, Any]) -> List[Dict[str, Any]]:
                 description,
                 hero,
                 f"location={quote(pin_id)}&detail=1",
+                extra={
+                    "heading": name,
+                    "country": country,
+                    "icao": str(pin.get("icao") or "").strip(),
+                    "count": len(pin_photos),
+                },
             )
         )
 
@@ -482,6 +642,10 @@ def social_preview_records(manifest: Dict[str, Any]) -> List[Dict[str, Any]]:
                 description,
                 hero or fallback_image,
                 f"airshow={quote(airshow_id)}",
+                extra={
+                    "heading": name,
+                    "count": len(photo_ids),
+                },
             )
         )
 
@@ -499,6 +663,11 @@ def social_preview_records(manifest: Dict[str, Any]) -> List[Dict[str, Any]]:
                 description,
                 hero,
                 f"squadron={quote(squadron['id'])}",
+                extra={
+                    "heading": name,
+                    "country": country,
+                    "count": len(photo_ids),
+                },
             )
         )
 
@@ -548,48 +717,69 @@ def social_preview_record(
     description: str,
     image: Dict[str, Any],
     fragment: str,
+    extra: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    return {
+    record = {
         "kind": kind,
         "id": entity_id,
+        "slug": slugify(entity_id),
         "title": title,
         "description": re.sub(r"\s+", " ", description).strip()[:260],
         "image": str(image.get("image") or image.get("thumbnail") or ""),
         "imageSize": str(image.get("processedSize") or image.get("thumbnailSize") or ""),
+        "thumbnail": str(image.get("thumbnail") or ""),
         "fragment": fragment,
     }
+    if extra:
+        record.update({key: value for key, value in extra.items() if value not in (None, "")})
+    return record
 
 
 def social_preview_document(record: Dict[str, Any], site_url: str, entity_id: str) -> str:
+    kind = record["kind"]
     title = html.escape(record["title"], quote=True)
     description = html.escape(record["description"], quote=True)
-    image_url = html.escape(urljoin(site_url, record["image"]), quote=True)
-    share_url = html.escape(urljoin(site_url, f"share/{record['kind']}/{entity_id}/"), quote=True)
+    heading_text = record.get("heading") or record.get("title") or SITE_NAME
+    heading = html.escape(heading_text, quote=True)
+    eyebrow = html.escape(SHARE_EYEBROWS.get(kind, "Field guide"), quote=True)
+    image_abs = urljoin(site_url, record["image"])
+    image_url = html.escape(image_abs, quote=True)
+    share_abs = urljoin(site_url, f"share/{kind}/{entity_id}/")
+    share_url = html.escape(share_abs, quote=True)
     page_path = {
         "aircraft": "aircraft-dex.html",
         "squadron": "squadrons.html",
         "airshow": "airshows.html",
         "location": "index.html",
         "photo": "index.html",
-    }.get(record["kind"], "index.html")
-    main_url = urljoin(site_url, f"{page_path}#{record['fragment']}")
-    canonical_url = html.escape(main_url, quote=True)
-    redirect_url = f"../../../{page_path}#{record['fragment']}"
+    }.get(kind, "index.html")
+    app_link = f"../../../{page_path}#{record['fragment']}"
+    app_link_attr = html.escape(app_link, quote=True)
+    cta_label = html.escape(SHARE_CTA_LABELS.get(kind, "Open in SpotterDex"), quote=True)
     width, height = parse_generated_size(record.get("imageSize"))
     dimension_meta = ""
+    hero_dimensions = ""
     if width and height:
         dimension_meta = (
             f'\n    <meta property="og:image:width" content="{width}">'
             f'\n    <meta property="og:image:height" content="{height}">'
         )
+        hero_dimensions = f' width="{width}" height="{height}"'
+    json_ld = render_share_json_ld(record, site_url, image_abs, share_abs, width, height)
+    json_ld_block = ""
+    if json_ld:
+        json_ld_block = f'\n    <script type="application/ld+json">{json_ld}</script>'
+    meta_block = render_share_meta(record)
     return f"""<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
     <title>{title}</title>
     <meta name="description" content="{description}">
-    <meta name="robots" content="noindex,follow">
+    <meta name="robots" content="index,follow,max-image-preview:large">
+    <meta name="author" content="{html.escape(SITE_AUTHOR, quote=True)}">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="SpotterDex">
     <meta property="og:locale" content="en_SG">
@@ -597,21 +787,173 @@ def social_preview_document(record: Dict[str, Any], site_url: str, entity_id: st
     <meta property="og:description" content="{description}">
     <meta property="og:image" content="{image_url}">
     <meta property="og:image:secure_url" content="{image_url}">
-    <meta property="og:image:alt" content="{title}">{dimension_meta}
+    <meta property="og:image:alt" content="{heading}">{dimension_meta}
     <meta property="og:url" content="{share_url}">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{title}">
     <meta name="twitter:description" content="{description}">
     <meta name="twitter:image" content="{image_url}">
-    <meta name="twitter:image:alt" content="{title}">
-    <link rel="canonical" href="{canonical_url}">
-    <script>window.location.replace({json.dumps(redirect_url)});</script>
+    <meta name="twitter:image:alt" content="{heading}">
+    <link rel="canonical" href="{share_url}">
+    <link rel="icon" type="image/png" href="../../../assets/icons/spotterdex-app-icon.png">
+    <style>{SHARE_PAGE_CSS}</style>{json_ld_block}
   </head>
   <body>
-    <p><a href="{html.escape(redirect_url, quote=True)}">Open this entry in SpotterDex</a></p>
+    <header class="sp-head">
+      <a class="sp-brand" href="../../../index.html">
+        <img src="../../../assets/icons/spotterdex-app-icon.png" alt="" width="28" height="28">
+        <span>SpotterDex</span>
+      </a>
+    </header>
+    <main class="sp-main">
+      <figure class="sp-figure">
+        <img class="sp-hero" src="{image_url}" alt="{heading}"{hero_dimensions} loading="eager" decoding="async">
+      </figure>
+      <p class="sp-eyebrow">{eyebrow}</p>
+      <h1 class="sp-title">{heading}</h1>
+      <p class="sp-desc">{description}</p>{meta_block}
+      <a class="sp-cta" href="{app_link_attr}">{cta_label}</a>
+      <p class="sp-note"><a href="../../../index.html">Back to SpotterDex</a></p>
+    </main>
   </body>
 </html>
 """
+
+
+def render_share_meta(record: Dict[str, Any]) -> str:
+    kind = record["kind"]
+    pairs: List[Tuple[str, str]] = []
+    if kind == "photo":
+        pairs = [
+            ("Aircraft", str(record.get("aircraftType") or "")),
+            ("Unit", str(record.get("unit") or "")),
+            ("Location", str(record.get("locationName") or "")),
+            ("Country", str(record.get("country") or "")),
+            ("Event", str(record.get("airshow") or "")),
+            ("Date", str(record.get("date") or record.get("year") or "")),
+        ]
+    elif kind == "aircraft":
+        pairs = [
+            ("Frames", _count_label(record.get("count"))),
+            ("Countries", ", ".join(record.get("countries") or [])),
+        ]
+    elif kind == "location":
+        pairs = [
+            ("ICAO", str(record.get("icao") or "")),
+            ("Country", str(record.get("country") or "")),
+            ("Frames", _count_label(record.get("count"))),
+        ]
+    elif kind == "squadron":
+        pairs = [
+            ("Country", str(record.get("country") or "")),
+            ("Frames", _count_label(record.get("count"))),
+        ]
+    elif kind == "airshow":
+        pairs = [("Frames", _count_label(record.get("count")))]
+    rows = [
+        f"        <dt>{html.escape(label, quote=True)}</dt>"
+        f"<dd>{html.escape(value, quote=True)}</dd>"
+        for label, value in pairs
+        if value
+    ]
+    if not rows:
+        return ""
+    return "\n      <dl class=\"sp-meta\">\n" + "\n".join(rows) + "\n      </dl>"
+
+
+def _count_label(value: Any) -> str:
+    try:
+        count = int(value)
+    except (TypeError, ValueError):
+        return ""
+    if count <= 0:
+        return ""
+    return f"{count} frame{'s' if count != 1 else ''}"
+
+
+def render_share_json_ld(
+    record: Dict[str, Any],
+    site_url: str,
+    image_url: str,
+    share_url: str,
+    width: int,
+    height: int,
+) -> str:
+    author = {"@type": "Person", "name": SITE_AUTHOR}
+    website = {"@type": "WebSite", "name": SITE_NAME, "url": site_url}
+    credit = f"{SITE_AUTHOR} / {SITE_NAME}"
+    if record["kind"] == "photo":
+        image_object: Dict[str, Any] = {
+            "@context": "https://schema.org",
+            "@type": "ImageObject",
+            "@id": f"{share_url}#primaryimage",
+            "url": image_url,
+            "contentUrl": image_url,
+            "name": record.get("heading") or record.get("title"),
+            "description": record.get("description"),
+            "caption": record.get("description"),
+            "representativeOfPage": True,
+            "creator": author,
+            "copyrightHolder": author,
+            "creditText": credit,
+            "isPartOf": website,
+            "mainEntityOfPage": share_url,
+        }
+        thumbnail = record.get("thumbnail")
+        if thumbnail:
+            image_object["thumbnailUrl"] = urljoin(site_url, thumbnail)
+        if width and height:
+            image_object["width"] = width
+            image_object["height"] = height
+        date_value = record.get("date")
+        if date_value:
+            image_object["dateCreated"] = date_value
+            image_object["datePublished"] = date_value
+        location_name = record.get("locationName")
+        if location_name:
+            place: Dict[str, Any] = {"@type": "Place", "name": location_name}
+            country = record.get("country")
+            if country:
+                place["address"] = {"@type": "PostalAddress", "addressCountry": country}
+            image_object["contentLocation"] = place
+        keywords = [
+            value
+            for value in (record.get("aircraftType"), record.get("unit"), record.get("airshow"))
+            if value
+        ]
+        if keywords:
+            image_object["keywords"] = ", ".join(keywords)
+        return _json_ld_dump(image_object)
+
+    primary_image: Dict[str, Any] = {
+        "@type": "ImageObject",
+        "url": image_url,
+        "contentUrl": image_url,
+        "creator": author,
+        "creditText": credit,
+    }
+    if width and height:
+        primary_image["width"] = width
+        primary_image["height"] = height
+    collection = {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "@id": share_url,
+        "url": share_url,
+        "name": record.get("heading") or record.get("title"),
+        "description": record.get("description"),
+        "isPartOf": website,
+        "primaryImageOfPage": primary_image,
+        "author": author,
+    }
+    return _json_ld_dump(collection)
+
+
+def _json_ld_dump(payload: Dict[str, Any]) -> str:
+    cleaned = {key: value for key, value in payload.items() if value not in (None, "")}
+    # ensure_ascii keeps the file ASCII-only; escape "<" so a caption can never break out
+    # of the surrounding <script type="application/ld+json"> element.
+    return json.dumps(cleaned, ensure_ascii=True, separators=(",", ":")).replace("<", "\\u003c")
 
 
 def parse_generated_size(value: Any) -> Tuple[int, int]:

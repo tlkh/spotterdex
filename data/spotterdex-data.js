@@ -1,5 +1,5 @@
 window.SPOTTERDEX_DATA = {
-  "generatedAt": "2026-07-09T02:25:08+00:00",
+  "generatedAt": "2026-07-09T14:32:42+00:00",
   "pins": [
     {
       "id": "hong-kong-international-airport",
@@ -371,33 +371,33 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "airbus-a300-600st-super-transporter",
-      "typeName": "Airbus A300-600ST (Super Transporter)",
+      "id": "airbus-a300-600st",
+      "typeName": "Airbus A300-600ST",
       "aircraftFamily": "heavy",
       "countries": [
         "France"
       ],
       "squadrons": [
         {
-          "id": "airbus-a300-600st-super-transporter-airbus",
+          "id": "airbus-a300-600st-airbus",
           "name": "Airbus",
           "country": "France",
-          "logo": "assets/logos/airbus-a300-600st-super-transporter-airbus.png",
+          "logo": "assets/logos/airbus-a300-600st-airbus.png",
           "unitType": "organisation",
           "unitLabel": "Organisation",
           "showOnSquadronsPage": false,
           "photoIds": [
-            "aircraft-airbus-a300-600st-super-transporter-airbus-beluga-1-fba0bd70",
-            "aircraft-airbus-a300-600st-super-transporter-airbus-beluga-2-82dc08fa"
+            "aircraft-airbus-a300-600st-airbus-beluga-1-fba0bd70",
+            "aircraft-airbus-a300-600st-airbus-beluga-2-82dc08fa"
           ],
           "photoCount": 2
         }
       ],
       "photoIds": [
-        "aircraft-airbus-a300-600st-super-transporter-airbus-beluga-1-fba0bd70",
-        "aircraft-airbus-a300-600st-super-transporter-airbus-beluga-2-82dc08fa"
+        "aircraft-airbus-a300-600st-airbus-beluga-1-fba0bd70",
+        "aircraft-airbus-a300-600st-airbus-beluga-2-82dc08fa"
       ],
-      "coverPhoto": "aircraft-airbus-a300-600st-super-transporter-airbus-beluga-1-fba0bd70",
+      "coverPhoto": "aircraft-airbus-a300-600st-airbus-beluga-1-fba0bd70",
       "stats": {
         "photoCount": 2,
         "unitCount": 1,
@@ -1399,48 +1399,6 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "c-146a-wolfhound",
-      "typeName": "C-146A Wolfhound",
-      "aircraftFamily": "medium",
-      "countries": [
-        "United States"
-      ],
-      "squadrons": [
-        {
-          "id": "c-146a-wolfhound-usaf-special-operations-command",
-          "name": "USAF Special Operations Command",
-          "country": "United States",
-          "logo": "",
-          "unitType": "squadron",
-          "unitLabel": "Squadron",
-          "showOnSquadronsPage": true,
-          "photoIds": [
-            "aircraft-c-146a-wolfhound-usaf-special-operations-command-wolfhound-1-2dfc334b"
-          ],
-          "photoCount": 1
-        }
-      ],
-      "photoIds": [
-        "aircraft-c-146a-wolfhound-usaf-special-operations-command-wolfhound-1-2dfc334b"
-      ],
-      "coverPhoto": "aircraft-c-146a-wolfhound-usaf-special-operations-command-wolfhound-1-2dfc334b",
-      "stats": {
-        "photoCount": 1,
-        "unitCount": 1,
-        "squadronCount": 1,
-        "organisationCount": 0,
-        "locationCount": 1,
-        "locations": [
-          "Singapore"
-        ],
-        "firstDate": "2023-05-16",
-        "latestDate": "2023-05-16",
-        "countries": [
-          "United States"
-        ]
-      }
-    },
-    {
       "id": "cessna-uc-35-citation",
       "typeName": "Cessna UC-35 Citation",
       "aircraftFamily": "medium",
@@ -1627,69 +1585,57 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "e-2d",
-      "typeName": "E-2D",
+      "id": "dornier-c-146a-wolfhound",
+      "typeName": "Dornier C-146A Wolfhound",
       "aircraftFamily": "medium",
       "countries": [
-        "Japan"
+        "United States"
       ],
       "squadrons": [
         {
-          "id": "e-2d-603rd-squadron",
-          "name": "603rd Squadron",
-          "country": "Japan",
-          "logo": "assets/logos/e-2d-603rd-squadron.png",
+          "id": "dornier-c-146a-wolfhound-usaf-special-operations-command",
+          "name": "USAF Special Operations Command",
+          "country": "United States",
+          "logo": "",
           "unitType": "squadron",
           "unitLabel": "Squadron",
           "showOnSquadronsPage": true,
           "photoIds": [
-            "aircraft-e-2d-603rd-squadron-dsc04209-3fd2610c",
-            "aircraft-e-2d-603rd-squadron-dsc04372-9bd22e18",
-            "aircraft-e-2d-603rd-squadron-dsc00567-62eb62be"
+            "aircraft-dornier-c-146a-wolfhound-usaf-special-operations-command-wolfhound-1-2dfc334b"
           ],
-          "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-e-2d-603rd-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-e-2d-603rd-squadron.jpg",
-            "source": "raw_assets/DSC04372.jpg",
-            "originalSize": "7093 x 5320",
-            "processedSize": "2560 x 1920",
-            "thumbnailSize": "1024 x 768"
-          },
-          "photoCount": 3
+          "photoCount": 1
         }
       ],
       "photoIds": [
-        "aircraft-e-2d-603rd-squadron-dsc04209-3fd2610c",
-        "aircraft-e-2d-603rd-squadron-dsc04372-9bd22e18",
-        "aircraft-e-2d-603rd-squadron-dsc00567-62eb62be"
+        "aircraft-dornier-c-146a-wolfhound-usaf-special-operations-command-wolfhound-1-2dfc334b"
       ],
-      "coverPhoto": "aircraft-e-2d-603rd-squadron-dsc04209-3fd2610c",
+      "coverPhoto": "aircraft-dornier-c-146a-wolfhound-usaf-special-operations-command-wolfhound-1-2dfc334b",
       "stats": {
-        "photoCount": 3,
+        "photoCount": 1,
         "unitCount": 1,
         "squadronCount": 1,
         "organisationCount": 0,
         "locationCount": 1,
         "locations": [
-          "Naha Air Base"
+          "Singapore"
         ],
-        "firstDate": "2025-12-11",
-        "latestDate": "2025-12-12",
+        "firstDate": "2023-05-16",
+        "latestDate": "2023-05-16",
         "countries": [
-          "Japan"
+          "United States"
         ]
       }
     },
     {
-      "id": "f-16a",
-      "typeName": "F-16A",
+      "id": "general-dynamics-f-16a",
+      "typeName": "General Dynamics F-16A",
       "aircraftFamily": "fighter",
       "countries": [
         "Thailand"
       ],
       "squadrons": [
         {
-          "id": "f-16a-103rd-fighter-squadron",
+          "id": "general-dynamics-f-16a-103rd-fighter-squadron",
           "name": "103rd Fighter Squadron",
           "country": "Thailand",
           "logo": "",
@@ -1697,17 +1643,17 @@ window.SPOTTERDEX_DATA = {
           "unitLabel": "Squadron",
           "showOnSquadronsPage": true,
           "photoIds": [
-            "aircraft-f-16a-103rd-fighter-squadron-dsc04380-6186a822",
-            "aircraft-f-16a-103rd-fighter-squadron-dsc04848-34e3466b",
-            "aircraft-f-16a-103rd-fighter-squadron-dsc04717-b6514e98",
-            "aircraft-f-16a-103rd-fighter-squadron-dsc04617-cb6f8bc0",
-            "aircraft-f-16a-103rd-fighter-squadron-dsc04426-e9dd220d",
-            "aircraft-f-16a-103rd-fighter-squadron-dsc04086-e1406928",
-            "aircraft-f-16a-103rd-fighter-squadron-dsc04119-f7c081b0"
+            "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04380-6186a822",
+            "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04848-34e3466b",
+            "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04717-b6514e98",
+            "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04617-cb6f8bc0",
+            "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04426-e9dd220d",
+            "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04086-e1406928",
+            "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04119-f7c081b0"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-f-16a-103rd-fighter-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-f-16a-103rd-fighter-squadron.jpg",
+            "image": "assets/generated/photos/squadron-hero-general-dynamics-f-16a-103rd-fighter-squadron.jpg",
+            "thumbnail": "assets/generated/thumbs/squadron-hero-general-dynamics-f-16a-103rd-fighter-squadron.jpg",
             "source": "raw_assets/DSC04848.jpg",
             "originalSize": "7526 x 5644",
             "processedSize": "2560 x 1920",
@@ -1717,15 +1663,15 @@ window.SPOTTERDEX_DATA = {
         }
       ],
       "photoIds": [
-        "aircraft-f-16a-103rd-fighter-squadron-dsc04380-6186a822",
-        "aircraft-f-16a-103rd-fighter-squadron-dsc04848-34e3466b",
-        "aircraft-f-16a-103rd-fighter-squadron-dsc04717-b6514e98",
-        "aircraft-f-16a-103rd-fighter-squadron-dsc04617-cb6f8bc0",
-        "aircraft-f-16a-103rd-fighter-squadron-dsc04426-e9dd220d",
-        "aircraft-f-16a-103rd-fighter-squadron-dsc04086-e1406928",
-        "aircraft-f-16a-103rd-fighter-squadron-dsc04119-f7c081b0"
+        "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04380-6186a822",
+        "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04848-34e3466b",
+        "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04717-b6514e98",
+        "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04617-cb6f8bc0",
+        "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04426-e9dd220d",
+        "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04086-e1406928",
+        "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04119-f7c081b0"
       ],
-      "coverPhoto": "aircraft-f-16a-103rd-fighter-squadron-dsc04380-6186a822",
+      "coverPhoto": "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04380-6186a822",
       "stats": {
         "photoCount": 7,
         "unitCount": 1,
@@ -1739,48 +1685,6 @@ window.SPOTTERDEX_DATA = {
         "latestDate": "2026-01-10",
         "countries": [
           "Thailand"
-        ]
-      }
-    },
-    {
-      "id": "g550-caew",
-      "typeName": "G550 CAEW",
-      "aircraftFamily": "medium",
-      "countries": [
-        "Italy"
-      ],
-      "squadrons": [
-        {
-          "id": "g550-caew-14-stormo",
-          "name": "14\u00b0 Stormo",
-          "country": "Italy",
-          "logo": "",
-          "unitType": "squadron",
-          "unitLabel": "Squadron",
-          "showOnSquadronsPage": true,
-          "photoIds": [
-            "aircraft-g550-caew-14-stormo-italy-g550-010e857a"
-          ],
-          "photoCount": 1
-        }
-      ],
-      "photoIds": [
-        "aircraft-g550-caew-14-stormo-italy-g550-010e857a"
-      ],
-      "coverPhoto": "aircraft-g550-caew-14-stormo-italy-g550-010e857a",
-      "stats": {
-        "photoCount": 1,
-        "unitCount": 1,
-        "squadronCount": 1,
-        "organisationCount": 0,
-        "locationCount": 1,
-        "locations": [
-          "Singapore"
-        ],
-        "firstDate": "2023-08-04",
-        "latestDate": "2023-08-04",
-        "countries": [
-          "Italy"
         ]
       }
     },
@@ -1838,6 +1742,102 @@ window.SPOTTERDEX_DATA = {
         "latestDate": "2023-12-20",
         "countries": [
           "United States"
+        ]
+      }
+    },
+    {
+      "id": "grumman-e-2d-hawkeye",
+      "typeName": "Grumman E-2D Hawkeye",
+      "aircraftFamily": "medium",
+      "countries": [
+        "Japan"
+      ],
+      "squadrons": [
+        {
+          "id": "grumman-e-2d-hawkeye-603rd-squadron",
+          "name": "603rd Squadron",
+          "country": "Japan",
+          "logo": "assets/logos/grumman-e-2d-hawkeye-603rd-squadron.png",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "aircraft-grumman-e-2d-hawkeye-603rd-squadron-dsc04209-3fd2610c",
+            "aircraft-grumman-e-2d-hawkeye-603rd-squadron-dsc04372-9bd22e18",
+            "aircraft-grumman-e-2d-hawkeye-603rd-squadron-dsc00567-62eb62be"
+          ],
+          "heroPhoto": {
+            "image": "assets/generated/photos/squadron-hero-grumman-e-2d-hawkeye-603rd-squadron.jpg",
+            "thumbnail": "assets/generated/thumbs/squadron-hero-grumman-e-2d-hawkeye-603rd-squadron.jpg",
+            "source": "raw_assets/DSC04372.jpg",
+            "originalSize": "7093 x 5320",
+            "processedSize": "2560 x 1920",
+            "thumbnailSize": "1024 x 768"
+          },
+          "photoCount": 3
+        }
+      ],
+      "photoIds": [
+        "aircraft-grumman-e-2d-hawkeye-603rd-squadron-dsc04209-3fd2610c",
+        "aircraft-grumman-e-2d-hawkeye-603rd-squadron-dsc04372-9bd22e18",
+        "aircraft-grumman-e-2d-hawkeye-603rd-squadron-dsc00567-62eb62be"
+      ],
+      "coverPhoto": "aircraft-grumman-e-2d-hawkeye-603rd-squadron-dsc04209-3fd2610c",
+      "stats": {
+        "photoCount": 3,
+        "unitCount": 1,
+        "squadronCount": 1,
+        "organisationCount": 0,
+        "locationCount": 1,
+        "locations": [
+          "Naha Air Base"
+        ],
+        "firstDate": "2025-12-11",
+        "latestDate": "2025-12-12",
+        "countries": [
+          "Japan"
+        ]
+      }
+    },
+    {
+      "id": "gulfstream-g550-caew",
+      "typeName": "Gulfstream G550 CAEW",
+      "aircraftFamily": "medium",
+      "countries": [
+        "Italy"
+      ],
+      "squadrons": [
+        {
+          "id": "gulfstream-g550-caew-14-stormo",
+          "name": "14\u00b0 Stormo",
+          "country": "Italy",
+          "logo": "",
+          "unitType": "squadron",
+          "unitLabel": "Squadron",
+          "showOnSquadronsPage": true,
+          "photoIds": [
+            "aircraft-gulfstream-g550-caew-14-stormo-italy-g550-010e857a"
+          ],
+          "photoCount": 1
+        }
+      ],
+      "photoIds": [
+        "aircraft-gulfstream-g550-caew-14-stormo-italy-g550-010e857a"
+      ],
+      "coverPhoto": "aircraft-gulfstream-g550-caew-14-stormo-italy-g550-010e857a",
+      "stats": {
+        "photoCount": 1,
+        "unitCount": 1,
+        "squadronCount": 1,
+        "organisationCount": 0,
+        "locationCount": 1,
+        "locations": [
+          "Singapore"
+        ],
+        "firstDate": "2023-08-04",
+        "latestDate": "2023-08-04",
+        "countries": [
+          "Italy"
         ]
       }
     },
@@ -3464,15 +3464,15 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "saab-jas-39c-gripen-c",
-      "typeName": "Saab JAS 39C (Gripen C)",
+      "id": "saab-gripen-c",
+      "typeName": "Saab Gripen C",
       "aircraftFamily": "fighter",
       "countries": [
         "Thailand"
       ],
       "squadrons": [
         {
-          "id": "saab-jas-39c-gripen-c-701st-squadron",
+          "id": "saab-gripen-c-701st-squadron",
           "name": "701st Squadron",
           "country": "Thailand",
           "logo": "",
@@ -3480,22 +3480,22 @@ window.SPOTTERDEX_DATA = {
           "unitLabel": "Squadron",
           "showOnSquadronsPage": true,
           "photoIds": [
-            "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05150-27c4945a",
-            "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05209-9c1fb88e",
-            "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05227-fd6c692b",
-            "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05296-caf83982",
-            "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05230-cfe0d8d5",
-            "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05309-21871183",
-            "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05351-13518695",
-            "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05401-be354c27",
-            "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05407-cb872cae",
-            "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05537-98cc1ef0",
-            "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05649-dfcc9e1a",
-            "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05725-f52e1198"
+            "aircraft-saab-gripen-c-701st-squadron-dsc05150-27c4945a",
+            "aircraft-saab-gripen-c-701st-squadron-dsc05209-9c1fb88e",
+            "aircraft-saab-gripen-c-701st-squadron-dsc05227-fd6c692b",
+            "aircraft-saab-gripen-c-701st-squadron-dsc05296-caf83982",
+            "aircraft-saab-gripen-c-701st-squadron-dsc05230-cfe0d8d5",
+            "aircraft-saab-gripen-c-701st-squadron-dsc05309-21871183",
+            "aircraft-saab-gripen-c-701st-squadron-dsc05351-13518695",
+            "aircraft-saab-gripen-c-701st-squadron-dsc05401-be354c27",
+            "aircraft-saab-gripen-c-701st-squadron-dsc05407-cb872cae",
+            "aircraft-saab-gripen-c-701st-squadron-dsc05537-98cc1ef0",
+            "aircraft-saab-gripen-c-701st-squadron-dsc05649-dfcc9e1a",
+            "aircraft-saab-gripen-c-701st-squadron-dsc05725-f52e1198"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-saab-jas-39c-gripen-c-701st-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-saab-jas-39c-gripen-c-701st-squadron.jpg",
+            "image": "assets/generated/photos/squadron-hero-saab-gripen-c-701st-squadron.jpg",
+            "thumbnail": "assets/generated/thumbs/squadron-hero-saab-gripen-c-701st-squadron.jpg",
             "source": "raw_assets/DSC05401.jpg",
             "originalSize": "4844 x 3633",
             "processedSize": "2560 x 1920",
@@ -3505,20 +3505,20 @@ window.SPOTTERDEX_DATA = {
         }
       ],
       "photoIds": [
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05150-27c4945a",
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05209-9c1fb88e",
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05227-fd6c692b",
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05296-caf83982",
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05230-cfe0d8d5",
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05309-21871183",
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05351-13518695",
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05401-be354c27",
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05407-cb872cae",
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05537-98cc1ef0",
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05649-dfcc9e1a",
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05725-f52e1198"
+        "aircraft-saab-gripen-c-701st-squadron-dsc05150-27c4945a",
+        "aircraft-saab-gripen-c-701st-squadron-dsc05209-9c1fb88e",
+        "aircraft-saab-gripen-c-701st-squadron-dsc05227-fd6c692b",
+        "aircraft-saab-gripen-c-701st-squadron-dsc05296-caf83982",
+        "aircraft-saab-gripen-c-701st-squadron-dsc05230-cfe0d8d5",
+        "aircraft-saab-gripen-c-701st-squadron-dsc05309-21871183",
+        "aircraft-saab-gripen-c-701st-squadron-dsc05351-13518695",
+        "aircraft-saab-gripen-c-701st-squadron-dsc05401-be354c27",
+        "aircraft-saab-gripen-c-701st-squadron-dsc05407-cb872cae",
+        "aircraft-saab-gripen-c-701st-squadron-dsc05537-98cc1ef0",
+        "aircraft-saab-gripen-c-701st-squadron-dsc05649-dfcc9e1a",
+        "aircraft-saab-gripen-c-701st-squadron-dsc05725-f52e1198"
       ],
-      "coverPhoto": "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05150-27c4945a",
+      "coverPhoto": "aircraft-saab-gripen-c-701st-squadron-dsc05150-27c4945a",
       "stats": {
         "photoCount": 12,
         "unitCount": 1,
@@ -3709,30 +3709,29 @@ window.SPOTTERDEX_DATA = {
       "id": "wan-dek-2026",
       "name": "Wan Dek 2026",
       "photoIds": [
-        "aircraft-f-16a-103rd-fighter-squadron-dsc04086-e1406928",
-        "aircraft-f-16a-103rd-fighter-squadron-dsc04119-f7c081b0",
-        "aircraft-f-16a-103rd-fighter-squadron-dsc04380-6186a822",
-        "aircraft-f-16a-103rd-fighter-squadron-dsc04426-e9dd220d",
-        "aircraft-f-16a-103rd-fighter-squadron-dsc04617-cb6f8bc0",
-        "aircraft-f-16a-103rd-fighter-squadron-dsc04717-b6514e98",
-        "aircraft-f-16a-103rd-fighter-squadron-dsc04848-34e3466b",
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05150-27c4945a",
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05209-9c1fb88e",
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05227-fd6c692b",
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05230-cfe0d8d5",
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05296-caf83982",
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05309-21871183",
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05351-13518695",
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05401-be354c27",
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05407-cb872cae",
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05537-98cc1ef0",
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05649-dfcc9e1a",
-        "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05725-f52e1198"
+        "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04086-e1406928",
+        "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04119-f7c081b0",
+        "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04380-6186a822",
+        "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04426-e9dd220d",
+        "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04617-cb6f8bc0",
+        "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04717-b6514e98",
+        "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04848-34e3466b",
+        "aircraft-saab-gripen-c-701st-squadron-dsc05150-27c4945a",
+        "aircraft-saab-gripen-c-701st-squadron-dsc05209-9c1fb88e",
+        "aircraft-saab-gripen-c-701st-squadron-dsc05227-fd6c692b",
+        "aircraft-saab-gripen-c-701st-squadron-dsc05230-cfe0d8d5",
+        "aircraft-saab-gripen-c-701st-squadron-dsc05296-caf83982",
+        "aircraft-saab-gripen-c-701st-squadron-dsc05309-21871183",
+        "aircraft-saab-gripen-c-701st-squadron-dsc05351-13518695",
+        "aircraft-saab-gripen-c-701st-squadron-dsc05401-be354c27",
+        "aircraft-saab-gripen-c-701st-squadron-dsc05407-cb872cae",
+        "aircraft-saab-gripen-c-701st-squadron-dsc05537-98cc1ef0",
+        "aircraft-saab-gripen-c-701st-squadron-dsc05649-dfcc9e1a",
+        "aircraft-saab-gripen-c-701st-squadron-dsc05725-f52e1198"
       ],
       "photoCount": 19,
       "firstDate": "2026-01-10",
-      "latestDate": "2026-01-10",
-      "heroPhotoId": "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05351-13518695"
+      "latestDate": "2026-01-10"
     },
     {
       "id": "tsuiki-air-show-2025",
@@ -4771,12 +4770,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05150-27c4945a",
+      "id": "aircraft-saab-gripen-c-701st-squadron-dsc05150-27c4945a",
       "tagScope": "aircraft",
-      "aircraftId": "saab-jas-39c-gripen-c",
-      "aircraftType": "Saab JAS 39C (Gripen C)",
+      "aircraftId": "saab-gripen-c",
+      "aircraftType": "Saab Gripen C",
       "aircraftFamily": "fighter",
-      "squadronId": "saab-jas-39c-gripen-c-701st-squadron",
+      "squadronId": "saab-gripen-c-701st-squadron",
       "squadronName": "701st Squadron",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -4788,15 +4787,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "don-muang-royal-thai-air-force-base",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/saab-jas-39c-gripen-c/701st-squadron/entry.yaml",
+        "entryPath": "aircraft/saab-gripen-c/701st-squadron/entry.yaml",
         "index": 0
       },
       "airshow": "Wan Dek 2026",
       "livery": "",
       "title": "",
       "caption": "RTAF Gripen C from 701 SQN taxiing on the ground for takeoff",
-      "image": "assets/generated/photos/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05150-27c4945a.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05150-27c4945a.jpg",
+      "image": "assets/generated/photos/aircraft-saab-gripen-c-701st-squadron-dsc05150-27c4945a.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-saab-gripen-c-701st-squadron-dsc05150-27c4945a.jpg",
       "source": "raw_assets/DSC05150.jpg",
       "originalSize": "6816 x 5112",
       "processedSize": "2560 x 1920",
@@ -4815,12 +4814,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05209-9c1fb88e",
+      "id": "aircraft-saab-gripen-c-701st-squadron-dsc05209-9c1fb88e",
       "tagScope": "aircraft",
-      "aircraftId": "saab-jas-39c-gripen-c",
-      "aircraftType": "Saab JAS 39C (Gripen C)",
+      "aircraftId": "saab-gripen-c",
+      "aircraftType": "Saab Gripen C",
       "aircraftFamily": "fighter",
-      "squadronId": "saab-jas-39c-gripen-c-701st-squadron",
+      "squadronId": "saab-gripen-c-701st-squadron",
       "squadronName": "701st Squadron",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -4832,15 +4831,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "don-muang-royal-thai-air-force-base",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/saab-jas-39c-gripen-c/701st-squadron/entry.yaml",
+        "entryPath": "aircraft/saab-gripen-c/701st-squadron/entry.yaml",
         "index": 1
       },
       "airshow": "Wan Dek 2026",
       "livery": "",
       "title": "",
       "caption": "RTAF Gripen C from 701 SQN taxiing on the ground for takeoff",
-      "image": "assets/generated/photos/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05209-9c1fb88e.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05209-9c1fb88e.jpg",
+      "image": "assets/generated/photos/aircraft-saab-gripen-c-701st-squadron-dsc05209-9c1fb88e.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-saab-gripen-c-701st-squadron-dsc05209-9c1fb88e.jpg",
       "source": "raw_assets/DSC05209.jpg",
       "originalSize": "7820 x 5213",
       "processedSize": "2560 x 1707",
@@ -4859,12 +4858,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05227-fd6c692b",
+      "id": "aircraft-saab-gripen-c-701st-squadron-dsc05227-fd6c692b",
       "tagScope": "aircraft",
-      "aircraftId": "saab-jas-39c-gripen-c",
-      "aircraftType": "Saab JAS 39C (Gripen C)",
+      "aircraftId": "saab-gripen-c",
+      "aircraftType": "Saab Gripen C",
       "aircraftFamily": "fighter",
-      "squadronId": "saab-jas-39c-gripen-c-701st-squadron",
+      "squadronId": "saab-gripen-c-701st-squadron",
       "squadronName": "701st Squadron",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -4876,15 +4875,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "don-muang-royal-thai-air-force-base",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/saab-jas-39c-gripen-c/701st-squadron/entry.yaml",
+        "entryPath": "aircraft/saab-gripen-c/701st-squadron/entry.yaml",
         "index": 2
       },
       "airshow": "Wan Dek 2026",
       "livery": "",
       "title": "",
       "caption": "RTAF Gripen C from 701 SQN during a Wan Dek performance",
-      "image": "assets/generated/photos/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05227-fd6c692b.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05227-fd6c692b.jpg",
+      "image": "assets/generated/photos/aircraft-saab-gripen-c-701st-squadron-dsc05227-fd6c692b.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-saab-gripen-c-701st-squadron-dsc05227-fd6c692b.jpg",
       "source": "raw_assets/DSC05227.jpg",
       "originalSize": "4967 x 3725",
       "processedSize": "2560 x 1920",
@@ -4903,12 +4902,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05296-caf83982",
+      "id": "aircraft-saab-gripen-c-701st-squadron-dsc05296-caf83982",
       "tagScope": "aircraft",
-      "aircraftId": "saab-jas-39c-gripen-c",
-      "aircraftType": "Saab JAS 39C (Gripen C)",
+      "aircraftId": "saab-gripen-c",
+      "aircraftType": "Saab Gripen C",
       "aircraftFamily": "fighter",
-      "squadronId": "saab-jas-39c-gripen-c-701st-squadron",
+      "squadronId": "saab-gripen-c-701st-squadron",
       "squadronName": "701st Squadron",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -4920,15 +4919,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "don-muang-royal-thai-air-force-base",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/saab-jas-39c-gripen-c/701st-squadron/entry.yaml",
+        "entryPath": "aircraft/saab-gripen-c/701st-squadron/entry.yaml",
         "index": 3
       },
       "airshow": "Wan Dek 2026",
       "livery": "",
       "title": "",
       "caption": "RTAF Gripen C from 701 SQN during a Wan Dek performance",
-      "image": "assets/generated/photos/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05296-caf83982.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05296-caf83982.jpg",
+      "image": "assets/generated/photos/aircraft-saab-gripen-c-701st-squadron-dsc05296-caf83982.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-saab-gripen-c-701st-squadron-dsc05296-caf83982.jpg",
       "source": "raw_assets/DSC05296.jpg",
       "originalSize": "3912 x 2934",
       "processedSize": "2560 x 1920",
@@ -4947,12 +4946,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05230-cfe0d8d5",
+      "id": "aircraft-saab-gripen-c-701st-squadron-dsc05230-cfe0d8d5",
       "tagScope": "aircraft",
-      "aircraftId": "saab-jas-39c-gripen-c",
-      "aircraftType": "Saab JAS 39C (Gripen C)",
+      "aircraftId": "saab-gripen-c",
+      "aircraftType": "Saab Gripen C",
       "aircraftFamily": "fighter",
-      "squadronId": "saab-jas-39c-gripen-c-701st-squadron",
+      "squadronId": "saab-gripen-c-701st-squadron",
       "squadronName": "701st Squadron",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -4964,15 +4963,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "don-muang-royal-thai-air-force-base",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/saab-jas-39c-gripen-c/701st-squadron/entry.yaml",
+        "entryPath": "aircraft/saab-gripen-c/701st-squadron/entry.yaml",
         "index": 4
       },
       "airshow": "Wan Dek 2026",
       "livery": "",
       "title": "",
       "caption": "RTAF Gripen C from 701 SQN during a Wan Dek performance",
-      "image": "assets/generated/photos/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05230-cfe0d8d5.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05230-cfe0d8d5.jpg",
+      "image": "assets/generated/photos/aircraft-saab-gripen-c-701st-squadron-dsc05230-cfe0d8d5.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-saab-gripen-c-701st-squadron-dsc05230-cfe0d8d5.jpg",
       "source": "raw_assets/DSC05230.jpg",
       "originalSize": "4806 x 3605",
       "processedSize": "2560 x 1920",
@@ -4991,12 +4990,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05309-21871183",
+      "id": "aircraft-saab-gripen-c-701st-squadron-dsc05309-21871183",
       "tagScope": "aircraft",
-      "aircraftId": "saab-jas-39c-gripen-c",
-      "aircraftType": "Saab JAS 39C (Gripen C)",
+      "aircraftId": "saab-gripen-c",
+      "aircraftType": "Saab Gripen C",
       "aircraftFamily": "fighter",
-      "squadronId": "saab-jas-39c-gripen-c-701st-squadron",
+      "squadronId": "saab-gripen-c-701st-squadron",
       "squadronName": "701st Squadron",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -5008,15 +5007,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "don-muang-royal-thai-air-force-base",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/saab-jas-39c-gripen-c/701st-squadron/entry.yaml",
+        "entryPath": "aircraft/saab-gripen-c/701st-squadron/entry.yaml",
         "index": 5
       },
       "airshow": "Wan Dek 2026",
       "livery": "",
       "title": "",
       "caption": "RTAF Gripen C from 701 SQN during a Wan Dek performance",
-      "image": "assets/generated/photos/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05309-21871183.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05309-21871183.jpg",
+      "image": "assets/generated/photos/aircraft-saab-gripen-c-701st-squadron-dsc05309-21871183.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-saab-gripen-c-701st-squadron-dsc05309-21871183.jpg",
       "source": "raw_assets/DSC05309.jpg",
       "originalSize": "4681 x 3511",
       "processedSize": "2560 x 1920",
@@ -5035,12 +5034,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05351-13518695",
+      "id": "aircraft-saab-gripen-c-701st-squadron-dsc05351-13518695",
       "tagScope": "aircraft",
-      "aircraftId": "saab-jas-39c-gripen-c",
-      "aircraftType": "Saab JAS 39C (Gripen C)",
+      "aircraftId": "saab-gripen-c",
+      "aircraftType": "Saab Gripen C",
       "aircraftFamily": "fighter",
-      "squadronId": "saab-jas-39c-gripen-c-701st-squadron",
+      "squadronId": "saab-gripen-c-701st-squadron",
       "squadronName": "701st Squadron",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -5052,15 +5051,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "don-muang-royal-thai-air-force-base",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/saab-jas-39c-gripen-c/701st-squadron/entry.yaml",
+        "entryPath": "aircraft/saab-gripen-c/701st-squadron/entry.yaml",
         "index": 6
       },
       "airshow": "Wan Dek 2026",
       "livery": "",
       "title": "",
       "caption": "RTAF Gripen C from 701 SQN during a Wan Dek performance",
-      "image": "assets/generated/photos/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05351-13518695.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05351-13518695.jpg",
+      "image": "assets/generated/photos/aircraft-saab-gripen-c-701st-squadron-dsc05351-13518695.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-saab-gripen-c-701st-squadron-dsc05351-13518695.jpg",
       "source": "raw_assets/DSC05351.jpg",
       "originalSize": "2892 x 2169",
       "processedSize": "2560 x 1920",
@@ -5079,12 +5078,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05401-be354c27",
+      "id": "aircraft-saab-gripen-c-701st-squadron-dsc05401-be354c27",
       "tagScope": "aircraft",
-      "aircraftId": "saab-jas-39c-gripen-c",
-      "aircraftType": "Saab JAS 39C (Gripen C)",
+      "aircraftId": "saab-gripen-c",
+      "aircraftType": "Saab Gripen C",
       "aircraftFamily": "fighter",
-      "squadronId": "saab-jas-39c-gripen-c-701st-squadron",
+      "squadronId": "saab-gripen-c-701st-squadron",
       "squadronName": "701st Squadron",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -5096,15 +5095,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "don-muang-royal-thai-air-force-base",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/saab-jas-39c-gripen-c/701st-squadron/entry.yaml",
+        "entryPath": "aircraft/saab-gripen-c/701st-squadron/entry.yaml",
         "index": 7
       },
       "airshow": "Wan Dek 2026",
       "livery": "",
       "title": "",
       "caption": "RTAF Gripen C from 701 SQN during a Wan Dek performance",
-      "image": "assets/generated/photos/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05401-be354c27.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05401-be354c27.jpg",
+      "image": "assets/generated/photos/aircraft-saab-gripen-c-701st-squadron-dsc05401-be354c27.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-saab-gripen-c-701st-squadron-dsc05401-be354c27.jpg",
       "source": "raw_assets/DSC05401.jpg",
       "originalSize": "4844 x 3633",
       "processedSize": "2560 x 1920",
@@ -5123,12 +5122,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05407-cb872cae",
+      "id": "aircraft-saab-gripen-c-701st-squadron-dsc05407-cb872cae",
       "tagScope": "aircraft",
-      "aircraftId": "saab-jas-39c-gripen-c",
-      "aircraftType": "Saab JAS 39C (Gripen C)",
+      "aircraftId": "saab-gripen-c",
+      "aircraftType": "Saab Gripen C",
       "aircraftFamily": "fighter",
-      "squadronId": "saab-jas-39c-gripen-c-701st-squadron",
+      "squadronId": "saab-gripen-c-701st-squadron",
       "squadronName": "701st Squadron",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -5140,15 +5139,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "don-muang-royal-thai-air-force-base",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/saab-jas-39c-gripen-c/701st-squadron/entry.yaml",
+        "entryPath": "aircraft/saab-gripen-c/701st-squadron/entry.yaml",
         "index": 8
       },
       "airshow": "Wan Dek 2026",
       "livery": "",
       "title": "",
       "caption": "RTAF Gripen C from 701 SQN during a Wan Dek performance",
-      "image": "assets/generated/photos/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05407-cb872cae.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05407-cb872cae.jpg",
+      "image": "assets/generated/photos/aircraft-saab-gripen-c-701st-squadron-dsc05407-cb872cae.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-saab-gripen-c-701st-squadron-dsc05407-cb872cae.jpg",
       "source": "raw_assets/DSC05407.jpg",
       "originalSize": "5554 x 4165",
       "processedSize": "2560 x 1920",
@@ -5167,12 +5166,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05537-98cc1ef0",
+      "id": "aircraft-saab-gripen-c-701st-squadron-dsc05537-98cc1ef0",
       "tagScope": "aircraft",
-      "aircraftId": "saab-jas-39c-gripen-c",
-      "aircraftType": "Saab JAS 39C (Gripen C)",
+      "aircraftId": "saab-gripen-c",
+      "aircraftType": "Saab Gripen C",
       "aircraftFamily": "fighter",
-      "squadronId": "saab-jas-39c-gripen-c-701st-squadron",
+      "squadronId": "saab-gripen-c-701st-squadron",
       "squadronName": "701st Squadron",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -5184,15 +5183,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "don-muang-royal-thai-air-force-base",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/saab-jas-39c-gripen-c/701st-squadron/entry.yaml",
+        "entryPath": "aircraft/saab-gripen-c/701st-squadron/entry.yaml",
         "index": 9
       },
       "airshow": "Wan Dek 2026",
       "livery": "",
       "title": "",
       "caption": "RTAF Gripen C from 701 SQN during a Wan Dek performance",
-      "image": "assets/generated/photos/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05537-98cc1ef0.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05537-98cc1ef0.jpg",
+      "image": "assets/generated/photos/aircraft-saab-gripen-c-701st-squadron-dsc05537-98cc1ef0.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-saab-gripen-c-701st-squadron-dsc05537-98cc1ef0.jpg",
       "source": "raw_assets/DSC05537.jpg",
       "originalSize": "6102 x 4577",
       "processedSize": "2560 x 1920",
@@ -5211,12 +5210,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05649-dfcc9e1a",
+      "id": "aircraft-saab-gripen-c-701st-squadron-dsc05649-dfcc9e1a",
       "tagScope": "aircraft",
-      "aircraftId": "saab-jas-39c-gripen-c",
-      "aircraftType": "Saab JAS 39C (Gripen C)",
+      "aircraftId": "saab-gripen-c",
+      "aircraftType": "Saab Gripen C",
       "aircraftFamily": "fighter",
-      "squadronId": "saab-jas-39c-gripen-c-701st-squadron",
+      "squadronId": "saab-gripen-c-701st-squadron",
       "squadronName": "701st Squadron",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -5228,15 +5227,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "don-muang-royal-thai-air-force-base",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/saab-jas-39c-gripen-c/701st-squadron/entry.yaml",
+        "entryPath": "aircraft/saab-gripen-c/701st-squadron/entry.yaml",
         "index": 10
       },
       "airshow": "Wan Dek 2026",
       "livery": "",
       "title": "",
       "caption": "RTAF Gripen C from 701 SQN during a Wan Dek performance",
-      "image": "assets/generated/photos/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05649-dfcc9e1a.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05649-dfcc9e1a.jpg",
+      "image": "assets/generated/photos/aircraft-saab-gripen-c-701st-squadron-dsc05649-dfcc9e1a.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-saab-gripen-c-701st-squadron-dsc05649-dfcc9e1a.jpg",
       "source": "raw_assets/DSC05649.jpg",
       "originalSize": "4164 x 3123",
       "processedSize": "2560 x 1920",
@@ -5255,12 +5254,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05725-f52e1198",
+      "id": "aircraft-saab-gripen-c-701st-squadron-dsc05725-f52e1198",
       "tagScope": "aircraft",
-      "aircraftId": "saab-jas-39c-gripen-c",
-      "aircraftType": "Saab JAS 39C (Gripen C)",
+      "aircraftId": "saab-gripen-c",
+      "aircraftType": "Saab Gripen C",
       "aircraftFamily": "fighter",
-      "squadronId": "saab-jas-39c-gripen-c-701st-squadron",
+      "squadronId": "saab-gripen-c-701st-squadron",
       "squadronName": "701st Squadron",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -5272,15 +5271,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "don-muang-royal-thai-air-force-base",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/saab-jas-39c-gripen-c/701st-squadron/entry.yaml",
+        "entryPath": "aircraft/saab-gripen-c/701st-squadron/entry.yaml",
         "index": 11
       },
       "airshow": "Wan Dek 2026",
       "livery": "",
       "title": "",
       "caption": "RTAF Gripen at Don Muang",
-      "image": "assets/generated/photos/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05725-f52e1198.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-saab-jas-39c-gripen-c-701st-squadron-dsc05725-f52e1198.jpg",
+      "image": "assets/generated/photos/aircraft-saab-gripen-c-701st-squadron-dsc05725-f52e1198.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-saab-gripen-c-701st-squadron-dsc05725-f52e1198.jpg",
       "source": "raw_assets/DSC05725.jpg",
       "originalSize": "6191 x 4643",
       "processedSize": "2560 x 1920",
@@ -5299,12 +5298,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-f-16a-103rd-fighter-squadron-dsc04380-6186a822",
+      "id": "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04380-6186a822",
       "tagScope": "aircraft",
-      "aircraftId": "f-16a",
-      "aircraftType": "F-16A",
+      "aircraftId": "general-dynamics-f-16a",
+      "aircraftType": "General Dynamics F-16A",
       "aircraftFamily": "fighter",
-      "squadronId": "f-16a-103rd-fighter-squadron",
+      "squadronId": "general-dynamics-f-16a-103rd-fighter-squadron",
       "squadronName": "103rd Fighter Squadron",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -5316,15 +5315,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "don-muang-royal-thai-air-force-base",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/f-16a/103rd-fighter-squadron/entry.yaml",
+        "entryPath": "aircraft/general-dynamics-f-16a/103rd-fighter-squadron/entry.yaml",
         "index": 0
       },
       "airshow": "Wan Dek 2026",
       "livery": "",
       "title": "",
       "caption": "RTAF F-16A from 103 SQN during a Wan Dek performance",
-      "image": "assets/generated/photos/aircraft-f-16a-103rd-fighter-squadron-dsc04380-6186a822.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-f-16a-103rd-fighter-squadron-dsc04380-6186a822.jpg",
+      "image": "assets/generated/photos/aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04380-6186a822.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04380-6186a822.jpg",
       "source": "raw_assets/DSC04380.jpg",
       "originalSize": "4177 x 3133",
       "processedSize": "2560 x 1920",
@@ -5343,12 +5342,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-f-16a-103rd-fighter-squadron-dsc04848-34e3466b",
+      "id": "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04848-34e3466b",
       "tagScope": "aircraft",
-      "aircraftId": "f-16a",
-      "aircraftType": "F-16A",
+      "aircraftId": "general-dynamics-f-16a",
+      "aircraftType": "General Dynamics F-16A",
       "aircraftFamily": "fighter",
-      "squadronId": "f-16a-103rd-fighter-squadron",
+      "squadronId": "general-dynamics-f-16a-103rd-fighter-squadron",
       "squadronName": "103rd Fighter Squadron",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -5360,15 +5359,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "don-muang-royal-thai-air-force-base",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/f-16a/103rd-fighter-squadron/entry.yaml",
+        "entryPath": "aircraft/general-dynamics-f-16a/103rd-fighter-squadron/entry.yaml",
         "index": 1
       },
       "airshow": "Wan Dek 2026",
       "livery": "",
       "title": "",
       "caption": "RTAF F-16A from 103 SQN during a Wan Dek performance",
-      "image": "assets/generated/photos/aircraft-f-16a-103rd-fighter-squadron-dsc04848-34e3466b.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-f-16a-103rd-fighter-squadron-dsc04848-34e3466b.jpg",
+      "image": "assets/generated/photos/aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04848-34e3466b.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04848-34e3466b.jpg",
       "source": "raw_assets/DSC04848.jpg",
       "originalSize": "7526 x 5644",
       "processedSize": "2560 x 1920",
@@ -5387,12 +5386,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-f-16a-103rd-fighter-squadron-dsc04717-b6514e98",
+      "id": "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04717-b6514e98",
       "tagScope": "aircraft",
-      "aircraftId": "f-16a",
-      "aircraftType": "F-16A",
+      "aircraftId": "general-dynamics-f-16a",
+      "aircraftType": "General Dynamics F-16A",
       "aircraftFamily": "fighter",
-      "squadronId": "f-16a-103rd-fighter-squadron",
+      "squadronId": "general-dynamics-f-16a-103rd-fighter-squadron",
       "squadronName": "103rd Fighter Squadron",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -5404,15 +5403,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "don-muang-royal-thai-air-force-base",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/f-16a/103rd-fighter-squadron/entry.yaml",
+        "entryPath": "aircraft/general-dynamics-f-16a/103rd-fighter-squadron/entry.yaml",
         "index": 2
       },
       "airshow": "Wan Dek 2026",
       "livery": "",
       "title": "",
       "caption": "RTAF F-16A from 103 SQN during a Wan Dek performance",
-      "image": "assets/generated/photos/aircraft-f-16a-103rd-fighter-squadron-dsc04717-b6514e98.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-f-16a-103rd-fighter-squadron-dsc04717-b6514e98.jpg",
+      "image": "assets/generated/photos/aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04717-b6514e98.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04717-b6514e98.jpg",
       "source": "raw_assets/DSC04717.jpg",
       "originalSize": "6878 x 5158",
       "processedSize": "2560 x 1920",
@@ -5431,12 +5430,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-f-16a-103rd-fighter-squadron-dsc04617-cb6f8bc0",
+      "id": "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04617-cb6f8bc0",
       "tagScope": "aircraft",
-      "aircraftId": "f-16a",
-      "aircraftType": "F-16A",
+      "aircraftId": "general-dynamics-f-16a",
+      "aircraftType": "General Dynamics F-16A",
       "aircraftFamily": "fighter",
-      "squadronId": "f-16a-103rd-fighter-squadron",
+      "squadronId": "general-dynamics-f-16a-103rd-fighter-squadron",
       "squadronName": "103rd Fighter Squadron",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -5448,15 +5447,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "don-muang-royal-thai-air-force-base",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/f-16a/103rd-fighter-squadron/entry.yaml",
+        "entryPath": "aircraft/general-dynamics-f-16a/103rd-fighter-squadron/entry.yaml",
         "index": 3
       },
       "airshow": "Wan Dek 2026",
       "livery": "",
       "title": "",
       "caption": "RTAF F-16A from 103 SQN during a Wan Dek performance",
-      "image": "assets/generated/photos/aircraft-f-16a-103rd-fighter-squadron-dsc04617-cb6f8bc0.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-f-16a-103rd-fighter-squadron-dsc04617-cb6f8bc0.jpg",
+      "image": "assets/generated/photos/aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04617-cb6f8bc0.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04617-cb6f8bc0.jpg",
       "source": "raw_assets/DSC04617.jpg",
       "originalSize": "5667 x 4250",
       "processedSize": "2560 x 1920",
@@ -5475,12 +5474,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-f-16a-103rd-fighter-squadron-dsc04426-e9dd220d",
+      "id": "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04426-e9dd220d",
       "tagScope": "aircraft",
-      "aircraftId": "f-16a",
-      "aircraftType": "F-16A",
+      "aircraftId": "general-dynamics-f-16a",
+      "aircraftType": "General Dynamics F-16A",
       "aircraftFamily": "fighter",
-      "squadronId": "f-16a-103rd-fighter-squadron",
+      "squadronId": "general-dynamics-f-16a-103rd-fighter-squadron",
       "squadronName": "103rd Fighter Squadron",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -5492,15 +5491,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "don-muang-royal-thai-air-force-base",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/f-16a/103rd-fighter-squadron/entry.yaml",
+        "entryPath": "aircraft/general-dynamics-f-16a/103rd-fighter-squadron/entry.yaml",
         "index": 4
       },
       "airshow": "Wan Dek 2026",
       "livery": "",
       "title": "",
       "caption": "RTAF F-16A from 103 SQN during a Wan Dek performance",
-      "image": "assets/generated/photos/aircraft-f-16a-103rd-fighter-squadron-dsc04426-e9dd220d.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-f-16a-103rd-fighter-squadron-dsc04426-e9dd220d.jpg",
+      "image": "assets/generated/photos/aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04426-e9dd220d.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04426-e9dd220d.jpg",
       "source": "raw_assets/DSC04426.jpg",
       "originalSize": "5093 x 3820",
       "processedSize": "2560 x 1920",
@@ -5519,12 +5518,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-f-16a-103rd-fighter-squadron-dsc04086-e1406928",
+      "id": "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04086-e1406928",
       "tagScope": "aircraft",
-      "aircraftId": "f-16a",
-      "aircraftType": "F-16A",
+      "aircraftId": "general-dynamics-f-16a",
+      "aircraftType": "General Dynamics F-16A",
       "aircraftFamily": "fighter",
-      "squadronId": "f-16a-103rd-fighter-squadron",
+      "squadronId": "general-dynamics-f-16a-103rd-fighter-squadron",
       "squadronName": "103rd Fighter Squadron",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -5536,15 +5535,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "don-muang-royal-thai-air-force-base",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/f-16a/103rd-fighter-squadron/entry.yaml",
+        "entryPath": "aircraft/general-dynamics-f-16a/103rd-fighter-squadron/entry.yaml",
         "index": 5
       },
       "airshow": "Wan Dek 2026",
       "livery": "",
       "title": "",
       "caption": "RTAF F-16A from 103 SQN taxiing on the ground for takeoff",
-      "image": "assets/generated/photos/aircraft-f-16a-103rd-fighter-squadron-dsc04086-e1406928.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-f-16a-103rd-fighter-squadron-dsc04086-e1406928.jpg",
+      "image": "assets/generated/photos/aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04086-e1406928.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04086-e1406928.jpg",
       "source": "raw_assets/DSC04086.jpg",
       "originalSize": "6966 x 5224",
       "processedSize": "2560 x 1920",
@@ -5563,12 +5562,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-f-16a-103rd-fighter-squadron-dsc04119-f7c081b0",
+      "id": "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04119-f7c081b0",
       "tagScope": "aircraft",
-      "aircraftId": "f-16a",
-      "aircraftType": "F-16A",
+      "aircraftId": "general-dynamics-f-16a",
+      "aircraftType": "General Dynamics F-16A",
       "aircraftFamily": "fighter",
-      "squadronId": "f-16a-103rd-fighter-squadron",
+      "squadronId": "general-dynamics-f-16a-103rd-fighter-squadron",
       "squadronName": "103rd Fighter Squadron",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -5580,15 +5579,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "don-muang-royal-thai-air-force-base",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/f-16a/103rd-fighter-squadron/entry.yaml",
+        "entryPath": "aircraft/general-dynamics-f-16a/103rd-fighter-squadron/entry.yaml",
         "index": 6
       },
       "airshow": "Wan Dek 2026",
       "livery": "",
       "title": "",
       "caption": "RTAF F-16A from 103 SQN taxiing on the ground for takeoff",
-      "image": "assets/generated/photos/aircraft-f-16a-103rd-fighter-squadron-dsc04119-f7c081b0.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-f-16a-103rd-fighter-squadron-dsc04119-f7c081b0.jpg",
+      "image": "assets/generated/photos/aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04119-f7c081b0.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04119-f7c081b0.jpg",
       "source": "raw_assets/DSC04119.jpg",
       "originalSize": "8427 x 5618",
       "processedSize": "2560 x 1707",
@@ -5651,12 +5650,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-e-2d-603rd-squadron-dsc00567-62eb62be",
+      "id": "aircraft-grumman-e-2d-hawkeye-603rd-squadron-dsc00567-62eb62be",
       "tagScope": "aircraft",
-      "aircraftId": "e-2d",
-      "aircraftType": "E-2D",
+      "aircraftId": "grumman-e-2d-hawkeye",
+      "aircraftType": "Grumman E-2D Hawkeye",
       "aircraftFamily": "medium",
-      "squadronId": "e-2d-603rd-squadron",
+      "squadronId": "grumman-e-2d-hawkeye-603rd-squadron",
       "squadronName": "603rd Squadron",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -5668,15 +5667,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "naha-air-base",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/e-2d/603rd-squadron/entry.yaml",
+        "entryPath": "aircraft/grumman-e2d-hawkeye/603rd-squadron/entry.yaml",
         "index": 2
       },
       "airshow": "",
       "livery": "",
       "title": "",
       "caption": "An E-2D Hawkeye from the 603rd Squadron, marked 477, on approach for Naha Air Base",
-      "image": "assets/generated/photos/aircraft-e-2d-603rd-squadron-dsc00567-62eb62be.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-e-2d-603rd-squadron-dsc00567-62eb62be.jpg",
+      "image": "assets/generated/photos/aircraft-grumman-e-2d-hawkeye-603rd-squadron-dsc00567-62eb62be.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-grumman-e-2d-hawkeye-603rd-squadron-dsc00567-62eb62be.jpg",
       "source": "raw_assets/DSC00567.jpg",
       "originalSize": "3679 x 2759",
       "processedSize": "2560 x 1920",
@@ -5695,12 +5694,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-e-2d-603rd-squadron-dsc04209-3fd2610c",
+      "id": "aircraft-grumman-e-2d-hawkeye-603rd-squadron-dsc04209-3fd2610c",
       "tagScope": "aircraft",
-      "aircraftId": "e-2d",
-      "aircraftType": "E-2D",
+      "aircraftId": "grumman-e-2d-hawkeye",
+      "aircraftType": "Grumman E-2D Hawkeye",
       "aircraftFamily": "medium",
-      "squadronId": "e-2d-603rd-squadron",
+      "squadronId": "grumman-e-2d-hawkeye-603rd-squadron",
       "squadronName": "603rd Squadron",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -5712,15 +5711,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "naha-air-base",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/e-2d/603rd-squadron/entry.yaml",
+        "entryPath": "aircraft/grumman-e2d-hawkeye/603rd-squadron/entry.yaml",
         "index": 0
       },
       "airshow": "",
       "livery": "",
       "title": "",
       "caption": "An E-2D Hawkeye from the 603rd Squadron, marked 476, taxis on the runway at Naha Air Base.",
-      "image": "assets/generated/photos/aircraft-e-2d-603rd-squadron-dsc04209-3fd2610c.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-e-2d-603rd-squadron-dsc04209-3fd2610c.jpg",
+      "image": "assets/generated/photos/aircraft-grumman-e-2d-hawkeye-603rd-squadron-dsc04209-3fd2610c.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-grumman-e-2d-hawkeye-603rd-squadron-dsc04209-3fd2610c.jpg",
       "source": "raw_assets/DSC04209.jpg",
       "originalSize": "6767 x 5075",
       "processedSize": "2560 x 1920",
@@ -5739,12 +5738,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-e-2d-603rd-squadron-dsc04372-9bd22e18",
+      "id": "aircraft-grumman-e-2d-hawkeye-603rd-squadron-dsc04372-9bd22e18",
       "tagScope": "aircraft",
-      "aircraftId": "e-2d",
-      "aircraftType": "E-2D",
+      "aircraftId": "grumman-e-2d-hawkeye",
+      "aircraftType": "Grumman E-2D Hawkeye",
       "aircraftFamily": "medium",
-      "squadronId": "e-2d-603rd-squadron",
+      "squadronId": "grumman-e-2d-hawkeye-603rd-squadron",
       "squadronName": "603rd Squadron",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -5756,15 +5755,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "naha-air-base",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/e-2d/603rd-squadron/entry.yaml",
+        "entryPath": "aircraft/grumman-e2d-hawkeye/603rd-squadron/entry.yaml",
         "index": 1
       },
       "airshow": "",
       "livery": "",
       "title": "",
       "caption": "An E-2D Hawkeye from the 603rd Squadron, marked 476, taxis on the runway at Naha Air Base.",
-      "image": "assets/generated/photos/aircraft-e-2d-603rd-squadron-dsc04372-9bd22e18.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-e-2d-603rd-squadron-dsc04372-9bd22e18.jpg",
+      "image": "assets/generated/photos/aircraft-grumman-e-2d-hawkeye-603rd-squadron-dsc04372-9bd22e18.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-grumman-e-2d-hawkeye-603rd-squadron-dsc04372-9bd22e18.jpg",
       "source": "raw_assets/DSC04372.jpg",
       "originalSize": "7093 x 5320",
       "processedSize": "2560 x 1920",
@@ -18551,12 +18550,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-g550-caew-14-stormo-italy-g550-010e857a",
+      "id": "aircraft-gulfstream-g550-caew-14-stormo-italy-g550-010e857a",
       "tagScope": "aircraft",
-      "aircraftId": "g550-caew",
-      "aircraftType": "G550 CAEW",
+      "aircraftId": "gulfstream-g550-caew",
+      "aircraftType": "Gulfstream G550 CAEW",
       "aircraftFamily": "medium",
-      "squadronId": "g550-caew-14-stormo",
+      "squadronId": "gulfstream-g550-caew-14-stormo",
       "squadronName": "14\u00b0 Stormo",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -18568,15 +18567,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "singapore",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/g550-caew/14-stormo/entry.yaml",
+        "entryPath": "aircraft/gulfstream-g550-caew/14-stormo/entry.yaml",
         "index": 0
       },
       "airshow": "",
       "livery": "",
       "title": "",
       "caption": "14\u00b0 Stormo G550 CAEW aircraft flying in Singapore",
-      "image": "assets/generated/photos/aircraft-g550-caew-14-stormo-italy-g550-010e857a.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-g550-caew-14-stormo-italy-g550-010e857a.jpg",
+      "image": "assets/generated/photos/aircraft-gulfstream-g550-caew-14-stormo-italy-g550-010e857a.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-gulfstream-g550-caew-14-stormo-italy-g550-010e857a.jpg",
       "source": "raw_assets/italy_g550.jpg",
       "originalSize": "4082 x 2721",
       "processedSize": "2560 x 1706",
@@ -19431,12 +19430,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-c-146a-wolfhound-usaf-special-operations-command-wolfhound-1-2dfc334b",
+      "id": "aircraft-dornier-c-146a-wolfhound-usaf-special-operations-command-wolfhound-1-2dfc334b",
       "tagScope": "aircraft",
-      "aircraftId": "c-146a-wolfhound",
-      "aircraftType": "C-146A Wolfhound",
+      "aircraftId": "dornier-c-146a-wolfhound",
+      "aircraftType": "Dornier C-146A Wolfhound",
       "aircraftFamily": "medium",
-      "squadronId": "c-146a-wolfhound-usaf-special-operations-command",
+      "squadronId": "dornier-c-146a-wolfhound-usaf-special-operations-command",
       "squadronName": "USAF Special Operations Command",
       "unitType": "squadron",
       "unitLabel": "Squadron",
@@ -19448,15 +19447,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "singapore",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/c-146a-wolfhound/usaf-special-operations-command/entry.yaml",
+        "entryPath": "aircraft/dornier-c-146a-wolfhound/usaf-special-operations-command/entry.yaml",
         "index": 0
       },
       "airshow": "",
       "livery": "",
       "title": "",
       "caption": "USAF Special Operations Command C-146A Wolfhound landing in Singapore",
-      "image": "assets/generated/photos/aircraft-c-146a-wolfhound-usaf-special-operations-command-wolfhound-1-2dfc334b.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-c-146a-wolfhound-usaf-special-operations-command-wolfhound-1-2dfc334b.jpg",
+      "image": "assets/generated/photos/aircraft-dornier-c-146a-wolfhound-usaf-special-operations-command-wolfhound-1-2dfc334b.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-dornier-c-146a-wolfhound-usaf-special-operations-command-wolfhound-1-2dfc334b.jpg",
       "source": "raw_assets/wolfhound_1.jpg",
       "originalSize": "4447 x 2965",
       "processedSize": "2560 x 1707",
@@ -19695,12 +19694,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-airbus-a300-600st-super-transporter-airbus-beluga-1-fba0bd70",
+      "id": "aircraft-airbus-a300-600st-airbus-beluga-1-fba0bd70",
       "tagScope": "aircraft",
-      "aircraftId": "airbus-a300-600st-super-transporter",
-      "aircraftType": "Airbus A300-600ST (Super Transporter)",
+      "aircraftId": "airbus-a300-600st",
+      "aircraftType": "Airbus A300-600ST",
       "aircraftFamily": "heavy",
-      "squadronId": "airbus-a300-600st-super-transporter-airbus",
+      "squadronId": "airbus-a300-600st-airbus",
       "squadronName": "Airbus",
       "unitType": "organisation",
       "unitLabel": "Organisation",
@@ -19712,15 +19711,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "singapore",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/airbus-a300-600st-super-transporter/airbus/entry.yaml",
+        "entryPath": "aircraft/airbus-a300-600st/airbus/entry.yaml",
         "index": 0
       },
       "airshow": "",
       "livery": "",
       "title": "",
       "caption": "Airbus A300-600ST (Super Transporter) landing in Singapore",
-      "image": "assets/generated/photos/aircraft-airbus-a300-600st-super-transporter-airbus-beluga-1-fba0bd70.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-airbus-a300-600st-super-transporter-airbus-beluga-1-fba0bd70.jpg",
+      "image": "assets/generated/photos/aircraft-airbus-a300-600st-airbus-beluga-1-fba0bd70.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-airbus-a300-600st-airbus-beluga-1-fba0bd70.jpg",
       "source": "raw_assets/beluga_1.jpg",
       "originalSize": "4477 x 2985",
       "processedSize": "2560 x 1707",
@@ -19739,12 +19738,12 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
-      "id": "aircraft-airbus-a300-600st-super-transporter-airbus-beluga-2-82dc08fa",
+      "id": "aircraft-airbus-a300-600st-airbus-beluga-2-82dc08fa",
       "tagScope": "aircraft",
-      "aircraftId": "airbus-a300-600st-super-transporter",
-      "aircraftType": "Airbus A300-600ST (Super Transporter)",
+      "aircraftId": "airbus-a300-600st",
+      "aircraftType": "Airbus A300-600ST",
       "aircraftFamily": "heavy",
-      "squadronId": "airbus-a300-600st-super-transporter-airbus",
+      "squadronId": "airbus-a300-600st-airbus",
       "squadronName": "Airbus",
       "unitType": "organisation",
       "unitLabel": "Organisation",
@@ -19756,15 +19755,15 @@ window.SPOTTERDEX_DATA = {
       "pinId": "singapore",
       "sourceRef": {
         "scope": "aircraft",
-        "entryPath": "aircraft/airbus-a300-600st-super-transporter/airbus/entry.yaml",
+        "entryPath": "aircraft/airbus-a300-600st/airbus/entry.yaml",
         "index": 1
       },
       "airshow": "",
       "livery": "",
       "title": "",
       "caption": "Airbus A300-600ST (Super Transporter) landing in Singapore",
-      "image": "assets/generated/photos/aircraft-airbus-a300-600st-super-transporter-airbus-beluga-2-82dc08fa.jpg",
-      "thumbnail": "assets/generated/thumbs/aircraft-airbus-a300-600st-super-transporter-airbus-beluga-2-82dc08fa.jpg",
+      "image": "assets/generated/photos/aircraft-airbus-a300-600st-airbus-beluga-2-82dc08fa.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-airbus-a300-600st-airbus-beluga-2-82dc08fa.jpg",
       "source": "raw_assets/beluga_2.jpg",
       "originalSize": "3659 x 2439",
       "processedSize": "2560 x 1706",
