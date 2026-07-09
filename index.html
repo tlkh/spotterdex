@@ -26,29 +26,35 @@
     <meta name="twitter:image" content="https://tlkh.github.io/spotterdex/assets/generated/photos/location-hero-gifu-air-base.jpg">
     <meta name="twitter:image:alt" content="Aircraft formation over Gifu Air Base in Japan">
     <link rel="canonical" href="https://tlkh.github.io/spotterdex/">
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
+    <link rel="preconnect" href="https://tile.openstreetmap.org" crossorigin>
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
+      media="print"
+      onload="this.media='all'"
     >
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""
+      >
+    </noscript>
     <link rel="icon" type="image/png" href="assets/icons/spotterdex-app-icon.png">
     <link rel="apple-touch-icon" href="assets/icons/spotterdex-app-icon.png">
     <link rel="stylesheet" href="styles.css">
-    <script
-      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-      crossorigin=""
-      defer
-    ></script>
-    <script src="data/spotterdex-data.js" defer></script>
+    <script src="data/spotterdex-map-data.js" defer></script>
     <script src="script.js" defer></script>
   </head>
-  <body>
+  <body data-page-view="mapView">
     <a class="skip-link" href="#main">Skip to content</a>
 
     <header class="site-header">
-      <a class="brand" href="#" aria-label="SpotterDex home">
+      <a class="brand" href="index.html" aria-label="SpotterDex home">
         <span class="brand-mark" aria-hidden="true">
           <img src="assets/icons/spotterdex-app-icon.png" alt="">
         </span>
@@ -58,65 +64,20 @@
         </span>
       </a>
 
-      <nav class="tab-nav" aria-label="Main views" role="tablist">
-        <button
-          class="tab-button is-active"
-          type="button"
-          role="tab"
-          aria-selected="true"
-          aria-controls="mapView"
-          data-tab-target="mapView"
-        >
-          World Map
-        </button>
-        <button
-          class="tab-button"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          aria-controls="dexView"
-          data-tab-target="dexView"
-        >
-          Aircraft Dex
-        </button>
-        <button
-          class="tab-button"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          aria-controls="squadronsView"
-          data-tab-target="squadronsView"
-        >
-          Squadrons
-        </button>
-        <button
-          class="tab-button"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          aria-controls="airshowsView"
-          data-tab-target="airshowsView"
-        >
-          Airshows
-        </button>
-        <button
-          class="tab-button"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          aria-controls="statsView"
-          data-tab-target="statsView"
-        >
-          Stats
-        </button>
+      <nav class="tab-nav" aria-label="Main views">
+        <a class="tab-button is-active" href="index.html" aria-current="page">World Map</a>
+        <a class="tab-button" href="aircraft-dex.html">Aircraft Dex</a>
+        <a class="tab-button" href="squadrons.html">Squadrons</a>
+        <a class="tab-button" href="airshows.html">Airshows</a>
+        <a class="tab-button" href="stats.html">Stats</a>
       </nav>
 
       <select class="nav-select" id="viewSelect" aria-label="Main view">
-        <option value="mapView">World Map</option>
-        <option value="dexView">Aircraft Dex</option>
-        <option value="squadronsView">Squadrons</option>
-        <option value="airshowsView">Airshows</option>
-        <option value="statsView">Stats</option>
+        <option value="index.html" selected>World Map</option>
+        <option value="aircraft-dex.html">Aircraft Dex</option>
+        <option value="squadrons.html">Squadrons</option>
+        <option value="airshows.html">Airshows</option>
+        <option value="stats.html">Stats</option>
       </select>
 
     </header>
@@ -191,222 +152,9 @@
         </div>
       </section>
 
-      <section class="view" id="dexView" data-view hidden>
-        <div class="dex-experience">
-          <section class="dex-hero" aria-labelledby="dexTitle">
-            <div class="dex-hero-media" id="dexHeroMedia" aria-hidden="true"></div>
-            <div class="dex-hero-scrim" aria-hidden="true"></div>
-            <div class="dex-hero-content">
-              <p class="eyebrow">Visual aircraft field guide</p>
-              <h1 id="dexTitle">Aircraft<br>Dex</h1>
-              <p class="dex-hero-lead">An evolving archive of airframes, operators, and the places they were photographed.</p>
-              <button class="dex-hero-action" id="dexHeroAction" type="button" hidden></button>
-            </div>
-            <div class="dex-hero-feature" id="dexHeroFeature" aria-live="polite"></div>
-            <dl class="dex-hero-stats" aria-label="Aircraft collection overview">
-              <div><dt>Types</dt><dd id="dexHeroAircraftCount">0</dd></div>
-              <div><dt>Frames</dt><dd id="dexHeroPhotoCount">0</dd></div>
-              <div><dt>Countries</dt><dd id="dexHeroCountryCount">0</dd></div>
-            </dl>
-            <span class="dex-scroll-cue" aria-hidden="true">Scroll to explore <i></i></span>
-          </section>
-
-          <section class="dex-command-bar" aria-label="Aircraft Dex filters">
-            <label class="dex-search" for="aircraftSearch">
-              <span class="field-label">Search the archive</span>
-              <span class="dex-search-control">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m16 16 4 4"></path></svg>
-                <input
-                  class="search-input"
-                  id="aircraftSearch"
-                  type="search"
-                  autocomplete="off"
-                  placeholder="Aircraft, unit, or country"
-                >
-              </span>
-            </label>
-            <div class="dex-family-filter" id="dexFamilyFilter" aria-live="polite"></div>
-            <p class="dex-count" id="dexCount">0 entries</p>
-          </section>
-
-          <section class="dex-recent" aria-label="Recent photos">
-            <div class="dex-strip-heading">
-              <p class="eyebrow">Latest sightings</p>
-              <p id="recentPhotosCount">0 photos</p>
-            </div>
-            <div class="recent-photo-strip" id="recentPhotosStrip"></div>
-          </section>
-
-          <section class="dex-browser" aria-label="Aircraft entries">
-            <div class="dex-browser-heading">
-              <p class="eyebrow">The collection</p>
-              <p>Open an entry for its complete visual record.</p>
-            </div>
-            <div class="aircraft-grid" id="aircraftGrid"></div>
-          </section>
-        </div>
-      </section>
-
-      <section class="view" id="squadronsView" data-view hidden>
-        <div class="squadrons-experience">
-          <section class="squadron-archive-hero" aria-labelledby="squadronsTitle">
-            <div class="squadron-archive-media" id="squadronHeroMedia" aria-hidden="true"></div>
-            <div class="squadron-archive-scrim" aria-hidden="true"></div>
-            <div class="squadron-archive-copy">
-              <p class="eyebrow">Unit markings archive</p>
-              <h1 id="squadronsTitle">Squadrons</h1>
-              <p>Insignia, aircraft, and photographic records from units across the collection.</p>
-            </div>
-            <dl class="squadron-archive-stats" aria-label="Squadron collection overview">
-              <div><dt>Units</dt><dd id="squadronPageCount">0</dd></div>
-              <div><dt>Countries</dt><dd id="squadronHeroCountryCount">0</dd></div>
-              <div><dt>Frames</dt><dd id="squadronHeroPhotoCount">0</dd></div>
-            </dl>
-          </section>
-
-          <section class="squadron-directory" aria-label="Squadron logo gallery">
-            <div class="squadron-command-bar">
-              <div class="squadron-country-rail" aria-label="Jump to country">
-                <p class="eyebrow">Country</p>
-                <nav id="squadronCountryRail" class="squadron-country-nav"></nav>
-              </div>
-            </div>
-            <div class="squadron-country-list" id="squadronLogoGrid"></div>
-          </section>
-        </div>
-      </section>
-
-      <section class="view" id="airshowsView" data-view hidden>
-        <div class="airshows-experience">
-          <section class="airshow-archive-hero" aria-labelledby="airshowsTitle">
-            <div class="airshow-archive-media" id="airshowHeroMedia" aria-hidden="true"></div>
-            <div class="airshow-archive-scrim" aria-hidden="true"></div>
-            <div class="airshow-archive-copy">
-              <p class="eyebrow">Event photography archive</p>
-              <h1 id="airshowsTitle">Airshows</h1>
-              <p>Chronological field reports from displays, rehearsals, and aviation gatherings.</p>
-            </div>
-            <dl class="airshow-archive-stats" aria-label="Airshow collection overview">
-              <div><dt>Events</dt><dd id="airshowPageCount">0</dd></div>
-              <div><dt>Frames</dt><dd id="airshowHeroPhotoCount">0</dd></div>
-              <div><dt>Locations</dt><dd id="airshowHeroLocationCount">0</dd></div>
-            </dl>
-          </section>
-
-          <section class="airshow-directory" aria-label="Airshow archive">
-            <div class="airshow-command-bar">
-              <p class="eyebrow">Event chronology</p>
-              <p id="airshowYearRange">Archive dates unavailable</p>
-            </div>
-            <section class="airshow-timeline" id="airshowTimeline" aria-live="polite"></section>
-          </section>
-        </div>
-      </section>
-
-      <section class="view detail-view" id="aircraftDetailView" data-view hidden>
-        <article class="detail-page" id="aircraftDetail" aria-live="polite"></article>
-      </section>
-
-      <section class="view detail-view" id="squadronDetailView" data-view hidden>
-        <article class="detail-page" id="squadronDetail" aria-live="polite"></article>
-      </section>
-
       <section class="view detail-view" id="locationDetailView" data-view hidden>
         <article class="detail-page" id="locationDetail" aria-live="polite"></article>
       </section>
-
-      <section class="view detail-view" id="airshowDetailView" data-view hidden>
-        <article class="detail-page" id="airshowDetail" aria-live="polite"></article>
-      </section>
-
-      <section class="view" id="statsView" data-view hidden>
-        <div class="stats-experience">
-          <section class="stats-archive-hero" aria-labelledby="statsArchiveTitle">
-            <div class="stats-archive-media" id="statsHeroMedia" aria-hidden="true"></div>
-            <div class="stats-archive-scrim" aria-hidden="true"></div>
-            <div class="stats-archive-copy">
-              <p class="eyebrow">Collection telemetry</p>
-              <h1 id="statsArchiveTitle">Stats</h1>
-              <p>A live reading of the airframes, places, and camera settings behind the archive.</p>
-            </div>
-            <dl class="stats-archive-metrics" aria-label="Collection totals">
-              <div>
-                <dt>Frames</dt>
-                <dd id="statsHeroPhotoCount">0</dd>
-              </div>
-              <div>
-                <dt>Types</dt>
-                <dd id="statsHeroAircraftCount">0</dd>
-              </div>
-              <div>
-                <dt>Locations</dt>
-                <dd id="statsHeroLocationCount">0</dd>
-              </div>
-            </dl>
-          </section>
-
-          <div class="stats-directory">
-            <header class="stats-directory-heading">
-              <p class="eyebrow">Archive overview</p>
-              <p>Live from the generated collection manifest</p>
-            </header>
-            <section class="stats-hero" aria-label="Collection statistics">
-              <div class="stats-dashboard-grid" id="statsDashboard"></div>
-            </section>
-            <section class="exif-dashboard" id="exifDashboard" aria-live="polite"></section>
-          </div>
-        </div>
-      </section>
     </main>
-
-    <div class="photo-viewer" id="photoViewer" role="dialog" aria-modal="true" aria-label="Photo viewer" hidden>
-      <div class="viewer-ambient" aria-hidden="true"></div>
-      <div class="viewer-stage">
-        <button class="viewer-button close" type="button" id="closeViewerButton" aria-label="Close viewer" title="Close viewer">
-          <svg class="viewer-control-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="m6 6 12 12M18 6 6 18"></path>
-          </svg>
-        </button>
-        <button
-          class="viewer-button info-toggle"
-          type="button"
-          id="viewerInfoButton"
-          aria-label="Show photo info"
-          aria-controls="viewerInfo"
-          aria-expanded="false"
-        >i</button>
-        <div class="viewer-telemetry" id="viewerTelemetry" aria-live="polite"></div>
-        <div class="viewer-zoom-controls" aria-label="Photo display controls">
-          <button class="viewer-button viewer-tool" type="button" id="viewerZoomOutButton" aria-label="Zoom out">−</button>
-          <button class="viewer-button viewer-tool viewer-zoom-readout" type="button" id="viewerZoomResetButton" aria-label="Reset photo zoom">1×</button>
-          <button class="viewer-button viewer-tool" type="button" id="viewerZoomInButton" aria-label="Zoom in">+</button>
-          <button class="viewer-button viewer-tool viewer-clean-toggle" type="button" id="viewerCleanButton" aria-pressed="false">Clean</button>
-          <button class="viewer-button viewer-tool viewer-action" type="button" id="viewerShareButton" aria-label="Share photo" title="Share photo">
-            <svg class="viewer-control-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M12 16V3"></path>
-              <path d="m7 8 5-5 5 5"></path>
-              <path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"></path>
-            </svg>
-          </button>
-          <button class="viewer-button viewer-tool viewer-action" type="button" id="viewerFullscreenButton" aria-label="Enter fullscreen" title="Enter fullscreen" aria-pressed="false">
-            <svg class="viewer-control-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M8 3H3v5M16 3h5v5M21 16v5h-5M3 16v5h5"></path>
-            </svg>
-          </button>
-        </div>
-        <div class="viewer-image-frame">
-          <button class="viewer-button previous" type="button" id="previousPhotoButton" aria-label="Previous photo">◀</button>
-          <img id="viewerImage" alt="" draggable="false">
-          <button class="viewer-button next" type="button" id="nextPhotoButton" aria-label="Next photo">▶</button>
-        </div>
-        <div class="viewer-filmstrip" id="viewerFilmstrip" aria-label="Photo thumbnails"></div>
-      </div>
-      <aside class="viewer-info" id="viewerInfo">
-        <p class="eyebrow" id="viewerKicker">Photo</p>
-        <h2 id="viewerTitle">Photo details</h2>
-        <p class="viewer-caption" id="viewerCaption"></p>
-        <div class="metadata-panel" id="viewerMetadata"></div>
-      </aside>
-    </div>
   </body>
 </html>

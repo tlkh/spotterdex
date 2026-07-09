@@ -124,6 +124,7 @@ pins:
     location: Chitose Air Base
     pin_id: chitose-air-base
     caption: F-15J from Chitose Air Base squadrons line up for take-off
+    airshow: Chitose Air Show 2024 (Rehearsal)
   hero_photo: DSC05932-Enhanced-NR.jpg
 - id: narita-international-airport
   name: Narita International Airport

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <title>Squadrons | SpotterDex</title>
+    <meta name="description" content="Browse squadron insignia, aircraft, and photographic records in SpotterDex.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="SpotterDex">
+    <meta property="og:locale" content="en_SG">
+    <meta property="og:title" content="Squadrons | SpotterDex">
+    <meta property="og:description" content="Squadron insignia, aircraft, and photographic records.">
+    <meta property="og:image" content="https://tlkh.github.io/spotterdex/assets/generated/photos/location-hero-gifu-air-base.jpg">
+    <meta property="og:url" content="https://tlkh.github.io/spotterdex/squadrons.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Squadrons | SpotterDex">
+    <meta name="twitter:description" content="Squadron insignia, aircraft, and photographic records.">
+    <meta name="twitter:image" content="https://tlkh.github.io/spotterdex/assets/generated/photos/location-hero-gifu-air-base.jpg">
+    <link rel="canonical" href="https://tlkh.github.io/spotterdex/squadrons.html">
+    <link rel="icon" type="image/png" href="assets/icons/spotterdex-app-icon.png">
+    <link rel="apple-touch-icon" href="assets/icons/spotterdex-app-icon.png">
+    <link rel="stylesheet" href="styles.css">
+    <script src="data/spotterdex-data.js" defer></script>
+    <script src="script.js" defer></script>
+  </head>
+  <body data-page-view="squadronsView">
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="SpotterDex home">
+        <span class="brand-mark" aria-hidden="true"><img src="assets/icons/spotterdex-app-icon.png" alt=""></span>
+        <span><span class="brand-title">SpotterDex</span><span class="brand-subtitle">Timothy's Logbook</span></span>
+      </a>
+      <nav class="tab-nav" aria-label="Main views">
+        <a class="tab-button" href="index.html">World Map</a>
+        <a class="tab-button" href="aircraft-dex.html">Aircraft Dex</a>
+        <a class="tab-button is-active" href="squadrons.html" aria-current="page">Squadrons</a>
+        <a class="tab-button" href="airshows.html">Airshows</a>
+        <a class="tab-button" href="stats.html">Stats</a>
+      </nav>
+      <select class="nav-select" id="viewSelect" aria-label="Main view">
+        <option value="index.html">World Map</option>
+        <option value="aircraft-dex.html">Aircraft Dex</option>
+        <option value="squadrons.html" selected>Squadrons</option>
+        <option value="airshows.html">Airshows</option>
+        <option value="stats.html">Stats</option>
+      </select>
+    </header>
+
+    <main class="app-shell" id="main">
+      <section class="view is-active" id="squadronsView" data-view>
+        <div class="squadrons-experience">
+          <section class="squadron-archive-hero" aria-labelledby="squadronsTitle">
+            <div class="squadron-archive-media" id="squadronHeroMedia" aria-hidden="true"></div>
+            <div class="squadron-archive-scrim" aria-hidden="true"></div>
+            <div class="squadron-archive-copy">
+              <p class="eyebrow">Unit markings archive</p>
+              <h1 id="squadronsTitle">Squadrons</h1>
+              <p>Insignia, aircraft, and photographic records from units across the collection.</p>
+            </div>
+            <dl class="squadron-archive-stats" aria-label="Squadron collection overview">
+              <div><dt>Units</dt><dd id="squadronPageCount">0</dd></div>
+              <div><dt>Countries</dt><dd id="squadronHeroCountryCount">0</dd></div>
+              <div><dt>Frames</dt><dd id="squadronHeroPhotoCount">0</dd></div>
+            </dl>
+          </section>
+          <section class="squadron-directory" aria-label="Squadron logo gallery">
+            <div class="squadron-command-bar">
+              <div class="squadron-country-rail" aria-label="Jump to country">
+                <p class="eyebrow">Country</p>
+                <nav id="squadronCountryRail" class="squadron-country-nav"></nav>
+              </div>
+            </div>
+            <div class="squadron-country-list" id="squadronLogoGrid"></div>
+          </section>
+        </div>
+      </section>
+      <section class="view detail-view" id="squadronDetailView" data-view hidden>
+        <article class="detail-page" id="squadronDetail" aria-live="polite"></article>
+      </section>
+    </main>
+  </body>
+</html>

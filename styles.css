@@ -42,6 +42,17 @@ body {
   animation: page-in 420ms ease-out both;
 }
 
+body[data-page-view="mapView"] {
+  animation: none;
+}
+
+body[data-page-view="mapView"] #mapView,
+body[data-page-view="mapView"] #mapView .control-panel,
+body[data-page-view="mapView"] #mapView .map-stage,
+body[data-page-view="mapView"] #mapView .results-panel {
+  animation: none;
+}
+
 button,
 input,
 select {
@@ -174,10 +185,13 @@ img {
 
 .tab-button {
   position: relative;
+  display: inline-flex;
+  align-items: center;
   padding: 8px 14px;
   overflow: hidden;
   color: var(--muted);
   font-weight: 700;
+  text-decoration: none;
   text-overflow: ellipsis;
   transition: border-color 180ms ease, background 180ms ease, color 180ms ease, transform 180ms ease;
 }

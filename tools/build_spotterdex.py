@@ -33,9 +33,9 @@ IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp"}
 AIRCRAFT_FAMILIES = {"fighter", "heavy", "helicopter", "light", "medium"}
 # The published site favors fast page loads over archival-grade derivatives. Source
 # images remain untouched in raw_assets; these settings only affect GitHub Pages output.
-FULL_JPEG_QUALITY = 72
+FULL_JPEG_QUALITY = 70
 FULL_JPEG_SUBSAMPLING = 2  # 4:2:0 provides a substantial reduction for web viewing.
-THUMB_JPEG_QUALITY = 64
+THUMB_JPEG_QUALITY = 55
 THUMB_JPEG_SUBSAMPLING = 2
 LOGO_PNG_COLORS = 256
 FULL_JPEG_PROFILE = f"spotterdex-full-jpeg-v4-q{FULL_JPEG_QUALITY}-s{FULL_JPEG_SUBSAMPLING}"
@@ -138,6 +138,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--logo-output", default="assets/logos", help="Published squadron logo output directory.")
     parser.add_argument("--json-output", default="data/spotterdex.json", help="Generated JSON manifest path.")
     parser.add_argument("--js-output", default="data/spotterdex-data.js", help="Generated JS manifest path.")
+    parser.add_argument(
+        "--map-js-output",
+        default="data/spotterdex-map-data.js",
+        help="Minified map-page JS manifest path.",
+    )
     parser.add_argument("--share-output", default="share", help="Generated social preview page directory.")
     parser.add_argument(
         "--site-url",
@@ -187,6 +192,7 @@ def main() -> int:
     logo_output_dir = root / args.logo_output
     json_output = root / args.json_output
     js_output = root / args.js_output
+    map_js_output = root / args.map_js_output
     share_output_dir = root / args.share_output
     show_progress = not args.no_progress
     photo_workers = normalize_worker_count(args.workers)
@@ -276,9 +282,12 @@ def main() -> int:
 
     json_output.parent.mkdir(parents=True, exist_ok=True)
     js_output.parent.mkdir(parents=True, exist_ok=True)
+    map_js_output.parent.mkdir(parents=True, exist_ok=True)
     json_text = json.dumps(manifest, indent=2, ensure_ascii=True)
+    map_json_text = json.dumps(map_page_manifest(manifest), ensure_ascii=True, separators=(",", ":"))
     json_output.write_text(json_text + "\n", encoding="utf-8")
     js_output.write_text(f"window.SPOTTERDEX_DATA = {json_text};\n", encoding="utf-8")
+    map_js_output.write_text(f"window.SPOTTERDEX_DATA={map_json_text};\n", encoding="utf-8")
     share_page_count = write_social_preview_pages(
         manifest=manifest,
         output_dir=share_output_dir,
@@ -292,11 +301,51 @@ def main() -> int:
     )
     print(f"Wrote {relative_posix(json_output, root)}")
     print(f"Wrote {relative_posix(js_output, root)}")
+    print(f"Wrote {relative_posix(map_js_output, root)}")
     print(f"Wrote {share_page_count} social preview pages under {relative_posix(share_output_dir, root)}")
     if args.strict and warnings.has_warnings():
         print("Build completed with validation warnings.", file=sys.stderr)
         return 1
     return 0
+
+
+def map_page_manifest(manifest: Dict[str, Any]) -> Dict[str, Any]:
+    photo_fields = {
+        "aircraftFamily",
+        "aircraftId",
+        "aircraftType",
+        "airshow",
+        "caption",
+        "country",
+        "date",
+        "id",
+        "image",
+        "livery",
+        "locationName",
+        "pinId",
+        "sortDate",
+        "squadronId",
+        "squadronName",
+        "tagScope",
+        "thumbnail",
+        "thumbnailSize",
+        "title",
+        "unitLabel",
+        "unitType",
+        "year",
+    }
+    return {
+        "payload": "map",
+        "generatedAt": manifest.get("generatedAt"),
+        "pins": manifest.get("pins", []),
+        "aircraft": manifest.get("aircraft", []),
+        "squadrons": manifest.get("squadrons", []),
+        "airshows": manifest.get("airshows", []),
+        "photos": [
+            {key: value for key, value in photo.items() if key in photo_fields}
+            for photo in manifest.get("photos", [])
+        ],
+    }
 
 
 def write_social_preview_pages(
@@ -492,9 +541,16 @@ def social_preview_document(record: Dict[str, Any], site_url: str, entity_id: st
     description = html.escape(record["description"], quote=True)
     image_url = html.escape(urljoin(site_url, record["image"]), quote=True)
     share_url = html.escape(urljoin(site_url, f"share/{record['kind']}/{entity_id}/"), quote=True)
-    main_url = f"{site_url}#{record['fragment']}"
+    page_path = {
+        "aircraft": "aircraft-dex.html",
+        "squadron": "squadrons.html",
+        "airshow": "airshows.html",
+        "location": "index.html",
+        "photo": "index.html",
+    }.get(record["kind"], "index.html")
+    main_url = urljoin(site_url, f"{page_path}#{record['fragment']}")
     canonical_url = html.escape(main_url, quote=True)
-    redirect_url = f"../../../#{record['fragment']}"
+    redirect_url = f"../../../{page_path}#{record['fragment']}"
     width, height = parse_generated_size(record.get("imageSize"))
     dimension_meta = ""
     if width and height:

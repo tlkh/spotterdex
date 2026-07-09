@@ -1,5 +1,5 @@
 window.SPOTTERDEX_DATA = {
-  "generatedAt": "2026-07-08T14:22:27+00:00",
+  "generatedAt": "2026-07-09T00:18:43+00:00",
   "pins": [
     {
       "id": "hong-kong-international-airport",
@@ -503,6 +503,14 @@ window.SPOTTERDEX_DATA = {
             "aircraft-airbus-a330-mrtt-31st-strategic-air-refueling-and-transport-wing-dsc08561-enhanced-nr-b1ba0a31",
             "aircraft-airbus-a330-mrtt-31st-strategic-air-refueling-and-transport-wing-dsc08601-5fe30f1e"
           ],
+          "heroPhoto": {
+            "image": "assets/generated/photos/squadron-hero-airbus-a330-mrtt-31st-strategic-air-refueling-and-transport-wing.jpg",
+            "thumbnail": "assets/generated/thumbs/squadron-hero-airbus-a330-mrtt-31st-strategic-air-refueling-and-transport-wing.jpg",
+            "source": "raw_assets/french_mrtt_2.jpg",
+            "originalSize": "5154 x 3436",
+            "processedSize": "2560 x 1707",
+            "thumbnailSize": "1024 x 683"
+          },
           "photoCount": 4
         }
       ],
@@ -2745,6 +2753,14 @@ window.SPOTTERDEX_DATA = {
             "aircraft-lockheed-martin-f-35a-lightning-ii-6-stormo-italy-f35-1-b8301f41",
             "aircraft-lockheed-martin-f-35a-lightning-ii-6-stormo-italy-f35-6-c33fcc25"
           ],
+          "heroPhoto": {
+            "image": "assets/generated/photos/squadron-hero-lockheed-martin-f-35a-lightning-ii-6-stormo.jpg",
+            "thumbnail": "assets/generated/thumbs/squadron-hero-lockheed-martin-f-35a-lightning-ii-6-stormo.jpg",
+            "source": "raw_assets/italy_f35_1.jpg",
+            "originalSize": "5068 x 3379",
+            "processedSize": "2560 x 1707",
+            "thumbnailSize": "1024 x 683"
+          },
           "photoCount": 2
         },
         {
@@ -2764,8 +2780,8 @@ window.SPOTTERDEX_DATA = {
           "heroPhoto": {
             "image": "assets/generated/photos/squadron-hero-lockheed-martin-f-35a-lightning-ii-75-squadron.jpg",
             "thumbnail": "assets/generated/thumbs/squadron-hero-lockheed-martin-f-35a-lightning-ii-75-squadron.jpg",
-            "source": "raw_assets/raaf_f35a_4.jpg",
-            "originalSize": "2407 x 1805",
+            "source": "raw_assets/raaf_f35a_1.jpg",
+            "originalSize": "5030 x 3773",
             "processedSize": "2560 x 1920",
             "thumbnailSize": "1024 x 768"
           },
@@ -2938,7 +2954,11 @@ window.SPOTTERDEX_DATA = {
             "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc08215-enhanced-nr-85af5687",
             "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc08164-enhanced-nr-e615033f",
             "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc05504-enhanced-nr-3ded12ad",
-            "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc08019-enhanced-nr-e4b578d9"
+            "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc08019-enhanced-nr-e4b578d9",
+            "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc07818-enhanced-nr-bccaa35f",
+            "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc07833-enhanced-nr-26a70cda",
+            "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc06698-enhanced-nr-dcf87fed",
+            "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc06371-enhanced-nr-c4a0350d"
           ],
           "heroPhoto": {
             "image": "assets/generated/photos/squadron-hero-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron.jpg",
@@ -2948,7 +2968,7 @@ window.SPOTTERDEX_DATA = {
             "processedSize": "2560 x 1706",
             "thumbnailSize": "1024 x 683"
           },
-          "photoCount": 5
+          "photoCount": 9
         },
         {
           "id": "mitsubishi-f-15j-eagle-204th-tactical-fighter-squadron",
@@ -3069,6 +3089,10 @@ window.SPOTTERDEX_DATA = {
         "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc08164-enhanced-nr-e615033f",
         "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc05504-enhanced-nr-3ded12ad",
         "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc08019-enhanced-nr-e4b578d9",
+        "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc07818-enhanced-nr-bccaa35f",
+        "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc07833-enhanced-nr-26a70cda",
+        "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc06698-enhanced-nr-dcf87fed",
+        "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc06371-enhanced-nr-c4a0350d",
         "aircraft-mitsubishi-f-15j-eagle-204th-tactical-fighter-squadron-204-sunset-a6f80a0f",
         "aircraft-mitsubishi-f-15j-eagle-303rd-tactical-fighter-squadron-728893-53b9fc1f",
         "aircraft-mitsubishi-f-15j-eagle-303rd-tactical-fighter-squadron-dsc04079-enhanced-nr-0c6f79ba",
@@ -3107,7 +3131,7 @@ window.SPOTTERDEX_DATA = {
       ],
       "coverPhoto": "aircraft-mitsubishi-f-15j-eagle-201st-tactical-fighter-squadron-dsc05993-enhanced-nr-62544667",
       "stats": {
-        "photoCount": 41,
+        "photoCount": 45,
         "unitCount": 7,
         "squadronCount": 7,
         "organisationCount": 0,
@@ -3153,7 +3177,10 @@ window.SPOTTERDEX_DATA = {
             "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc03398-1829817f",
             "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc01142-026c7ed1",
             "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc01315-bcd9412b",
-            "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc00991-30ef69b1"
+            "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc00991-30ef69b1",
+            "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc06178-enhanced-nr-f0c603a1",
+            "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc04130-enhanced-nr-1aa48eda",
+            "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc04107-enhanced-nr-9221a9bf"
           ],
           "heroPhoto": {
             "image": "assets/generated/photos/squadron-hero-mitsubishi-f-2a-6th-tactical-fighter-squadron.jpg",
@@ -3163,7 +3190,7 @@ window.SPOTTERDEX_DATA = {
             "processedSize": "2560 x 1707",
             "thumbnailSize": "1024 x 683"
           },
-          "photoCount": 12
+          "photoCount": 15
         },
         {
           "id": "mitsubishi-f-2a-8th-tactical-fighter-squadron",
@@ -3194,7 +3221,8 @@ window.SPOTTERDEX_DATA = {
             "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc03112-37b7e763",
             "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc03104-91c6914f",
             "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc03813-b0bbc5c2",
-            "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc03889-37899d05"
+            "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc03889-37899d05",
+            "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc04758-enhanced-nr-21949593"
           ],
           "heroPhoto": {
             "image": "assets/generated/photos/squadron-hero-mitsubishi-f-2a-8th-tactical-fighter-squadron.jpg",
@@ -3204,7 +3232,7 @@ window.SPOTTERDEX_DATA = {
             "processedSize": "2560 x 1707",
             "thumbnailSize": "1024 x 683"
           },
-          "photoCount": 21
+          "photoCount": 22
         },
         {
           "id": "mitsubishi-f-2a-air-development-and-test-wing",
@@ -3245,6 +3273,9 @@ window.SPOTTERDEX_DATA = {
         "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc01142-026c7ed1",
         "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc01315-bcd9412b",
         "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc00991-30ef69b1",
+        "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc06178-enhanced-nr-f0c603a1",
+        "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc04130-enhanced-nr-1aa48eda",
+        "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc04107-enhanced-nr-9221a9bf",
         "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-trio-jasdf-8tfs-4813e2c2",
         "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc07228-enhanced-nr-9ac6b507",
         "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc06473-enhanced-nr-1-e2f86dd0",
@@ -3266,6 +3297,7 @@ window.SPOTTERDEX_DATA = {
         "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc03104-91c6914f",
         "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc03813-b0bbc5c2",
         "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc03889-37899d05",
+        "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc04758-enhanced-nr-21949593",
         "aircraft-mitsubishi-f-2a-air-development-and-test-wing-xx8523-5bbc20e2",
         "aircraft-mitsubishi-f-2a-air-development-and-test-wing-dsc09583-enhanced-nr-914ef1b2",
         "aircraft-mitsubishi-f-2a-air-development-and-test-wing-dsc07562-enhanced-nr-1-3196b5c4",
@@ -3282,12 +3314,13 @@ window.SPOTTERDEX_DATA = {
       ],
       "coverPhoto": "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-trio-jasdf-6tfs-984ad7be",
       "stats": {
-        "photoCount": 46,
+        "photoCount": 50,
         "unitCount": 3,
         "squadronCount": 3,
         "organisationCount": 0,
-        "locationCount": 3,
+        "locationCount": 4,
         "locations": [
+          "Chitose Air Base",
           "Gifu Air Base",
           "Komatsu Air Base",
           "Tsuiki Air Base"
@@ -3765,12 +3798,19 @@ window.SPOTTERDEX_DATA = {
       "id": "chitose-air-show-2024-rehearsal",
       "name": "Chitose Air Show 2024 (Rehearsal)",
       "photoIds": [
+        "aircraft-boeing-777-300er-701st-squadron-special-airlift-group-dsc00349-enhanced-nr-4a5c7178",
+        "aircraft-mitsubishi-f-15j-eagle-201st-tactical-fighter-squadron-dsc05993-enhanced-nr-62544667",
+        "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc06371-enhanced-nr-c4a0350d",
+        "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc06698-enhanced-nr-dcf87fed",
+        "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc07818-enhanced-nr-bccaa35f",
+        "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc07833-enhanced-nr-26a70cda",
         "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc08013-enhanced-nr-1885b137",
         "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc08019-enhanced-nr-e4b578d9",
         "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc08164-enhanced-nr-e615033f",
-        "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc08215-enhanced-nr-85af5687"
+        "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc08215-enhanced-nr-85af5687",
+        "location-dsc05932-enhanced-nr-9058866d"
       ],
-      "photoCount": 4,
+      "photoCount": 11,
       "firstDate": "2024-08-21",
       "latestDate": "2024-08-21",
       "heroPhotoId": "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc08019-enhanced-nr-e4b578d9"
@@ -3796,9 +3836,12 @@ window.SPOTTERDEX_DATA = {
         "aircraft-hawker-u-125a-jasdf-air-rescue-wing-dsc06045-enhanced-nr-72c3f8f6",
         "aircraft-hawker-u-125a-jasdf-air-rescue-wing-dsc06065-enhanced-nr-0ead6a8e",
         "aircraft-kawasaki-p-1-air-patrol-squadron-1-dsc07531-enhanced-nr-2-b661e4b2",
+        "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc04107-enhanced-nr-9221a9bf",
+        "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc04130-enhanced-nr-1aa48eda",
         "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc04151-enhanced-nr-2483fccf",
         "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc04165-enhanced-nr-4d3064c6",
         "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc04506-enhanced-nr-afa719a7",
+        "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc06178-enhanced-nr-f0c603a1",
         "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc07375-enhanced-nr-e9124e75",
         "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc07469-enhanced-nr-d87d052f",
         "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc04019-enhanced-nr-1-178058e7",
@@ -3809,6 +3852,7 @@ window.SPOTTERDEX_DATA = {
         "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc04362-enhanced-nr-4490a825",
         "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc04557-enhanced-nr-652ee3dd",
         "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc04564-enhanced-nr-ba9dbbb2",
+        "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc04758-enhanced-nr-21949593",
         "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc06473-enhanced-nr-1-e2f86dd0",
         "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc06512-enhanced-nr-65b6ba86",
         "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc06560-enhanced-nr-5606ca3a",
@@ -3824,7 +3868,7 @@ window.SPOTTERDEX_DATA = {
         "squadron-jasdf-air-rescue-wing-dsc05672-enhanced-nr-1-2dba6d9c",
         "squadron-jasdf-air-rescue-wing-dsc05676-enhanced-nr-1-bfbc0f68"
       ],
-      "photoCount": 44,
+      "photoCount": 48,
       "firstDate": "2023-11-26",
       "latestDate": "2023-11-26",
       "heroPhotoId": "location-dsc04647-enhanced-nr-b6ab6a26"
@@ -3840,6 +3884,7 @@ window.SPOTTERDEX_DATA = {
         "aircraft-mitsubishi-f-2a-air-development-and-test-wing-dsc07403-enhanced-nr-0c0eca91",
         "aircraft-mitsubishi-f-2a-air-development-and-test-wing-dsc07562-enhanced-nr-1-3196b5c4",
         "aircraft-boeing-kc-767j-404th-tactical-airlift-tanker-squadron-dsc09722-enhanced-nr-61ca9c0f",
+        "aircraft-boeing-kc-767j-404th-tactical-airlift-tanker-squadron-dsc09753-enhanced-nr-506f6ab6",
         "aircraft-hawker-u-125a-jasdf-air-rescue-wing-dsc00093-enhanced-nr-055f9fa3",
         "aircraft-hawker-u-125a-jasdf-air-rescue-wing-dsc09892-enhanced-nr-6223e355",
         "aircraft-kawasaki-c-2-air-development-and-test-wing-dsc01085-enhanced-nr-e32b55de",
@@ -3861,7 +3906,7 @@ window.SPOTTERDEX_DATA = {
         "squadron-air-development-and-test-wing-gifu-formation-1-76308d83",
         "squadron-air-development-and-test-wing-gifu-formation-2-a604b1ec"
       ],
-      "photoCount": 27,
+      "photoCount": 28,
       "firstDate": "2023-11-11",
       "latestDate": "2023-11-12",
       "heroPhotoId": "squadron-air-development-and-test-wing-dsc00962-enhanced-nr-6756f7ee"
@@ -8750,7 +8795,7 @@ window.SPOTTERDEX_DATA = {
         "entryPath": "aircraft/mitsubishi-f-15j-eagle/201st-tactical-fighter-squadron/entry.yaml",
         "index": 0
       },
-      "airshow": "",
+      "airshow": "Chitose Air Show 2024 (Rehearsal)",
       "livery": "",
       "title": "",
       "caption": "F-15J from 201 TFS taking off from Chitose Air Base",
@@ -8950,6 +8995,182 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
+      "id": "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc07818-enhanced-nr-bccaa35f",
+      "tagScope": "aircraft",
+      "aircraftId": "mitsubishi-f-15j-eagle",
+      "aircraftType": "Mitsubishi F-15J Eagle",
+      "aircraftFamily": "fighter",
+      "squadronId": "mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron",
+      "squadronName": "203rd Tactical Fighter Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2024",
+      "date": "2024-08-21",
+      "sortDate": "2024-08-21",
+      "locationName": "Chitose Air Base",
+      "pinId": "chitose-air-base",
+      "sourceRef": {
+        "scope": "aircraft",
+        "entryPath": "aircraft/mitsubishi-f-15j-eagle/203rd-tactical-fighter-squadron/entry.yaml",
+        "index": 5
+      },
+      "airshow": "Chitose Air Show 2024 (Rehearsal)",
+      "livery": "",
+      "title": "",
+      "caption": "F-15J making a low pass at Chitose Air Base",
+      "image": "assets/generated/photos/aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc07818-enhanced-nr-bccaa35f.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc07818-enhanced-nr-bccaa35f.jpg",
+      "source": "raw_assets/DSC07818-Enhanced-NR.jpg",
+      "originalSize": "4561 x 3421",
+      "processedSize": "2560 x 1920",
+      "thumbnailSize": "1024 x 768",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-6700",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "600mm",
+        "FNumber": "f/6.3",
+        "ExposureTime": "1/2000s",
+        "ISO": "400",
+        "DateTimeOriginal": "2024:08:21 10:18:55",
+        "DateTimeDigitized": "2024:08:21 10:18:55",
+        "DateTime": "2026:07:04 19:50:48"
+      }
+    },
+    {
+      "id": "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc07833-enhanced-nr-26a70cda",
+      "tagScope": "aircraft",
+      "aircraftId": "mitsubishi-f-15j-eagle",
+      "aircraftType": "Mitsubishi F-15J Eagle",
+      "aircraftFamily": "fighter",
+      "squadronId": "mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron",
+      "squadronName": "203rd Tactical Fighter Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2024",
+      "date": "2024-08-21",
+      "sortDate": "2024-08-21",
+      "locationName": "Chitose Air Base",
+      "pinId": "chitose-air-base",
+      "sourceRef": {
+        "scope": "aircraft",
+        "entryPath": "aircraft/mitsubishi-f-15j-eagle/203rd-tactical-fighter-squadron/entry.yaml",
+        "index": 6
+      },
+      "airshow": "Chitose Air Show 2024 (Rehearsal)",
+      "livery": "",
+      "title": "",
+      "caption": "F-15J making a low pass at Chitose Air Base",
+      "image": "assets/generated/photos/aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc07833-enhanced-nr-26a70cda.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc07833-enhanced-nr-26a70cda.jpg",
+      "source": "raw_assets/DSC07833-Enhanced-NR.jpg",
+      "originalSize": "4435 x 3326",
+      "processedSize": "2560 x 1920",
+      "thumbnailSize": "1024 x 768",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-6700",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "600mm",
+        "FNumber": "f/6.3",
+        "ExposureTime": "1/2000s",
+        "ISO": "320",
+        "DateTimeOriginal": "2024:08:21 10:18:59",
+        "DateTimeDigitized": "2024:08:21 10:18:59",
+        "DateTime": "2026:07:04 19:50:49"
+      }
+    },
+    {
+      "id": "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc06698-enhanced-nr-dcf87fed",
+      "tagScope": "aircraft",
+      "aircraftId": "mitsubishi-f-15j-eagle",
+      "aircraftType": "Mitsubishi F-15J Eagle",
+      "aircraftFamily": "fighter",
+      "squadronId": "mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron",
+      "squadronName": "203rd Tactical Fighter Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2024",
+      "date": "2024-08-21",
+      "sortDate": "2024-08-21",
+      "locationName": "Chitose Air Base",
+      "pinId": "chitose-air-base",
+      "sourceRef": {
+        "scope": "aircraft",
+        "entryPath": "aircraft/mitsubishi-f-15j-eagle/203rd-tactical-fighter-squadron/entry.yaml",
+        "index": 7
+      },
+      "airshow": "Chitose Air Show 2024 (Rehearsal)",
+      "livery": "",
+      "title": "",
+      "caption": "F-15J landing at Chitose Air Base",
+      "image": "assets/generated/photos/aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc06698-enhanced-nr-dcf87fed.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc06698-enhanced-nr-dcf87fed.jpg",
+      "source": "raw_assets/DSC06698-Enhanced-NR.jpg",
+      "originalSize": "4123 x 3092",
+      "processedSize": "2560 x 1920",
+      "thumbnailSize": "1024 x 768",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-6700",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "433mm",
+        "FNumber": "f/6.3",
+        "ExposureTime": "1/2000s",
+        "ISO": "320",
+        "DateTimeOriginal": "2024:08:21 08:42:58",
+        "DateTimeDigitized": "2024:08:21 08:42:58",
+        "DateTime": "2026:07:04 19:50:24"
+      }
+    },
+    {
+      "id": "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc06371-enhanced-nr-c4a0350d",
+      "tagScope": "aircraft",
+      "aircraftId": "mitsubishi-f-15j-eagle",
+      "aircraftType": "Mitsubishi F-15J Eagle",
+      "aircraftFamily": "fighter",
+      "squadronId": "mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron",
+      "squadronName": "203rd Tactical Fighter Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2024",
+      "date": "2024-08-21",
+      "sortDate": "2024-08-21",
+      "locationName": "Chitose Air Base",
+      "pinId": "chitose-air-base",
+      "sourceRef": {
+        "scope": "aircraft",
+        "entryPath": "aircraft/mitsubishi-f-15j-eagle/203rd-tactical-fighter-squadron/entry.yaml",
+        "index": 8
+      },
+      "airshow": "Chitose Air Show 2024 (Rehearsal)",
+      "livery": "",
+      "title": "",
+      "caption": "F-15J taking off from Chitose Air Base",
+      "image": "assets/generated/photos/aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc06371-enhanced-nr-c4a0350d.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc06371-enhanced-nr-c4a0350d.jpg",
+      "source": "raw_assets/DSC06371-Enhanced-NR.jpg",
+      "originalSize": "3747 x 2810",
+      "processedSize": "2560 x 1920",
+      "thumbnailSize": "1024 x 768",
+      "exif": {
+        "Make": "SONY",
+        "Model": "ILCE-6700",
+        "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+        "FocalLength": "600mm",
+        "FNumber": "f/8.0",
+        "ExposureTime": "1/100s",
+        "ISO": "100",
+        "DateTimeOriginal": "2024:08:21 08:29:24",
+        "DateTimeDigitized": "2024:08:21 08:29:24",
+        "DateTime": "2026:07:04 19:50:15"
+      }
+    },
+    {
       "id": "aircraft-boeing-777-300er-701st-squadron-special-airlift-group-dsc00349-enhanced-nr-4a5c7178",
       "tagScope": "aircraft",
       "aircraftId": "boeing-777-300er",
@@ -8970,7 +9191,7 @@ window.SPOTTERDEX_DATA = {
         "entryPath": "aircraft/boeing-777-300er/701st-squadron-special-airlift-group/entry.yaml",
         "index": 4
       },
-      "airshow": "",
+      "airshow": "Chitose Air Show 2024 (Rehearsal)",
       "livery": "",
       "title": "",
       "caption": "Cygnus performing touch-and-go at Chitose Air Base",
@@ -9015,7 +9236,7 @@ window.SPOTTERDEX_DATA = {
         "index": 0,
         "targetPinId": "chitose-air-base"
       },
-      "airshow": "",
+      "airshow": "Chitose Air Show 2024 (Rehearsal)",
       "livery": "",
       "title": "",
       "caption": "F-15J from Chitose Air Base squadrons line up for take-off",
@@ -10227,6 +10448,50 @@ window.SPOTTERDEX_DATA = {
       }
     },
     {
+      "id": "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc06178-enhanced-nr-f0c603a1",
+      "tagScope": "aircraft",
+      "aircraftId": "mitsubishi-f-2a",
+      "aircraftType": "Mitsubishi F-2A",
+      "aircraftFamily": "fighter",
+      "squadronId": "mitsubishi-f-2a-6th-tactical-fighter-squadron",
+      "squadronName": "6th Tactical Fighter Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2023",
+      "date": "2023-11-26",
+      "sortDate": "2023-11-26",
+      "locationName": "Tsuiki Air Base",
+      "pinId": "tsuiki-air-base",
+      "sourceRef": {
+        "scope": "aircraft",
+        "entryPath": "aircraft/mitsubishi-f-2a/6th-tactical-fighter-squadron/entry.yaml",
+        "index": 12
+      },
+      "airshow": "Tsuiki Air Show 2023",
+      "livery": "",
+      "title": "",
+      "caption": "F-2A parked on the ground at Tsuiki",
+      "image": "assets/generated/photos/aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc06178-enhanced-nr-f0c603a1.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc06178-enhanced-nr-f0c603a1.jpg",
+      "source": "raw_assets/DSC06178-Enhanced-NR.jpeg",
+      "originalSize": "5407 x 3605",
+      "processedSize": "2560 x 1707",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "35.7mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:11:26 10:25:02",
+        "DateTimeDigitized": "2023:11:26 10:25:02",
+        "DateTime": "2026:07:08 15:12:35"
+      }
+    },
+    {
       "id": "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc07228-enhanced-nr-9ac6b507",
       "tagScope": "aircraft",
       "aircraftId": "mitsubishi-f-2a",
@@ -10752,6 +11017,138 @@ window.SPOTTERDEX_DATA = {
         "DateTimeOriginal": "2023:11:26 06:42:32",
         "DateTimeDigitized": "2023:11:26 06:42:32",
         "DateTime": "2026:07:04 19:49:15"
+      }
+    },
+    {
+      "id": "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc04130-enhanced-nr-1aa48eda",
+      "tagScope": "aircraft",
+      "aircraftId": "mitsubishi-f-2a",
+      "aircraftType": "Mitsubishi F-2A",
+      "aircraftFamily": "fighter",
+      "squadronId": "mitsubishi-f-2a-6th-tactical-fighter-squadron",
+      "squadronName": "6th Tactical Fighter Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2023",
+      "date": "2023-11-26",
+      "sortDate": "2023-11-26",
+      "locationName": "Chitose Air Base",
+      "pinId": "chitose-air-base",
+      "sourceRef": {
+        "scope": "aircraft",
+        "entryPath": "aircraft/mitsubishi-f-2a/6th-tactical-fighter-squadron/entry.yaml",
+        "index": 13
+      },
+      "airshow": "Tsuiki Air Show 2023",
+      "livery": "",
+      "title": "",
+      "caption": "F-2A taking off from Tsuiki Air Base",
+      "image": "assets/generated/photos/aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc04130-enhanced-nr-1aa48eda.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc04130-enhanced-nr-1aa48eda.jpg",
+      "source": "raw_assets/DSC04130-Enhanced-NR.jpeg",
+      "originalSize": "5392 x 3595",
+      "processedSize": "2560 x 1707",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "400",
+        "DateTimeOriginal": "2023:11:26 06:39:31",
+        "DateTimeDigitized": "2023:11:26 06:39:31",
+        "DateTime": "2026:07:04 19:49:11"
+      }
+    },
+    {
+      "id": "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc04107-enhanced-nr-9221a9bf",
+      "tagScope": "aircraft",
+      "aircraftId": "mitsubishi-f-2a",
+      "aircraftType": "Mitsubishi F-2A",
+      "aircraftFamily": "fighter",
+      "squadronId": "mitsubishi-f-2a-6th-tactical-fighter-squadron",
+      "squadronName": "6th Tactical Fighter Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2023",
+      "date": "2023-11-26",
+      "sortDate": "2023-11-26",
+      "locationName": "Chitose Air Base",
+      "pinId": "chitose-air-base",
+      "sourceRef": {
+        "scope": "aircraft",
+        "entryPath": "aircraft/mitsubishi-f-2a/6th-tactical-fighter-squadron/entry.yaml",
+        "index": 14
+      },
+      "airshow": "Tsuiki Air Show 2023",
+      "livery": "",
+      "title": "",
+      "caption": "F-2A landing at Tsuiki Air Base",
+      "image": "assets/generated/photos/aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc04107-enhanced-nr-9221a9bf.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc04107-enhanced-nr-9221a9bf.jpg",
+      "source": "raw_assets/DSC04107-Enhanced-NR.jpeg",
+      "originalSize": "4772 x 3181",
+      "processedSize": "2560 x 1706",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ISO": "250",
+        "DateTimeOriginal": "2023:11:26 06:39:24",
+        "DateTimeDigitized": "2023:11:26 06:39:24",
+        "DateTime": "2026:07:04 19:49:09"
+      }
+    },
+    {
+      "id": "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc04758-enhanced-nr-21949593",
+      "tagScope": "aircraft",
+      "aircraftId": "mitsubishi-f-2a",
+      "aircraftType": "Mitsubishi F-2A",
+      "aircraftFamily": "fighter",
+      "squadronId": "mitsubishi-f-2a-8th-tactical-fighter-squadron",
+      "squadronName": "8th Tactical Fighter Squadron",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2023",
+      "date": "2023-11-26",
+      "sortDate": "2023-11-26",
+      "locationName": "Chitose Air Base",
+      "pinId": "chitose-air-base",
+      "sourceRef": {
+        "scope": "aircraft",
+        "entryPath": "aircraft/mitsubishi-f-2a/8th-tactical-fighter-squadron/entry.yaml",
+        "index": 21
+      },
+      "airshow": "Tsuiki Air Show 2023",
+      "livery": "",
+      "title": "",
+      "caption": "F-2A landing with drag chute at Tsuiki Air Base",
+      "image": "assets/generated/photos/aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc04758-enhanced-nr-21949593.jpg",
+      "thumbnail": "assets/generated/thumbs/aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc04758-enhanced-nr-21949593.jpg",
+      "source": "raw_assets/DSC04758-Enhanced-NR.jpeg",
+      "originalSize": "5408 x 3605",
+      "processedSize": "2560 x 1707",
+      "thumbnailSize": "1024 x 683",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "117.3mm",
+        "FNumber": "f/4.0",
+        "ExposureTime": "1/1000s",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:11:26 07:15:34",
+        "DateTimeDigitized": "2023:11:26 07:15:34",
+        "DateTime": "2026:07:04 19:49:31"
       }
     },
     {
@@ -12449,7 +12846,7 @@ window.SPOTTERDEX_DATA = {
         "entryPath": "aircraft/boeing-kc-767j/404th-tactical-airlift-tanker-squadron/entry.yaml",
         "index": 2
       },
-      "airshow": "",
+      "airshow": "Gifu Air Show 2023",
       "livery": "",
       "title": "",
       "caption": "KC-767J landing at Gifu Air Base",

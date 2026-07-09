@@ -82,13 +82,13 @@ Expect batches of aircraft entries, not one-off code changes. Work entry-by-entr
 
 ## Site Structure
 
-- `index.html` defines the static page shell, main tabs plus mobile dropdown navigation, map surface, Aircraft Dex view, Stats Dashboard view, Squadrons view, and full-screen photo viewer.
+- `index.html` defines the World Map page. `aircraft-dex.html`, `squadrons.html`, `airshows.html`, and `stats.html` define the other top-level pages. Each page keeps the shared desktop/mobile navigation; `script.js` injects the common full-screen photo viewer.
 - `styles.css` contains responsive layout, light/dark tokens, map styling, cards, and viewer styling.
 - `script.js` loads the generated data bundle and implements filtering, tabs, map pins, grouping, and photo-viewer behavior.
 - `tools/build_spotterdex.py` reads source YAML and source photos, extracts EXIF, resizes photos, and writes static data files.
 - `raw_assets/` is the centralized, gitignored source directory for all original photos to be processed. Mirror each source YAML parent under `raw_assets/`.
 - `data/spotterdex.json` is the generated JSON manifest for debugging or external consumers.
-- `data/spotterdex-data.js` is the generated browser data bundle loaded by `index.html`.
+- `data/spotterdex-data.js` is the generated full browser data bundle loaded by Aircraft Dex, Squadrons, Airshows, and Stats. `data/spotterdex-map-data.js` is the minified, metadata-light bundle loaded by the World Map; the viewer lazily fetches `data/spotterdex.json` when full EXIF metadata is needed.
 - `share/` contains generated social preview pages for photo, aircraft, location, squadron, and airshow links. Do not hand-edit these pages.
 - `assets/generated/photos/` contains generated 2560px-wide JPEGs. Do not hand-edit these files.
 - `assets/generated/thumbs/` contains generated thumbnail JPEGs for card and strip views. Do not hand-edit these files.
@@ -98,7 +98,7 @@ Expect batches of aircraft entries, not one-off code changes. Work entry-by-entr
 - `airshows/events.yaml` stores optional event-hero references for the Airshows timeline.
 - `aircraft/<aircraft_type>/<squadron>/entry.yaml` contains aircraft, squadron, logo, and photo metadata.
 - `squadrons/<squadron>/entry.yaml` contains unit metadata and photos not assigned to one aircraft type.
-- The world map uses Leaflet 1.9.4 from a CDN and OpenStreetMap raster tiles. Keep visible map attribution in place.
+- The world map loads pinned Leaflet 1.9.4 assets from the unpkg CDN without blocking the initial page shell, and uses remote OpenStreetMap raster tiles. Keep visible map attribution in place.
 
 ## Editing Principles
 
@@ -254,16 +254,17 @@ Open `http://127.0.0.1:8000/`.
 
 ## Implementation Notes
 
-- The browser app first reads `window.SPOTTERDEX_DATA` from `data/spotterdex-data.js`, then falls back to fetching `data/spotterdex.json`.
-- Deep links use hash params: `#location=<pin-id>`, `#location=<pin-id>&detail=1`, `#aircraft=<aircraft-id>`, `#photo=<photo-id>`, `#squadron=<squadron-id>`, and `#stats=summary|exif`. Photo deep links should open the viewer after selecting the best surrounding context.
+- The browser app first reads page-specific `window.SPOTTERDEX_DATA`: `index.html` loads `data/spotterdex-map-data.js`, while the other top-level pages load `data/spotterdex-data.js`. It falls back to fetching `data/spotterdex.json`; the map page also fetches that full manifest lazily when the photo viewer opens.
+- Deep links are page-specific: `index.html#location=<pin-id>`, `index.html#location=<pin-id>&detail=1`, `aircraft-dex.html#aircraft=<aircraft-id>`, `squadrons.html#squadron=<squadron-id>`, `airshows.html#airshow=<airshow-id>`, and `stats.html#stats=summary|exif`. Photo deep links use `index.html#photo=<photo-id>`. Cross-page legacy hashes such as `index.html#aircraft=...` are unsupported and must not redirect.
 - The World Map selected-location panel is a compact launch surface: its hero shows `ICAO - country`, aircraft-family and squadron marks, a link to the dedicated location page, and expandable latest-photo rows grouped by aircraft type and unit.
 - The dedicated location page uses `#location=<pin-id>&detail=1`, follows the aircraft/squadron detail-page design, and shows location-scoped images before aircraft- and squadron-scoped frames. Location heroes are custom when `hero_photo`, `hero_image`, `hero.path`, or `hero_photo_id` exists on the pin; otherwise the UI prefers the newest location-scoped photo and then the newest photo at that pin.
-- The World Map view is a full-bleed map-first presentation on desktop and mobile: the Leaflet map fills the viewport below the header, with the Timothy Liu overview, recent locations, and selected-location photo results floating over it as glass panels. Mobile uses side-collapsible floating panels and compact ICAO marker labels when available. Keep marker labels visible and preserve map attribution.
-- The Aircraft Dex view uses a two-column workspace: filters and the Latest frames sidebar live in the left panel, while entry cards and the selected-entry results panel live in the right column. Expanded aircraft entries show stats, squadron logos, and large image-first photo grids.
-- The Squadrons view is a separate top-level tab that aggregates records with `unitType: squadron` by country and name, then displays prominent logo/hero cards grouped into one subsection per country. Organisation records are intentionally hidden from this page. Clicking a squadron logo selects it and renders all viewable photos for that squadron in the detail grid below the logo gallery.
+- The World Map page is a full-bleed map-first presentation on desktop and mobile: the Leaflet map fills the viewport below the header, with the Timothy Liu overview, recent locations, and selected-location photo results floating over it as glass panels. Mobile uses side-collapsible floating panels and compact ICAO marker labels when available. Keep marker labels visible and preserve map attribution.
+- The Aircraft Dex page uses a two-column workspace: filters and the Latest frames sidebar live in the left panel, while entry cards and the selected-entry results panel live in the right column. Expanded aircraft entries show stats, squadron logos, and large image-first photo grids.
+- The Squadrons page aggregates records with `unitType: squadron` by country and name, then displays prominent logo/hero cards grouped into one subsection per country. Organisation records are intentionally hidden from this page. Clicking a squadron logo selects it and renders all viewable photos for that squadron in the detail grid below the logo gallery.
+- The Airshows page presents the chronological event archive and keeps each event detail view on `airshows.html` with an `#airshow=<id>` hash.
 - Squadron logo links in the viewer, World Map location detail, and Aircraft Dex should deep link to the aggregate Squadrons-page ID, `normalizeKey(country + "-" + squadron name)`, not the aircraft-specific generated squadron ID.
-- The Stats Dashboard is the final top-level tab. It shows collection summary pairs plus the EXIF dashboard. Squadron totals should use the same country/name aggregation as the Squadrons view, not per-aircraft folder IDs.
-- Desktop navigation uses tab buttons. Mobile navigation uses the `#viewSelect` dropdown; keep it synchronized with `data-tab-target` buttons in `setActiveTab`.
+- The Stats page shows collection summary pairs plus the EXIF dashboard. Squadron totals should use the same country/name aggregation as the Squadrons page, not per-aircraft folder IDs.
+- Desktop navigation uses links between the five top-level HTML pages. Mobile navigation uses the `#viewSelect` dropdown with matching page URLs; keep the selected option synchronized with the current page and its detail view.
 - The stats and EXIF dashboards are computed client-side from generated `pins`, `aircraft`, `squadrons`, `photos`, and `photos[].exif` in `script.js`; the Python build script only needs changes if generated field names or normalization rules change.
 - Map pins use custom Leaflet `divIcon` markers over OpenStreetMap tiles, with a small custom in-app clustering layer in `script.js`. Marker labels are horizontal in-marker labels, not Leaflet tooltips, and may include one-em squadron/organisation logos plus aircraft-family PNG icons. Desktop labels use the pin name; mobile labels use `pin.icao` when present. Dedupe logos by unit identity, not generated logo filename, because the same logo may be published under multiple aircraft-specific names. If changing providers, preserve attribution and keep the site static/GitHub Pages compatible.
 - The photo viewer reads grouped EXIF and frame metadata from the generated manifest. The Camera section shows lens model, focal length, aperture, shutter speed, and ISO only when those values are present in the manifest. Keep detailed capture timestamps hidden. The Frame Date row should prefer `DateTimeOriginal`, then fall back to YAML `year` when capture EXIF is absent. If EXIF is absent, the UI should still render a clear fallback.
