@@ -310,12 +310,20 @@ def main() -> int:
 
 
 def map_page_manifest(manifest: Dict[str, Any]) -> Dict[str, Any]:
+    unit_fields = {
+        "country",
+        "id",
+        "logo",
+        "name",
+        "showOnSquadronsPage",
+        "unitLabel",
+        "unitType",
+    }
     photo_fields = {
         "aircraftFamily",
         "aircraftId",
         "aircraftType",
         "airshow",
-        "caption",
         "country",
         "date",
         "id",
@@ -329,18 +337,34 @@ def map_page_manifest(manifest: Dict[str, Any]) -> Dict[str, Any]:
         "tagScope",
         "thumbnail",
         "thumbnailSize",
-        "title",
         "unitLabel",
         "unitType",
         "year",
     }
+
+    def compact_unit(unit: Dict[str, Any]) -> Dict[str, Any]:
+        return {key: value for key, value in unit.items() if key in unit_fields}
+
+    compact_aircraft = []
+    for entry in manifest.get("aircraft", []):
+        compact_aircraft.append(
+            {
+                "id": entry.get("id"),
+                "typeName": entry.get("typeName"),
+                "aircraftFamily": entry.get("aircraftFamily"),
+                "countries": entry.get("countries", []),
+                "squadrons": [compact_unit(unit) for unit in entry.get("squadrons", [])],
+            }
+        )
+
     return {
         "payload": "map",
         "generatedAt": manifest.get("generatedAt"),
         "pins": manifest.get("pins", []),
-        "aircraft": manifest.get("aircraft", []),
-        "squadrons": manifest.get("squadrons", []),
-        "airshows": manifest.get("airshows", []),
+        "aircraft": compact_aircraft,
+        "squadrons": [compact_unit(unit) for unit in manifest.get("squadrons", [])],
+        # Airshow summaries are rebuilt client-side from the retained photo tags.
+        "airshows": [],
         "photos": [
             {key: value for key, value in photo.items() if key in photo_fields}
             for photo in manifest.get("photos", [])

@@ -64,6 +64,7 @@
     mapPreviewCache: new Map(),
     mapDossierOpen: true,
     markersByPinId: new Map(),
+    mapLabelsByPinId: new Map(),
     mapCalloutLayouts: [],
     activeMapMarkerId: null,
     pendingMapFocusId: null,
@@ -72,6 +73,7 @@
     mapImageObserver: null,
     mapRefreshHandle: null,
     mapRefreshTimer: null,
+    mapResultsRenderHandle: null,
     activePhotoIds: [],
     activePhotoIndex: 0,
     activePhotoContext: "map",
@@ -796,9 +798,26 @@
     state.mobileMapPanel = panel === "locations" || panel === "results" ? panel : null;
     updateMapPanelState();
 
-    if (state.map) {
+    if (state.mobileMapPanel === "results") {
+      scheduleMobileMapResults();
+    }
+
+    if (state.map && !isMobileMapLayout()) {
       refreshMapLayout();
     }
+  }
+
+  function scheduleMobileMapResults() {
+    if (!isMobileMapLayout() || !els.mapResults || els.mapResults.dataset.pinId === state.selectedPinId) {
+      return;
+    }
+    window.cancelAnimationFrame(state.mapResultsRenderHandle);
+    els.mapResults.innerHTML = '<div class="empty-state compact">Loading location details...</div>';
+    state.mapResultsRenderHandle = window.requestAnimationFrame(() => {
+      if (state.mobileMapPanel === "results") {
+        renderMapResults();
+      }
+    });
   }
 
   function setMapDossierOpen(isOpen) {
@@ -1149,7 +1168,9 @@
 
     if (directoryView === "mapView") {
       renderLocations();
-      renderMapResults();
+      if (!isMobileMapLayout()) {
+        renderMapResults();
+      }
       window.setTimeout(initializeMapWhenReady, 0);
     } else if (directoryView === "dexView") {
       renderDexHero();
@@ -1212,13 +1233,21 @@
       return;
     }
 
+    const mobileLayout = isMobileMapLayout();
     state.map = window.L.map(els.worldMap, {
       scrollWheelZoom: true,
-      zoomControl: true
+      zoomControl: true,
+      fadeAnimation: !mobileLayout,
+      zoomAnimation: !mobileLayout,
+      markerZoomAnimation: !mobileLayout,
+      inertia: !mobileLayout
     });
 
     window.L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
+      keepBuffer: mobileLayout ? 1 : 2,
+      updateWhenIdle: mobileLayout,
+      updateWhenZooming: !mobileLayout,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(state.map);
 
@@ -1238,7 +1267,7 @@
       state.mapZoomInProgress = true;
     });
     state.map.on("moveend", () => {
-      const needsReflow = state.mapZoomInProgress || mapCalloutsNeedReflow();
+      const needsReflow = state.mapZoomInProgress || (!isMobileMapLayout() && mapCalloutsNeedReflow());
       state.mapZoomInProgress = false;
       if (needsReflow) {
         refreshMapLayout();
@@ -1308,7 +1337,7 @@
   }
 
   function refreshMapLayout() {
-    if (!state.map) {
+    if (!state.map || !Number.isFinite(state.map.getZoom())) {
       return;
     }
 
@@ -1328,7 +1357,14 @@
   }
 
   function renderPins(options = {}) {
-    if (!state.map || !state.markerLayer || !state.mapLeaderLayer || !state.mapLabelLayer || !window.L) {
+    if (
+      !state.map ||
+      !Number.isFinite(state.map.getZoom()) ||
+      !state.markerLayer ||
+      !state.mapLeaderLayer ||
+      !state.mapLabelLayer ||
+      !window.L
+    ) {
       return;
     }
 
@@ -1336,6 +1372,7 @@
     state.mapLeaderLayer.clearLayers();
     state.mapLabelLayer.clearLayers();
     state.markersByPinId = new Map();
+    state.mapLabelsByPinId = new Map();
     const pins = state.enabledPins;
     const markerLayouts = mapMarkerLayouts(pins);
 
@@ -1347,7 +1384,7 @@
         keyboard: false,
         pane: "spotterdexLeaderPane"
       }).addTo(state.mapLeaderLayer);
-      window.L.marker([pin.lat, pin.lon], {
+      const labelMarker = window.L.marker([pin.lat, pin.lon], {
         icon: mapLabelIcon(pin, pin.id === state.selectedPinId, preview, callout),
         title: `Select ${pin.name}`,
         keyboard: true,
@@ -1356,6 +1393,7 @@
       })
         .on("click", () => selectPin(pin.id, { pan: false }))
         .addTo(state.mapLabelLayer);
+      state.mapLabelsByPinId.set(pin.id, labelMarker);
       const marker = window.L.marker([pin.lat, pin.lon], {
         icon: mapMarkerIcon(pin, pin.id === state.selectedPinId),
         title: pin.name,
@@ -2280,6 +2318,11 @@
     if (!state.mapTrafficLayer || !window.L) {
       return;
     }
+    if (isMobileMapLayout()) {
+      state.mapTrafficLayer.clearLayers();
+      state.mapTrafficInitialized = false;
+      return;
+    }
     if (state.mapTrafficInitialized && !force) {
       return;
     }
@@ -2348,6 +2391,7 @@
     const pin = state.pinById.get(state.selectedPinId);
     if (!pin) {
       els.mapResults.innerHTML = '<div class="empty-state">Add enabled pins to start browsing the map.</div>';
+      delete els.mapResults.dataset.pinId;
       return;
     }
 
@@ -2357,6 +2401,7 @@
       <h2 class="location-details-title">Location Details</h2>
       ${renderMapLocationPanel(profile)}
     `;
+    els.mapResults.dataset.pinId = pin.id;
     activateDeferredMapImages();
   }
 
@@ -4208,8 +4253,13 @@
     }
     renderLocations();
     updateActiveMapMarker(previousPinId, pinId);
-    renderMapResults();
-    refreshMapLayout();
+
+    if (!isMobileMapLayout()) {
+      renderMapResults();
+      refreshMapLayout();
+    } else if (els.mapResults) {
+      delete els.mapResults.dataset.pinId;
+    }
 
     if (options.updateHash !== false) {
       updateDeepLink("location", pinId);
@@ -4252,23 +4302,25 @@
   }
 
   function updateActiveMapMarker(previousPinId, nextPinId) {
-    const updateMarker = (pinId, isActive) => {
-      const marker = state.markersByPinId.get(pinId);
+    const updateMarker = (marker, isActive, activeOffset) => {
       if (!marker) {
         return;
       }
-      marker.setZIndexOffset(isActive ? 800 : 0);
+      marker.setZIndexOffset(isActive ? activeOffset : 0);
       const element = marker.getElement();
       if (element) {
         element.classList.toggle("is-active", isActive);
+        element.querySelector(".spotterdex-marker-label")?.classList.toggle("is-active", isActive);
       }
     };
 
     if (previousPinId && previousPinId !== nextPinId) {
-      updateMarker(previousPinId, false);
+      updateMarker(state.markersByPinId.get(previousPinId), false, 800);
+      updateMarker(state.mapLabelsByPinId.get(previousPinId), false, 900);
     }
     if (nextPinId) {
-      updateMarker(nextPinId, true);
+      updateMarker(state.markersByPinId.get(nextPinId), true, 800);
+      updateMarker(state.mapLabelsByPinId.get(nextPinId), true, 900);
     }
     state.activeMapMarkerId = nextPinId || null;
   }
@@ -4607,7 +4659,17 @@
     }
 
     const currentZoom = state.map.getZoom();
-    state.map.flyTo([pin.lat, pin.lon], Number.isFinite(currentZoom) ? Math.max(currentZoom, 11) : 11, {
+    if (!Number.isFinite(currentZoom)) {
+      state.map.setView([pin.lat, pin.lon], 11, { animate: false });
+      renderPins();
+      return;
+    }
+    const nextZoom = Math.max(currentZoom, 11);
+    if (isMobileMapLayout()) {
+      state.map.setView([pin.lat, pin.lon], nextZoom, { animate: false });
+      return;
+    }
+    state.map.flyTo([pin.lat, pin.lon], nextZoom, {
       animate: true,
       duration: 0.7
     });
@@ -4669,7 +4731,7 @@
     state.map.fitBounds(bounds, {
       ...mapFitPadding(),
       maxZoom: 9,
-      animate: options.animate !== false
+      animate: !isMobileMapLayout() && options.animate !== false
     });
     refreshMapLayout();
 

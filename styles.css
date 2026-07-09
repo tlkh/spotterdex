@@ -7951,3 +7951,55 @@ button.location-unit-chip:focus-visible,
     transition-duration: 0.01ms !important;
   }
 }
+
+@media (max-width: 1040px) {
+  body[data-page-view="mapView"] .leaflet-tile {
+    filter: none;
+    transition: none;
+  }
+
+  #mapView .map-workspace::after {
+    display: none;
+  }
+
+  #mapView .spotterdex-marker-label {
+    background: rgba(13, 15, 16, 0.92);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+    backdrop-filter: none;
+    transition: none;
+    will-change: auto;
+  }
+
+  #mapView .spotterdex-marker-label:hover,
+  #mapView .spotterdex-marker-label.is-active,
+  #mapView .spotterdex-marker-label.is-active:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+    transform: none;
+  }
+
+  #mapView .spotterdex-marker-dot {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.24);
+    transition: none;
+  }
+
+  #mapView .spotterdex-marker-shell.is-active .spotterdex-marker-dot::before,
+  #mapView .spotterdex-marker-shell.is-active .spotterdex-marker-dot::after {
+    animation: none;
+  }
+
+  #mapView .control-panel,
+  #mapView #mapResults,
+  #mapView .map-panel-toggle {
+    backdrop-filter: none;
+  }
+
+  #mapView .control-panel,
+  #mapView #mapResults {
+    visibility: hidden;
+  }
+
+  #mapView .map-workspace.is-locations-open > .control-panel,
+  #mapView .map-workspace.is-results-open #mapResults {
+    visibility: visible;
+  }
+}
