@@ -1,0 +1,9 @@
+squadron_name: 121 Squadron
+country: Singapore
+aircraft_type: Fokker 50 UTA
+photos:
+- path: DSC08334-Enhanced-NR.jpg
+  location: Singapore
+  pin_id: singapore
+  caption: RSAF 121 SQN Fokker-50 UTA
+aircraft_family: medium

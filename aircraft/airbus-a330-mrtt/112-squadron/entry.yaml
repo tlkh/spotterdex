@@ -43,5 +43,13 @@ photos:
   location: Singapore
   pin_id: singapore
   caption: RSAF A330 MRTT banking taking off during golden hour
+- path: DSC07164-Enhanced-NR.jpg
+  location: Singapore
+  pin_id: singapore
+  caption: RSAF A330 MRTT landing in Singapore
+- path: DSC05179-Enhanced-NR.jpg
+  location: Singapore
+  pin_id: singapore
+  caption: A330 MRTT on approach for landing in Singapore
 aircraft_family: heavy
 squadron_logo: logos/112_sqn.png

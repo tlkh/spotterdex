@@ -5,6 +5,7 @@
       selectedIssueKey: "",
       assetFilter: "untagged",
       activeTab: "attach",
+      qualityShowAcknowledged: false,
       captionAssist: {
         attachAssetPath: "",
         editPhotoKey: "",
@@ -209,6 +210,7 @@
         asset.path,
         asset.name,
         asset.extension,
+        asset.captureDate,
         ...asset.tags.flatMap((tag) => [tag.kind, tag.label, tag.location, tag.path])
       ].join(" ").toLowerCase();
       return haystack.includes(term);
@@ -238,62 +240,120 @@
       $("assetGrid").innerHTML = assets.map((asset) => {
         const selected = state.selectedAssets.has(asset.path) ? " selected" : "";
         const tag = asset.tags.length
-          ? `<span class="tag">${asset.tags[0].kind}</span>`
+          ? `<span class="tag">${escapeHtml(asset.tags[0].kind)}</span>`
           : `<span class="tag warn">new</span>`;
-        const title = asset.tags.map((item) => `${item.kind}: ${item.label || item.path || ""}`).join("\n");
+        const captureLine = asset.captureDate ? `Captured: ${asset.captureDate}` : "No capture date";
+        const tagLines = asset.tags.map((item) => `${item.kind}: ${item.label || item.path || ""}`);
+        const title = [captureLine, ...tagLines].join("\n");
         const resolutionTag = asset.isUnderResolution
           ? `<span class="tag warn">${escapeHtml(asset.dimensionsLabel)}</span>`
-          : `<span>${escapeHtml(asset.dimensionsLabel)}</span>`;
-        const qualityTags = (asset.qualityFlags || []).map((flag) => (
-          `<span class="tag warn" title="${escapeHtml(flag.detail || "")}">${escapeHtml(flag.label || "Quality warning")}</span>`
-        )).join("");
+          : `<span class="asset-dim">${escapeHtml(asset.dimensionsLabel)}</span>`;
+        const qualityTags = (asset.qualityFlags || []).filter((flag) => flag.severity !== "info").map((flag) => {
+          const short = flag.short || flag.label || "Quality";
+          const detail = [flag.label, flag.detail].filter(Boolean).join(" - ");
+          return `<span class="tag warn" title="${escapeHtml(detail)}">${escapeHtml(short)}</span>`;
+        }).join("");
         return `
           <button class="asset-card${selected}" type="button" data-asset="${escapeHtml(asset.path)}" title="${escapeHtml(title)}">
             <img src="${thumbUrl(asset.path)}" loading="lazy" alt="${escapeHtml(asset.name)}">
             <div class="asset-name">${escapeHtml(asset.name)}</div>
-            <div class="asset-meta"><span>${escapeHtml(asset.sizeLabel)}</span>${resolutionTag}${qualityTags}${tag}</div>
+            <div class="asset-meta"><span class="asset-size">${escapeHtml(asset.sizeLabel)}</span>${resolutionTag}${qualityTags}${tag}</div>
           </button>
         `;
       }).join("");
     }
 
+    function qualityMetricChips(asset, minimum) {
+      const chips = [];
+      const push = (label, value) => {
+        if (value === null || value === undefined || value === "") return;
+        chips.push(`<span class="metric-chip"><b>${escapeHtml(label)}</b> ${escapeHtml(String(value))}</span>`);
+      };
+      push("Dimensions", asset.dimensionsLabel);
+      push("Luminance", asset.meanLuminance);
+      push("Tonal range", asset.tonalRange);
+      if (asset.pureBlackPercent) push("Pure black", `${asset.pureBlackPercent}%`);
+      if (asset.pureWhitePercent) push("Pure white", `${asset.pureWhitePercent}%`);
+      if (asset.neutralChannelSpread) {
+        push("Colour spread", `${asset.neutralChannelSpread}${asset.colourCastDirection ? ` (${asset.colourCastDirection})` : ""}`);
+      }
+      push("Acutance", asset.acutance);
+      if (asset.iso) push("ISO", asset.iso);
+      return chips.join("");
+    }
+
     function renderQualityControl() {
-      const assets = (state.data?.assets || []).filter((asset) => (
+      const flagged = (state.data?.assets || []).filter((asset) => (
         asset.isPhotoSource && (asset.isUnderResolution || (asset.qualityFlags || []).length)
       ));
+      const showAcknowledged = state.qualityShowAcknowledged;
+      const assets = flagged.filter((asset) => showAcknowledged || !asset.qualityAcknowledged);
       const allPhotoSources = (state.data?.assets || []).filter((asset) => asset.isPhotoSource);
       const project = state.data?.project || {};
       const minimum = project.minimumSourcePhotoWidth || 2560;
       const belowMinimum = project.underResolutionAssetCount || 0;
       const exposure = project.exposureIssueAssetCount || 0;
       const colour = project.colourBalanceIssueAssetCount || 0;
-      $("qualitySummary").textContent = `${assets.length} of ${allPhotoSources.length} source photograph(s) flagged: ${belowMinimum} below ${minimum}px, ${exposure} exposure, ${colour} colour balance.`;
+      const acknowledged = project.acknowledgedQualityCount || 0;
+      $("qualityShowAcknowledged").checked = showAcknowledged;
+      $("qualitySummary").textContent = `${flagged.length} of ${allPhotoSources.length} source photograph(s) flagged: ${belowMinimum} below ${minimum}px, ${exposure} exposure, ${colour} colour. ${acknowledged} marked reviewed.`;
       if (!assets.length) {
-        $("qualityList").innerHTML = `<div class="empty">All source photographs meet the ${minimum}px requirement with no exposure or colour-balance warnings.</div>`;
+        const done = acknowledged && !showAcknowledged
+          ? `All ${acknowledged} flagged source photograph(s) have been reviewed. Enable "Show reviewed" to see them.`
+          : `All source photographs meet the ${minimum}px requirement with no quality warnings.`;
+        $("qualityList").innerHTML = `<div class="empty">${escapeHtml(done)}</div>`;
         return;
       }
+      const severityRank = (asset) => {
+        if (asset.isUnderResolution) return 0;
+        return (asset.qualityFlags || []).some((flag) => flag.severity !== "info") ? 0 : 1;
+      };
       $("qualityList").innerHTML = assets
-        .sort((a, b) => (b.qualityFlags || []).length - (a.qualityFlags || []).length || a.width - b.width || a.path.localeCompare(b.path))
+        .sort((a, b) => (
+          Number(a.qualityAcknowledged) - Number(b.qualityAcknowledged)
+          || severityRank(a) - severityRank(b)
+          || (b.qualityFlags || []).length - (a.qualityFlags || []).length
+          || a.width - b.width
+          || a.path.localeCompare(b.path)
+        ))
         .map((asset) => {
           const associations = asset.tags.length
             ? asset.tags.map((tag) => `${tag.kind}: ${tag.label || tag.path || "Source"}`).join(" · ")
             : "New raw asset";
-          const warnings = [
-            asset.isUnderResolution ? `${asset.dimensionsLabel} source - below ${minimum}px` : "",
-            ...(asset.qualityFlags || []).map((flag) => flag.detail || flag.label || "Quality warning")
-          ].filter(Boolean);
+          const chips = [];
+          if (asset.isUnderResolution) {
+            chips.push(`<span class="tag warn">${escapeHtml(asset.dimensionsLabel)} - below ${minimum}px</span>`);
+          }
+          for (const flag of asset.qualityFlags || []) {
+            const cls = flag.severity === "info" ? "tag info" : "tag warn";
+            chips.push(`<span class="${cls}">${escapeHtml(flag.detail || flag.label || "Quality warning")}</span>`);
+          }
+          const ackClass = asset.qualityAcknowledged ? " acknowledged" : "";
+          const ackButton = asset.qualityAcknowledged
+            ? `<button class="btn ghost" type="button" data-quality-unack="${escapeHtml(asset.path)}">Restore to queue</button>`
+            : `<button class="btn secondary" type="button" data-quality-ack="${escapeHtml(asset.path)}">Mark reviewed</button>`;
           return `
-            <button class="quality-card" type="button" data-quality-asset="${escapeHtml(asset.path)}">
+            <article class="quality-card${ackClass}">
               <img src="${thumbUrl(asset.path)}" loading="lazy" alt="${escapeHtml(asset.name)}">
-              <span class="quality-card-copy">
+              <div class="quality-card-copy">
                 <strong>${escapeHtml(asset.path)}</strong>
-                ${warnings.map((warning) => `<span class="tag warn">${escapeHtml(warning)}</span>`).join("")}
-                <span class="mini-meta">${escapeHtml(associations)}</span>
-                <span class="mini-meta">Select to review this source in Attach.</span>
-              </span>
-            </button>
+                <div class="quality-tags">${chips.join("")}</div>
+                <div class="metric-row">${qualityMetricChips(asset, minimum)}</div>
+                <span class="mini-meta">${escapeHtml(associations)}${asset.qualityAcknowledged ? " · reviewed" : ""}</span>
+                <div class="card-actions">
+                  <button class="btn ghost" type="button" data-quality-select="${escapeHtml(asset.path)}">Review in Attach</button>
+                  ${ackButton}
+                </div>
+              </div>
+            </article>
           `;
         }).join("");
+    }
+
+    async function acknowledgeQuality(path, acknowledged) {
+      const result = await api("/api/acknowledge-quality", {path, acknowledged});
+      toast(result.message);
+      await loadState(true);
     }
 
     function renderSelectedStrip() {
@@ -2010,11 +2070,25 @@
         renderSelectedStrip();
         renderBulkCaptions();
       });
+      $("qualityShowAcknowledged").addEventListener("change", (event) => {
+        state.qualityShowAcknowledged = event.target.checked;
+        renderQualityControl();
+      });
       $("qualityList").addEventListener("click", (event) => {
-        const card = event.target.closest("[data-quality-asset]");
-        if (!card) return;
+        const ack = event.target.closest("[data-quality-ack]");
+        const unack = event.target.closest("[data-quality-unack]");
+        const select = event.target.closest("[data-quality-select]");
+        if (ack) {
+          acknowledgeQuality(ack.dataset.qualityAck, true).catch((error) => toast(error.message));
+          return;
+        }
+        if (unack) {
+          acknowledgeQuality(unack.dataset.qualityUnack, false).catch((error) => toast(error.message));
+          return;
+        }
+        if (!select) return;
         state.selectedAssets.clear();
-        state.selectedAssets.add(card.dataset.qualityAsset);
+        state.selectedAssets.add(select.dataset.qualitySelect);
         resetBulkCaptionQueue();
         setTab("attach");
         renderAssetGrid();

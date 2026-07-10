@@ -1,0 +1,13 @@
+squadron_name: Indian Naval Air Squadrons (INAS)
+country: India
+aircraft_type: Dornier 228
+photos:
+- path: DSC09504.jpg
+  location: Singapore
+  pin_id: singapore
+  caption: INAS Dornier 228 in Singapore
+- path: DSC09472.jpg
+  location: Singapore
+  pin_id: singapore
+  caption: INAS Dornier 228 in Singapore
+aircraft_family: medium

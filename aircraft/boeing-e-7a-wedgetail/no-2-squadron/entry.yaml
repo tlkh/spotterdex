@@ -1,0 +1,17 @@
+squadron_name: No. 2 Squadron
+country: Australia
+aircraft_type: Boeing E-7A Wedgetail
+photos:
+- path: DSC09753-Enhanced-NR.jpg
+  location: Singapore
+  pin_id: singapore
+  caption: RAAF E-7A from No. 2 Squadron landing in Singapore
+- path: DSC09773-Enhanced-NR.jpg
+  location: Singapore
+  pin_id: singapore
+  caption: RAAF E-7A from No. 2 Squadron landing in Singapore
+- path: DSC09765-Enhanced-NR.jpg
+  location: Singapore
+  pin_id: singapore
+  caption: RAAF E-7A from No. 2 Squadron landing in Singapore
+aircraft_family: medium

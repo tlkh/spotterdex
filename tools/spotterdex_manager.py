@@ -41,7 +41,7 @@ except ImportError as exc:  # pragma: no cover - user environment guard
     raise SystemExit("Missing PyYAML. Install with: python3 -m pip install -r requirements.txt") from exc
 
 try:
-    from PIL import Image, ImageOps
+    from PIL import Image, ImageChops, ImageFilter, ImageOps
 except ImportError as exc:  # pragma: no cover - user environment guard
     raise SystemExit("Missing Pillow. Install with: python3 -m pip install -r requirements.txt") from exc
 
@@ -72,6 +72,26 @@ CLIPPED_SHADOW_RATIO = 0.24
 CLIPPED_HIGHLIGHT_RATIO = 0.24
 NEUTRAL_PIXEL_CHROMA_MAX = 32
 COLOUR_CAST_CHANNEL_SPREAD = 28
+# High-confidence "hard" clipping: a meaningful share of pixels pinned to pure
+# black or pure white loses all recoverable detail regardless of overall mean.
+TRUE_CLIP_SHADOW_RATIO = 0.06
+TRUE_CLIP_HIGHLIGHT_RATIO = 0.05
+# A very small p2..p98 luminance spread signals a flat or hazy frame. Kept tight
+# so tightly-cropped subjects against plain skies are not routinely flagged.
+LOW_CONTRAST_TONAL_RANGE = 55
+# Mean edge magnitude on the 256px proxy; below this (on a frame that still has
+# usable contrast) the source is likely soft/out of focus. Conservative on
+# purpose so sharp subjects against plain skies are not falsely flagged.
+SOFT_FOCUS_ACUTANCE = 5.0
+# EXIF ISO at or above this is surfaced as a noise-risk note, not a hard fault.
+HIGH_ISO_NOISE_THRESHOLD = 6400
+# Cast-direction descriptors only appear once a channel imbalance is meaningful.
+COLOUR_CAST_DIRECTION_DELTA = 12
+# Local-only record of source images the user has reviewed and accepted despite a
+# quality warning. Keyed by raw-asset path with the file's size/mtime so editing
+# or replacing the image re-surfaces it. Kept out of the build cache so "Clear
+# build cache" does not wipe manual review decisions.
+QUALITY_ACK_PATH = ROOT / ".spotterdex-manager-quality.json"
 
 
 class FlowList(list):
@@ -154,6 +174,50 @@ class SpotterDexManager:
             "removedBytes": byte_count,
             "message": f"Cleared {file_count} cached file(s) and reset {metadata_count} image metadata record(s).",
         }
+
+    def _load_quality_ack(self) -> Dict[str, Dict[str, Any]]:
+        """Load the persisted map of source images the user accepted despite warnings."""
+        if not QUALITY_ACK_PATH.exists():
+            return {}
+        try:
+            data = json.loads(QUALITY_ACK_PATH.read_text("utf-8"))
+        except (OSError, ValueError):
+            return {}
+        entries = data.get("acknowledged") if isinstance(data, dict) else None
+        return entries if isinstance(entries, dict) else {}
+
+    @staticmethod
+    def _quality_ack_signature(size: Any, modified: Any) -> str:
+        return f"{int(size or 0)}:{int(modified or 0)}"
+
+    def set_quality_acknowledgement(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Persist or clear a reviewer decision to accept a flagged source image."""
+        rel = clean_text(payload.get("path"))
+        if not rel:
+            raise ValueError("An asset path is required.")
+        asset_path = self._raw_asset_path(rel)
+        acknowledged = bool(payload.get("acknowledged", True))
+        store = self._load_quality_ack()
+        if acknowledged:
+            if not asset_path.exists():
+                raise ValueError("This source image no longer exists.")
+            stat = asset_path.stat()
+            store[rel] = {
+                "signature": self._quality_ack_signature(stat.st_size, int(stat.st_mtime)),
+                "acknowledgedAt": int(time.time()),
+            }
+            message = "Marked as reviewed; it will drop out of the quality queue."
+        else:
+            store.pop(rel, None)
+            message = "Cleared the reviewed marker; it will reappear in the quality queue if still flagged."
+        try:
+            QUALITY_ACK_PATH.write_text(
+                json.dumps({"acknowledged": store}, ensure_ascii=True, indent=2),
+                "utf-8",
+            )
+        except OSError as exc:
+            raise ValueError(f"Could not save the review decision: {exc}") from exc
+        return {"ok": True, "acknowledged": acknowledged, "path": rel, "message": message}
 
     def find_orphans(self, _payload: Dict[str, Any]) -> Dict[str, Any]:
         """Report generated JPEGs on disk that the manifest no longer references."""
@@ -240,7 +304,17 @@ class SpotterDexManager:
         )
         exposure_issue_asset_count = sum(1 for asset in assets if asset.get("hasExposureIssue"))
         colour_balance_issue_asset_count = sum(1 for asset in assets if asset.get("hasColourBalanceIssue"))
-        quality_issue_asset_count = sum(1 for asset in assets if asset.get("qualityFlags"))
+
+        def asset_is_flagged(asset: Dict[str, Any]) -> bool:
+            return bool(
+                asset.get("isPhotoSource")
+                and (asset.get("isUnderResolution") or asset.get("qualityFlags"))
+            )
+
+        quality_issue_asset_count = sum(1 for asset in assets if asset_is_flagged(asset))
+        acknowledged_quality_count = sum(
+            1 for asset in assets if asset_is_flagged(asset) and asset.get("qualityAcknowledged")
+        )
 
         return {
             "project": {
@@ -259,6 +333,7 @@ class SpotterDexManager:
                 "exposureIssueAssetCount": exposure_issue_asset_count,
                 "colourBalanceIssueAssetCount": colour_balance_issue_asset_count,
                 "qualityIssueAssetCount": quality_issue_asset_count,
+                "acknowledgedQualityCount": acknowledged_quality_count,
                 "minimumSourcePhotoWidth": MIN_SOURCE_PHOTO_WIDTH,
             },
             "aircraft": aircraft,
@@ -1660,9 +1735,32 @@ class SpotterDexManager:
                     except Exception:
                         quality_by_path[rel] = {"flags": []}
 
+        # Read the EXIF capture date for every raw asset so the selector grid can
+        # be ordered by when the frame was shot rather than by filesystem mtime.
+        capture_by_path: Dict[str, str] = {}
+        if candidates:
+            worker_count = min(8, len(candidates), max(1, os.cpu_count() or 1))
+            with ThreadPoolExecutor(max_workers=worker_count) as executor:
+                futures = {
+                    executor.submit(read_image_capture_date, item["pathObject"], self._exif_date_cache): item["path"]
+                    for item in candidates
+                }
+                for future, rel in futures.items():
+                    try:
+                        capture_by_path[rel] = future.result()
+                    except Exception:
+                        capture_by_path[rel] = ""
+
+        acknowledged_map = self._load_quality_ack()
         for item in candidates:
             quality = quality_by_path.get(item["path"], {"flags": []})
             quality_flags = quality.get("flags") if isinstance(quality.get("flags"), list) else []
+            capture_date = capture_by_path.get(item["path"], "")
+            ack_entry = acknowledged_map.get(item["path"])
+            acknowledged = bool(
+                ack_entry
+                and ack_entry.get("signature") == self._quality_ack_signature(item["size"], item["modified"])
+            )
             assets.append(
                 {
                     "path": item["path"],
@@ -1671,6 +1769,7 @@ class SpotterDexManager:
                     "size": item["size"],
                     "sizeLabel": format_bytes(item["size"]),
                     "modified": item["modified"],
+                    "captureDate": capture_date,
                     "width": item["width"],
                     "height": item["height"],
                     "dimensionsLabel": f"{item['width']} x {item['height']}" if item["width"] and item["height"] else "Unavailable",
@@ -1679,14 +1778,32 @@ class SpotterDexManager:
                     "qualityFlags": quality_flags,
                     "hasExposureIssue": any(flag.get("category") == "exposure" for flag in quality_flags if isinstance(flag, dict)),
                     "hasColourBalanceIssue": any(flag.get("category") == "colour" for flag in quality_flags if isinstance(flag, dict)),
+                    "qualityAcknowledged": acknowledged,
                     "meanLuminance": quality.get("meanLuminance"),
                     "shadowClipPercent": quality.get("shadowClipPercent"),
                     "highlightClipPercent": quality.get("highlightClipPercent"),
+                    "pureBlackPercent": quality.get("pureBlackPercent"),
+                    "pureWhitePercent": quality.get("pureWhitePercent"),
+                    "tonalRange": quality.get("tonalRange"),
                     "neutralChannelSpread": quality.get("neutralChannelSpread"),
+                    "colourCastDirection": quality.get("colourCastDirection"),
+                    "acutance": quality.get("acutance"),
+                    "iso": quality.get("iso"),
                     "tags": item["tags"],
                 }
             )
-        assets.sort(key=lambda item: (bool(item["tags"]), -item["modified"], item["path"]))
+        # New (untagged) assets first, then newest capture date first. Frames with
+        # no readable capture date fall back to filesystem mtime and sort last
+        # within their group so freshly imported photos still surface at the top.
+        assets.sort(
+            key=lambda item: (
+                bool(item["tags"]),
+                not bool(item.get("captureDate")),
+                -capture_date_sort_value(item.get("captureDate", "")),
+                -item["modified"],
+                item["path"],
+            )
+        )
         return assets
 
     def _project_path(self, value: str) -> Optional[Path]:
@@ -1774,6 +1891,7 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
                 "/api/create-pin": self.context.manager.create_pin,
                 "/api/set-pin-hero": self.context.manager.set_pin_hero,
                 "/api/clear-build-cache": self.context.manager.clear_build_cache,
+                "/api/acknowledge-quality": self.context.manager.set_quality_acknowledgement,
                 "/api/find-orphans": self.context.manager.find_orphans,
                 "/api/delete-orphans": self.context.manager.delete_orphans,
                 "/api/build": self.context.manager.run_build,
@@ -2068,6 +2186,22 @@ def read_image_capture_date(path: Path, cache: Dict[str, str]) -> str:
     return result
 
 
+def capture_date_sort_value(date_value: str) -> int:
+    """Return a comparable integer for a normalized capture date.
+
+    Dates are stored as ``YYYY-MM-DD`` strings; converting to an integer such as
+    ``20240226`` lets the asset grid sort newest-first with a simple negation and
+    keeps images without any capture date (value ``0``) grouped together.
+    """
+    digits = re.sub(r"\D", "", date_value or "")
+    if len(digits) >= 8:
+        try:
+            return int(digits[:8])
+        except ValueError:
+            return 0
+    return 0
+
+
 def read_image_dimensions(path: Path, cache: Dict[str, Tuple[int, int]]) -> Tuple[int, int]:
     """Read source dimensions once per unchanged raw image for manager QA."""
     try:
@@ -2088,8 +2222,249 @@ def read_image_dimensions(path: Path, cache: Dict[str, Tuple[int, int]]) -> Tupl
     return result
 
 
+def _histogram_percentile(histogram: List[int], total: int, fraction: float) -> int:
+    """Return the bin index at which the cumulative histogram passes ``fraction``."""
+    if total <= 0:
+        return 0
+    threshold = total * fraction
+    cumulative = 0
+    for index, count in enumerate(histogram):
+        cumulative += count
+        if cumulative >= threshold:
+            return index
+    return len(histogram) - 1
+
+
+def describe_colour_cast(channel_means: List[float]) -> str:
+    """Summarise the direction of a neutral-pixel colour cast for the reviewer."""
+    if len(channel_means) != 3:
+        return ""
+    red, green, blue = channel_means
+    parts: List[str] = []
+    warm_cool = red - blue
+    if warm_cool >= COLOUR_CAST_DIRECTION_DELTA:
+        parts.append("warm/orange")
+    elif warm_cool <= -COLOUR_CAST_DIRECTION_DELTA:
+        parts.append("cool/blue")
+    green_magenta = green - (red + blue) / 2
+    if green_magenta >= COLOUR_CAST_DIRECTION_DELTA:
+        parts.append("green")
+    elif green_magenta <= -COLOUR_CAST_DIRECTION_DELTA:
+        parts.append("magenta")
+    return ", ".join(parts)
+
+
+def coerce_iso_value(value: Any) -> Optional[int]:
+    if value is None:
+        return None
+    if isinstance(value, (tuple, list)):
+        value = value[0] if value else None
+    try:
+        iso = int(round(float(value)))
+    except (TypeError, ValueError):
+        return None
+    return iso if iso > 0 else None
+
+
+def read_exif_iso(opened: Image.Image) -> Optional[int]:
+    """Read the capture ISO from an open image, if the EXIF records one."""
+    try:
+        raw = opened.getexif()
+        if not raw:
+            return None
+        exif_ifd = read_exif_sub_ifd(raw)
+        for tag_name in ("ISOSpeedRatings", "PhotographicSensitivity", "ISOSpeed"):
+            tag_id = exif_tag_id(tag_name)
+            if not tag_id:
+                continue
+            iso = coerce_iso_value(exif_ifd.get(tag_id))
+            if iso is None:
+                iso = coerce_iso_value(raw.get(tag_id))
+            if iso is not None:
+                return iso
+    except Exception:
+        return None
+    return None
+
+
+def compute_quality_metrics(image: Image.Image, pixel_count: int) -> Dict[str, Any]:
+    """Derive exposure, contrast, colour-cast and sharpness metrics with C-level ops.
+
+    Everything here runs on Pillow's histogram / channel primitives rather than a
+    Python per-pixel loop, so it is both far faster and releases the GIL, letting
+    the manager analyse a large ``raw_assets/`` set in parallel.
+    """
+    # Rec.709 luminance keeps parity with the previous per-pixel weighting.
+    luminance = image.convert("L", (0.2126, 0.7152, 0.0722, 0))
+    lum_hist = luminance.histogram()
+    total = sum(lum_hist) or 1
+
+    mean_luminance = sum(index * count for index, count in enumerate(lum_hist)) / total
+    shadow_ratio = sum(lum_hist[0:11]) / total
+    highlight_ratio = sum(lum_hist[245:256]) / total
+    true_shadow_ratio = lum_hist[0] / total
+    true_highlight_ratio = lum_hist[255] / total
+    tonal_range = _histogram_percentile(lum_hist, total, 0.98) - _histogram_percentile(lum_hist, total, 0.02)
+
+    red_band, green_band, blue_band = image.split()
+    channel_max = ImageChops.lighter(ImageChops.lighter(red_band, green_band), blue_band)
+    channel_min = ImageChops.darker(ImageChops.darker(red_band, green_band), blue_band)
+    chroma = ImageChops.difference(channel_max, channel_min)
+    neutral_by_chroma = chroma.point(lambda value: 255 if value <= NEUTRAL_PIXEL_CHROMA_MAX else 0)
+    luminance_in_range = luminance.point(lambda value: 255 if 36 <= value <= 228 else 0)
+    neutral_mask = ImageChops.multiply(neutral_by_chroma, luminance_in_range)
+    neutral_count = neutral_mask.histogram()[255]
+
+    channel_spread = 0.0
+    cast_direction = ""
+    neutral_minimum = max(120, round(pixel_count * 0.025))
+    if neutral_count >= neutral_minimum:
+        channel_means: List[float] = []
+        for band in (red_band, green_band, blue_band):
+            masked = ImageChops.multiply(band, neutral_mask)
+            band_sum = sum(index * count for index, count in enumerate(masked.histogram()))
+            channel_means.append(band_sum / neutral_count)
+        channel_spread = max(channel_means) - min(channel_means)
+        cast_direction = describe_colour_cast(channel_means)
+
+    edge_hist = luminance.filter(ImageFilter.FIND_EDGES).histogram()
+    edge_total = sum(edge_hist) or 1
+    acutance = sum(index * count for index, count in enumerate(edge_hist)) / edge_total
+
+    return {
+        "mean_luminance": mean_luminance,
+        "shadow_ratio": shadow_ratio,
+        "highlight_ratio": highlight_ratio,
+        "true_shadow_ratio": true_shadow_ratio,
+        "true_highlight_ratio": true_highlight_ratio,
+        "tonal_range": tonal_range,
+        "channel_spread": channel_spread,
+        "cast_direction": cast_direction,
+        "acutance": acutance,
+    }
+
+
+def build_quality_flags(metrics: Dict[str, Any], iso_value: Optional[int]) -> List[Dict[str, str]]:
+    """Turn raw metrics into reviewer-facing warnings (severity ``warn`` or ``info``)."""
+    flags: List[Dict[str, str]] = []
+    mean_luminance = metrics["mean_luminance"]
+    shadow_ratio = metrics["shadow_ratio"]
+    highlight_ratio = metrics["highlight_ratio"]
+    true_shadow_ratio = metrics["true_shadow_ratio"]
+    true_highlight_ratio = metrics["true_highlight_ratio"]
+    tonal_range = metrics["tonal_range"]
+
+    if true_shadow_ratio >= TRUE_CLIP_SHADOW_RATIO:
+        flags.append(
+            {
+                "id": "clipped-shadows",
+                "category": "exposure",
+                "severity": "warn",
+                "label": "Clipped shadows",
+                "short": "Crushed blacks",
+                "detail": f"{round(true_shadow_ratio * 100)}% of pixels are pure black with no recoverable detail.",
+            }
+        )
+    if true_highlight_ratio >= TRUE_CLIP_HIGHLIGHT_RATIO:
+        flags.append(
+            {
+                "id": "blown-highlights",
+                "category": "exposure",
+                "severity": "warn",
+                "label": "Blown highlights",
+                "short": "Blown highlights",
+                "detail": f"{round(true_highlight_ratio * 100)}% of pixels are pure white with no recoverable detail.",
+            }
+        )
+
+    if mean_luminance <= UNDEREXPOSED_MEAN_LUMINANCE and shadow_ratio >= CLIPPED_SHADOW_RATIO:
+        flags.append(
+            {
+                "id": "underexposed",
+                "category": "exposure",
+                "severity": "warn",
+                "label": "Possible underexposure",
+                "short": "Underexposed",
+                "detail": f"Average luminance {round(mean_luminance)} with {round(shadow_ratio * 100)}% deep shadows.",
+            }
+        )
+    elif mean_luminance >= OVEREXPOSED_MEAN_LUMINANCE and highlight_ratio >= CLIPPED_HIGHLIGHT_RATIO:
+        flags.append(
+            {
+                "id": "overexposed",
+                "category": "exposure",
+                "severity": "warn",
+                "label": "Possible overexposure",
+                "short": "Overexposed",
+                "detail": f"Average luminance {round(mean_luminance)} with {round(highlight_ratio * 100)}% bright highlights.",
+            }
+        )
+
+    if (
+        tonal_range <= LOW_CONTRAST_TONAL_RANGE
+        and true_shadow_ratio < TRUE_CLIP_SHADOW_RATIO
+        and true_highlight_ratio < TRUE_CLIP_HIGHLIGHT_RATIO
+    ):
+        flags.append(
+            {
+                "id": "low-contrast",
+                "category": "contrast",
+                "severity": "info",
+                "label": "Low contrast / possible haze",
+                "short": "Low contrast",
+                "detail": f"Tonal range spans only {round(tonal_range)} of 255 levels; the frame may look flat or hazy.",
+            }
+        )
+
+    if metrics["channel_spread"] >= COLOUR_CAST_CHANNEL_SPREAD:
+        direction = metrics["cast_direction"]
+        direction_text = f" ({direction} cast)" if direction else ""
+        flags.append(
+            {
+                "id": "colour-cast",
+                "category": "colour",
+                "severity": "warn",
+                "label": "Possible colour cast",
+                "short": "Colour cast",
+                "detail": (
+                    f"Neutral-toned pixels differ by {round(metrics['channel_spread'])} RGB levels on average"
+                    f"{direction_text}."
+                ),
+            }
+        )
+
+    if metrics["acutance"] and metrics["acutance"] <= SOFT_FOCUS_ACUTANCE and tonal_range > LOW_CONTRAST_TONAL_RANGE:
+        flags.append(
+            {
+                "id": "soft-focus",
+                "category": "focus",
+                "severity": "info",
+                "label": "Possible soft focus",
+                "short": "Soft focus",
+                "detail": (
+                    f"Low edge detail (acutance {round(metrics['acutance'], 1)}); "
+                    "review at full size for missed focus or motion blur."
+                ),
+            }
+        )
+
+    if iso_value and iso_value >= HIGH_ISO_NOISE_THRESHOLD:
+        flags.append(
+            {
+                "id": "high-iso",
+                "category": "noise",
+                "severity": "info",
+                "label": "High ISO (noise risk)",
+                "short": f"ISO {iso_value}",
+                "detail": f"Captured at ISO {iso_value}; inspect shadows for noise before publishing.",
+            }
+        )
+
+    return flags
+
+
 def analyse_image_quality(path: Path, cache: Dict[str, Tuple[int, int, Dict[str, Any]]]) -> Dict[str, Any]:
-    """Return conservative exposure and neutral-colour-cast warnings for a source image."""
+    """Return conservative exposure, contrast, colour, focus and noise warnings."""
     try:
         stat = path.stat()
     except OSError:
@@ -2100,86 +2475,40 @@ def analyse_image_quality(path: Path, cache: Dict[str, Tuple[int, int, Dict[str,
         return cached[2]
 
     result: Dict[str, Any] = {"flags": []}
+    iso_value: Optional[int] = None
     try:
         with Image.open(path) as opened:
             try:
                 opened.draft("RGB", (QUALITY_ANALYSIS_MAX_DIMENSION, QUALITY_ANALYSIS_MAX_DIMENSION))
             except Exception:
                 pass
+            iso_value = read_exif_iso(opened)
             image = ImageOps.exif_transpose(opened).convert("RGB")
             image.thumbnail((QUALITY_ANALYSIS_MAX_DIMENSION, QUALITY_ANALYSIS_MAX_DIMENSION), Image.Resampling.LANCZOS)
-            pixels = list(image.getdata())
     except Exception:
         cache[cache_key] = (stat.st_mtime_ns, stat.st_size, result)
         return result
 
-    if not pixels:
+    pixel_count = image.width * image.height
+    if pixel_count <= 0:
         cache[cache_key] = (stat.st_mtime_ns, stat.st_size, result)
         return result
 
-    luminance_total = 0.0
-    dark_count = 0
-    bright_count = 0
-    neutral_count = 0
-    neutral_channels = [0, 0, 0]
-    for red, green, blue in pixels:
-        luminance = 0.2126 * red + 0.7152 * green + 0.0722 * blue
-        luminance_total += luminance
-        if luminance <= 10:
-            dark_count += 1
-        if luminance >= 245:
-            bright_count += 1
-        if 36 <= luminance <= 228 and max(red, green, blue) - min(red, green, blue) <= NEUTRAL_PIXEL_CHROMA_MAX:
-            neutral_count += 1
-            neutral_channels[0] += red
-            neutral_channels[1] += green
-            neutral_channels[2] += blue
-
-    pixel_count = len(pixels)
-    mean_luminance = luminance_total / pixel_count
-    shadow_ratio = dark_count / pixel_count
-    highlight_ratio = bright_count / pixel_count
-    flags: List[Dict[str, str]] = []
-    if mean_luminance <= UNDEREXPOSED_MEAN_LUMINANCE and shadow_ratio >= CLIPPED_SHADOW_RATIO:
-        flags.append(
-            {
-                "id": "underexposed",
-                "category": "exposure",
-                "label": "Possible underexposure",
-                "detail": f"Average luminance {round(mean_luminance)} with {round(shadow_ratio * 100)}% deep shadows.",
-            }
-        )
-    elif mean_luminance >= OVEREXPOSED_MEAN_LUMINANCE and highlight_ratio >= CLIPPED_HIGHLIGHT_RATIO:
-        flags.append(
-            {
-                "id": "overexposed",
-                "category": "exposure",
-                "label": "Possible overexposure",
-                "detail": f"Average luminance {round(mean_luminance)} with {round(highlight_ratio * 100)}% bright highlights.",
-            }
-        )
-
-    neutral_minimum = max(120, round(pixel_count * 0.025))
-    channel_spread = 0.0
-    if neutral_count >= neutral_minimum:
-        channel_means = [value / neutral_count for value in neutral_channels]
-        channel_spread = max(channel_means) - min(channel_means)
-        if channel_spread >= COLOUR_CAST_CHANNEL_SPREAD:
-            flags.append(
-                {
-                    "id": "colour-cast",
-                    "category": "colour",
-                    "label": "Possible colour cast",
-                    "detail": f"Neutral-toned pixels differ by {round(channel_spread)} RGB levels on average.",
-                }
-            )
+    metrics = compute_quality_metrics(image, pixel_count)
+    flags = build_quality_flags(metrics, iso_value)
 
     result = {
         "flags": flags,
-        "meanLuminance": round(mean_luminance),
-        "shadowClipPercent": round(shadow_ratio * 100),
-        "highlightClipPercent": round(highlight_ratio * 100),
-        "neutralChannelSpread": round(channel_spread),
+        "meanLuminance": round(metrics["mean_luminance"]),
+        "shadowClipPercent": round(metrics["shadow_ratio"] * 100),
+        "highlightClipPercent": round(metrics["highlight_ratio"] * 100),
+        "pureBlackPercent": round(metrics["true_shadow_ratio"] * 100),
+        "pureWhitePercent": round(metrics["true_highlight_ratio"] * 100),
+        "tonalRange": round(metrics["tonal_range"]),
+        "neutralChannelSpread": round(metrics["channel_spread"]),
+        "colourCastDirection": metrics["cast_direction"],
+        "acutance": round(metrics["acutance"], 1),
+        "iso": iso_value,
     }
     cache[cache_key] = (stat.st_mtime_ns, stat.st_size, result)
     return result

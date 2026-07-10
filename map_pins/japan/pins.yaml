@@ -59,33 +59,35 @@ pins:
   - path: DSC09277-Enhanced-NR.jpeg
     location: Komatsu Air Base
     pin_id: komatsu-air-base
-    caption: Mixed unit formation fly-by at Komastu Air Base
+    caption: Mixed unit formation fly-by at Komatsu Air Base
     airshow: Komatsu Air Show 2023
   - path: DSC09299-Enhanced-NR.jpeg
     location: Komatsu Air Base
     pin_id: komatsu-air-base
-    caption: Mixed unit formation fly-by at Komastu Air Base
+    caption: Mixed unit formation fly-by at Komatsu Air Base
     airshow: Komatsu Air Show 2023
   - path: DSC02710-Enhanced-NR.jpeg
     location: Komatsu Air Base
     pin_id: komatsu-air-base
-    caption: Mixed unit formation fly-by at Komastu Air Base
+    caption: Mixed unit formation fly-by at Komatsu Air Base
     airshow: Komatsu Air Show 2023
   - path: DSC02759-Enhanced-NR.jpeg
     location: Komatsu Air Base
     pin_id: komatsu-air-base
-    caption: Mixed unit formation fly-by at Komastu Air Base
+    caption: Mixed unit formation fly-by at Komatsu Air Base
     airshow: Komatsu Air Show 2023
   - path: DSC01185-Enhanced-NR.jpeg
     location: Komatsu Air Base
     pin_id: komatsu-air-base
     caption: Fighter lineup at Komatsu Air Base
     airshow: Komatsu Air Show 2023
+  hero_photo: DSC01185-Enhanced-NR.jpeg
 - id: yokota-air-base
   name: Yokota Air Base
   icao: RJTY
   coordinates: [35.7485, 139.348]
   enabled: true
+  hero_photo: DSC09870-Enhanced-NR.jpeg
 - id: iruma-air-base
   name: Iruma Air Base
   icao: RJTJ
@@ -102,6 +104,20 @@ pins:
   icao: RJTT
   coordinates: [35.5523, 139.78]
   enabled: true
+  photos:
+  - path: DSC07166-Enhanced-NR.jpg
+    location: Haneda Airport
+    pin_id: haneda-airport
+    caption: Commercial traffic at Haneda Airport
+  - path: DSC07323-Enhanced-NR.jpg
+    location: Haneda Airport
+    pin_id: haneda-airport
+    caption: Commercial traffic at Haneda Airport
+  - path: DSC02520-Enhanced-NR.jpg
+    location: Haneda Airport
+    pin_id: haneda-airport
+    caption: Commercial traffic at Haneda Airport
+  hero_photo: DSC07323-Enhanced-NR.jpg
 - id: kisarazu-airfield
   name: Kisarazu Airfield
   icao: RJTK
@@ -136,6 +152,32 @@ pins:
   icao: RJCO
   coordinates: [43.1175, 141.3814]
   enabled: true
+  photos:
+  - path: DSC04948-Enhanced-NR.jpg
+    location: Okadama Airport
+    pin_id: okadama-airport
+    caption: Commercial traffic at Sapporo Okadama Airport
+  - path: DSC04787-Enhanced-NR.jpg
+    location: Okadama Airport
+    pin_id: okadama-airport
+    caption: Commercial traffic at Sapporo Okadama Airport
+  - path: DSC04660-Enhanced-NR.jpg
+    location: Okadama Airport
+    pin_id: okadama-airport
+    caption: Commercial traffic at Sapporo Okadama Airport
+  - path: DSC04408-Enhanced-NR.jpg
+    location: Okadama Airport
+    pin_id: okadama-airport
+    caption: Commercial traffic at Sapporo Okadama Airport
+  - path: DSC04634-Enhanced-NR.jpg
+    location: Okadama Airport
+    pin_id: okadama-airport
+    caption: Commercial traffic at Sapporo Okadama Airport
+  - path: DSC04369-Enhanced-NR.jpg
+    location: Okadama Airport
+    pin_id: okadama-airport
+    caption: Commercial traffic at Sapporo Okadama Airport
+  hero_photo: DSC04369-Enhanced-NR.jpg
 - id: hamamatsu-air-base
   name: Hamamatsu Air Base
   icao: RJNH

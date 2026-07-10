@@ -342,9 +342,17 @@ def main() -> int:
     js_output.parent.mkdir(parents=True, exist_ok=True)
     map_js_output.parent.mkdir(parents=True, exist_ok=True)
     json_text = json.dumps(manifest, indent=2, ensure_ascii=True)
+    directory_json_text = json.dumps(
+        directory_page_manifest(manifest),
+        ensure_ascii=True,
+        separators=(",", ":"),
+    )
     map_json_text = json.dumps(map_page_manifest(manifest), ensure_ascii=True, separators=(",", ":"))
     json_output.write_text(json_text + "\n", encoding="utf-8")
-    js_output.write_text(f"window.SPOTTERDEX_DATA = {json_text};\n", encoding="utf-8")
+    # Dex/Squadrons/Airshows/Stats load a compact directory payload. Camera EXIF stays
+    # in this primary bundle so the Stats dashboard does not depend on a second fetch.
+    # Heavier size/source metadata remains available through lazy full-data hydration.
+    js_output.write_text(f"window.SPOTTERDEX_DATA={directory_json_text};\n", encoding="utf-8")
     map_js_output.write_text(f"window.SPOTTERDEX_DATA={map_json_text};\n", encoding="utf-8")
     share_records = social_preview_records(manifest)
     share_page_count = write_social_preview_pages(
@@ -376,6 +384,59 @@ def main() -> int:
         print("Build completed with validation warnings.", file=sys.stderr)
         return 1
     return 0
+
+
+DIRECTORY_PHOTO_OMIT_FIELDS = {
+    "originalSize",
+    "processedSize",
+    "source",
+    "sourceRef",
+}
+
+
+def directory_page_manifest(manifest: Dict[str, Any]) -> Dict[str, Any]:
+    """Lean browser bundle for Dex/Squadrons/Airshows/Stats.
+
+    Keeps captions, display fields, and EXIF needed for browsing and photography
+    stats, but omits processing metadata. The client hydrates that heavier metadata
+    from spotterdex.json when the photo viewer needs it.
+    """
+    directory_manifest = {
+        "payload": "directory",
+        "generatedAt": manifest.get("generatedAt"),
+        "pins": manifest.get("pins", []),
+        "aircraft": manifest.get("aircraft", []),
+        "squadrons": manifest.get("squadrons", []),
+        "airshows": manifest.get("airshows", []),
+        "photos": [
+            {key: value for key, value in photo.items() if key not in DIRECTORY_PHOTO_OMIT_FIELDS}
+            for photo in manifest.get("photos", [])
+        ],
+    }
+    validate_directory_photo_exif(manifest, directory_manifest)
+    return directory_manifest
+
+
+def validate_directory_photo_exif(
+    manifest: Dict[str, Any],
+    directory_manifest: Dict[str, Any],
+) -> None:
+    """Prevent the browser bundle from silently dropping available camera metadata."""
+    directory_photos = {
+        str(photo.get("id", "")): photo for photo in directory_manifest.get("photos", [])
+    }
+    missing_ids = [
+        str(photo.get("id", ""))
+        for photo in manifest.get("photos", [])
+        if photo.get("exif")
+        and directory_photos.get(str(photo.get("id", "")), {}).get("exif") != photo.get("exif")
+    ]
+    if missing_ids:
+        preview = ", ".join(missing_ids[:3])
+        suffix = "..." if len(missing_ids) > 3 else ""
+        raise ValueError(
+            f"Directory bundle dropped EXIF data for {len(missing_ids)} photo(s): {preview}{suffix}"
+        )
 
 
 def map_page_manifest(manifest: Dict[str, Any]) -> Dict[str, Any]:
@@ -2709,8 +2770,10 @@ def extract_exif(image: Image.Image) -> Dict[str, str]:
     model = read("Model")
     lens = read("LensModel") or read("LensMake")
     focal = read("FocalLength")
+    focal_35mm = read("FocalLengthIn35mmFilm")
     aperture = read("FNumber")
     exposure = read("ExposureTime")
+    exposure_bias = read("ExposureBiasValue")
     iso = read("ISOSpeedRatings") or read("PhotographicSensitivity") or read("RecommendedExposureIndex")
     captured = read("DateTimeOriginal")
     digitized = read("DateTimeDigitized")
@@ -2726,10 +2789,14 @@ def extract_exif(image: Image.Image) -> Dict[str, str]:
         exif["LensModel"] = str(lens).strip()
     if focal:
         exif["FocalLength"] = format_focal_length(focal)
+    if focal_35mm:
+        exif["FocalLengthIn35mmFilm"] = format_focal_length(focal_35mm)
     if aperture:
         exif["FNumber"] = format_aperture(aperture)
     if exposure:
         exif["ExposureTime"] = format_exposure(exposure)
+    if exposure_bias is not None:
+        exif["ExposureBiasValue"] = format_exposure_bias(exposure_bias)
     if iso:
         exif["ISO"] = str(iso)
     if captured:
@@ -2764,6 +2831,15 @@ def format_exposure(value: Any) -> str:
     if numeric > 0 and numeric < 1:
         return f"1/{round(1 / numeric)}s"
     return f"{numeric:g}s"
+
+
+def format_exposure_bias(value: Any) -> str:
+    numeric = rational_to_float(value)
+    if numeric is None:
+        return str(value)
+    if abs(numeric) < 0.05:
+        numeric = 0.0
+    return f"{numeric:.1f}"
 
 
 def rational_to_float(value: Any) -> Optional[float]:

@@ -2375,54 +2375,6 @@ h3 {
   vector-effect: non-scaling-stroke;
 }
 
-.map-marker-assets,
-.map-logo-row,
-.map-family-row {
-  display: inline-flex;
-  height: 16px;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
-  overflow: hidden;
-  line-height: 1;
-}
-
-.map-marker-assets {
-  width: 100%;
-  gap: 5px;
-  justify-content: flex-start;
-}
-
-.map-marker-divider {
-  display: inline-flex;
-  height: 16px;
-  align-items: center;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 900;
-  line-height: 1;
-}
-
-.map-logo-row img {
-  display: block;
-  width: 16px;
-  height: 16px;
-  flex: 0 0 16px;
-  padding: 1px;
-  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
-  border-radius: 3px;
-  background: color-mix(in srgb, var(--surface) 86%, transparent);
-  object-fit: contain;
-}
-
-.map-family-icon {
-  display: block;
-  width: 16px;
-  height: 16px;
-  flex: 0 0 16px;
-  object-fit: contain;
-}
-
 .spotterdex-marker-shell.is-active .spotterdex-marker-dot {
   background: var(--pin-active);
   color: #ffffff;
@@ -2534,6 +2486,17 @@ h3 {
   100% {
     opacity: 0;
     transform: translate(var(--traffic-end-x), var(--traffic-end-y)) rotate(var(--traffic-heading));
+  }
+}
+
+@keyframes map-panel-coach-pulse {
+  0%,
+  100% {
+    border-color: color-mix(in srgb, var(--line-strong) 70%, transparent);
+  }
+
+  50% {
+    border-color: color-mix(in srgb, var(--pin-active) 78%, transparent);
   }
 }
 
@@ -3820,6 +3783,41 @@ button.location-unit-chip:focus-visible,
   margin-bottom: 0;
 }
 
+.focal-distribution-heading,
+.stats-limits-heading {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.focal-mode-control {
+  display: inline-flex;
+  flex: 0 0 auto;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+}
+
+.focal-mode-button {
+  padding: 5px 9px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.focal-mode-button.is-active {
+  background: var(--cyan);
+  color: #07141a;
+}
+
 .focal-distribution-chart {
   display: grid;
   min-width: 0;
@@ -3827,7 +3825,10 @@ button.location-unit-chip:focus-visible,
   grid-template-columns: repeat(16, minmax(0, 1fr));
   gap: 2px;
   align-items: end;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-color: var(--line-strong) transparent;
+  scrollbar-width: thin;
 }
 
 .focal-distribution-column {
@@ -3885,6 +3886,122 @@ button.location-unit-chip:focus-visible,
   line-height: 1.15;
   overflow: hidden;
   text-overflow: clip;
+  white-space: nowrap;
+}
+
+.stats-limits-section {
+  display: grid;
+  gap: 12px;
+}
+
+.stats-limits-heading h3,
+.stats-limits-heading p {
+  margin: 0;
+}
+
+.stats-limits-heading h3 {
+  margin-top: 3px;
+  color: var(--text);
+  font-size: 1.1rem;
+}
+
+.stats-limits-heading > p {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.stats-limits-gallery {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stats-limit-card {
+  position: relative;
+  isolation: isolate;
+  display: block;
+  min-width: 0;
+  min-height: 220px;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-strong);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: border-color 180ms ease, transform 180ms ease;
+}
+
+.stats-limit-card:hover,
+.stats-limit-card:focus-visible {
+  border-color: var(--cyan);
+  transform: translateY(-2px);
+}
+
+.stats-limit-card img,
+.stats-limit-scrim {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.stats-limit-card img {
+  z-index: -2;
+  object-fit: cover;
+  transition: transform 240ms ease, filter 240ms ease;
+}
+
+.stats-limit-card:hover img,
+.stats-limit-card:focus-visible img {
+  filter: saturate(1.08) contrast(1.03);
+  transform: scale(1.035);
+}
+
+.stats-limit-scrim {
+  z-index: -1;
+  background: linear-gradient(180deg, rgba(7, 11, 13, 0.04) 18%, rgba(7, 11, 13, 0.92) 100%);
+}
+
+.stats-limit-copy {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: grid;
+  gap: 3px;
+  padding: 18px 16px 14px;
+}
+
+.stats-limit-copy small,
+.stats-limit-copy strong,
+.stats-limit-copy span {
+  display: block;
+  min-width: 0;
+}
+
+.stats-limit-copy small {
+  color: var(--cyan);
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.stats-limit-copy strong {
+  color: #fff;
+  font-size: clamp(1rem, 1.4vw, 1.3rem);
+  line-height: 1.15;
+}
+
+.stats-limit-copy span {
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.7rem;
+  line-height: 1.3;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -4337,39 +4454,48 @@ button.location-unit-chip:focus-visible,
 }
 
 #squadronsView .squadron-card-logo {
+  display: grid;
+  place-items: center;
   top: 16px;
   right: auto;
   bottom: auto;
   left: 16px;
   z-index: 3;
-  width: 64px;
-  height: 64px;
+  width: 56px;
+  height: 56px;
   aspect-ratio: 1;
-  padding: 8px;
+  padding: 6px;
   overflow: hidden;
-  border-color: rgba(255, 255, 255, 0.24);
+  border: 0;
   border-radius: 50%;
-  background: rgba(248, 245, 238, 0.88);
+  background: rgba(248, 245, 238, 0.48);
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+  -webkit-backdrop-filter: blur(16px) saturate(1.12);
+  backdrop-filter: blur(16px) saturate(1.12);
 }
 
 #squadronsView .squadron-card-logo.is-standalone {
   position: absolute;
   top: 16px;
   left: 16px;
-  width: 64px;
-  height: 64px;
-  padding: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.24);
+  width: 56px;
+  height: 56px;
+  padding: 6px;
+  border: 0;
   border-radius: 50%;
-  background: rgba(248, 245, 238, 0.88);
+  background: rgba(248, 245, 238, 0.48);
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+  -webkit-backdrop-filter: blur(16px) saturate(1.12);
+  backdrop-filter: blur(16px) saturate(1.12);
 }
 
 #squadronsView .squadron-card-logo img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
+  object-position: center;
+  margin: 0 auto;
 }
 
 #squadronsView .squadron-card-index {
@@ -4650,7 +4776,7 @@ button.location-unit-chip:focus-visible,
 #dexView .aircraft-grid {
   grid-template-columns: repeat(12, minmax(0, 1fr));
   grid-auto-flow: dense;
-  grid-auto-rows: clamp(190px, 16vw, 280px);
+  grid-auto-rows: clamp(209px, 17.6vw, 308px);
   gap: 8px;
 }
 
@@ -4669,19 +4795,8 @@ button.location-unit-chip:focus-visible,
   isolation: isolate;
 }
 
-#dexView .aircraft-card.is-feature {
-  min-height: 0;
-  grid-column: span 8;
-  grid-row: auto;
-}
-
 #dexView .aircraft-card.is-wide {
-  min-height: 0;
   grid-column: span 8;
-}
-
-#dexView .aircraft-card.is-tall {
-  min-height: 0;
 }
 
 #dexView .aircraft-card::after {
@@ -4764,43 +4879,9 @@ button.location-unit-chip:focus-visible,
   position: absolute;
   inset: auto 0 0;
   z-index: 2;
-  display: grid;
-  gap: 6px;
+  display: block;
   padding: clamp(16px, 1.6vw, 24px);
   color: #fff;
-  transform: translateY(28px);
-  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-#dexView .aircraft-card:hover .aircraft-body,
-#dexView .aircraft-card:focus-visible .aircraft-body {
-  transform: translateY(0);
-}
-
-#dexView .aircraft-card-kicker,
-#dexView .aircraft-card-meta,
-#dexView .aircraft-card-footer {
-  display: flex;
-  color: rgba(255, 255, 255, 0.68);
-}
-
-#dexView .aircraft-card-kicker {
-  gap: 10px;
-  align-items: center;
-  font-size: 0.65rem;
-  font-weight: 850;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-}
-
-#dexView .aircraft-card-kicker span {
-  color: inherit;
-  font-size: inherit;
-}
-
-#dexView .aircraft-card-kicker span + span::before {
-  margin-right: 10px;
-  content: "·";
 }
 
 #dexView .aircraft-title {
@@ -4812,33 +4893,51 @@ button.location-unit-chip:focus-visible,
   text-wrap: balance;
 }
 
-#dexView .is-feature .aircraft-title {
-  max-width: 13ch;
-  font-size: clamp(2rem, 3.4vw, 3.4rem);
-}
-
-#dexView .is-wide .aircraft-title {
-  font-size: clamp(1.8rem, 2.8vw, 3rem);
-}
-
-#dexView .aircraft-card-meta {
-  font-size: 0.78rem;
-}
-
-#dexView .aircraft-card-footer {
-  justify-content: space-between;
-  margin-top: 8px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+#dexView .aircraft-card-hover-details {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) repeat(2, minmax(0, 0.75fr));
+  gap: 12px;
+  max-height: 0;
+  margin-top: 0;
+  overflow: hidden;
   opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px);
+  transition: max-height 300ms ease, margin-top 300ms ease, opacity 240ms ease, transform 300ms ease;
+}
+
+#dexView .aircraft-card-hover-details > span {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+#dexView .aircraft-card-hover-details small {
+  color: rgba(255, 255, 255, 0.54);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+#dexView .aircraft-card-hover-details strong {
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.84);
   font-size: 0.72rem;
   font-weight: 760;
-  transition: opacity 260ms ease 60ms;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-#dexView .aircraft-card:hover .aircraft-card-footer,
-#dexView .aircraft-card:focus-visible .aircraft-card-footer {
+#dexView .aircraft-card:hover .aircraft-card-hover-details,
+#dexView .aircraft-card:focus-visible .aircraft-card-hover-details {
+  max-height: 48px;
+  margin-top: 14px;
   opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 .entry-stat-grid {
@@ -4884,10 +4983,49 @@ button.location-unit-chip:focus-visible,
   grid-template-columns: 44px minmax(0, 1fr);
   gap: 10px;
   align-items: center;
+  width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface-strong);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease, background 180ms ease;
+}
+
+.squadron-row.is-clickable {
+  cursor: pointer;
+}
+
+.squadron-row.is-clickable:hover,
+.squadron-row.is-clickable:focus-visible {
+  border-color: var(--line-strong);
+  outline: none;
+  box-shadow: 0 14px 28px rgba(38, 35, 31, 0.1);
+  transform: translateY(-2px);
+}
+
+.squadron-row.is-clickable:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.squadron-row > span:last-child,
+.aircraft-location-copy {
+  min-width: 0;
+}
+
+.squadron-row > span:last-child > span,
+.aircraft-location-copy > span {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.aircraft-location-row {
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .squadron-logo,
@@ -5756,11 +5894,6 @@ button.location-unit-chip:focus-visible,
     grid-column: span 4;
   }
 
-  #dexView .aircraft-card.is-feature,
-  #dexView .aircraft-card.is-wide {
-    grid-column: span 8;
-  }
-
   .dex-command-bar {
     grid-template-columns: minmax(240px, 0.72fr) minmax(0, 1.28fr);
   }
@@ -5794,28 +5927,18 @@ button.location-unit-chip:focus-visible,
   }
 
   #dexView .aircraft-grid {
-    grid-auto-rows: clamp(210px, 27vw, 260px);
+    grid-auto-rows: clamp(231px, 29.7vw, 286px);
   }
 
-  #dexView .aircraft-card,
-  #dexView .aircraft-card.is-tall {
+  #dexView .aircraft-card {
     min-height: 0;
     grid-column: span 6;
   }
 
-  #dexView .aircraft-card.is-feature,
   #dexView .aircraft-card.is-wide {
-    min-height: 0;
     grid-column: span 12;
   }
 
-  #dexView .aircraft-card-footer {
-    opacity: 1;
-  }
-
-  #dexView .aircraft-body {
-    transform: none;
-  }
 }
 
 @media (max-width: 760px) {
@@ -5925,34 +6048,22 @@ button.location-unit-chip:focus-visible,
 
   #dexView .aircraft-grid {
     grid-template-columns: 1fr;
-    grid-auto-rows: 220px;
+    grid-auto-rows: 242px;
     gap: 10px;
   }
 
-  #dexView .aircraft-card,
-  #dexView .aircraft-card.is-feature,
-  #dexView .aircraft-card.is-wide,
-  #dexView .aircraft-card.is-tall {
+  #dexView .aircraft-card {
     min-height: 0;
     grid-column: 1;
     grid-row: auto;
   }
 
-  #dexView .aircraft-card.is-feature {
-    min-height: 0;
-  }
-
   #dexView .aircraft-card.is-wide {
-    min-height: 0;
+    grid-column: 1;
   }
 
-  #dexView .aircraft-title,
-  #dexView .is-wide .aircraft-title {
+  #dexView .aircraft-title {
     font-size: clamp(1.45rem, 7vw, 2.1rem);
-  }
-
-  #dexView .is-feature .aircraft-title {
-    font-size: clamp(1.8rem, 9vw, 2.5rem);
   }
 }
 
@@ -6095,9 +6206,9 @@ button.location-unit-chip:focus-visible,
   #squadronsView .squadron-card-logo.is-standalone {
     top: 14px;
     left: 14px;
-    width: 64px;
-    height: 64px;
-    padding: 8px;
+    width: 56px;
+    height: 56px;
+    padding: 6px;
   }
 }
 
@@ -6646,37 +6757,22 @@ button.location-unit-chip:focus-visible,
     font-size: 0.7rem;
   }
 
-  #mapView .map-marker-assets,
-  #mapView .map-logo-row,
-  #mapView .map-family-row,
-  #mapView .map-marker-divider {
-    height: 14px;
-  }
-
-  #mapView .map-logo-row img,
-  #mapView .map-family-icon {
-    width: 14px;
-    height: 14px;
-    flex-basis: 14px;
-  }
 }
 
 @media (max-width: 1040px) {
   .site-header {
-    grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 10px;
   }
 
   .tab-nav {
-    min-width: 0;
-    width: auto;
-    justify-self: stretch;
+    display: none;
   }
 
-  .tab-button {
-    flex: 1;
-    min-width: 0;
-    white-space: nowrap;
+  .nav-select {
+    display: block;
+    justify-self: end;
+    min-width: min(220px, 46vw);
   }
 
   .dex-workspace {
@@ -6836,6 +6932,53 @@ button.location-unit-chip:focus-visible,
     background: var(--surface);
   }
 
+  #mapView .map-panel-coach {
+    position: absolute;
+    left: 50%;
+    bottom: 72px;
+    z-index: 31;
+    display: grid;
+    gap: 10px;
+    width: min(340px, calc(100% - 32px));
+    padding: 12px 14px;
+    border: 1px solid color-mix(in srgb, var(--line-strong) 70%, transparent);
+    border-radius: var(--radius);
+    background: var(--glass-strong);
+    box-shadow: var(--portfolio-shadow);
+    color: var(--text);
+    backdrop-filter: blur(18px) saturate(1.08);
+    transform: translateX(-50%);
+  }
+
+  #mapView .map-panel-coach[hidden] {
+    display: none;
+  }
+
+  #mapView .map-panel-coach p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.92rem;
+    line-height: 1.45;
+  }
+
+  #mapView .map-panel-coach strong {
+    color: var(--text);
+    font-weight: 800;
+  }
+
+  #mapView .map-panel-coach-dismiss {
+    justify-self: end;
+    min-height: 34px;
+    padding: 6px 10px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    font-weight: 750;
+  }
+
+  #mapView .map-workspace.is-panel-coach-visible .map-panel-toggle {
+    animation: map-panel-coach-pulse 1.8s ease-in-out 2;
+  }
+
   #mapView .leaflet-control-container {
     position: relative;
     z-index: 3;
@@ -6854,10 +6997,6 @@ button.location-unit-chip:focus-visible,
     text-align: center;
   }
 
-  #mapView .map-marker-assets {
-    display: none;
-  }
-
   #mapView .spotterdex-marker-leader polyline {
     stroke-width: 1.1;
   }
@@ -6867,14 +7006,6 @@ button.location-unit-chip:focus-visible,
   .site-header {
     gap: 10px;
     padding: 12px;
-  }
-
-  .tab-nav {
-    display: none;
-  }
-
-  .nav-select {
-    display: block;
   }
 
   .brand-subtitle {
@@ -7031,6 +7162,11 @@ button.location-unit-chip:focus-visible,
   #mapView .map-panel-toggle.is-active {
     border-color: var(--pin-active);
     background: var(--surface);
+  }
+
+  #mapView .map-panel-coach {
+    bottom: 66px;
+    width: min(320px, calc(100% - 24px));
   }
 
   #mapView .leaflet-control-container {
@@ -7777,6 +7913,44 @@ button.location-unit-chip:focus-visible,
   color: var(--stats-gold);
 }
 
+#statsView .focal-mode-control {
+  border-color: var(--stats-line);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+#statsView .focal-mode-button {
+  border-radius: 1px;
+  color: var(--stats-muted);
+}
+
+#statsView .focal-mode-button.is-active {
+  background: var(--stats-gold);
+  color: #11100d;
+}
+
+#statsView .stats-limits-heading h3 {
+  color: var(--stats-ink);
+}
+
+#statsView .stats-limits-heading > p {
+  color: var(--stats-muted);
+}
+
+#statsView .stats-limit-card {
+  border-color: var(--stats-line);
+  border-radius: 2px;
+}
+
+#statsView .stats-limit-card:hover,
+#statsView .stats-limit-card:focus-visible {
+  border-color: rgba(210, 183, 124, 0.72);
+}
+
+#statsView .stats-limit-copy small {
+  color: var(--stats-gold);
+}
+
 #statsView .aircraft-family-segment {
   --family-accent: var(--stats-gold);
   min-height: 136px;
@@ -8026,5 +8200,27 @@ button.location-unit-chip:focus-visible,
 
   #mapView .world-map.is-map-zooming .spotterdex-marker-label-shell {
     pointer-events: none !important;
+  }
+}
+
+@media (max-width: 1040px) {
+  .stats-limits-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .focal-distribution-heading,
+  .stats-limits-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .stats-limits-gallery {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-limit-card {
+    min-height: 240px;
   }
 }

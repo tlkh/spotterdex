@@ -1,0 +1,25 @@
+squadron_name: 111 Squadron
+country: Singapore
+aircraft_type: Gulfstream G550 CAEW
+photos:
+- path: DSC09861-Enhanced-NR.jpg
+  location: Singapore
+  pin_id: singapore
+  caption: Gulfstream G550 CAEW from RSAF 111 SQN "Jaeger" in Singapore
+- path: DSC09907-Enhanced-NR.jpg
+  location: Singapore
+  pin_id: singapore
+  caption: Gulfstream G550 CAEW from RSAF 111 SQN "Jaeger" in Singapore
+- path: DSC09899-Enhanced-NR.jpg
+  location: Singapore
+  pin_id: singapore
+  caption: Gulfstream G550 CAEW from RSAF 111 SQN "Jaeger" in Singapore
+- path: DSC09955-Enhanced-NR.jpg
+  location: Singapore
+  pin_id: singapore
+  caption: Gulfstream G550 CAEW from RSAF 111 SQN "Jaeger" in Singapore
+- path: DSC09958-Enhanced-NR.jpg
+  location: Singapore
+  pin_id: singapore
+  caption: Gulfstream G550 CAEW from RSAF 111 SQN "Jaeger" in Singapore
+aircraft_family: medium

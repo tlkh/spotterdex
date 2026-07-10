@@ -3,4 +3,5 @@ __pycache__/
 *.pyc
 raw_assets/
 .spotterdex-manager-cache/
+.spotterdex-manager-quality.json
 .playwright*

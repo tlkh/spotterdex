@@ -132,6 +132,8 @@ python3 tools/build_spotterdex.py
 
 The same build generates entity-specific social preview pages under `share/` for photos, aircraft, locations, squadrons, and airshows. Use `--site-url` when publishing from a different public base URL.
 
+Generated photo records retain camera EXIF used by the photography dashboard, including actual and camera-reported 35mm-equivalent focal length, aperture, shutter speed, ISO, and exposure compensation. The Stats page can compare actual versus equivalent focal lengths and links its distribution and extreme-setting cards back to the matching frames.
+
 Full-size JPEGs use quality 92 with 4:4:4 chroma for near-lossless aircraft detail; 1024 px thumbnails use quality 90 with 4:2:0 chroma for faster grids.
 
 Photo processing uses multiprocessing by default with one fewer worker than the number of CPU cores. Override it when needed:

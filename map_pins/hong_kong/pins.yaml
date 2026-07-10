@@ -1,7 +1,17 @@
 country: Hong Kong
 pins:
-  - id: hong-kong-international-airport
-    name: Hong Kong International Airport
-    icao: VHHH
-    coordinates: [22.3089, 113.9200]
-    enabled: true
+- id: hong-kong-international-airport
+  name: Hong Kong International Airport
+  icao: VHHH
+  coordinates: [22.3089, 113.92]
+  enabled: true
+  photos:
+  - path: DSC02499-Enhanced-NR.jpg
+    location: Hong Kong International Airport
+    pin_id: hong-kong-international-airport
+    caption: Commercial traffic at HKIA
+  - path: DSC02522-Enhanced-NR.jpg
+    location: Hong Kong International Airport
+    pin_id: hong-kong-international-airport
+    caption: Commercial traffic at HKIA
+  hero_photo: N742CK.jpg

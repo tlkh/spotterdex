@@ -1,22 +1,65 @@
 country: Singapore
 pins:
-  - id: singapore
-    name: Singapore
-    icao: SG
-    coordinates: [1.3521, 103.8198]
-    enabled: true
-  - id: changi-airport
-    name: Changi Airport
-    icao: WSSS
-    coordinates: [1.3502, 103.9940]
-    enabled: true
-  - id: changi-exhibition-centre
-    name: Changi Exhibition Center
-    icao: CEC
-    coordinates: [1.3631, 104.0229]
-    enabled: true
-  - id: seletar-airport
-    name: Seletar Airport
-    icao: WSSL
-    coordinates: [1.4172, 103.8678]
-    enabled: true
+- id: singapore
+  name: Singapore
+  icao: SG
+  coordinates: [1.3521, 103.8198]
+  enabled: true
+  photos:
+  - path: DSC03414-Enhanced-NR-2.jpg
+    location: Singapore
+    pin_id: singapore
+    caption: NDP 2023
+    airshow: NDP 2023
+  - path: DSC06375-Enhanced-NR.jpg
+    location: Singapore
+    pin_id: singapore
+    caption: NDP 2023
+    airshow: NDP 2023
+  - path: DSC03466-Enhanced-NR.jpg
+    location: Singapore
+    pin_id: singapore
+    caption: NDP 2023
+    airshow: NDP 2023
+  - path: DSC03542-Enhanced-NR.jpg
+    location: Singapore
+    pin_id: singapore
+    caption: NDP 2023
+    airshow: NDP 2023
+  - path: DSC08860-Enhanced-NR.jpg
+    location: Singapore
+    pin_id: singapore
+    caption: NDP 2023
+    airshow: NDP 2023
+  - path: DSC08909-Enhanced-NR.jpg
+    location: Singapore
+    pin_id: singapore
+    caption: NDP 2023
+    airshow: NDP 2023
+  - path: DSC02325-Enhanced-NR2.jpg
+    location: Singapore
+    pin_id: singapore
+    caption: NDP 2023
+    airshow: NDP 2023
+  - path: DSC02893-Enhanced-NR.jpg
+    location: Singapore
+    pin_id: singapore
+    caption: NDP 2024
+    airshow: NDP 2024
+  hero_photo: DSC02893-Enhanced-NR.jpg
+- id: changi-airport
+  name: Changi Airport
+  icao: WSSS
+  coordinates: [1.3502, 103.994]
+  enabled: true
+- id: changi-exhibition-centre
+  name: Changi Exhibition Center
+  icao: CEC
+  coordinates: [1.3631, 104.0229]
+  enabled: true
+  hero_photo: rsaf_apache_flare.jpg
+- id: seletar-airport
+  name: Seletar Airport
+  icao: WSSL
+  coordinates: [1.4172, 103.8678]
+  enabled: true

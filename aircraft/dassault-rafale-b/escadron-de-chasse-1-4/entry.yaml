@@ -3,6 +3,10 @@ squadron_name: Escadron de Chasse 1/4
 unit_type: squadron
 country: France
 photos:
+- path: rafale_b_1.jpg
+  location: Singapore
+  caption: Dassault Rafale B landing in Singapore
+  caption_ai_assisted: true
 - path: rafale_b_2.jpg
   location: Singapore
   caption: A French Dassault Rafale B fighter jet flies through the sky.
