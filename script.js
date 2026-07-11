@@ -145,6 +145,8 @@
     state.sessionRestore = readPageSessionState();
     restoreSessionFilters(state.sessionRestore);
     setupEvents();
+    registerServiceWorker();
+    prefetchMobilePageShells();
 
     state.data = prepareData(await loadData());
     chooseInitialSelections();
@@ -158,7 +160,6 @@
     updateMobileAppChrome();
     updateConnectivityUi({ announce: false });
     restoreSessionScroll(state.sessionRestore);
-    registerServiceWorker();
   }
 
   function currentPageViewId() {
@@ -173,6 +174,24 @@
     const url = new URL(pageRouteForView(viewId), document.baseURI);
     url.hash = hash.replace(/^#/, "");
     window.location.assign(url.href);
+  }
+
+  function prefetchMobilePageShells() {
+    if (!isFocusedMobileLayout()) {
+      return;
+    }
+    const currentPath = window.location.pathname;
+    unique(Object.values(PAGE_ROUTES)).forEach((route) => {
+      const url = new URL(route, document.baseURI);
+      if (url.pathname === currentPath) {
+        return;
+      }
+      const link = document.createElement("link");
+      link.rel = "prefetch";
+      link.as = "document";
+      link.href = url.href;
+      document.head.appendChild(link);
+    });
   }
 
   function ensurePhotoViewer() {
@@ -1231,6 +1250,12 @@
       }
       return;
     }
+    els.mobileTabLinks?.forEach((tabLink) => {
+      const isDestination = tabLink === link;
+      tabLink.classList.toggle("is-active", isDestination);
+      if (isDestination) tabLink.setAttribute("aria-current", "page");
+      else tabLink.removeAttribute("aria-current");
+    });
     saveCurrentSessionState();
     const saved = readPageSessionState(targetView);
     let destination = new URL(link.getAttribute("href"), document.baseURI);
@@ -1354,11 +1379,9 @@
     if (!("serviceWorker" in navigator) || (window.location.protocol !== "https:" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1")) {
       return;
     }
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register(new URL("service-worker.js", document.baseURI), {
-        scope: new URL("./", document.baseURI).pathname
-      }).catch((error) => console.warn("SpotterDex service worker registration failed", error));
-    }, { once: true });
+    navigator.serviceWorker.register(new URL("service-worker.js", document.baseURI), {
+      scope: new URL("./", document.baseURI).pathname
+    }).catch((error) => console.warn("SpotterDex service worker registration failed", error));
   }
 
   function toggleSheetSnap(kind) {
@@ -3881,23 +3904,10 @@
       return;
     }
 
-    const squadrons = collectSquadrons();
-    const isMobile = isFocusedMobileLayout();
-    const query = normalizeText(state.squadronQuery);
-    const filteredSquadrons = isMobile
-      ? squadrons.filter((squadron) => {
-          if (state.squadronCountryFilter && squadron.country !== state.squadronCountryFilter) {
-            return false;
-          }
-          return !query || normalizeText(`${squadron.name} ${squadron.country} ${squadron.aircraftTypes.join(" ")}`).includes(query);
-        })
-      : squadrons;
-    const mobileOrderedSquadrons = isMobile
-      ? groupSquadronsByCountry(filteredSquadrons).flatMap((group) => group.squadrons)
-      : filteredSquadrons;
+    const { squadrons, filteredSquadrons, orderedSquadrons, isMobile } = squadronArchiveEntries();
     const visibleSquadrons = isMobile
-      ? mobileOrderedSquadrons.slice(0, state.squadronVisibleCount)
-      : mobileOrderedSquadrons;
+      ? orderedSquadrons.slice(0, state.squadronVisibleCount)
+      : orderedSquadrons;
 
     renderSquadronArchiveHero(squadrons);
     renderSquadronCountryRail(squadrons);
@@ -3921,6 +3931,24 @@
       "squadrons"
     );
     scrollActiveFilterChip(els.squadronCountryRail);
+  }
+
+  function squadronArchiveEntries() {
+    const squadrons = collectSquadrons();
+    const isMobile = isFocusedMobileLayout();
+    const query = normalizeText(state.squadronQuery);
+    const filteredSquadrons = isMobile
+      ? squadrons.filter((squadron) => {
+          if (state.squadronCountryFilter && squadron.country !== state.squadronCountryFilter) {
+            return false;
+          }
+          return !query || normalizeText(`${squadron.name} ${squadron.country} ${squadron.aircraftTypes.join(" ")}`).includes(query);
+        })
+      : squadrons;
+    const orderedSquadrons = isMobile
+      ? groupSquadronsByCountry(filteredSquadrons).flatMap((group) => group.squadrons)
+      : filteredSquadrons;
+    return { squadrons, filteredSquadrons, orderedSquadrons, isMobile };
   }
 
   function renderSquadronArchiveHero(squadrons) {
@@ -5008,18 +5036,8 @@
     if (!els.aircraftSearch || !els.dexCount || !els.aircraftGrid) {
       return;
     }
-    const query = normalizeText(els.aircraftSearch.value);
+    const entries = filteredAircraftEntries();
     const familyFilter = state.dexFamilyFilter;
-    const entries = state.data.aircraft.filter((entry) => {
-      if (familyFilter && aircraftFamilyIdForEntry(entry) !== familyFilter) {
-        return false;
-      }
-      if (!query) {
-        return true;
-      }
-      const squadronText = entry.squadrons.map((squadron) => `${squadron.name} ${squadron.unitLabel}`).join(" ");
-      return normalizeText(`${entry.typeName} ${entry.countries.join(" ")} ${squadronText}`).includes(query);
-    });
 
     renderDexFamilyFilter();
     scrollActiveFilterChip(els.dexFamilyFilter);
@@ -5029,6 +5047,21 @@
       : entries;
     renderAircraftGrid(visibleEntries);
     renderArchivePagination(els.dexPagination, visibleEntries.length, entries.length, "aircraft", "aircraft entries");
+  }
+
+  function filteredAircraftEntries() {
+    const query = normalizeText(els.aircraftSearch?.value || "");
+    const familyFilter = state.dexFamilyFilter;
+    return state.data.aircraft.filter((entry) => {
+      if (familyFilter && aircraftFamilyIdForEntry(entry) !== familyFilter) {
+        return false;
+      }
+      if (!query) {
+        return true;
+      }
+      const squadronText = entry.squadrons.map((squadron) => `${squadron.name} ${squadron.unitLabel}`).join(" ");
+      return normalizeText(`${entry.typeName} ${entry.countries.join(" ")} ${squadronText}`).includes(query);
+    });
   }
 
   function openAircraftFamilyDex(familyId) {
@@ -5110,56 +5143,58 @@
 
     const gridEntries = aircraftGridEntries(entries);
     els.aircraftGrid.innerHTML = gridEntries
-      .map(({ entry, isWide }, index) => {
-        const cover = state.photoById.get(entry.coverPhoto);
-        const stats = aircraftStats(entry);
-        const countries = unique(entry.countries).slice(0, 3);
-        const activeClass = entry.id === state.selectedAircraftId ? " is-active" : "";
-        const coverImage = cover ? cover.thumbnail || cover.image : "";
-        const catalogueNumber = String(index + 1).padStart(3, "0");
-
-        return `
-          <button
-            class="aircraft-card${isWide ? " is-wide" : ""}${activeClass}"
-            type="button"
-            data-aircraft-id="${escapeAttr(entry.id)}"
-            style="--dex-delay: ${Math.min(index, 12) * 42}ms"
-            aria-label="Open ${escapeAttr(entry.typeName)} field guide"
-          >
-            <div class="aircraft-cover">
-              ${
-                coverImage
-                  ? renderResponsivePhotoImage(cover, entry.typeName, {
-                      sizes: isWide
-                        ? "(max-width: 620px) 100vw, (max-width: 1040px) 100vw, 67vw"
-                        : "(max-width: 620px) 100vw, (max-width: 1040px) 50vw, 34vw",
-                      fullResolution: isWide
-                    })
-                  : '<div class="empty-cover">No photo</div>'
-              }
-            </div>
-            <span class="aircraft-card-index">${catalogueNumber}</span>
-            <div class="aircraft-body">
-              <strong class="aircraft-title">${formatAircraftCardTitle(entry.typeName)}</strong>
-              <span class="aircraft-card-hover-details">
-                <span>
-                  <small>Countries</small>
-                  <strong>${escapeHtml(countries.join(" / ") || "Country not set")}</strong>
-                </span>
-                <span>
-                  <small>Squadrons</small>
-                  <strong>${stats.unitCount}</strong>
-                </span>
-                <span>
-                  <small>Number of Photos</small>
-                  <strong>${stats.photoCount}</strong>
-                </span>
-              </span>
-            </div>
-          </button>
-        `;
-      })
+      .map(({ entry, isWide }, index) => renderAircraftCard(entry, isWide, index))
       .join("");
+  }
+
+  function renderAircraftCard(entry, isWide, index) {
+    const cover = state.photoById.get(entry.coverPhoto);
+    const stats = aircraftStats(entry);
+    const countries = unique(entry.countries).slice(0, 3);
+    const activeClass = entry.id === state.selectedAircraftId ? " is-active" : "";
+    const coverImage = cover ? cover.thumbnail || cover.image : "";
+    const catalogueNumber = String(index + 1).padStart(3, "0");
+
+    return `
+      <button
+        class="aircraft-card${isWide ? " is-wide" : ""}${activeClass}"
+        type="button"
+        data-aircraft-id="${escapeAttr(entry.id)}"
+        style="--dex-delay: ${Math.min(index, 12) * 42}ms"
+        aria-label="Open ${escapeAttr(entry.typeName)} field guide"
+      >
+        <div class="aircraft-cover">
+          ${
+            coverImage
+              ? renderResponsivePhotoImage(cover, entry.typeName, {
+                  sizes: isWide
+                    ? "(max-width: 620px) 100vw, (max-width: 1040px) 100vw, 67vw"
+                    : "(max-width: 620px) 100vw, (max-width: 1040px) 50vw, 34vw",
+                  fullResolution: isWide
+                })
+              : '<div class="empty-cover">No photo</div>'
+          }
+        </div>
+        <span class="aircraft-card-index">${catalogueNumber}</span>
+        <div class="aircraft-body">
+          <strong class="aircraft-title">${formatAircraftCardTitle(entry.typeName)}</strong>
+          <span class="aircraft-card-hover-details">
+            <span>
+              <small>Countries</small>
+              <strong>${escapeHtml(countries.join(" / ") || "Country not set")}</strong>
+            </span>
+            <span>
+              <small>Squadrons</small>
+              <strong>${stats.unitCount}</strong>
+            </span>
+            <span>
+              <small>Number of Photos</small>
+              <strong>${stats.photoCount}</strong>
+            </span>
+          </span>
+        </div>
+      </button>
+    `;
   }
 
   function loadNextArchivePage(kind) {
@@ -5167,28 +5202,84 @@
       return;
     }
 
-    const scrollY = window.scrollY;
-    const scrollAnchor = captureArchiveScrollAnchor(kind);
     state.archiveLoadPending = true;
     try {
       if (kind === "aircraft") {
-        state.dexVisibleCount += MOBILE_ARCHIVE_PAGE_SIZE;
-        renderDex();
+        appendAircraftArchivePage();
       } else if (kind === "squadrons") {
-        state.squadronVisibleCount += MOBILE_ARCHIVE_PAGE_SIZE;
-        renderSquadronsPage();
+        appendSquadronArchivePage();
       } else if (kind === "airshows") {
-        state.airshowVisibleCount += MOBILE_ARCHIVE_PAGE_SIZE;
-        renderAirshowsPage();
+        appendAirshowArchivePage();
       }
     } finally {
       state.archiveLoadPending = false;
-      window.requestAnimationFrame(() => {
-        if (!restoreArchiveScrollAnchor(scrollAnchor)) {
-          window.scrollTo({ top: scrollY, behavior: "auto" });
-        }
-      });
     }
+  }
+
+  function appendAircraftArchivePage() {
+    const entries = filteredAircraftEntries();
+    const previousCount = Math.min(state.dexVisibleCount, entries.length);
+    const nextCount = Math.min(previousCount + MOBILE_ARCHIVE_PAGE_SIZE, entries.length);
+    const gridEntries = aircraftGridEntries(entries.slice(0, nextCount));
+    const markup = gridEntries
+      .slice(previousCount)
+      .map(({ entry, isWide }, offset) => renderAircraftCard(entry, isWide, previousCount + offset))
+      .join("");
+    if (markup) {
+      els.aircraftGrid.insertAdjacentHTML("beforeend", markup);
+    }
+    state.dexVisibleCount = nextCount;
+    renderArchivePagination(els.dexPagination, nextCount, entries.length, "aircraft", "aircraft entries");
+  }
+
+  function appendSquadronArchivePage() {
+    const { filteredSquadrons, orderedSquadrons } = squadronArchiveEntries();
+    const previousCount = Math.min(state.squadronVisibleCount, orderedSquadrons.length);
+    const nextCount = Math.min(previousCount + MOBILE_ARCHIVE_PAGE_SIZE, orderedSquadrons.length);
+    const groups = groupSquadronsByCountry(filteredSquadrons);
+    const groupByCountry = new Map(groups.map((group) => [group.country, group]));
+
+    orderedSquadrons.slice(previousCount, nextCount).forEach((squadron) => {
+      const country = squadron.country || "Country not set";
+      const group = groupByCountry.get(country);
+      const sectionId = squadronCountryId(country);
+      let section = document.getElementById(sectionId);
+      if (!section || !els.squadronLogoGrid.contains(section)) {
+        els.squadronLogoGrid.insertAdjacentHTML("beforeend", `
+          <section class="squadron-country-section" id="${escapeAttr(sectionId)}">
+            <div class="group-header squadron-country-header">
+              <div>
+                <p class="eyebrow">Country</p>
+                <h2>${renderCountryLabel(country)}</h2>
+              </div>
+              <span class="count-pill">${group?.squadrons.length || 0}</span>
+            </div>
+            <div class="squadron-logo-grid"></div>
+          </section>
+        `);
+        section = document.getElementById(sectionId);
+      }
+      const index = Math.max(0, group?.squadrons.findIndex((item) => item.id === squadron.id) ?? 0);
+      section?.querySelector(".squadron-logo-grid")?.insertAdjacentHTML("beforeend", renderSquadronLogoCard(squadron, index));
+    });
+
+    state.squadronVisibleCount = nextCount;
+    renderArchivePagination(els.squadronPagination, nextCount, filteredSquadrons.length, "squadrons", "squadrons");
+  }
+
+  function appendAirshowArchivePage() {
+    const airshows = state.data.airshows || [];
+    const previousCount = Math.min(state.airshowVisibleCount, airshows.length);
+    const nextCount = Math.min(previousCount + MOBILE_ARCHIVE_PAGE_SIZE, airshows.length);
+    const markup = airshows
+      .slice(previousCount, nextCount)
+      .map((airshow, offset) => renderAirshowTimelineItem(airshow, previousCount + offset))
+      .join("");
+    if (markup) {
+      els.airshowTimeline.insertAdjacentHTML("beforeend", markup);
+    }
+    state.airshowVisibleCount = nextCount;
+    renderArchivePagination(els.airshowPagination, nextCount, airshows.length, "airshows", "airshow events");
   }
 
   function archiveItemSelector(kind) {
@@ -5200,19 +5291,6 @@
     }
     if (kind === "airshows") {
       return "#airshowsView .airshow-timeline-card[data-airshow-id]";
-    }
-    return "";
-  }
-
-  function archiveItemKeyAttribute(kind) {
-    if (kind === "aircraft") {
-      return "data-aircraft-id";
-    }
-    if (kind === "squadrons") {
-      return "data-squadron-id";
-    }
-    if (kind === "airshows") {
-      return "data-airshow-id";
     }
     return "";
   }
@@ -5239,36 +5317,6 @@
     const items = archiveItemElements(kind);
     const batchStart = Math.max(0, visibleCount - MOBILE_ARCHIVE_PAGE_SIZE);
     return items[batchStart + MOBILE_ARCHIVE_PREFETCH_OFFSET] || null;
-  }
-
-  function captureArchiveScrollAnchor(kind) {
-    const target = archiveLoadTarget(kind);
-    const keyAttribute = archiveItemKeyAttribute(kind);
-    if (!target || !keyAttribute) {
-      return null;
-    }
-    return {
-      kind,
-      key: target.getAttribute(keyAttribute),
-      top: target.getBoundingClientRect().top
-    };
-  }
-
-  function restoreArchiveScrollAnchor(anchor) {
-    if (!anchor || !anchor.key) {
-      return false;
-    }
-    const keyAttribute = archiveItemKeyAttribute(anchor.kind);
-    const target = archiveItemElements(anchor.kind)
-      .find((item) => item.getAttribute(keyAttribute) === anchor.key);
-    if (!target) {
-      return false;
-    }
-    const delta = target.getBoundingClientRect().top - anchor.top;
-    if (Math.abs(delta) > 0.5) {
-      window.scrollBy({ top: delta, behavior: "auto" });
-    }
-    return true;
   }
 
   function disconnectArchiveLoadObserver() {

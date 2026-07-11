@@ -8778,16 +8778,6 @@ button.location-unit-chip:focus-visible,
   display: none;
 }
 
-@view-transition {
-  navigation: auto;
-}
-
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: 180ms;
-  animation-timing-function: ease-out;
-}
-
 @media (max-width: 760px) {
   :root {
     --mobile-tab-height: calc(60px + env(safe-area-inset-bottom));
@@ -8918,6 +8908,7 @@ button.location-unit-chip:focus-visible,
     border-radius: 12px;
     color: rgba(245, 241, 233, 0.58);
     text-decoration: none;
+    touch-action: manipulation;
     transition: background 150ms ease, color 150ms ease, transform 120ms ease;
   }
 

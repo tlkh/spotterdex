@@ -1,4 +1,4 @@
-const CACHE_VERSION = "spotterdex-v2";
+const CACHE_VERSION = "spotterdex-v3";
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const THUMB_CACHE = `${CACHE_VERSION}-thumbs`;
 const PHOTO_CACHE = `${CACHE_VERSION}-photos`;
@@ -19,7 +19,8 @@ const SHELL_PATHS = [
   "data/spotterdex.json",
   "assets/icons/spotterdex-app-icon.png",
   "assets/icons/spotterdex-app-icon-192.png",
-  "assets/icons/spotterdex-app-icon-maskable-512.png"
+  "assets/icons/spotterdex-app-icon-maskable-512.png",
+  "assets/icons/spotterdex-apple-touch-icon-v3.png"
 ];
 
 const scopedUrl = (path) => new URL(path, self.registration.scope).href;
@@ -52,7 +53,13 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (request.mode === "navigate" || isCatalogData(url)) {
+  if (request.mode === "navigate") {
+    const update = updateCachedNavigation(request);
+    event.respondWith(cachedNavigation(request, update));
+    event.waitUntil(update.catch(() => null));
+    return;
+  }
+  if (isCatalogData(url)) {
     event.respondWith(networkFirst(request));
     return;
   }
@@ -68,6 +75,29 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(staleWhileRevalidate(request));
   }
 });
+
+async function updateCachedNavigation(request) {
+  const cache = await caches.open(SHELL_CACHE);
+  const response = await fetch(request);
+  if (response.ok) {
+    await cache.put(request, response.clone());
+  }
+  return response;
+}
+
+async function cachedNavigation(request, update) {
+  const cache = await caches.open(SHELL_CACHE);
+  const cached = await cache.match(request, { ignoreSearch: true });
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    return await update;
+  } catch (error) {
+    return await cache.match(scopedUrl("index.html"));
+  }
+}
 
 function isCatalogData(url) {
   return /\/data\/spotterdex(?:-data|-map-data)?\.(?:js|json)$/.test(url.pathname);
