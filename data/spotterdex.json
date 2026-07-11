@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-10T13:48:48+00:00",
+  "generatedAt": "2026-07-11T04:50:41+00:00",
   "pins": [
     {
       "id": "hong-kong-international-airport",
@@ -365,10 +365,10 @@
       "heroPhoto": {
         "image": "assets/generated/photos/location-hero-don-muang-royal-thai-air-force-base.jpg",
         "thumbnail": "assets/generated/thumbs/location-hero-don-muang-royal-thai-air-force-base.jpg",
-        "source": "raw_assets/DSC04119.jpg",
-        "originalSize": "8427 x 5618",
-        "processedSize": "2560 x 1707",
-        "thumbnailSize": "1024 x 683"
+        "source": "raw_assets/DSC05725.jpg",
+        "originalSize": "6191 x 4643",
+        "processedSize": "2560 x 1920",
+        "thumbnailSize": "1024 x 768"
       }
     },
     {
@@ -553,6 +553,14 @@
             "aircraft-airbus-a330-mrtt-112-squadron-dsc07164-enhanced-nr-1011b993",
             "aircraft-airbus-a330-mrtt-112-squadron-dsc05179-enhanced-nr-6a1ddfd2"
           ],
+          "heroPhoto": {
+            "image": "assets/generated/photos/squadron-hero-airbus-a330-mrtt-112-squadron.jpg",
+            "thumbnail": "assets/generated/thumbs/squadron-hero-airbus-a330-mrtt-112-squadron.jpg",
+            "source": "raw_assets/DSC05206-Enhanced-NR.jpg",
+            "originalSize": "5125 x 2883",
+            "processedSize": "2560 x 1440",
+            "thumbnailSize": "1024 x 576"
+          },
           "photoCount": 12
         },
         {
@@ -1068,6 +1076,14 @@
             "aircraft-boeing-c-40a-clipper-fleet-logistics-support-squadron-51-vr-51-usn-clipper-1-ba218d93",
             "aircraft-boeing-c-40a-clipper-fleet-logistics-support-squadron-51-vr-51-usn-clipper-2-9393a5c9"
           ],
+          "heroPhoto": {
+            "image": "assets/generated/photos/squadron-hero-boeing-c-40a-clipper-fleet-logistics-support-squadron-51-vr-51.jpg",
+            "thumbnail": "assets/generated/thumbs/squadron-hero-boeing-c-40a-clipper-fleet-logistics-support-squadron-51-vr-51.jpg",
+            "source": "raw_assets/usn_clipper_2.jpeg",
+            "originalSize": "4986 x 3324",
+            "processedSize": "2560 x 1707",
+            "thumbnailSize": "1024 x 683"
+          },
           "photoCount": 2
         },
         {
@@ -1276,6 +1292,14 @@
             "aircraft-boeing-e-7a-wedgetail-no-2-squadron-dsc09773-enhanced-nr-f8cdb19f",
             "aircraft-boeing-e-7a-wedgetail-no-2-squadron-dsc09765-enhanced-nr-5a05a1d6"
           ],
+          "heroPhoto": {
+            "image": "assets/generated/photos/squadron-hero-boeing-e-7a-wedgetail-no-2-squadron.jpg",
+            "thumbnail": "assets/generated/thumbs/squadron-hero-boeing-e-7a-wedgetail-no-2-squadron.jpg",
+            "source": "raw_assets/DSC09753-Enhanced-NR.jpg",
+            "originalSize": "5096 x 3822",
+            "processedSize": "2560 x 1920",
+            "thumbnailSize": "1024 x 768"
+          },
           "photoCount": 3
         }
       ],
@@ -1323,6 +1347,14 @@
             "aircraft-boeing-f-15sg-strike-eagle-142-squadron-dsc05095-enhanced-nr-b749ffb6",
             "aircraft-boeing-f-15sg-strike-eagle-142-squadron-dsc04980-enhanced-nr-4f6aeb37"
           ],
+          "heroPhoto": {
+            "image": "assets/generated/photos/squadron-hero-boeing-f-15sg-strike-eagle-142-squadron.jpg",
+            "thumbnail": "assets/generated/thumbs/squadron-hero-boeing-f-15sg-strike-eagle-142-squadron.jpg",
+            "source": "raw_assets/DSC00741-Enhanced-NR.jpg",
+            "originalSize": "4367 x 2911",
+            "processedSize": "2560 x 1706",
+            "thumbnailSize": "1024 x 683"
+          },
           "photoCount": 4
         },
         {
@@ -1372,6 +1404,14 @@
             "aircraft-boeing-f-15sg-strike-eagle-149-squadron-dsc03587-enhanced-nr-14331c0a",
             "aircraft-boeing-f-15sg-strike-eagle-149-squadron-dsc02930-enhanced-nr-4e2489cd"
           ],
+          "heroPhoto": {
+            "image": "assets/generated/photos/squadron-hero-boeing-f-15sg-strike-eagle-149-squadron.jpg",
+            "thumbnail": "assets/generated/thumbs/squadron-hero-boeing-f-15sg-strike-eagle-149-squadron.jpg",
+            "source": "raw_assets/DSC08780-Enhanced-NR.jpg",
+            "originalSize": "3299 x 2199",
+            "processedSize": "2560 x 1706",
+            "thumbnailSize": "1024 x 683"
+          },
           "photoCount": 37
         }
       ],
@@ -1666,6 +1706,14 @@
             "aircraft-cessna-uc-35-citation-usmc-operational-support-airlift-dsc02445-enhanced-nr-4030a48e",
             "aircraft-cessna-uc-35-citation-usmc-operational-support-airlift-dsc02424-enhanced-nr-0f9baeca"
           ],
+          "heroPhoto": {
+            "image": "assets/generated/photos/squadron-hero-cessna-uc-35-citation-usmc-operational-support-airlift.jpg",
+            "thumbnail": "assets/generated/thumbs/squadron-hero-cessna-uc-35-citation-usmc-operational-support-airlift.jpg",
+            "source": "raw_assets/DSC02445-Enhanced-NR.jpeg",
+            "originalSize": "5267 x 3511",
+            "processedSize": "2560 x 1707",
+            "thumbnailSize": "1024 x 683"
+          },
           "photoCount": 2
         }
       ],
@@ -1903,6 +1951,14 @@
             "aircraft-fokker-50-mpa-121-squadron-dsc07526-enhanced-nr-72ad6115",
             "aircraft-fokker-50-mpa-121-squadron-dsc07416-enhanced-nr-f9f0e4bf"
           ],
+          "heroPhoto": {
+            "image": "assets/generated/photos/squadron-hero-fokker-50-mpa-121-squadron.jpg",
+            "thumbnail": "assets/generated/thumbs/squadron-hero-fokker-50-mpa-121-squadron.jpg",
+            "source": "raw_assets/DSC07416-Enhanced-NR.jpg",
+            "originalSize": "4439 x 2959",
+            "processedSize": "2560 x 1706",
+            "thumbnailSize": "1024 x 683"
+          },
           "photoCount": 4
         }
       ],
@@ -2168,6 +2224,14 @@
             "aircraft-gulfstream-g550-caew-111-squadron-dsc09955-enhanced-nr-ea3d4722",
             "aircraft-gulfstream-g550-caew-111-squadron-dsc09958-enhanced-nr-a76eb46b"
           ],
+          "heroPhoto": {
+            "image": "assets/generated/photos/squadron-hero-gulfstream-g550-caew-111-squadron.jpg",
+            "thumbnail": "assets/generated/thumbs/squadron-hero-gulfstream-g550-caew-111-squadron.jpg",
+            "source": "raw_assets/DSC09899-Enhanced-NR.jpg",
+            "originalSize": "4610 x 3073",
+            "processedSize": "2560 x 1706",
+            "thumbnailSize": "1024 x 683"
+          },
           "photoCount": 5
         },
         {
@@ -2322,6 +2386,14 @@
             "aircraft-kai-t-50b-golden-eagle-black-eagles-dsc02772-enhanced-nr-19bc0abb",
             "aircraft-kai-t-50b-golden-eagle-black-eagles-dsc02792-enhanced-nr-7741041e"
           ],
+          "heroPhoto": {
+            "image": "assets/generated/photos/squadron-hero-kai-t-50b-golden-eagle-black-eagles.jpg",
+            "thumbnail": "assets/generated/thumbs/squadron-hero-kai-t-50b-golden-eagle-black-eagles.jpg",
+            "source": "raw_assets/DSC05211-Enhanced-NR.jpg",
+            "originalSize": "2315 x 1543",
+            "processedSize": "2560 x 1706",
+            "thumbnailSize": "1024 x 683"
+          },
           "photoCount": 18
         }
       ],
@@ -4105,6 +4177,14 @@
             "aircraft-sikorsky-mh-60r-seahawk-helicopter-maritime-strike-squadron-51-hsm-51-usn-seahawk-1-0fcaee4d",
             "aircraft-sikorsky-mh-60r-seahawk-helicopter-maritime-strike-squadron-51-hsm-51-usn-seahawk-2-1fd7b473"
           ],
+          "heroPhoto": {
+            "image": "assets/generated/photos/squadron-hero-sikorsky-mh-60r-seahawk-helicopter-maritime-strike-squadron-51-hsm-51.jpg",
+            "thumbnail": "assets/generated/thumbs/squadron-hero-sikorsky-mh-60r-seahawk-helicopter-maritime-strike-squadron-51-hsm-51.jpg",
+            "source": "raw_assets/usn_seahawk_1.jpeg",
+            "originalSize": "3138 x 2092",
+            "processedSize": "2560 x 1707",
+            "thumbnailSize": "1024 x 683"
+          },
           "photoCount": 2
         }
       ],
@@ -4155,7 +4235,15 @@
         "squadron-air-development-and-test-wing-gifu-formation-1-76308d83",
         "squadron-air-development-and-test-wing-dsc00962-enhanced-nr-6756f7ee",
         "squadron-air-development-and-test-wing-gifu-formation-2-a604b1ec",
-        "squadron-air-development-and-test-wing-dsc09476-enhanced-nr-88aee185"
+        "squadron-air-development-and-test-wing-dsc09476-enhanced-nr-88aee185",
+        "squadron-air-development-and-test-wing-dsc01206-enhanced-nr-ca526be8",
+        "squadron-air-development-and-test-wing-dsc01259-enhanced-nr-c2a3e15b",
+        "squadron-air-development-and-test-wing-dsc01250-enhanced-nr-4c45d215",
+        "squadron-air-development-and-test-wing-dsc01248-enhanced-nr-08c100a8",
+        "squadron-air-development-and-test-wing-dsc01240-enhanced-nr-5fdeed7f",
+        "squadron-air-development-and-test-wing-dsc01224-enhanced-nr-27b4d24a",
+        "squadron-air-development-and-test-wing-dsc01252-enhanced-nr-946b95e3",
+        "squadron-air-development-and-test-wing-dsc01265-enhanced-nr-f0036f36"
       ],
       "aircraftTypes": [],
       "heroPhoto": {
@@ -4166,7 +4254,7 @@
         "processedSize": "2560 x 1707",
         "thumbnailSize": "1024 x 683"
       },
-      "photoCount": 4
+      "photoCount": 12
     },
     {
       "id": "japan-air-rescue-wing",
@@ -4365,7 +4453,8 @@
       ],
       "photoCount": 18,
       "firstDate": "2024-02-13",
-      "latestDate": "2024-02-22"
+      "latestDate": "2024-02-22",
+      "heroPhotoId": "aircraft-kai-t-50b-golden-eagle-black-eagles-dsc06214-enhanced-nr-42b3aff0"
     },
     {
       "id": "tsuiki-air-show-2023",
@@ -4456,14 +4545,22 @@
         "aircraft-mitsubishi-f-2b-air-development-and-test-wing-dsc09175-enhanced-nr-3f527f2d",
         "aircraft-mitsubishi-f-2b-air-development-and-test-wing-dsc09667-enhanced-nr-ef1c5f2a",
         "squadron-air-development-and-test-wing-dsc00962-enhanced-nr-6756f7ee",
+        "squadron-air-development-and-test-wing-dsc01206-enhanced-nr-ca526be8",
+        "squadron-air-development-and-test-wing-dsc01224-enhanced-nr-27b4d24a",
+        "squadron-air-development-and-test-wing-dsc01240-enhanced-nr-5fdeed7f",
+        "squadron-air-development-and-test-wing-dsc01248-enhanced-nr-08c100a8",
+        "squadron-air-development-and-test-wing-dsc01250-enhanced-nr-4c45d215",
+        "squadron-air-development-and-test-wing-dsc01252-enhanced-nr-946b95e3",
+        "squadron-air-development-and-test-wing-dsc01259-enhanced-nr-c2a3e15b",
+        "squadron-air-development-and-test-wing-dsc01265-enhanced-nr-f0036f36",
         "squadron-air-development-and-test-wing-dsc09476-enhanced-nr-88aee185",
         "squadron-air-development-and-test-wing-gifu-formation-1-76308d83",
         "squadron-air-development-and-test-wing-gifu-formation-2-a604b1ec"
       ],
-      "photoCount": 28,
+      "photoCount": 36,
       "firstDate": "2023-11-11",
       "latestDate": "2023-11-12",
-      "heroPhotoId": "squadron-air-development-and-test-wing-dsc00962-enhanced-nr-6756f7ee"
+      "heroPhotoId": "squadron-air-development-and-test-wing-dsc01224-enhanced-nr-27b4d24a"
     },
     {
       "id": "hamamatsu-air-show-2023",
@@ -16031,6 +16128,374 @@
         "DateTimeOriginal": "2023:11:12 08:06:08",
         "DateTimeDigitized": "2023:11:12 08:06:08",
         "DateTime": "2026:07:08 15:12:41"
+      }
+    },
+    {
+      "id": "squadron-air-development-and-test-wing-dsc01206-enhanced-nr-ca526be8",
+      "tagScope": "squadron",
+      "aircraftId": "",
+      "aircraftType": "",
+      "aircraftFamily": "",
+      "squadronId": "japan-air-development-and-test-wing",
+      "squadronName": "Air Development and Test Wing",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2023",
+      "date": "2023-11-12",
+      "sortDate": "2023-11-12",
+      "locationName": "Gifu Air Base",
+      "pinId": "gifu-air-base",
+      "sourceRef": {
+        "scope": "squadron",
+        "entryPath": "squadrons/air-development-and-test-wing/entry.yaml",
+        "index": 4
+      },
+      "airshow": "Gifu Air Show 2023",
+      "livery": "",
+      "title": "",
+      "caption": "Mixed ADTW formation during Gifu Air Show",
+      "image": "assets/generated/photos/squadron-air-development-and-test-wing-dsc01206-enhanced-nr-ca526be8.jpg",
+      "thumbnail": "assets/generated/thumbs/squadron-air-development-and-test-wing-dsc01206-enhanced-nr-ca526be8.jpg",
+      "source": "raw_assets/DSC01206-Enhanced-NR.jpg",
+      "originalSize": "4126 x 3095",
+      "processedSize": "2560 x 1920",
+      "thumbnailSize": "1024 x 768",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "220mm",
+        "FocalLengthIn35mmFilm": "600mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ExposureBiasValue": "0.0",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:11:12 10:51:41",
+        "DateTimeDigitized": "2023:11:12 10:51:41",
+        "DateTime": "2026:07:11 11:16:23"
+      }
+    },
+    {
+      "id": "squadron-air-development-and-test-wing-dsc01259-enhanced-nr-c2a3e15b",
+      "tagScope": "squadron",
+      "aircraftId": "",
+      "aircraftType": "",
+      "aircraftFamily": "",
+      "squadronId": "japan-air-development-and-test-wing",
+      "squadronName": "Air Development and Test Wing",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2023",
+      "date": "2023-11-12",
+      "sortDate": "2023-11-12",
+      "locationName": "Gifu Air Base",
+      "pinId": "gifu-air-base",
+      "sourceRef": {
+        "scope": "squadron",
+        "entryPath": "squadrons/air-development-and-test-wing/entry.yaml",
+        "index": 5
+      },
+      "airshow": "Gifu Air Show 2023",
+      "livery": "",
+      "title": "",
+      "caption": "Mixed ADTW formation during Gifu Air Show",
+      "image": "assets/generated/photos/squadron-air-development-and-test-wing-dsc01259-enhanced-nr-c2a3e15b.jpg",
+      "thumbnail": "assets/generated/thumbs/squadron-air-development-and-test-wing-dsc01259-enhanced-nr-c2a3e15b.jpg",
+      "source": "raw_assets/DSC01259-Enhanced-NR.jpg",
+      "originalSize": "4095 x 3071",
+      "processedSize": "2560 x 1920",
+      "thumbnailSize": "1024 x 768",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "87.1mm",
+        "FocalLengthIn35mmFilm": "238mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ExposureBiasValue": "0.0",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:11:12 10:51:56",
+        "DateTimeDigitized": "2023:11:12 10:51:56",
+        "DateTime": "2026:07:11 11:16:29"
+      }
+    },
+    {
+      "id": "squadron-air-development-and-test-wing-dsc01250-enhanced-nr-4c45d215",
+      "tagScope": "squadron",
+      "aircraftId": "",
+      "aircraftType": "",
+      "aircraftFamily": "",
+      "squadronId": "japan-air-development-and-test-wing",
+      "squadronName": "Air Development and Test Wing",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2023",
+      "date": "2023-11-12",
+      "sortDate": "2023-11-12",
+      "locationName": "Gifu Air Base",
+      "pinId": "gifu-air-base",
+      "sourceRef": {
+        "scope": "squadron",
+        "entryPath": "squadrons/air-development-and-test-wing/entry.yaml",
+        "index": 6
+      },
+      "airshow": "Gifu Air Show 2023",
+      "livery": "",
+      "title": "",
+      "caption": "Mixed ADTW formation during Gifu Air Show",
+      "image": "assets/generated/photos/squadron-air-development-and-test-wing-dsc01250-enhanced-nr-4c45d215.jpg",
+      "thumbnail": "assets/generated/thumbs/squadron-air-development-and-test-wing-dsc01250-enhanced-nr-4c45d215.jpg",
+      "source": "raw_assets/DSC01250-Enhanced-NR.jpg",
+      "originalSize": "4671 x 3503",
+      "processedSize": "2560 x 1920",
+      "thumbnailSize": "1024 x 768",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "97.5mm",
+        "FocalLengthIn35mmFilm": "266mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ExposureBiasValue": "0.0",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:11:12 10:51:54",
+        "DateTimeDigitized": "2023:11:12 10:51:54",
+        "DateTime": "2026:07:11 11:16:27"
+      }
+    },
+    {
+      "id": "squadron-air-development-and-test-wing-dsc01248-enhanced-nr-08c100a8",
+      "tagScope": "squadron",
+      "aircraftId": "",
+      "aircraftType": "",
+      "aircraftFamily": "",
+      "squadronId": "japan-air-development-and-test-wing",
+      "squadronName": "Air Development and Test Wing",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2023",
+      "date": "2023-11-12",
+      "sortDate": "2023-11-12",
+      "locationName": "Gifu Air Base",
+      "pinId": "gifu-air-base",
+      "sourceRef": {
+        "scope": "squadron",
+        "entryPath": "squadrons/air-development-and-test-wing/entry.yaml",
+        "index": 7
+      },
+      "airshow": "Gifu Air Show 2023",
+      "livery": "",
+      "title": "",
+      "caption": "Mixed ADTW formation during Gifu Air Show",
+      "image": "assets/generated/photos/squadron-air-development-and-test-wing-dsc01248-enhanced-nr-08c100a8.jpg",
+      "thumbnail": "assets/generated/thumbs/squadron-air-development-and-test-wing-dsc01248-enhanced-nr-08c100a8.jpg",
+      "source": "raw_assets/DSC01248-Enhanced-NR.jpg",
+      "originalSize": "3809 x 2857",
+      "processedSize": "2560 x 1920",
+      "thumbnailSize": "1024 x 768",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "124.9mm",
+        "FocalLengthIn35mmFilm": "341mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ExposureBiasValue": "0.0",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:11:12 10:51:52",
+        "DateTimeDigitized": "2023:11:12 10:51:52",
+        "DateTime": "2026:07:11 11:16:26"
+      }
+    },
+    {
+      "id": "squadron-air-development-and-test-wing-dsc01240-enhanced-nr-5fdeed7f",
+      "tagScope": "squadron",
+      "aircraftId": "",
+      "aircraftType": "",
+      "aircraftFamily": "",
+      "squadronId": "japan-air-development-and-test-wing",
+      "squadronName": "Air Development and Test Wing",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2023",
+      "date": "2023-11-12",
+      "sortDate": "2023-11-12",
+      "locationName": "Gifu Air Base",
+      "pinId": "gifu-air-base",
+      "sourceRef": {
+        "scope": "squadron",
+        "entryPath": "squadrons/air-development-and-test-wing/entry.yaml",
+        "index": 8
+      },
+      "airshow": "Gifu Air Show 2023",
+      "livery": "",
+      "title": "",
+      "caption": "Mixed ADTW formation during Gifu Air Show",
+      "image": "assets/generated/photos/squadron-air-development-and-test-wing-dsc01240-enhanced-nr-5fdeed7f.jpg",
+      "thumbnail": "assets/generated/thumbs/squadron-air-development-and-test-wing-dsc01240-enhanced-nr-5fdeed7f.jpg",
+      "source": "raw_assets/DSC01240-Enhanced-NR.jpg",
+      "originalSize": "3980 x 2985",
+      "processedSize": "2560 x 1920",
+      "thumbnailSize": "1024 x 768",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "124.9mm",
+        "FocalLengthIn35mmFilm": "341mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ExposureBiasValue": "0.0",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:11:12 10:51:51",
+        "DateTimeDigitized": "2023:11:12 10:51:51",
+        "DateTime": "2026:07:11 11:16:25"
+      }
+    },
+    {
+      "id": "squadron-air-development-and-test-wing-dsc01224-enhanced-nr-27b4d24a",
+      "tagScope": "squadron",
+      "aircraftId": "",
+      "aircraftType": "",
+      "aircraftFamily": "",
+      "squadronId": "japan-air-development-and-test-wing",
+      "squadronName": "Air Development and Test Wing",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2023",
+      "date": "2023-11-12",
+      "sortDate": "2023-11-12",
+      "locationName": "Gifu Air Base",
+      "pinId": "gifu-air-base",
+      "sourceRef": {
+        "scope": "squadron",
+        "entryPath": "squadrons/air-development-and-test-wing/entry.yaml",
+        "index": 9
+      },
+      "airshow": "Gifu Air Show 2023",
+      "livery": "",
+      "title": "",
+      "caption": "Mixed ADTW formation during Gifu Air Show",
+      "image": "assets/generated/photos/squadron-air-development-and-test-wing-dsc01224-enhanced-nr-27b4d24a.jpg",
+      "thumbnail": "assets/generated/thumbs/squadron-air-development-and-test-wing-dsc01224-enhanced-nr-27b4d24a.jpg",
+      "source": "raw_assets/DSC01224-Enhanced-NR.jpg",
+      "originalSize": "4030 x 3022",
+      "processedSize": "2560 x 1920",
+      "thumbnailSize": "1024 x 768",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "146.8mm",
+        "FocalLengthIn35mmFilm": "400mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ExposureBiasValue": "0.0",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:11:12 10:51:46",
+        "DateTimeDigitized": "2023:11:12 10:51:46",
+        "DateTime": "2026:07:11 11:16:24"
+      }
+    },
+    {
+      "id": "squadron-air-development-and-test-wing-dsc01252-enhanced-nr-946b95e3",
+      "tagScope": "squadron",
+      "aircraftId": "",
+      "aircraftType": "",
+      "aircraftFamily": "",
+      "squadronId": "japan-air-development-and-test-wing",
+      "squadronName": "Air Development and Test Wing",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2023",
+      "date": "2023-11-12",
+      "sortDate": "2023-11-12",
+      "locationName": "Gifu Air Base",
+      "pinId": "gifu-air-base",
+      "sourceRef": {
+        "scope": "squadron",
+        "entryPath": "squadrons/air-development-and-test-wing/entry.yaml",
+        "index": 10
+      },
+      "airshow": "Gifu Air Show 2023",
+      "livery": "",
+      "title": "",
+      "caption": "Mixed ADTW formation during Gifu Air Show",
+      "image": "assets/generated/photos/squadron-air-development-and-test-wing-dsc01252-enhanced-nr-946b95e3.jpg",
+      "thumbnail": "assets/generated/thumbs/squadron-air-development-and-test-wing-dsc01252-enhanced-nr-946b95e3.jpg",
+      "source": "raw_assets/DSC01252-Enhanced-NR.jpg",
+      "originalSize": "4573 x 3430",
+      "processedSize": "2560 x 1920",
+      "thumbnailSize": "1024 x 768",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "97.5mm",
+        "FocalLengthIn35mmFilm": "266mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ExposureBiasValue": "0.0",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:11:12 10:51:54",
+        "DateTimeDigitized": "2023:11:12 10:51:54",
+        "DateTime": "2026:07:11 11:16:28"
+      }
+    },
+    {
+      "id": "squadron-air-development-and-test-wing-dsc01265-enhanced-nr-f0036f36",
+      "tagScope": "squadron",
+      "aircraftId": "",
+      "aircraftType": "",
+      "aircraftFamily": "",
+      "squadronId": "japan-air-development-and-test-wing",
+      "squadronName": "Air Development and Test Wing",
+      "unitType": "squadron",
+      "unitLabel": "Squadron",
+      "country": "Japan",
+      "year": "2023",
+      "date": "2023-11-12",
+      "sortDate": "2023-11-12",
+      "locationName": "Gifu Air Base",
+      "pinId": "gifu-air-base",
+      "sourceRef": {
+        "scope": "squadron",
+        "entryPath": "squadrons/air-development-and-test-wing/entry.yaml",
+        "index": 11
+      },
+      "airshow": "Gifu Air Show 2023",
+      "livery": "",
+      "title": "",
+      "caption": "Mixed ADTW formation during Gifu Air Show",
+      "image": "assets/generated/photos/squadron-air-development-and-test-wing-dsc01265-enhanced-nr-f0036f36.jpg",
+      "thumbnail": "assets/generated/thumbs/squadron-air-development-and-test-wing-dsc01265-enhanced-nr-f0036f36.jpg",
+      "source": "raw_assets/DSC01265-Enhanced-NR.jpg",
+      "originalSize": "4393 x 3295",
+      "processedSize": "2560 x 1920",
+      "thumbnailSize": "1024 x 768",
+      "exif": {
+        "Make": "SONY",
+        "Model": "DSC-RX10M4",
+        "LensModel": "24-600mm F2.4-4.0",
+        "FocalLength": "87.1mm",
+        "FocalLengthIn35mmFilm": "238mm",
+        "FNumber": "f/5.6",
+        "ExposureTime": "1/1000s",
+        "ExposureBiasValue": "0.0",
+        "ISO": "100",
+        "DateTimeOriginal": "2023:11:12 10:51:57",
+        "DateTimeDigitized": "2023:11:12 10:51:57",
+        "DateTime": "2026:07:11 11:16:30"
       }
     },
     {

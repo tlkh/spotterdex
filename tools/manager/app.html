@@ -184,7 +184,7 @@
           <div class="form-grid">
             <div class="field wide">
               <label><input id="bulkExcludeAiCaptions" type="checkbox" checked> Exclude captions already assisted by AI</label>
-              <div class="subtle">Only selected source images linked to an existing caption are eligible. Suggestions run one at a time with a 0.5 second pause between images.</div>
+              <div class="subtle">All existing source images linked to a human-written caption are populated automatically. Suggestions run one at a time with a 0.5 second pause between images.</div>
             </div>
           </div>
           <div class="bulk-caption-list" id="bulkCaptionList"></div>
@@ -288,9 +288,20 @@
                   <option value="squadron">Squadron</option>
                 </select>
               </div>
-              <div class="field">
+              <div class="field" data-entry-scope-field="aircraft">
                 <label for="newAircraftType">Aircraft Type (Aircraft only)</label>
                 <input id="newAircraftType" type="text" placeholder="Lockheed C-130R">
+              </div>
+              <div class="field" data-entry-scope-field="aircraft">
+                <label for="newAircraftFamily">Aircraft Family</label>
+                <select id="newAircraftFamily">
+                  <option value="">Select a family</option>
+                  <option value="fighter">Fighter</option>
+                  <option value="helicopter">Helicopter</option>
+                  <option value="light">Light</option>
+                  <option value="medium">Medium</option>
+                  <option value="heavy">Heavy</option>
+                </select>
               </div>
               <div class="field">
                 <label for="newSquadronName">Unit Name</label>
@@ -306,6 +317,10 @@
                   <option value="squadron">Squadron</option>
                   <option value="organisation">Organisation</option>
                 </select>
+              </div>
+              <div class="field wide">
+                <label for="newSquadronLogo">Squadron Logo (optional)</label>
+                <input id="newSquadronLogo" type="text" placeholder="jasdf_adtw.png">
               </div>
               <button class="btn primary" id="createEntryBtn" type="button">+ Entry</button>
             </div>
@@ -413,6 +428,20 @@
     </main>
   </div>
   <div class="toast" id="toast"></div>
+  <dialog class="asset-preview-modal" id="assetPreviewModal" aria-labelledby="assetPreviewTitle">
+    <div class="asset-preview-dialog">
+      <div class="bar">
+        <div>
+          <h2 class="panel-title" id="assetPreviewTitle">Raw Asset Preview</h2>
+          <div class="subtle" id="assetPreviewMeta"></div>
+        </div>
+        <button class="btn ghost" id="closeAssetPreviewBtn" type="button">Close</button>
+      </div>
+      <div class="asset-preview-frame">
+        <img id="assetPreviewImage" alt="">
+      </div>
+    </div>
+  </dialog>
 
   <script src="app.js" defer></script>
 </body>

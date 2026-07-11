@@ -17,6 +17,11 @@
   const MAP_PANEL_GAP = 10;
   const MAP_TRAFFIC_FAMILY_ROTATION_MS = 24000;
   const MAP_PANEL_COACH_STORAGE_KEY = "spotterdex-map-panel-coach-dismissed";
+  const MOBILE_SESSION_KEY_PREFIX = "spotterdex-mobile-session-v1:";
+  const INSTALL_DISMISSED_STORAGE_KEY = "spotterdex-install-dismissed-v1";
+  const SHEET_DISMISS_DISTANCE = 140;
+  const SHEET_SNAP_DISTANCE = 52;
+  const SHEET_DISMISS_VELOCITY = 0.78;
   const DEFAULT_SHARE_IMAGE_ALT = "Aircraft formation over Gifu Air Base in Japan";
   const FOCAL_DISTRIBUTION_FIRST_CENTER = 50;
   const FOCAL_DISTRIBUTION_BIN_WIDTH = 50;
@@ -60,6 +65,7 @@
     dexFamilyFilter: "",
     dexVisibleCount: MOBILE_ARCHIVE_PAGE_SIZE,
     squadronVisibleCount: MOBILE_ARCHIVE_PAGE_SIZE,
+    airshowVisibleCount: MOBILE_ARCHIVE_PAGE_SIZE,
     squadronQuery: "",
     squadronCountryFilter: "",
     statsSection: "summary",
@@ -85,6 +91,9 @@
     mapZoomInProgress: false,
     mapResizeObserver: null,
     mapImageObserver: null,
+    archiveLoadObserver: null,
+    archiveLoadFallbackHandler: null,
+    archiveLoadPending: false,
     mapRefreshHandle: null,
     mapRefreshTimer: null,
     mapCalloutRefreshHandle: null,
@@ -107,9 +116,16 @@
     viewerDragOrigin: null,
     viewerPinchStart: null,
     viewerSwipeStart: null,
+    viewerInfoSnap: "expanded",
     viewerHistoryPushed: false,
     viewerReturnFocus: null,
     mobileMapPanel: null,
+    mapSheetSnap: "compact",
+    sheetDrag: null,
+    installPromptEvent: null,
+    connectivityOffline: false,
+    sessionRestore: null,
+    toastTimer: null,
     mapControlPanelOpen: true,
     renderedViews: new Set(),
     fullDataPromise: null,
@@ -123,17 +139,25 @@
 
   async function init() {
     ensurePhotoViewer();
+    ensureMobileAppShell();
     cacheElements();
+    state.sessionRestore = readPageSessionState();
+    restoreSessionFilters(state.sessionRestore);
     setupEvents();
 
     state.data = prepareData(await loadData());
     chooseInitialSelections();
+    restoreSessionSelections(state.sessionRestore);
     renderAll();
     const routed = applyDeepLinkFromHash({ initial: true });
     if (!routed) {
       setActiveTab(currentPageViewId(), { updateHash: false });
     }
     updateShareMetadata();
+    updateMobileAppChrome();
+    updateConnectivityUi({ announce: false });
+    restoreSessionScroll(state.sessionRestore);
+    registerServiceWorker();
   }
 
   function currentPageViewId() {
@@ -191,7 +215,7 @@
         </div>
         <aside class="viewer-info" id="viewerInfo">
           <div class="viewer-info-sheet-bar">
-            <span class="viewer-info-sheet-handle" aria-hidden="true"></span>
+            <button class="viewer-info-sheet-handle" type="button" data-sheet-handle="viewer" aria-label="Collapse photo information" aria-expanded="true"></button>
             <button class="viewer-info-close" type="button" id="viewerInfoCloseButton" aria-label="Close photo information">Close</button>
           </div>
           <p class="eyebrow" id="viewerKicker">Photo</p>
@@ -201,6 +225,47 @@
         </aside>
       </div>
     `);
+  }
+
+  function ensureMobileAppShell() {
+    if (document.getElementById("mobileTabBar")) {
+      return;
+    }
+    const header = document.querySelector(".site-header");
+    header?.insertAdjacentHTML("beforeend", `
+      <div class="mobile-context-bar" id="mobileContextBar" hidden>
+        <button class="mobile-context-back" id="mobileContextBack" type="button" aria-label="Back to collection">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+        </button>
+        <strong id="mobileContextTitle">SpotterDex</strong>
+      </div>
+      <span class="mobile-connectivity" id="mobileConnectivity" role="status" hidden>Offline</span>
+    `);
+    document.body.insertAdjacentHTML("beforeend", `
+      <nav class="mobile-tab-bar" id="mobileTabBar" aria-label="Primary navigation">
+        ${mobileTabLink("mapView", "index.html", "Map", '<path d="M4 6.5 9 4l6 2.5L20 4v13.5L15 20l-6-2.5L4 20Z"></path><path d="M9 4v13.5M15 6.5V20"></path>')}
+        ${mobileTabLink("dexView", "aircraft-dex.html", "Aircraft", '<path d="M3 13.5 10 11V5.5a2 2 0 0 1 4 0V11l7 2.5v2l-7-.8V19l2 1v1l-4-1-4 1v-1l2-1v-4.3l-7 .8Z"></path>')}
+        ${mobileTabLink("squadronsView", "squadrons.html", "Squadrons", '<circle cx="12" cy="10" r="8"></circle><path class="squadron-patch-compass" d="M12 3v4M4.5 10h3M16.5 10h3"></path><path class="squadron-patch-eagle" d="M12 10.5C10 7.8 7.8 6.8 5 7c.8 3 2.8 5 6 6l-1.8 3 2.8-1 2.8 1-1.8-3c3.2-1 5.2-3 6-6-2.8-.2-5 .8-7 3.5Z"></path><path d="M5 17.5 3.5 20 8 21l4-1 4 1 4.5-1-1.5-2.5"></path>')}
+        ${mobileTabLink("airshowsView", "airshows.html", "Airshows", '<path class="airshow-formation-trails" d="M12 9.2v9.2M7 15.2V22M17 15.2V22"></path><g class="airshow-formation-jets"><path transform="translate(12 5) scale(.68)" d="M0-4c.8 0 1.1.8 1.1 2v2l4.2 2v1.5l-4.2-.9v2l1.5 1v.9L0 5.8l-2.6.7v-.9l1.5-1v-2l-4.2.9V2l4.2-2v-2c0-1.2.3-2 1.1-2Z"></path><path transform="translate(7 11) scale(.68)" d="M0-4c.8 0 1.1.8 1.1 2v2l4.2 2v1.5l-4.2-.9v2l1.5 1v.9L0 5.8l-2.6.7v-.9l1.5-1v-2l-4.2.9V2l4.2-2v-2c0-1.2.3-2 1.1-2Z"></path><path transform="translate(17 11) scale(.68)" d="M0-4c.8 0 1.1.8 1.1 2v2l4.2 2v1.5l-4.2-.9v2l1.5 1v.9L0 5.8l-2.6.7v-.9l1.5-1v-2l-4.2.9V2l4.2-2v-2c0-1.2.3-2 1.1-2Z"></path></g>')}
+        ${mobileTabLink("statsView", "stats.html", "Stats", '<path d="M4 20V10h4v10M10 20V4h4v16M16 20v-7h4v7M3 20h18"></path>')}
+      </nav>
+      <div class="mobile-install-prompt" id="mobileInstallPrompt" hidden>
+        <img src="assets/icons/spotterdex-app-icon-192.png" alt="">
+        <span><strong>Install SpotterDex</strong><small>Open it from your home screen.</small></span>
+        <button type="button" id="mobileInstallButton">Install</button>
+        <button class="mobile-install-dismiss" type="button" id="mobileInstallDismiss" aria-label="Dismiss install prompt">×</button>
+      </div>
+      <div class="app-toast" id="appToast" role="status" aria-live="polite" hidden></div>
+    `);
+  }
+
+  function mobileTabLink(viewId, href, label, icon) {
+    return `
+      <a href="${href}" data-mobile-tab-view="${viewId}">
+        <svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg>
+        <span>${label}</span>
+      </a>
+    `;
   }
 
   function cacheElements() {
@@ -219,6 +284,16 @@
     els.twitterImageAlt = document.querySelector('meta[name="twitter:image:alt"]');
     els.canonical = document.querySelector('link[rel="canonical"]');
     els.viewSelect = document.getElementById("viewSelect");
+    els.mobileContextBar = document.getElementById("mobileContextBar");
+    els.mobileContextBack = document.getElementById("mobileContextBack");
+    els.mobileContextTitle = document.getElementById("mobileContextTitle");
+    els.mobileTabBar = document.getElementById("mobileTabBar");
+    els.mobileTabLinks = document.querySelectorAll("[data-mobile-tab-view]");
+    els.mobileConnectivity = document.getElementById("mobileConnectivity");
+    els.mobileInstallPrompt = document.getElementById("mobileInstallPrompt");
+    els.mobileInstallButton = document.getElementById("mobileInstallButton");
+    els.mobileInstallDismiss = document.getElementById("mobileInstallDismiss");
+    els.appToast = document.getElementById("appToast");
     els.aircraftCount = document.getElementById("aircraftCount");
     els.photoCount = document.getElementById("photoCount");
     els.locationCount = document.getElementById("locationCount");
@@ -265,6 +340,7 @@
     els.locationDetail = document.getElementById("locationDetail");
     els.squadronPageCount = document.getElementById("squadronPageCount");
     els.airshowTimeline = document.getElementById("airshowTimeline");
+    els.airshowPagination = document.getElementById("airshowPagination");
     els.airshowPageCount = document.getElementById("airshowPageCount");
     els.airshowHeroMedia = document.getElementById("airshowHeroMedia");
     els.airshowHeroPhotoCount = document.getElementById("airshowHeroPhotoCount");
@@ -512,8 +588,15 @@
       });
     }
     if (els.viewSelect) {
-      els.viewSelect.addEventListener("change", () => window.location.assign(els.viewSelect.value));
+      els.viewSelect.addEventListener("change", () => {
+        saveCurrentSessionState();
+        window.location.assign(els.viewSelect.value);
+      });
     }
+    els.mobileContextBack?.addEventListener("click", handleMobileContextBack);
+    els.mobileTabLinks?.forEach((link) => link.addEventListener("click", handleMobileTabNavigation));
+    els.mobileInstallButton?.addEventListener("click", installSpotterDex);
+    els.mobileInstallDismiss?.addEventListener("click", dismissInstallPrompt);
 
     document.getElementById("fitPinsButton")?.addEventListener("click", fitMapToPins);
     els.mapPanelCoachDismiss?.addEventListener("click", dismissMapPanelCoach);
@@ -556,13 +639,27 @@
 
     document.addEventListener("click", handleDocumentClick);
     document.addEventListener("keydown", handleKeydown);
+    document.addEventListener("pointerdown", handleSheetPointerDown);
+    document.addEventListener("pointermove", handleSheetPointerMove, { passive: false });
+    document.addEventListener("pointerup", handleSheetPointerUp);
+    document.addEventListener("pointercancel", handleSheetPointerUp);
     window.addEventListener("popstate", handleHistoryNavigation);
     window.addEventListener("hashchange", handleHistoryNavigation);
+    window.addEventListener("pagehide", saveCurrentSessionState);
+    window.addEventListener("online", () => updateConnectivityUi({ offline: false }));
+    window.addEventListener("offline", () => updateConnectivityUi({ offline: true }));
+    window.addEventListener("beforeinstallprompt", handleInstallPrompt);
+    window.addEventListener("appinstalled", () => {
+      state.installPromptEvent = null;
+      if (els.mobileInstallPrompt) els.mobileInstallPrompt.hidden = true;
+      showToast("SpotterDex installed");
+    });
     document.addEventListener("fullscreenchange", updateViewerFullscreenButton);
     window.addEventListener("resize", debounce(() => {
       updateMapPanelState();
       updateMapPanelCoach();
       updateViewerInfoState();
+      updateMobileAppChrome();
       refreshMapLayout();
       updateRecentPhotoLimit();
       if (state.renderedViews.has("dexView")) {
@@ -647,6 +744,16 @@
       return;
     }
 
+    const sheetHandle = event.target.closest("[data-sheet-handle]");
+    if (sheetHandle) {
+      if (sheetHandle.dataset.dragged === "true") {
+        delete sheetHandle.dataset.dragged;
+      } else {
+        toggleSheetSnap(sheetHandle.dataset.sheetHandle);
+      }
+      return;
+    }
+
     if (!els.photoViewer.hidden && state.viewerInfoOpen && isMobileViewerLayout() && !event.target.closest("#viewerInfo")) {
       setViewerInfoOpen(false);
     }
@@ -681,18 +788,6 @@
       const target = document.getElementById(countryJump.dataset.squadronCountryJump || "");
       if (target) {
         target.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-      return;
-    }
-
-    const loadMoreButton = event.target.closest("[data-archive-load-more]");
-    if (loadMoreButton) {
-      if (loadMoreButton.dataset.archiveLoadMore === "aircraft") {
-        state.dexVisibleCount += MOBILE_ARCHIVE_PAGE_SIZE;
-        renderDex();
-      } else if (loadMoreButton.dataset.archiveLoadMore === "squadrons") {
-        state.squadronVisibleCount += MOBILE_ARCHIVE_PAGE_SIZE;
-        renderSquadronsPage();
       }
       return;
     }
@@ -756,6 +851,14 @@
 
     const locationGroupButton = event.target.closest("[data-location-group-key]");
     if (locationGroupButton) {
+      const squadronId = locationGroupButton.dataset.locationSquadronId;
+      if (squadronId) {
+        if (!els.photoViewer.hidden) {
+          closeViewer({ updateHash: false, useHistory: false, restoreFocus: false });
+        }
+        selectSquadron(squadronId);
+        return;
+      }
       const singlePhotoId = locationGroupButton.dataset.locationSinglePhotoId;
       if (singlePhotoId) {
         openViewer(singlePhotoId, "map");
@@ -882,10 +985,15 @@
     setMapPanel(state.mobileMapPanel === panel ? null : panel);
   }
 
-  function setMapPanel(panel) {
+  function setMapPanel(panel, options = {}) {
     const nextPanel = panel === "locations" || panel === "results" ? panel : null;
     if (nextPanel) {
       dismissMapPanelCoach();
+      if (options.snap === "compact" || options.snap === "expanded") {
+        state.mapSheetSnap = options.snap;
+      } else if (!state.mobileMapPanel) {
+        state.mapSheetSnap = "compact";
+      }
     }
     state.mobileMapPanel = nextPanel;
     updateMapPanelState();
@@ -941,6 +1049,7 @@
     const activePanel = state.mobileMapPanel;
     els.mapWorkspace.classList.toggle("is-locations-open", activePanel === "locations");
     els.mapWorkspace.classList.toggle("is-results-open", activePanel === "results");
+    els.mapWorkspace.classList.toggle("is-sheet-expanded", activePanel && state.mapSheetSnap === "expanded");
     if (els.mapPanelBackdrop) {
       const isOpen = Boolean(activePanel && isFocusedMobileLayout());
       els.mapPanelBackdrop.setAttribute("aria-hidden", String(!isOpen));
@@ -951,6 +1060,11 @@
       const isExpanded = button.dataset.mapPanelToggle === activePanel;
       button.classList.toggle("is-active", isExpanded);
       button.setAttribute("aria-expanded", String(isExpanded));
+    });
+    els.mapWorkspace.querySelectorAll('[data-sheet-handle="map"]').forEach((handle) => {
+      const expanded = state.mapSheetSnap === "expanded";
+      handle.setAttribute("aria-expanded", String(expanded));
+      handle.setAttribute("aria-label", expanded ? "Collapse map panel" : "Expand map panel");
     });
   }
 
@@ -1011,6 +1125,342 @@
     return window.matchMedia("(max-width: 1040px)").matches;
   }
 
+  function sessionKeyForView(viewId = currentPageViewId()) {
+    return `${MOBILE_SESSION_KEY_PREFIX}${navigationViewFor(viewId)}`;
+  }
+
+  function readPageSessionState(viewId = currentPageViewId()) {
+    try {
+      const value = window.sessionStorage.getItem(sessionKeyForView(viewId));
+      return value ? JSON.parse(value) : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function saveCurrentSessionState() {
+    const pageViewId = currentPageViewId();
+    const snapshot = {
+      version: 1,
+      url: window.location.href,
+      scrollY: Math.max(0, Math.round(window.scrollY)),
+      aircraftQuery: els.aircraftSearch?.value || "",
+      dexFamilyFilter: state.dexFamilyFilter,
+      dexVisibleCount: state.dexVisibleCount,
+      airshowVisibleCount: state.airshowVisibleCount,
+      squadronQuery: els.squadronSearch?.value || state.squadronQuery,
+      squadronCountryFilter: state.squadronCountryFilter,
+      squadronVisibleCount: state.squadronVisibleCount,
+      statsSection: state.statsSection,
+      selectedPinId: state.selectedPinId,
+      selectedAircraftId: state.selectedAircraftId,
+      selectedSquadronId: state.selectedSquadronId,
+      selectedAirshowId: state.selectedAirshowId,
+      mobileMapPanel: state.mobileMapPanel,
+      mapSheetSnap: state.mapSheetSnap
+    };
+    try {
+      window.sessionStorage.setItem(sessionKeyForView(pageViewId), JSON.stringify(snapshot));
+    } catch (error) {
+      // Session restoration is an enhancement; navigation remains usable without storage.
+    }
+  }
+
+  function restoreSessionFilters(snapshot) {
+    if (!snapshot || snapshot.version !== 1) {
+      return;
+    }
+    state.dexFamilyFilter = normalizeAircraftFamily(snapshot.dexFamilyFilter) || "";
+    state.dexVisibleCount = Math.max(MOBILE_ARCHIVE_PAGE_SIZE, Number(snapshot.dexVisibleCount) || MOBILE_ARCHIVE_PAGE_SIZE);
+    state.airshowVisibleCount = Math.max(MOBILE_ARCHIVE_PAGE_SIZE, Number(snapshot.airshowVisibleCount) || MOBILE_ARCHIVE_PAGE_SIZE);
+    state.squadronQuery = String(snapshot.squadronQuery || "");
+    state.squadronCountryFilter = String(snapshot.squadronCountryFilter || "");
+    state.squadronVisibleCount = Math.max(MOBILE_ARCHIVE_PAGE_SIZE, Number(snapshot.squadronVisibleCount) || MOBILE_ARCHIVE_PAGE_SIZE);
+    state.statsSection = normalizeStatsSection(snapshot.statsSection);
+    if (els.aircraftSearch) els.aircraftSearch.value = String(snapshot.aircraftQuery || "");
+    if (els.squadronSearch) els.squadronSearch.value = state.squadronQuery;
+  }
+
+  function restoreSessionSelections(snapshot) {
+    if (!snapshot || snapshot.version !== 1) {
+      return;
+    }
+    if (snapshot.selectedPinId && state.pinById.has(snapshot.selectedPinId)) state.selectedPinId = snapshot.selectedPinId;
+    if (snapshot.selectedAircraftId && state.aircraftById.has(snapshot.selectedAircraftId)) state.selectedAircraftId = snapshot.selectedAircraftId;
+    if (snapshot.selectedSquadronId) state.selectedSquadronId = snapshot.selectedSquadronId;
+    if (snapshot.selectedAirshowId && state.airshowById.has(snapshot.selectedAirshowId)) state.selectedAirshowId = snapshot.selectedAirshowId;
+    if (snapshot.mapSheetSnap === "expanded" || snapshot.mapSheetSnap === "compact") state.mapSheetSnap = snapshot.mapSheetSnap;
+  }
+
+  function restoreSessionScroll(snapshot) {
+    if (!snapshot || snapshot.version !== 1 || !snapshot.url) {
+      return;
+    }
+    let savedUrl;
+    try {
+      savedUrl = new URL(snapshot.url);
+    } catch (error) {
+      return;
+    }
+    if (savedUrl.origin !== window.location.origin || savedUrl.pathname !== window.location.pathname || savedUrl.hash !== window.location.hash) {
+      return;
+    }
+    if (currentPageViewId() === "mapView" && (snapshot.mobileMapPanel === "locations" || snapshot.mobileMapPanel === "results")) {
+      setMapPanel(snapshot.mobileMapPanel, { snap: snapshot.mapSheetSnap });
+    }
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => window.scrollTo({ top: Number(snapshot.scrollY) || 0, behavior: "auto" })));
+  }
+
+  function handleMobileTabNavigation(event) {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button) {
+      return;
+    }
+    const link = event.currentTarget;
+    const targetView = link.dataset.mobileTabView;
+    if (!targetView) {
+      return;
+    }
+    event.preventDefault();
+    const activeView = document.querySelector("[data-view].is-active")?.id || currentPageViewId();
+    if (navigationViewFor(activeView) === targetView) {
+      if (activeView !== targetView) {
+        handleMobileContextBack();
+      } else {
+        window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      }
+      return;
+    }
+    saveCurrentSessionState();
+    const saved = readPageSessionState(targetView);
+    let destination = new URL(link.getAttribute("href"), document.baseURI);
+    if (saved?.url) {
+      try {
+        const savedUrl = new URL(saved.url);
+        const expectedPath = new URL(pageRouteForView(targetView), document.baseURI).pathname;
+        if (savedUrl.origin === window.location.origin && savedUrl.pathname === expectedPath) {
+          destination = savedUrl;
+        }
+      } catch (error) {
+        // Use the tab's root URL when saved session data is malformed.
+      }
+    }
+    window.location.assign(destination.href);
+  }
+
+  function handleMobileContextBack() {
+    const activeView = document.querySelector("[data-view].is-active")?.id;
+    const collectionView = navigationViewFor(activeView);
+    if (activeView === collectionView) {
+      return;
+    }
+    openDirectoryView(collectionView);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }
+
+  function updateMobileAppChrome() {
+    const activeView = document.querySelector("[data-view].is-active")?.id || currentPageViewId();
+    const navigationView = navigationViewFor(activeView);
+    const detailTitles = {
+      aircraftDetailView: state.aircraftById.get(state.selectedAircraftId)?.typeName,
+      squadronDetailView: collectSquadrons().find((item) => item.id === state.selectedSquadronId)?.name,
+      airshowDetailView: state.airshowById.get(state.selectedAirshowId)?.name,
+      locationDetailView: state.pinById.get(state.selectedPinId)?.name
+    };
+    const isDetail = activeView !== navigationView && Boolean(detailTitles[activeView]);
+    els.siteHeader?.classList.toggle("is-contextual", isDetail);
+    if (els.mobileContextBar) els.mobileContextBar.hidden = !isDetail;
+    if (els.mobileContextTitle) els.mobileContextTitle.textContent = detailTitles[activeView] || "SpotterDex";
+    if (els.mobileContextBack) {
+      const labels = { mapView: "World Map", dexView: "Aircraft Dex", squadronsView: "Squadrons", airshowsView: "Airshows" };
+      els.mobileContextBack.setAttribute("aria-label", `Back to ${labels[navigationView] || "collection"}`);
+    }
+    els.mobileTabLinks?.forEach((link) => {
+      const active = link.dataset.mobileTabView === navigationView;
+      link.classList.toggle("is-active", active);
+      if (active) link.setAttribute("aria-current", "page");
+      else link.removeAttribute("aria-current");
+    });
+  }
+
+  function handleInstallPrompt(event) {
+    event.preventDefault();
+    state.installPromptEvent = event;
+    let dismissed = false;
+    try {
+      dismissed = window.localStorage.getItem(INSTALL_DISMISSED_STORAGE_KEY) === "1";
+    } catch (error) {
+      dismissed = false;
+    }
+    if (!dismissed && els.mobileInstallPrompt) {
+      els.mobileInstallPrompt.hidden = false;
+    }
+  }
+
+  async function installSpotterDex() {
+    const promptEvent = state.installPromptEvent;
+    if (!promptEvent) {
+      return;
+    }
+    await promptEvent.prompt();
+    const choice = await promptEvent.userChoice;
+    state.installPromptEvent = null;
+    if (els.mobileInstallPrompt) els.mobileInstallPrompt.hidden = true;
+    showToast(choice.outcome === "accepted" ? "Installing SpotterDex" : "Install cancelled");
+  }
+
+  function dismissInstallPrompt() {
+    if (els.mobileInstallPrompt) els.mobileInstallPrompt.hidden = true;
+    try {
+      window.localStorage.setItem(INSTALL_DISMISSED_STORAGE_KEY, "1");
+    } catch (error) {
+      // Dismissal remains effective for the current page when storage is unavailable.
+    }
+  }
+
+  function updateConnectivityUi(options = {}) {
+    const offline = typeof options.offline === "boolean" ? options.offline : !navigator.onLine;
+    state.connectivityOffline = offline;
+    document.body.classList.toggle("is-offline", offline);
+    if (els.mobileConnectivity) {
+      els.mobileConnectivity.hidden = !offline;
+    }
+    if (els.mapFallback) {
+      if (offline) {
+        els.mapFallback.hidden = false;
+      } else if (state.map) {
+        els.mapFallback.hidden = true;
+        refreshMapLayout();
+      }
+    }
+    if (options.announce !== false) {
+      showToast(offline ? "Offline · cached catalog available" : "Back online");
+    }
+  }
+
+  function showToast(message) {
+    if (!els.appToast || !message) {
+      return;
+    }
+    window.clearTimeout(state.toastTimer);
+    els.appToast.textContent = message;
+    els.appToast.hidden = false;
+    state.toastTimer = window.setTimeout(() => {
+      els.appToast.hidden = true;
+    }, 2400);
+  }
+
+  function registerServiceWorker() {
+    if (!("serviceWorker" in navigator) || (window.location.protocol !== "https:" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1")) {
+      return;
+    }
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register(new URL("service-worker.js", document.baseURI), {
+        scope: new URL("./", document.baseURI).pathname
+      }).catch((error) => console.warn("SpotterDex service worker registration failed", error));
+    }, { once: true });
+  }
+
+  function toggleSheetSnap(kind) {
+    if (kind === "map" && state.mobileMapPanel) {
+      state.mapSheetSnap = state.mapSheetSnap === "expanded" ? "compact" : "expanded";
+      updateMapPanelState();
+      return;
+    }
+    if (kind === "viewer" && state.viewerInfoOpen) {
+      state.viewerInfoSnap = state.viewerInfoSnap === "expanded" ? "compact" : "expanded";
+      updateViewerInfoState();
+    }
+  }
+
+  function handleSheetPointerDown(event) {
+    const handle = event.target instanceof Element ? event.target.closest("[data-sheet-handle]") : null;
+    if (!handle || event.button) {
+      return;
+    }
+    const kind = handle.dataset.sheetHandle;
+    if ((kind === "map" && !isFocusedMobileLayout()) || (kind === "viewer" && !isMobileViewerLayout())) {
+      return;
+    }
+    const landscapeViewer = kind === "viewer" && window.matchMedia("(orientation: landscape)").matches;
+    const panel = kind === "map"
+      ? state.mobileMapPanel === "locations" ? els.mapControlPanel : state.mobileMapPanel === "results" ? els.mapResults : null
+      : state.viewerInfoOpen ? els.viewerInfo : null;
+    if (!panel) {
+      return;
+    }
+    state.sheetDrag = {
+      kind,
+      handle,
+      panel,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startedAt: performance.now(),
+      originalSnap: kind === "map" ? state.mapSheetSnap : state.viewerInfoSnap,
+      landscapeViewer,
+      moved: false
+    };
+    handle.setPointerCapture?.(event.pointerId);
+    panel.classList.add("is-sheet-dragging");
+  }
+
+  function handleSheetPointerMove(event) {
+    const drag = state.sheetDrag;
+    if (!drag || drag.pointerId !== event.pointerId) {
+      return;
+    }
+    const deltaX = event.clientX - drag.startX;
+    const deltaY = event.clientY - drag.startY;
+    const distance = drag.landscapeViewer ? deltaX : deltaY;
+    if (Math.abs(distance) > 7) {
+      drag.moved = true;
+      drag.handle.dataset.dragged = "true";
+    }
+    if (!drag.moved) {
+      return;
+    }
+    event.preventDefault();
+    if (drag.landscapeViewer) {
+      drag.panel.style.setProperty("--sheet-drag-x", `${Math.max(0, deltaX)}px`);
+    } else {
+      const height = drag.panel.getBoundingClientRect().height || window.innerHeight;
+      drag.panel.style.setProperty("--sheet-drag-y", `${Math.max(-height * 0.5, Math.min(height, deltaY))}px`);
+    }
+  }
+
+  function handleSheetPointerUp(event) {
+    const drag = state.sheetDrag;
+    if (!drag || drag.pointerId !== event.pointerId) {
+      return;
+    }
+    const delta = drag.landscapeViewer ? event.clientX - drag.startX : event.clientY - drag.startY;
+    const duration = Math.max(1, performance.now() - drag.startedAt);
+    const velocity = delta / duration;
+    drag.panel.classList.remove("is-sheet-dragging");
+    drag.panel.style.removeProperty("--sheet-drag-x");
+    drag.panel.style.removeProperty("--sheet-drag-y");
+    drag.handle.releasePointerCapture?.(event.pointerId);
+    state.sheetDrag = null;
+    if (!drag.moved) {
+      return;
+    }
+
+    const dismiss = delta > SHEET_DISMISS_DISTANCE || velocity > SHEET_DISMISS_VELOCITY;
+    if (drag.kind === "map") {
+      if (dismiss) {
+        setMapPanel(null);
+      } else {
+        state.mapSheetSnap = delta < -SHEET_SNAP_DISTANCE ? "expanded" : delta > SHEET_SNAP_DISTANCE ? "compact" : drag.originalSnap;
+        updateMapPanelState();
+      }
+    } else if (dismiss) {
+      setViewerInfoOpen(false);
+    } else {
+      state.viewerInfoSnap = delta < -SHEET_SNAP_DISTANCE ? "expanded" : delta > SHEET_SNAP_DISTANCE ? "compact" : drag.originalSnap;
+      updateViewerInfoState();
+    }
+  }
+
   function setActiveTab(viewId, options = {}) {
     if (!document.getElementById(viewId)) {
       navigateToViewPage(viewId);
@@ -1033,6 +1483,7 @@
       updateStatsSectionNav();
     }
     updateMapPanelCoach();
+    updateMobileAppChrome();
 
     if (options.updateHash !== false && !state.isApplyingHash) {
       updateDeepLinkForView(viewId);
@@ -1179,6 +1630,7 @@
 
   async function copyFieldGuideLink(button) {
     await copyText(shareUrlForCurrentState());
+    showToast("Field guide link copied");
     const originalLabel = button.dataset.copyFieldGuide || "Copy link";
     button.textContent = "Copied";
     window.setTimeout(() => {
@@ -1415,7 +1867,8 @@
       inertia: true
     });
 
-    window.L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    let consecutiveTileErrors = 0;
+    const tileLayer = window.L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
       keepBuffer: mobileLayout ? 1 : 2,
       updateWhenIdle: mobileLayout,
@@ -1423,6 +1876,18 @@
       updateInterval: mobileLayout ? 180 : 200,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(state.map);
+    tileLayer.on("tileerror", () => {
+      consecutiveTileErrors += 1;
+      if (consecutiveTileErrors >= 3 && els.mapFallback) {
+        els.mapFallback.hidden = false;
+      }
+    });
+    tileLayer.on("tileload", () => {
+      consecutiveTileErrors = 0;
+      if (!state.connectivityOffline && els.mapFallback) {
+        els.mapFallback.hidden = true;
+      }
+    });
 
     const leaderPane = state.map.createPane("spotterdexLeaderPane");
     leaderPane.style.zIndex = "590";
@@ -2713,9 +3178,10 @@
   }
 
   function renderMapSheetBar(title, panelLabel) {
+    const expanded = state.mapSheetSnap === "expanded";
     return `
       <div class="map-sheet-bar">
-        <span class="map-sheet-handle" aria-hidden="true"></span>
+        <button class="map-sheet-handle" type="button" data-sheet-handle="map" aria-label="${expanded ? "Collapse" : "Expand"} ${escapeAttr(panelLabel)} panel" aria-expanded="${expanded}"></button>
         <strong>${escapeHtml(title)}</strong>
         <button class="map-sheet-close" type="button" data-map-panel-close aria-label="Close ${escapeAttr(panelLabel)} panel">Close</button>
       </div>
@@ -2798,7 +3264,7 @@
   }
 
   function renderMapLocationPanel(profile) {
-    const { pin, heroPhoto, heroAsset, families, units, photos } = profile;
+    const { pin, heroPhoto, heroAsset, units, photos } = profile;
     const heroImage = heroPhoto
       ? heroPhoto.image || heroPhoto.thumbnail
       : heroAsset
@@ -2821,7 +3287,7 @@
           <span class="location-hero-overlay">
             <span class="eyebrow">${escapeHtml(locationKicker(pin))}</span>
             <strong>${escapeHtml(pin.name)}</strong>
-            ${renderLocationIdentityMarks(families, units)}
+            ${renderLocationIdentityMarks([], units, { includeFamilies: false })}
           </span>
         </div>
         <button class="location-page-button" type="button" data-location-page-id="${escapeAttr(pin.id)}">
@@ -2840,12 +3306,13 @@
     return [pin.icao, pin.country].filter(Boolean).join(" - ") || "Location";
   }
 
-  function renderLocationIdentityMarks(families, units) {
-    const familyMarks = (families || []).slice(0, 3).map((family) => `
+  function renderLocationIdentityMarks(families, units, options = {}) {
+    const includeFamilies = options.includeFamilies !== false;
+    const familyMarks = includeFamilies ? (families || []).slice(0, 3).map((family) => `
       <span class="location-identity-mark is-family" title="${escapeAttr(family.label)}">
         <img src="${escapeAttr(family.lightModeIcon || family.darkIcon || family.icon)}" alt="${escapeAttr(family.label)}">
       </span>
-    `);
+    `) : [];
     const unitMarks = (units || []).filter((unit) => unit.logo).slice(0, 3).map((unit) => `
       <span class="location-identity-mark is-unit" title="${escapeAttr(`${unit.name} logo`)}">
         <img src="${escapeAttr(unit.logo)}" loading="lazy" decoding="async" fetchpriority="low" alt="${escapeAttr(`${unit.name} logo`)}">
@@ -2854,7 +3321,20 @@
     if (!familyMarks.length && !unitMarks.length) {
       return "";
     }
-    return `<span class="location-identity-marks" aria-label="Aircraft families and squadron logos">${familyMarks.join("")}${unitMarks.join("")}</span>`;
+    const unitTypes = new Set((units || []).map((unit) => normalizeUnitType(unit.unitType)));
+    const hasSquadrons = unitTypes.has("squadron");
+    const hasOrganisations = unitTypes.has("organisation");
+    const unitLabel = hasSquadrons && hasOrganisations
+      ? "Squadron and organisation logos"
+      : hasOrganisations
+        ? "Organisation logos"
+        : "Squadron logos";
+    const label = familyMarks.length && unitMarks.length
+      ? "Aircraft families and squadron logos"
+      : familyMarks.length
+        ? "Aircraft family icons"
+        : unitLabel;
+    return `<span class="location-identity-marks" aria-label="${escapeAttr(label)}">${familyMarks.join("")}${unitMarks.join("")}</span>`;
   }
 
   function locationPhotoGroups(pin, photos, kind) {
@@ -2884,7 +3364,13 @@
       const unitType = squadron?.unitType || photo.unitType;
       addPhoto(
         `unit-${normalizeKey(`${photo.country || pin.country || ""}-${title}-${unitType || ""}`)}`,
-        { title, eyebrow: squadron?.unitLabel || photo.unitLabel || unitDisplayLabel(unitType), logo: squadron?.logo || "" },
+        {
+          title,
+          eyebrow: squadron?.unitLabel || photo.unitLabel || unitDisplayLabel(unitType),
+          logo: squadron?.logo || "",
+          unitType: normalizeUnitType(unitType),
+          squadronId: squadron ? squadronPageIdForUnit(squadron) : squadronPageIdForPhoto(photo)
+        },
         photo
       );
     });
@@ -2905,7 +3391,7 @@
     const labels = {
       location: "Location frames",
       type: "Aircraft type",
-      squadron: "Squadrons and organisations"
+      squadron: locationUnitGroupLabel(groups)
     };
     return `
       <section class="location-expandable-section">
@@ -2920,6 +3406,16 @@
         </div>
       </section>
     `;
+  }
+
+  function locationUnitGroupLabel(groups) {
+    const unitTypes = new Set(groups.map((group) => normalizeUnitType(group.unitType)));
+    const hasSquadrons = unitTypes.has("squadron");
+    const hasOrganisations = unitTypes.has("organisation");
+    if (hasSquadrons && hasOrganisations) {
+      return "Squadrons and organisations";
+    }
+    return hasOrganisations ? "Organisations" : "Squadrons";
   }
 
   function renderLocationAircraftTypeGroup(pin, group) {
@@ -2972,6 +3468,7 @@
     const image = latest?.thumbnail || latest?.image || "";
     const remaining = group.photos.slice(1);
     const singlePhotoId = group.photos.length === 1 && latest?.id ? latest.id : "";
+    const squadronId = kind === "squadron" ? group.squadronId : "";
     const logo = group.logo
       ? `<img class="location-group-logo" data-deferred-src="${escapeAttr(group.logo)}" alt="${escapeAttr(`${group.title} logo`)}">`
       : "";
@@ -2981,7 +3478,9 @@
           class="location-group-toggle"
           type="button"
           data-location-group-key="${escapeAttr(groupKey)}"
-          ${singlePhotoId
+          ${squadronId
+            ? `data-location-squadron-id="${escapeAttr(squadronId)}" aria-label="Open ${escapeAttr(`${group.title} squadron page`)}"`
+            : singlePhotoId
             ? `data-location-single-photo-id="${escapeAttr(singlePhotoId)}" aria-label="Open ${escapeAttr(`${group.title} photo`)}"`
             : `aria-expanded="${isExpanded ? "true" : "false"}" aria-controls="location-group-${escapeAttr(slugify(groupKey))}"`}
         >
@@ -2994,10 +3493,10 @@
             <span>${escapeHtml(displayPhotoDate(latest))} · ${group.photos.length} photo${group.photos.length === 1 ? "" : "s"}</span>
           </span>
           ${logo}
-          <span class="location-group-chevron" aria-hidden="true">${singlePhotoId ? "↗" : (isExpanded ? "−" : "+")}</span>
+          <span class="location-group-chevron" aria-hidden="true">${squadronId || singlePhotoId ? "↗" : (isExpanded ? "−" : "+")}</span>
         </button>
         ${
-          isExpanded
+          isExpanded && !squadronId
             ? `<div class="location-group-archive" id="location-group-${escapeAttr(slugify(groupKey))}">
                 ${remaining.length
                   ? `<div class="photo-grid location-group-photo-grid">${remaining.map((photo) => renderPhotoCard(photo, "map")).join("")}</div>`
@@ -3386,9 +3885,12 @@
           return !query || normalizeText(`${squadron.name} ${squadron.country} ${squadron.aircraftTypes.join(" ")}`).includes(query);
         })
       : squadrons;
-    const visibleSquadrons = isMobile
-      ? filteredSquadrons.slice(0, state.squadronVisibleCount)
+    const mobileOrderedSquadrons = isMobile
+      ? groupSquadronsByCountry(filteredSquadrons).flatMap((group) => group.squadrons)
       : filteredSquadrons;
+    const visibleSquadrons = isMobile
+      ? mobileOrderedSquadrons.slice(0, state.squadronVisibleCount)
+      : mobileOrderedSquadrons;
 
     renderSquadronArchiveHero(squadrons);
     renderSquadronCountryRail(squadrons);
@@ -3452,10 +3954,21 @@
 
     if (!airshows.length) {
       els.airshowTimeline.innerHTML = '<div class="empty-state">Tag photos with an airshow or event name to build this timeline.</div>';
+      renderArchivePagination(els.airshowPagination, 0, 0, "airshows", "airshow events");
       return;
     }
 
-    els.airshowTimeline.innerHTML = airshows.map(renderAirshowTimelineItem).join("");
+    const visibleAirshows = isFocusedMobileLayout()
+      ? airshows.slice(0, state.airshowVisibleCount)
+      : airshows;
+    els.airshowTimeline.innerHTML = visibleAirshows.map(renderAirshowTimelineItem).join("");
+    renderArchivePagination(
+      els.airshowPagination,
+      visibleAirshows.length,
+      airshows.length,
+      "airshows",
+      "airshow events"
+    );
   }
 
   function renderAirshowArchiveHero(airshows) {
@@ -4642,7 +5155,77 @@
       .join("");
   }
 
+  function loadNextArchivePage(kind) {
+    if (!isFocusedMobileLayout() || state.archiveLoadPending) {
+      return;
+    }
+
+    const scrollY = window.scrollY;
+    state.archiveLoadPending = true;
+    try {
+      if (kind === "aircraft") {
+        state.dexVisibleCount += MOBILE_ARCHIVE_PAGE_SIZE;
+        renderDex();
+      } else if (kind === "squadrons") {
+        state.squadronVisibleCount += MOBILE_ARCHIVE_PAGE_SIZE;
+        renderSquadronsPage();
+      } else if (kind === "airshows") {
+        state.airshowVisibleCount += MOBILE_ARCHIVE_PAGE_SIZE;
+        renderAirshowsPage();
+      }
+    } finally {
+      state.archiveLoadPending = false;
+      window.requestAnimationFrame(() => {
+        window.scrollTo({ top: scrollY, behavior: "auto" });
+      });
+    }
+  }
+
+  function disconnectArchiveLoadObserver() {
+    state.archiveLoadObserver?.disconnect();
+    state.archiveLoadObserver = null;
+    if (state.archiveLoadFallbackHandler) {
+      window.removeEventListener("scroll", state.archiveLoadFallbackHandler);
+      state.archiveLoadFallbackHandler = null;
+    }
+  }
+
+  function observeArchiveLoadSentinel() {
+    disconnectArchiveLoadObserver();
+    if (!isFocusedMobileLayout()) {
+      return;
+    }
+
+    const sentinel = document.querySelector("[data-archive-load-sentinel]");
+    if (!sentinel) {
+      return;
+    }
+
+    const loadKind = sentinel.dataset.archiveLoadSentinel;
+    if ("IntersectionObserver" in window) {
+      state.archiveLoadObserver = new IntersectionObserver((entries, observer) => {
+        if (!entries.some((entry) => entry.isIntersecting)) {
+          return;
+        }
+        observer.disconnect();
+        loadNextArchivePage(loadKind);
+      }, { rootMargin: "0px 0px 640px 0px" });
+      state.archiveLoadObserver.observe(sentinel);
+      return;
+    }
+
+    const loadIfNearViewport = () => {
+      if (sentinel.getBoundingClientRect().top <= window.innerHeight + 640) {
+        loadNextArchivePage(loadKind);
+      }
+    };
+    state.archiveLoadFallbackHandler = loadIfNearViewport;
+    window.addEventListener("scroll", loadIfNearViewport, { passive: true });
+    loadIfNearViewport();
+  }
+
   function renderArchivePagination(container, visibleCount, totalCount, kind, itemLabel) {
+    disconnectArchiveLoadObserver();
     if (!container) {
       return;
     }
@@ -4655,9 +5238,12 @@
     container.innerHTML = `
       <p>Showing ${visibleCount} of ${totalCount} ${escapeHtml(itemLabel)}</p>
       ${hasMore
-        ? `<button class="archive-load-more" type="button" data-archive-load-more="${escapeAttr(kind)}">Show ${Math.min(MOBILE_ARCHIVE_PAGE_SIZE, totalCount - visibleCount)} more</button>`
+        ? `<span class="archive-load-sentinel" data-archive-load-sentinel="${escapeAttr(kind)}" aria-hidden="true"></span>`
         : ""}
     `;
+    if (hasMore) {
+      observeArchiveLoadSentinel();
+    }
   }
 
   function scrollActiveFilterChip(container) {
@@ -5082,7 +5668,7 @@
     }
 
     if (isMobileMapLayout() && options.openPanel !== false) {
-      setMapPanel("results");
+      setMapPanel("results", { snap: "expanded" });
     } else if (!isMobileMapLayout() && options.openDossier !== false) {
       setMapDossierOpen(true);
     }
@@ -5593,6 +6179,7 @@
       state.viewerReturnFocus = document.activeElement;
     }
     els.photoViewer.hidden = false;
+    document.body.classList.add("is-viewer-open");
     document.body.style.overflow = "hidden";
     setViewerBackgroundInert(true);
     updateViewerInfoState();
@@ -5716,6 +6303,7 @@
       && state.viewerHistoryPushed
       && new URLSearchParams(window.location.hash.replace(/^#/, "")).has("photo");
     els.photoViewer.hidden = true;
+    document.body.classList.remove("is-viewer-open");
     document.body.style.overflow = "";
     setViewerBackgroundInert(false);
     setViewerInfoOpen(false);
@@ -5743,7 +6331,7 @@
   }
 
   function setViewerBackgroundInert(isInert) {
-    [els.siteHeader, els.main].forEach((element) => {
+    [els.siteHeader, els.main, els.mobileTabBar].forEach((element) => {
       if (element) {
         element.inert = Boolean(isInert);
       }
@@ -5824,13 +6412,16 @@
     try {
       if (navigator.share) {
         await navigator.share({ title, text, url });
+        showToast("Photo shared");
         return;
       }
       await copyText(url);
       showViewerActionStatus(els.viewerShareButton, "Copied");
+      showToast("Photo link copied");
     } catch (error) {
       if (error?.name !== "AbortError") {
         showViewerActionStatus(els.viewerShareButton, "Failed");
+        showToast("Could not share this photo");
       }
     }
   }
@@ -6185,6 +6776,9 @@
   }
 
   function setViewerInfoOpen(isOpen) {
+    if (isOpen && !state.viewerInfoOpen) {
+      state.viewerInfoSnap = "expanded";
+    }
     state.viewerInfoOpen = Boolean(isOpen);
     updateViewerInfoState();
   }
@@ -6197,10 +6791,17 @@
     const isOpen = Boolean(state.viewerInfoOpen);
     const isMobile = isMobileViewerLayout();
     els.photoViewer.classList.toggle("is-info-open", isOpen);
+    els.photoViewer.classList.toggle("is-info-compact", isOpen && state.viewerInfoSnap === "compact");
     els.viewerInfoButton.classList.toggle("is-active", isOpen);
     els.viewerInfoButton.setAttribute("aria-expanded", String(isOpen));
     els.viewerInfoButton.setAttribute("aria-label", isOpen ? "Hide photo info" : "Show photo info");
     els.viewerInfo.setAttribute("aria-hidden", String(isMobile && !isOpen));
+    const handle = els.viewerInfo.querySelector('[data-sheet-handle="viewer"]');
+    if (handle) {
+      const expanded = state.viewerInfoSnap === "expanded";
+      handle.setAttribute("aria-expanded", String(expanded));
+      handle.setAttribute("aria-label", expanded ? "Collapse photo information" : "Expand photo information");
+    }
   }
 
   function metadataSections(photo) {

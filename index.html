@@ -4,6 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#111416">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SpotterDex">
     <title>SpotterDex</title>
     <meta
       name="description"
@@ -46,6 +50,7 @@
     </noscript>
     <link rel="icon" type="image/png" href="assets/icons/spotterdex-app-icon.png">
     <link rel="apple-touch-icon" href="assets/icons/spotterdex-app-icon.png">
+    <link rel="manifest" href="manifest.webmanifest">
     <link rel="stylesheet" href="styles.css">
     <script src="data/spotterdex-map-data.js" defer></script>
     <script src="script.js" defer></script>
@@ -123,7 +128,7 @@
 
           <aside class="control-panel" id="mapControlPanel" aria-label="Timothy Liu overview">
             <div class="map-sheet-bar">
-              <span class="map-sheet-handle" aria-hidden="true"></span>
+              <button class="map-sheet-handle" type="button" data-sheet-handle="map" aria-label="Expand Locations panel" aria-expanded="false"></button>
               <strong>Locations</strong>
               <button class="map-sheet-close" type="button" data-map-panel-close aria-label="Close Locations panel">Close</button>
             </div>
@@ -165,7 +170,8 @@
             <section class="map-stage" aria-label="World map with aircraft spotting pins">
               <div class="world-map" id="worldMap" role="img" aria-label="OpenStreetMap showing aircraft spotting locations"></div>
               <p class="map-fallback" id="mapFallback" hidden>
-                Map tiles are unavailable. Recent locations can still be selected from the list.
+                <span>Map tiles require a connection. Cached locations remain available.</span>
+                <a href="aircraft-dex.html">Browse Aircraft Dex</a>
               </p>
             </section>
 

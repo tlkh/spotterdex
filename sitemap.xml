@@ -2,27 +2,27 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://tlkh.github.io/spotterdex/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/aircraft-dex.html</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/squadrons.html</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/airshows.html</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/stats.html</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
@@ -1266,6 +1266,46 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://tlkh.github.io/spotterdex/share/photo/squadron-air-development-and-test-wing-dsc01206-enhanced-nr-ca526be8/</loc>
+    <lastmod>2023-11-12</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/photo/squadron-air-development-and-test-wing-dsc01259-enhanced-nr-c2a3e15b/</loc>
+    <lastmod>2023-11-12</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/photo/squadron-air-development-and-test-wing-dsc01250-enhanced-nr-4c45d215/</loc>
+    <lastmod>2023-11-12</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/photo/squadron-air-development-and-test-wing-dsc01248-enhanced-nr-08c100a8/</loc>
+    <lastmod>2023-11-12</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/photo/squadron-air-development-and-test-wing-dsc01240-enhanced-nr-5fdeed7f/</loc>
+    <lastmod>2023-11-12</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/photo/squadron-air-development-and-test-wing-dsc01224-enhanced-nr-27b4d24a/</loc>
+    <lastmod>2023-11-12</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/photo/squadron-air-development-and-test-wing-dsc01252-enhanced-nr-946b95e3/</loc>
+    <lastmod>2023-11-12</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/photo/squadron-air-development-and-test-wing-dsc01265-enhanced-nr-f0036f36/</loc>
+    <lastmod>2023-11-12</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://tlkh.github.io/spotterdex/share/photo/aircraft-mitsubishi-f-2a-air-development-and-test-wing-dsc07562-enhanced-nr-1-3196b5c4/</loc>
     <lastmod>2023-11-11</lastmod>
     <priority>0.6</priority>
@@ -2347,802 +2387,802 @@
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/atr-72-500/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/airbus-a300-600st/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/airbus-a320-200/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/airbus-a330-mrtt/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/bell-uh-1-iroquois/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/boeing-727/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/boeing-737-800/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/boeing-747-400-f/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/boeing-757/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/boeing-777-300er/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/boeing-ah-64d-apache-longbow/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/boeing-ah-64djp-apache/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/boeing-c-17-globemaster-iii/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/boeing-c-40a-clipper/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/boeing-e-3g-sentry/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/boeing-e-4b-nightwatch/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/boeing-e-767/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/boeing-e-7a-wedgetail/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/boeing-f-15sg-strike-eagle/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/boeing-kc-135-stratotanker/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/boeing-kc-46-pegasus/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/boeing-kc-767/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/boeing-kc-767j/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/cessna-uc-35-citation/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/dassault-rafale-b/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/dassault-rafale-c/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/dornier-228/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/dornier-c-146a-wolfhound/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/fokker-50-mpa/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/fokker-50-uta/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/general-dynamics-f-16a/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/grumman-c-2a-greyhound/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/grumman-e-2d-hawkeye/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/gulfstream-g550-caew/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/hawker-u-125a/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/kai-t-50b-golden-eagle/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/kawasaki-c-2/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/kawasaki-ec-2/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/kawasaki-oh-1-ninja/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/kawasaki-p-1/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/kawasaki-rc-2/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/kawasaki-t-4/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/kawasaki-up-1/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/kawasaki-up-3c-orion/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/kawasaki-up-3d/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/learjet-u-36a/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/lockheed-c-130j-super-hercules/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/lockheed-c-130r/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/lockheed-kc-130j-hercules/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/lockheed-martin-f-35a-lightning-ii/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/lockheed-p-3k2-orion/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/mitsubishi-f-15dj-eagle/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/mitsubishi-f-15j-eagle/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/mitsubishi-f-2a/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/mitsubishi-f-2b/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/mitsubishi-uh-60j/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/saab-gripen-c/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/shinmaywa-us-2/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/sikorsky-mh-60r-seahawk/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/hong-kong-international-airport/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/atsugi-air-base/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/chitose-air-base/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/chofu-airport/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/gifu-air-base/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/hamamatsu-air-base/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/haneda-airport/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/iruma-air-base/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/kadena-air-base/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/kisarazu-airfield/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/kitakyushu-airport/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/komaki-air-base/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/komatsu-air-base/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/naha-air-base/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/narita-international-airport/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/okadama-airport/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/tsuiki-air-base/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/yokota-air-base/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/kuala-lumpur-international-airport/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/penang-international-airport/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/changi-airport/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/changi-exhibition-centre/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/seletar-airport/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/singapore/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/don-muang-royal-thai-air-force-base/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/tan-son-nhat-international-airport/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/airshow/singapore-airshow-2026/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/airshow/wan-dek-2026/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/airshow/tsuiki-air-show-2025/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/airshow/chitose-air-show-2024-rehearsal/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/airshow/ndp-2024/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/airshow/singapore-airshow-2024/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/airshow/tsuiki-air-show-2023/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/airshow/gifu-air-show-2023/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/airshow/hamamatsu-air-show-2023/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/airshow/komatsu-air-show-2023/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/airshow/kisarazu-air-show-2023/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/airshow/ndp-2023/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/australia-75-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/australia-no-2-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/australia-no-36-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/france-31st-strategic-air-refueling-and-transport-wing/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/france-escadron-de-chasse-1-4/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/france-escadron-de-chasse-3-30-lorraine/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/india-indian-naval-air-squadrons-inas/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/italy-14-stormo/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/italy-32-stormo/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/italy-46a-brigata-aerea/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/italy-6-stormo/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/italy-8-gruppo/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-1st-attack-helicopter-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-201st-tactical-fighter-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-203rd-tactical-fighter-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-204th-tactical-fighter-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-303rd-tactical-fighter-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-304th-tactical-fighter-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-306th-tactical-fighter-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-402nd-tactical-airlift-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-403rd-tactical-airlift-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-404th-tactical-airlift-tanker-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-405th-air-refueling-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-51st-fleet-air-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-602nd-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-603rd-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-6th-tactical-fighter-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-701st-squadron-special-airlift-group/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-81st-air-group/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-8th-tactical-fighter-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-air-development-squadron-51-vx-51/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-air-development-and-test-wing/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-air-patrol-squadron-1/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-air-patrol-squadron-3/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-air-rescue-squadron-71-ars-71/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-air-rescue-wing/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-air-transport-squadron-61/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-blue-impulse/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-electronic-warfare-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/japan-tactical-fighter-training-group/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/korea-black-eagles/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/new-zealand-no-5-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/singapore-111-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/singapore-112-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/singapore-120-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/singapore-121-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/singapore-142-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/singapore-149-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/thailand-103rd-fighter-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/thailand-701st-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/united-states-1st-airborne-command-control-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/united-states-355th-fighter-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/united-states-356th-fighter-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/united-states-36th-airlift-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/united-states-459th-airlift-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/united-states-961st-airborne-air-control-squadron/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/united-states-fleet-logistics-support-squadron-30-vrc-30/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/united-states-fleet-logistics-support-squadron-40-vrc-40/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/united-states-fleet-logistics-support-squadron-51-vr-51/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/united-states-fleet-logistics-support-squadron-57-vr-57/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/united-states-helicopter-maritime-strike-squadron-51-hsm-51/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/united-states-usaf-special-operations-command/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/united-states-usmc-operational-support-airlift/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-07-11</lastmod>
     <priority>0.7</priority>
   </url>
 </urlset>

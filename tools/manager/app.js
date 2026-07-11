@@ -52,6 +52,10 @@
       return `/api/thumb?path=${encodeURIComponent(path)}${cache}`;
     }
 
+    function rawAssetUrl(path) {
+      return `/api/raw?path=${encodeURIComponent(path)}`;
+    }
+
     function selectedEntry() {
       const value = $("entrySelect").value;
       return entryByTargetKey(value);
@@ -171,6 +175,7 @@
     function renderAll() {
       renderStats();
       renderAssetGrid();
+      renderEntryCreationFields();
       renderEntryOptions();
       renderEditTagTargetOptions();
       renderPinOptions();
@@ -198,9 +203,7 @@
         ["Pins", project.pinCount],
         ["Missing", project.missingPhotoCount],
         ["Fields", (project.missingFieldPhotoCount || 0) + (project.missingEntryFieldCount || 0)],
-        ["<2560px", project.underResolutionAssetCount || 0],
-        ["Exposure", project.exposureIssueAssetCount || 0],
-        ["Colour", project.colourBalanceIssueAssetCount || 0]
+        ["Quality Issue:", project.qualityIssueAssetCount || 0]
       ].map(([label, value]) => `<span class="pill">${label} <strong>${value}</strong></span>`).join("");
     }
 
@@ -254,13 +257,32 @@
           return `<span class="tag warn" title="${escapeHtml(detail)}">${escapeHtml(short)}</span>`;
         }).join("");
         return `
-          <button class="asset-card${selected}" type="button" data-asset="${escapeHtml(asset.path)}" title="${escapeHtml(title)}">
-            <img src="${thumbUrl(asset.path)}" loading="lazy" alt="${escapeHtml(asset.name)}">
-            <div class="asset-name">${escapeHtml(asset.name)}</div>
-            <div class="asset-meta"><span class="asset-size">${escapeHtml(asset.sizeLabel)}</span>${resolutionTag}${qualityTags}${tag}</div>
-          </button>
+          <article class="asset-card${selected}">
+            <button class="asset-select" type="button" data-asset="${escapeHtml(asset.path)}" aria-pressed="${state.selectedAssets.has(asset.path)}" title="${escapeHtml(title)}">
+              <img src="${thumbUrl(asset.path)}" loading="lazy" alt="${escapeHtml(asset.name)}">
+              <div class="asset-name">${escapeHtml(asset.name)}</div>
+              <div class="asset-meta"><span class="asset-size">${escapeHtml(asset.sizeLabel)}</span>${resolutionTag}${qualityTags}${tag}</div>
+            </button>
+            <button class="asset-preview" type="button" data-asset-preview="${escapeHtml(asset.path)}">Open full preview</button>
+          </article>
         `;
       }).join("");
+    }
+
+    function openAssetPreview(path) {
+      const asset = (state.data?.assets || []).find((item) => item.path === path);
+      if (!asset) throw new Error("The selected raw asset is no longer available. Reload and try again.");
+      const modal = $("assetPreviewModal");
+      $("assetPreviewImage").src = rawAssetUrl(asset.path);
+      $("assetPreviewImage").alt = asset.name || asset.path;
+      $("assetPreviewTitle").textContent = asset.name || "Raw Asset Preview";
+      $("assetPreviewMeta").textContent = [
+        asset.path,
+        asset.dimensionsLabel,
+        asset.captureDate ? `Captured ${asset.captureDate}` : "No capture date"
+      ].filter(Boolean).join(" · ");
+      if (typeof modal.showModal === "function") modal.showModal();
+      else modal.setAttribute("open", "");
     }
 
     function qualityMetricChips(asset, minimum) {
@@ -359,7 +381,12 @@
     function renderSelectedStrip() {
       const selected = [...state.selectedAssets];
       $("selectedStrip").innerHTML = selected.length
-        ? selected.map((path) => `<img src="${thumbUrl(path)}" alt="${escapeHtml(path)}" title="${escapeHtml(path)}">`).join("")
+        ? selected.map((path) => `
+          <button class="selected-asset" type="button" data-asset-preview="${escapeHtml(path)}" title="Open full preview: ${escapeHtml(path)}">
+            <img src="${thumbUrl(path)}" alt="${escapeHtml(path)}">
+            <span>${escapeHtml(path)}</span>
+          </button>
+        `).join("")
         : `<div class="empty">No selected assets</div>`;
     }
 
@@ -705,13 +732,13 @@
 
     function selectedBulkCaptionCandidates() {
       const candidates = [];
-      let selectedPhotoCount = 0;
+      let existingPhotoCount = 0;
       let aiExcludedCount = 0;
       let missingCaptionCount = 0;
       for (const entry of state.data?.entries || []) {
         for (const photo of entry.photos || []) {
-          if (photo.invalid || !photo.exists || !photo.sourceAssetPath || !state.selectedAssets.has(photo.sourceAssetPath)) continue;
-          selectedPhotoCount += 1;
+          if (photo.invalid || !photo.exists || !photo.sourceAssetPath) continue;
+          existingPhotoCount += 1;
           if (!String(photo.caption || "").trim()) {
             missingCaptionCount += 1;
             continue;
@@ -727,7 +754,7 @@
           });
         }
       }
-      return {candidates, selectedPhotoCount, aiExcludedCount, missingCaptionCount};
+      return {candidates, existingPhotoCount, aiExcludedCount, missingCaptionCount};
     }
 
     function currentBulkCaptionQueue() {
@@ -752,7 +779,7 @@
       const queue = currentBulkCaptionQueue();
       const results = state.bulkCaptions.results;
       const usingSavedQueue = state.bulkCaptions.queue !== null;
-      const selectedLabel = `${state.selectedAssets.size} selected source image(s), ${selection.candidates.length} eligible human-written caption(s)`;
+      const selectedLabel = `${selection.existingPhotoCount} existing photo entr${selection.existingPhotoCount === 1 ? "y" : "ies"}, ${selection.candidates.length} eligible human-written caption(s)`;
       const exclusions = [
         selection.aiExcludedCount ? `${selection.aiExcludedCount} AI-assisted excluded` : "",
         selection.missingCaptionCount ? `${selection.missingCaptionCount} without a caption` : ""
@@ -768,7 +795,7 @@
       $("runBulkCaptionsBtn").textContent = state.bulkCaptions.running ? "Proposing..." : "Propose Captions";
 
       if (!queue.length) {
-        $("bulkCaptionList").innerHTML = `<div class="empty">Select one or more existing raw photo assets with human-written captions, then return here to create a review queue.</div>`;
+        $("bulkCaptionList").innerHTML = `<div class="empty">No existing photo entries with eligible human-written captions were found.</div>`;
         return;
       }
 
@@ -821,7 +848,7 @@
       if (state.bulkCaptions.running) return;
       const {candidates} = selectedBulkCaptionCandidates();
       if (!candidates.length) {
-        throw new Error("Select existing images with eligible human-written captions first.");
+        throw new Error("No existing photo entries with eligible human-written captions were found.");
       }
       state.bulkCaptions.queue = candidates;
       state.bulkCaptions.results = {};
@@ -911,6 +938,16 @@
         $("entrySelect").value = current;
       }
       renderEntryDetail();
+    }
+
+    function renderEntryCreationFields() {
+      const isAircraft = $("newEntryScope").value === "aircraft";
+      document.querySelectorAll("[data-entry-scope-field]").forEach((field) => {
+        const visible = field.dataset.entryScopeField === "aircraft" ? isAircraft : true;
+        field.hidden = !visible;
+      });
+      $("newAircraftType").required = isAircraft;
+      $("newAircraftFamily").required = isAircraft;
     }
 
     function renderEditTagTargetOptions() {
@@ -1640,13 +1677,18 @@
       const result = await api("/api/create-entry", {
         scope: $("newEntryScope").value,
         aircraftType: $("newAircraftType").value,
+        aircraftFamily: $("newAircraftFamily").value,
         squadronName: $("newSquadronName").value,
         country: $("newCountry").value,
-        unitType: $("newUnitType").value
+        unitType: $("newUnitType").value,
+        squadronLogo: $("newSquadronLogo").value
       });
       toast(result.message);
       $("newAircraftType").value = "";
+      $("newAircraftFamily").value = "";
       $("newSquadronName").value = "";
+      $("newCountry").value = "";
+      $("newSquadronLogo").value = "";
       await loadState(false);
       $("entrySelect").value = result.entryPath;
       setTab("attach");
@@ -2011,6 +2053,7 @@
       $("assetSearch").addEventListener("input", renderAssetGrid);
       $("entrySearch").addEventListener("input", renderEntryOptions);
       $("entryListSearch").addEventListener("input", renderEntryCards);
+      $("newEntryScope").addEventListener("change", renderEntryCreationFields);
       $("missingSearch").addEventListener("input", renderMissingFields);
       $("missingFilter").addEventListener("change", renderMissingFields);
       $("bulkEventSearch").addEventListener("input", renderBulkEvents);
@@ -2060,6 +2103,11 @@
         renderAssetGrid();
       });
       $("assetGrid").addEventListener("click", (event) => {
+        const preview = event.target.closest("[data-asset-preview]");
+        if (preview) {
+          openAssetPreview(preview.dataset.assetPreview);
+          return;
+        }
         const card = event.target.closest("[data-asset]");
         if (!card) return;
         const path = card.dataset.asset;
@@ -2069,6 +2117,14 @@
         renderAssetGrid();
         renderSelectedStrip();
         renderBulkCaptions();
+      });
+      $("selectedStrip").addEventListener("click", (event) => {
+        const preview = event.target.closest("[data-asset-preview]");
+        if (preview) openAssetPreview(preview.dataset.assetPreview);
+      });
+      $("closeAssetPreviewBtn").addEventListener("click", () => $("assetPreviewModal").close());
+      $("assetPreviewModal").addEventListener("click", (event) => {
+        if (event.target === $("assetPreviewModal")) $("assetPreviewModal").close();
       });
       $("qualityShowAcknowledged").addEventListener("change", (event) => {
         state.qualityShowAcknowledged = event.target.checked;

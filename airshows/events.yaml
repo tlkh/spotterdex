@@ -24,7 +24,7 @@ events:
   hero_photo:
     scope: squadron
     entry_path: squadrons/air-development-and-test-wing/entry.yaml
-    index: 1
+    index: 9
 - name: Tsuiki Air Show 2025
   hero_photo:
     scope: aircraft
@@ -39,4 +39,9 @@ events:
   hero_photo:
     scope: aircraft
     entry_path: aircraft/mitsubishi-uh-60j/air-rescue-wing/entry.yaml
+    index: 2
+- name: Singapore Airshow 2024
+  hero_photo:
+    scope: aircraft
+    entry_path: aircraft/kai-t-50b-golden-eagle/black-eagles/entry.yaml
     index: 2

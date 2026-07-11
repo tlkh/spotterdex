@@ -45,6 +45,11 @@ try:
 except ImportError as exc:  # pragma: no cover - user environment guard
     raise SystemExit("Missing Pillow. Install with: python3 -m pip install -r requirements.txt") from exc
 
+try:
+    from prompts import CAPTION_SYSTEM_PROMPT, build_caption_prompt
+except ImportError:  # Support importing this module as tools.spotterdex_manager.
+    from tools.prompts import CAPTION_SYSTEM_PROMPT, build_caption_prompt
+
 
 ROOT = Path(__file__).resolve().parents[1]
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp"}
@@ -961,13 +966,15 @@ class SpotterDexManager:
     def create_entry(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         scope = clean_text(payload.get("scope")) or "aircraft"
         aircraft_type = clean_text(payload.get("aircraftType"))
+        aircraft_family = normalize_aircraft_family(payload.get("aircraftFamily"))
         squadron_name = clean_text(payload.get("squadronName"))
         country = clean_text(payload.get("country"))
         unit_type = clean_text(payload.get("unitType")) or "squadron"
+        squadron_logo = clean_text(payload.get("squadronLogo"))
         if scope not in {"aircraft", "squadron"}:
             raise ValueError("Entry scope is invalid.")
-        if not squadron_name or not country or (scope == "aircraft" and not aircraft_type):
-            raise ValueError("Aircraft entries require an aircraft type, unit name, and country; squadron entries require a unit name and country.")
+        if not squadron_name or not country or (scope == "aircraft" and (not aircraft_type or not aircraft_family)):
+            raise ValueError("Aircraft entries require an aircraft type, aircraft family, unit name, and country; squadron entries require a unit name and country.")
         if unit_type not in {"squadron", "organisation"}:
             unit_type = "squadron"
 
@@ -984,8 +991,11 @@ class SpotterDexManager:
         data: Dict[str, Any] = {"squadron_name": squadron_name, "country": country}
         if scope == "aircraft":
             data["aircraft_type"] = aircraft_type
+            data["aircraft_family"] = aircraft_family
         if unit_type == "organisation":
             data["unit_type"] = "organisation"
+        if squadron_logo:
+            data["squadron_logo"] = squadron_logo
         data["photos"] = []
         write_yaml(entry_path, data)
         return {
@@ -1224,6 +1234,14 @@ class SpotterDexManager:
                     image = image.convert("RGB")
                 image.save(thumb_path, "JPEG", quality=82, optimize=True)
         return thumb_path.read_bytes(), "image/jpeg"
+
+    def make_full_asset(self, asset_rel: str) -> Tuple[bytes, str]:
+        """Return the selected raw asset at its original resolution for preview."""
+        asset_path = self._raw_asset_path(asset_rel)
+        if not asset_path.is_file() or asset_path.suffix.lower() not in IMAGE_EXTENSIONS:
+            raise FileNotFoundError(asset_rel)
+        content_type = mimetypes.guess_type(asset_path.name)[0] or "application/octet-stream"
+        return asset_path.read_bytes(), content_type
 
     def _scan_pins(
         self,
@@ -1859,6 +1877,12 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
                 asset_rel = query.get("path", [""])[0]
                 content, content_type = self.context.manager.make_thumbnail(asset_rel)
                 self._send_bytes(content, content_type, cache_seconds=86400)
+                return
+            if parsed.path == "/api/raw":
+                query = parse_qs(parsed.query)
+                asset_rel = query.get("path", [""])[0]
+                content, content_type = self.context.manager.make_full_asset(asset_rel)
+                self._send_bytes(content, content_type)
                 return
             if parsed.path == "/api/build-stream":
                 query = parse_qs(parsed.query)
@@ -2761,34 +2785,6 @@ def caption_image_data_url(source_path: Path) -> str:
     return f"data:image/jpeg;base64,{encoded}"
 
 
-def build_caption_prompt(
-    *,
-    aircraft_type: str,
-    squadron_name: str,
-    location: str,
-    airshow: str,
-    livery: str,
-    draft_caption: str,
-) -> str:
-    return "\n".join(
-        [
-            "Write one concise, polished English caption for this aviation photograph.",
-            "Use the image and the supplied metadata. Return only the final caption, without a label, "
-            "quotation marks, Markdown, or an explanation.",
-            "The caption must be accurate and specific, but do not invent a registration, date, weather, "
-            "mission, livery detail, manoeuvre, or other fact that is not visibly supported or supplied.",
-            "If an existing caption is supplied, refine it when useful and remove unsupported details.",
-            "",
-            f"Aircraft type: {aircraft_type or 'Not supplied'}",
-            f"Squadron or operator: {squadron_name or 'Not supplied'}",
-            f"Location: {location or 'Not supplied'}",
-            f"Airshow event: {airshow or 'Not supplied'}",
-            f"Livery or paint scheme: {livery or 'Not supplied'}",
-            f"Existing caption: {draft_caption or 'None'}",
-        ]
-    )
-
-
 def nvidia_caption_endpoint() -> str:
     configured = clean_text(
         os.getenv("NVIDIA_CAPTION_ENDPOINT")
@@ -2843,7 +2839,7 @@ def request_nvidia_caption(*, prompt: str, image_url: str) -> str:
         "messages": [
             {
                 "role": "system",
-                "content": "You are a precise aviation photography caption editor.",
+                "content": CAPTION_SYSTEM_PROMPT,
             },
             {
                 "role": "user",

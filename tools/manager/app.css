@@ -272,6 +272,37 @@
       border-radius: 6px;
       background: #d8e1e8;
     }
+    .asset-select {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+      padding: 0;
+      background: transparent;
+      color: inherit;
+      text-align: left;
+    }
+    .asset-select:focus-visible,
+    .asset-preview:focus-visible,
+    .selected-asset:focus-visible {
+      outline: 3px solid rgba(20,123,143,0.28);
+      outline-offset: 2px;
+    }
+    .asset-preview {
+      width: 100%;
+      min-height: 30px;
+      padding: 6px 8px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #f7fafb;
+      color: var(--accent-2);
+      font-size: 11px;
+      font-weight: 800;
+      text-align: center;
+    }
+    .asset-preview:hover {
+      border-color: var(--accent);
+      background: #eef8f9;
+    }
     .asset-name {
       min-height: 34px;
       font-size: 12px;
@@ -383,6 +414,25 @@
       border: 1px solid var(--line);
       background: #d8e1e8;
       flex: 0 0 auto;
+    }
+    .selected-asset {
+      display: grid;
+      gap: 4px;
+      width: 108px;
+      padding: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 10px;
+      text-align: left;
+    }
+    .selected-asset img {
+      width: 108px;
+      height: 64px;
+    }
+    .selected-asset span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .photo-list {
       display: grid;
@@ -700,6 +750,42 @@
     .metric-chip b {
       color: var(--ink);
       font-weight: 750;
+    }
+    .asset-preview-modal {
+      width: min(1100px, calc(100vw - 32px));
+      max-width: none;
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--ink);
+      box-shadow: var(--shadow);
+    }
+    .asset-preview-modal::backdrop {
+      background: rgba(23, 32, 42, 0.72);
+      backdrop-filter: blur(3px);
+    }
+    .asset-preview-dialog {
+      display: grid;
+      gap: 4px;
+      padding: 14px;
+    }
+    .asset-preview-frame {
+      display: grid;
+      place-items: center;
+      min-height: min(70vh, 720px);
+      max-height: calc(100vh - 130px);
+      overflow: auto;
+      border-radius: 8px;
+      background: #17202a;
+    }
+    .asset-preview-frame img {
+      display: block;
+      max-width: 100%;
+      max-height: calc(100vh - 160px);
+      width: auto;
+      height: auto;
+      object-fit: contain;
     }
     .inline-toggle {
       display: inline-flex;
