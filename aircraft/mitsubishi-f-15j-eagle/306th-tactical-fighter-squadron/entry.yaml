@@ -63,5 +63,21 @@ photos:
   pin_id: chitose-air-base
   caption: F-15J from 306 TFS
   airshow: Komatsu Air Show 2023
+- path: DSC02171-Enhanced-NR.jpg
+  location: Komatsu Air Base
+  pin_id: komatsu-air-base
+  caption: F-15J from 306 TFS taking off from Komatsu Air Base
+- path: DSC02153-Enhanced-NR.jpg
+  location: Komatsu Air Base
+  pin_id: komatsu-air-base
+  caption: F-15J from 306 TFS taking off from Komatsu Air Base
+- path: DSC02141-Enhanced-NR.jpg
+  location: Komatsu Air Base
+  pin_id: komatsu-air-base
+  caption: F-15J from 306 TFS taking off from Komatsu Air Base
+- path: DSC04312-Enhanced-NR.jpg
+  location: Komatsu Air Base
+  pin_id: komatsu-air-base
+  caption: F-15J from 306 TFS performing a low pass
 aircraft_family: fighter
 squadron_hero: DSC02379-Enhanced-NR.jpeg

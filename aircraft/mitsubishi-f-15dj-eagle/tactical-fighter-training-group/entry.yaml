@@ -127,6 +127,10 @@ photos:
   pin_id: komatsu-air-base
   caption: JASDF F-15DJ Aggressor (Black livery) at Komatsu Air Base
   airshow: Komatsu Air Show 2023
+- path: DSC02176-Enhanced-NR.jpeg
+  location: Komatsu Air Base
+  pin_id: komatsu-air-base
+  caption: F-15DJ Aggressor taking off from Komatsu Air Base
 aircraft_family: fighter
 squadron_logo: logos/aggressor_logo.png
 squadron_hero: DSC02632-Enhanced-NR.jpeg
