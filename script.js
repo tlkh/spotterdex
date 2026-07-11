@@ -18,6 +18,7 @@
   const MAP_LEADER_MAXIMUM_COMPACT = 140;
   const MAP_PANEL_GAP = 10;
   const MAP_TRAFFIC_FAMILY_ROTATION_MS = 24000;
+  const MOBILE_MAP_TRAFFIC_PIN_LIMIT = 10;
   const MAP_PANEL_COACH_STORAGE_KEY = "spotterdex-map-panel-coach-dismissed";
   const MOBILE_SESSION_KEY_PREFIX = "spotterdex-mobile-session-v1:";
   const INSTALL_DISMISSED_STORAGE_KEY = "spotterdex-install-dismissed-v1";
@@ -35,9 +36,13 @@
     { id: "heavy", label: "Heavy" }
   ];
   const AIRCRAFT_FAMILY_LABELS = new Map(AIRCRAFT_FAMILY_DEFINITIONS.map((family) => [family.id, family.label]));
+  const MOBILE_MAP_MEDIA_QUERY = "(max-width: 1040px)";
+  const FOCUSED_MOBILE_MEDIA_QUERY = "(max-width: 760px)";
+  const REDUCED_MOTION_MEDIA_QUERY = "(prefers-reduced-motion: reduce)";
   const LEAFLET_SCRIPT_URL = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
   const LEAFLET_SCRIPT_INTEGRITY = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
   let leafletLoadPromise = null;
+  let statsExifLoadPromise = null;
   const PAGE_ROUTES = {
     mapView: "index.html",
     locationDetailView: "index.html",
@@ -79,9 +84,11 @@
     mapLabelLayer: null,
     mapTrafficLayer: null,
     mapTrafficInitialized: false,
+    mapTrafficMobileLayout: null,
     mapTrafficMarkersByPinId: new Map(),
     mapTrafficFamiliesByPinId: new Map(),
     mapTrafficFamilyIndexByPinId: new Map(),
+    mobileMapTrafficPinIds: null,
     mapTrafficRotationTimer: null,
     mapPreviewCache: new Map(),
     mapDossierOpen: true,
@@ -131,6 +138,7 @@
     mapControlPanelOpen: true,
     renderedViews: new Set(),
     detailGalleries: new Map(),
+    pageNavigationLoading: false,
     fullDataPromise: null,
     lastHandledHistoryUrl: "",
     isApplyingHash: false
@@ -286,6 +294,10 @@
         <button class="mobile-install-dismiss" type="button" id="mobileInstallDismiss" aria-label="Dismiss install prompt">×</button>
       </div>
       <div class="app-toast" id="appToast" role="status" aria-live="polite" hidden></div>
+      <div class="page-loading-indicator" id="pageLoadingIndicator" role="status" aria-live="polite" aria-label="Loading page" hidden>
+        <span class="page-loading-spinner" aria-hidden="true"></span>
+        <span id="pageLoadingLabel">Loading…</span>
+      </div>
     `);
   }
 
@@ -324,6 +336,8 @@
     els.mobileInstallButton = document.getElementById("mobileInstallButton");
     els.mobileInstallDismiss = document.getElementById("mobileInstallDismiss");
     els.appToast = document.getElementById("appToast");
+    els.pageLoadingIndicator = document.getElementById("pageLoadingIndicator");
+    els.pageLoadingLabel = document.getElementById("pageLoadingLabel");
     els.aircraftCount = document.getElementById("aircraftCount");
     els.photoCount = document.getElementById("photoCount");
     els.locationCount = document.getElementById("locationCount");
@@ -398,20 +412,61 @@
   }
 
   async function loadData() {
-    if (window.SPOTTERDEX_DATA) {
-      return window.SPOTTERDEX_DATA;
+    let data = window.SPOTTERDEX_DATA;
+    if (!data) {
+      try {
+        const response = await fetch("data/spotterdex.json", { cache: "no-cache" });
+        if (!response.ok) {
+          throw new Error("Could not load SpotterDex data");
+        }
+        data = await response.json();
+      } catch (error) {
+        console.warn(error);
+        data = EMPTY_DATA;
+      }
     }
 
-    try {
-      const response = await fetch("data/spotterdex.json", { cache: "no-cache" });
-      if (!response.ok) {
-        throw new Error("Could not load SpotterDex data");
-      }
-      return await response.json();
-    } catch (error) {
-      console.warn(error);
-      return EMPTY_DATA;
+    if (currentPageViewId() === "statsView") {
+      await loadStatsExifBundle();
+      data = applyStatsExif(data);
     }
+    return data;
+  }
+
+  function loadStatsExifBundle() {
+    if (window.SPOTTERDEX_EXIF) {
+      return Promise.resolve(window.SPOTTERDEX_EXIF);
+    }
+    if (statsExifLoadPromise) {
+      return statsExifLoadPromise;
+    }
+
+    statsExifLoadPromise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "data/spotterdex-exif.js";
+      script.async = true;
+      script.addEventListener("load", () => resolve(window.SPOTTERDEX_EXIF || null), { once: true });
+      script.addEventListener("error", () => reject(new Error("Could not load Stats EXIF data")), { once: true });
+      document.head.append(script);
+    }).catch((error) => {
+      console.warn(error);
+      return null;
+    });
+    return statsExifLoadPromise;
+  }
+
+  function applyStatsExif(data) {
+    const exifByPhotoId = window.SPOTTERDEX_EXIF?.photos;
+    if (!exifByPhotoId || !Array.isArray(data?.photos)) {
+      return data;
+    }
+    return {
+      ...data,
+      photos: data.photos.map((photo) => ({
+        ...photo,
+        exif: exifByPhotoId[photo.id] || {}
+      }))
+    };
   }
 
   function prepareData(rawData) {
@@ -676,6 +731,7 @@
     window.addEventListener("popstate", handleHistoryNavigation);
     window.addEventListener("hashchange", handleHistoryNavigation);
     window.addEventListener("pagehide", saveCurrentSessionState);
+    window.addEventListener("pageshow", () => setPageNavigationLoading(false));
     window.addEventListener("online", () => updateConnectivityUi({ offline: false }));
     window.addEventListener("offline", () => updateConnectivityUi({ offline: true }));
     window.addEventListener("beforeinstallprompt", handleInstallPrompt);
@@ -712,7 +768,7 @@
 
     if (
       window.matchMedia("(hover: hover) and (pointer: fine)").matches
-      && !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      && !isReducedMotion()
     ) {
       document.addEventListener("pointermove", handleLensPointerMove, { passive: true });
       document.addEventListener("pointerout", handleLensPointerOut, { passive: true });
@@ -1156,11 +1212,11 @@
   }
 
   function isMobileMapLayout() {
-    return window.matchMedia("(max-width: 1040px)").matches;
+    return window.matchMedia(MOBILE_MAP_MEDIA_QUERY).matches;
   }
 
   function isFocusedMobileLayout() {
-    return window.matchMedia("(max-width: 760px)").matches;
+    return window.matchMedia(FOCUSED_MOBILE_MEDIA_QUERY).matches;
   }
 
   function isDenseDesktopMapLayout() {
@@ -1168,7 +1224,11 @@
   }
 
   function isMobileViewerLayout() {
-    return window.matchMedia("(max-width: 1040px)").matches;
+    return isMobileMapLayout();
+  }
+
+  function isReducedMotion() {
+    return window.matchMedia(REDUCED_MOTION_MEDIA_QUERY).matches;
   }
 
   function sessionKeyForView(viewId = currentPageViewId()) {
@@ -1261,6 +1321,10 @@
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button) {
       return;
     }
+    if (state.pageNavigationLoading) {
+      event.preventDefault();
+      return;
+    }
     const link = event.currentTarget;
     const targetView = link.dataset.mobileTabView;
     if (!targetView) {
@@ -1272,7 +1336,7 @@
       if (activeView !== targetView) {
         handleMobileContextBack();
       } else {
-        window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+        window.scrollTo({ top: 0, behavior: isReducedMotion() ? "auto" : "smooth" });
       }
       return;
     }
@@ -1296,7 +1360,33 @@
         // Use the tab's root URL when saved session data is malformed.
       }
     }
-    window.location.assign(destination.href);
+    const destinationLabel = link.querySelector("span")?.textContent.trim() || "page";
+    setPageNavigationLoading(true, destinationLabel);
+    window.requestAnimationFrame(() => {
+      if (state.pageNavigationLoading) {
+        window.location.assign(destination.href);
+      }
+    });
+  }
+
+  function setPageNavigationLoading(isLoading, label = "page") {
+    state.pageNavigationLoading = isLoading;
+    const indicator = els.pageLoadingIndicator;
+    if (indicator) {
+      indicator.hidden = !isLoading;
+      indicator.setAttribute("aria-label", isLoading ? `Loading ${label}` : "Loading page");
+    }
+    if (els.pageLoadingLabel) {
+      els.pageLoadingLabel.textContent = isLoading ? `Loading ${label}…` : "Loading…";
+    }
+    document.body.classList.toggle("is-page-navigation-loading", isLoading);
+    els.mobileTabLinks?.forEach((tabLink) => {
+      if (isLoading) {
+        tabLink.setAttribute("aria-disabled", "true");
+      } else {
+        tabLink.removeAttribute("aria-disabled");
+      }
+    });
   }
 
   function handleMobileContextBack() {
@@ -1945,7 +2035,7 @@
     leaderPane.style.pointerEvents = "none";
     const markerPane = state.map.getPane("markerPane");
     if (markerPane) {
-      markerPane.style.zIndex = "600";
+      markerPane.style.zIndex = "700";
     }
     const labelPane = state.map.createPane("spotterdexLabelPane");
     labelPane.style.zIndex = "650";
@@ -2822,7 +2912,7 @@
   }
 
   function mapPanelShouldReserveSpace(panel) {
-    if (isMobileMapLayout() || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (isMobileMapLayout() || isReducedMotion()) {
       return false;
     }
     if (panel === els.mapControlPanel) {
@@ -3099,13 +3189,8 @@
     if (!state.mapTrafficLayer || !window.L) {
       return;
     }
-    if (isMobileMapLayout()) {
-      state.mapTrafficLayer.clearLayers();
-      stopMapTrafficFamilyRotation();
-      state.mapTrafficInitialized = false;
-      return;
-    }
-    if (state.mapTrafficInitialized && !force) {
+    const mobileLayout = isMobileMapLayout();
+    if (state.mapTrafficInitialized && !force && state.mapTrafficMobileLayout === mobileLayout) {
       return;
     }
     stopMapTrafficFamilyRotation();
@@ -3114,7 +3199,10 @@
     state.mapTrafficFamiliesByPinId = new Map();
     state.mapTrafficFamilyIndexByPinId = new Map();
 
-    state.enabledPins.forEach((pin) => {
+    const trafficPins = mobileLayout
+      ? mobileMapTrafficPins()
+      : state.enabledPins;
+    trafficPins.forEach((pin) => {
       const families = mapLocationPreview([pin]).families;
       if (!families.length) {
         return;
@@ -3132,7 +3220,26 @@
       state.mapTrafficFamilyIndexByPinId.set(pin.id, initialIndex);
     });
     startMapTrafficFamilyRotation();
+    state.mapTrafficMobileLayout = mobileLayout;
     state.mapTrafficInitialized = true;
+  }
+
+  function mobileMapTrafficPins() {
+    // Keep the phone map light while ensuring every selected pin has a family icon.
+    const eligiblePins = state.enabledPins.filter((pin) => mapLocationPreview([pin]).families.length);
+    if (!state.mobileMapTrafficPinIds) {
+      const shuffled = eligiblePins.slice();
+      for (let index = shuffled.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+      }
+      state.mobileMapTrafficPinIds = shuffled
+        .slice(0, MOBILE_MAP_TRAFFIC_PIN_LIMIT)
+        .map((pin) => pin.id);
+    }
+
+    const selectedPinIds = new Set(state.mobileMapTrafficPinIds);
+    return eligiblePins.filter((pin) => selectedPinIds.has(pin.id));
   }
 
   function mapTrafficIcon(pin, family) {
@@ -3157,7 +3264,7 @@
 
   function startMapTrafficFamilyRotation() {
     const hasRotatingBase = Array.from(state.mapTrafficFamiliesByPinId.values()).some((families) => families.length > 1);
-    if (!hasRotatingBase || isMobileMapLayout() || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (!hasRotatingBase || isMobileMapLayout() || isReducedMotion()) {
       return;
     }
     state.mapTrafficRotationTimer = window.setInterval(rotateMapTrafficFamilies, MAP_TRAFFIC_FAMILY_ROTATION_MS);
@@ -3169,7 +3276,7 @@
   }
 
   function rotateMapTrafficFamilies() {
-    if (isMobileMapLayout() || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (isMobileMapLayout() || isReducedMotion()) {
       stopMapTrafficFamilyRotation();
       return;
     }

@@ -132,9 +132,11 @@ python3 tools/build_spotterdex.py
 
 The same build generates entity-specific social preview pages under `share/` for photos, aircraft, locations, squadrons, and airshows. Use `--site-url` when publishing from a different public base URL.
 
+`data/spotterdex-data.js` is the compact directory bundle used by Aircraft Dex, Squadrons, and Airshows. Camera EXIF is kept out of that bundle; the Stats page loads `data/spotterdex-exif.js` only when its page is opened. Share pages reference the shared cached stylesheet at `share/share.css`. Squadron logos are published once per normalized country/unit identity and reused across aircraft entries.
+
 Generated photo records retain camera EXIF used by the photography dashboard, including actual and camera-reported 35mm-equivalent focal length, aperture, shutter speed, ISO, and exposure compensation. The Stats page can compare actual versus equivalent focal lengths and links its distribution and extreme-setting cards back to the matching frames.
 
-Full-size JPEGs use quality 92 with 4:4:4 chroma for near-lossless aircraft detail; 1024 px thumbnails use quality 90 with 4:2:0 chroma for faster grids.
+Full-size JPEGs use quality 70 with 4:2:0 chroma for web delivery; 1024 px thumbnails use quality 55 with 4:2:0 chroma for faster grids. Original sources remain untouched in `raw_assets/`.
 
 Photo processing uses multiprocessing by default with one fewer worker than the number of CPU cores. Override it when needed:
 
@@ -175,4 +177,4 @@ Useful deep links:
 
 ## Deploy
 
-Commit the generated `data/` files, `share/` preview pages, `assets/generated/photos/`, and `assets/generated/thumbs/`, then enable GitHub Pages from the repository root. Keep original photos in local `raw_assets/`; that directory is gitignored and is not deployed from the repository.
+Commit the generated `data/` files (including `spotterdex-exif.js`), `share/` preview pages and `share/share.css`, `assets/generated/photos/`, `assets/generated/thumbs/`, and canonical assets under `assets/logos/`, then enable GitHub Pages from the repository root. Keep original photos in local `raw_assets/`; that directory is gitignored and is not deployed from the repository.

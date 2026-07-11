@@ -1,4 +1,4 @@
-const CACHE_VERSION = "spotterdex-v3";
+const CACHE_VERSION = "spotterdex-v4";
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const THUMB_CACHE = `${CACHE_VERSION}-thumbs`;
 const PHOTO_CACHE = `${CACHE_VERSION}-photos`;
@@ -16,7 +16,6 @@ const SHELL_PATHS = [
   "manifest.webmanifest",
   "data/spotterdex-data.js",
   "data/spotterdex-map-data.js",
-  "data/spotterdex.json",
   "assets/icons/spotterdex-app-icon.png",
   "assets/icons/spotterdex-app-icon-192.png",
   "assets/icons/spotterdex-app-icon-maskable-512.png",
@@ -100,7 +99,7 @@ async function cachedNavigation(request, update) {
 }
 
 function isCatalogData(url) {
-  return /\/data\/spotterdex(?:-data|-map-data)?\.(?:js|json)$/.test(url.pathname);
+  return /\/data\/spotterdex(?:-data|-map-data|-exif)?\.(?:js|json)$/.test(url.pathname);
 }
 
 async function networkFirst(request) {

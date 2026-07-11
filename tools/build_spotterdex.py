@@ -194,6 +194,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--json-output", default="data/spotterdex.json", help="Generated JSON manifest path.")
     parser.add_argument("--js-output", default="data/spotterdex-data.js", help="Generated JS manifest path.")
     parser.add_argument(
+        "--exif-js-output",
+        default="data/spotterdex-exif.js",
+        help="Stats-only generated EXIF JS manifest path.",
+    )
+    parser.add_argument(
         "--map-js-output",
         default="data/spotterdex-map-data.js",
         help="Minified map-page JS manifest path.",
@@ -249,6 +254,7 @@ def main() -> int:
     logo_output_dir = root / args.logo_output
     json_output = root / args.json_output
     js_output = root / args.js_output
+    exif_js_output = root / args.exif_js_output
     map_js_output = root / args.map_js_output
     share_output_dir = root / args.share_output
     sitemap_output = root / args.sitemap_output
@@ -337,6 +343,7 @@ def main() -> int:
         "photos": photos,
     }
 
+    remove_unreferenced_logos(manifest, logo_output_dir, root, warnings)
     deduplicate_generated_images(
         manifest=manifest,
         root=root,
@@ -348,6 +355,7 @@ def main() -> int:
 
     json_output.parent.mkdir(parents=True, exist_ok=True)
     js_output.parent.mkdir(parents=True, exist_ok=True)
+    exif_js_output.parent.mkdir(parents=True, exist_ok=True)
     map_js_output.parent.mkdir(parents=True, exist_ok=True)
     json_text = json.dumps(manifest, indent=2, ensure_ascii=True)
     directory_json_text = json.dumps(
@@ -355,12 +363,13 @@ def main() -> int:
         ensure_ascii=True,
         separators=(",", ":"),
     )
+    exif_json_text = json.dumps(exif_page_manifest(manifest), ensure_ascii=True, separators=(",", ":"))
     map_json_text = json.dumps(map_page_manifest(manifest), ensure_ascii=True, separators=(",", ":"))
     json_output.write_text(json_text + "\n", encoding="utf-8")
-    # Dex/Squadrons/Airshows/Stats load a compact directory payload. Camera EXIF stays
-    # in this primary bundle so the Stats dashboard does not depend on a second fetch.
-    # Heavier size/source metadata remains available through lazy full-data hydration.
+    # Dex/Squadrons/Airshows load a compact directory payload. Stats loads the
+    # camera-only bundle on demand, while the viewer hydrates heavier metadata lazily.
     js_output.write_text(f"window.SPOTTERDEX_DATA={directory_json_text};\n", encoding="utf-8")
+    exif_js_output.write_text(f"window.SPOTTERDEX_EXIF={exif_json_text};\n", encoding="utf-8")
     map_js_output.write_text(f"window.SPOTTERDEX_DATA={map_json_text};\n", encoding="utf-8")
     share_records = social_preview_records(manifest)
     share_page_count = write_social_preview_pages(
@@ -384,6 +393,7 @@ def main() -> int:
     )
     print(f"Wrote {relative_posix(json_output, root)}")
     print(f"Wrote {relative_posix(js_output, root)}")
+    print(f"Wrote {relative_posix(exif_js_output, root)}")
     print(f"Wrote {relative_posix(map_js_output, root)}")
     print(f"Wrote {share_page_count} social preview pages under {relative_posix(share_output_dir, root)}")
     print(f"Wrote {relative_posix(sitemap_path, root)} ({sitemap_url_count} URLs)")
@@ -395,6 +405,7 @@ def main() -> int:
 
 
 DIRECTORY_PHOTO_OMIT_FIELDS = {
+    "exif",
     "originalSize",
     "processedSize",
     "source",
@@ -421,30 +432,20 @@ def directory_page_manifest(manifest: Dict[str, Any]) -> Dict[str, Any]:
             for photo in manifest.get("photos", [])
         ],
     }
-    validate_directory_photo_exif(manifest, directory_manifest)
     return directory_manifest
 
 
-def validate_directory_photo_exif(
-    manifest: Dict[str, Any],
-    directory_manifest: Dict[str, Any],
-) -> None:
-    """Prevent the browser bundle from silently dropping available camera metadata."""
-    directory_photos = {
-        str(photo.get("id", "")): photo for photo in directory_manifest.get("photos", [])
+def exif_page_manifest(manifest: Dict[str, Any]) -> Dict[str, Any]:
+    """Return the camera-only payload loaded by the Stats page."""
+    return {
+        "payload": "exif",
+        "generatedAt": manifest.get("generatedAt"),
+        "photos": {
+            str(photo.get("id")): photo.get("exif", {})
+            for photo in manifest.get("photos", [])
+            if photo.get("id") and photo.get("exif")
+        },
     }
-    missing_ids = [
-        str(photo.get("id", ""))
-        for photo in manifest.get("photos", [])
-        if photo.get("exif")
-        and directory_photos.get(str(photo.get("id", "")), {}).get("exif") != photo.get("exif")
-    ]
-    if missing_ids:
-        preview = ", ".join(missing_ids[:3])
-        suffix = "..." if len(missing_ids) > 3 else ""
-        raise ValueError(
-            f"Directory bundle dropped EXIF data for {len(missing_ids)} photo(s): {preview}{suffix}"
-        )
 
 
 def map_page_manifest(manifest: Dict[str, Any]) -> Dict[str, Any]:
@@ -522,6 +523,8 @@ def write_social_preview_pages(
         kind_dir = output_dir / kind
         if kind_dir.exists():
             shutil.rmtree(kind_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir.joinpath("share.css").write_text(SHARE_PAGE_CSS + "\n", encoding="utf-8")
 
     for record in records:
         kind = record["kind"]
@@ -865,7 +868,7 @@ def social_preview_document(record: Dict[str, Any], site_url: str, entity_id: st
     <meta name="twitter:image:alt" content="{heading}">
     <link rel="canonical" href="{share_url}">
     <link rel="icon" type="image/png" href="../../../assets/icons/spotterdex-app-icon.png">
-    <style>{SHARE_PAGE_CSS}</style>{json_ld_block}
+    <link rel="stylesheet" href="../../share.css">{json_ld_block}
   </head>
   <body>
     <header class="sp-head">
@@ -1188,6 +1191,7 @@ def load_aircraft(
         country = str(data.get("country") or squadron_data.get("country") or "").strip()
         aircraft_id = slugify(type_name)
         squadron_id = slugify(f"{aircraft_id}-{squadron_name}")
+        logo_id = slugify(f"{country}-{squadron_name}")
         logo_value = data.get("squadron_logo") or data.get("squadronLogo") or data.get("logo") or squadron_data.get("logo")
         logo = resolve_squadron_logo(
             root=root,
@@ -1195,7 +1199,7 @@ def load_aircraft(
             logo_output_dir=logo_output_dir,
             yaml_path=yaml_path,
             logo_value=logo_value,
-            squadron_id=squadron_id,
+            squadron_id=logo_id,
             squadron_name=squadron_name,
             logo_max_size=logo_max_size,
             warnings=warnings,
@@ -2101,6 +2105,44 @@ def _manifest_generated_asset_references(manifest: Dict[str, Any]) -> set[str]:
 
     visit(manifest)
     return references
+
+
+def remove_unreferenced_logos(
+    manifest: Dict[str, Any],
+    logo_output_dir: Path,
+    root: Path,
+    warnings: BuildWarningLog,
+) -> None:
+    """Remove stale generated logos after canonical unit names are rebuilt."""
+    referenced: set[str] = set()
+
+    def visit(value: Any) -> None:
+        if isinstance(value, dict):
+            for key, item in value.items():
+                if key == "logo" and isinstance(item, str) and item.startswith("assets/logos/"):
+                    referenced.add(item)
+                visit(item)
+        elif isinstance(value, list):
+            for item in value:
+                visit(item)
+
+    visit(manifest)
+    if not logo_output_dir.exists():
+        return
+
+    removed = 0
+    for path in logo_output_dir.iterdir():
+        if not path.is_file() or path.suffix.lower() not in IMAGE_EXTENSIONS | {".svg"}:
+            continue
+        if site_path_for(path, root) in referenced:
+            continue
+        try:
+            path.unlink()
+            removed += 1
+        except OSError as exc:
+            warnings.add(f"could not remove stale logo {relative_posix(path, root)}: {exc}")
+    if removed:
+        warnings.info(f"removed {removed} stale squadron logo file(s) after canonicalization")
 
 
 def _rewrite_manifest_generated_assets(value: Any, replacements: Dict[str, str]) -> None:
@@ -3096,6 +3138,13 @@ def resolve_squadron_logo(
         pass
 
     logo_output_dir.mkdir(parents=True, exist_ok=True)
+    existing_outputs = sorted(
+        path for path in logo_output_dir.glob(f"{squadron_id}.*")
+        if path.is_file() and path.suffix.lower() in IMAGE_EXTENSIONS | {".svg"}
+    )
+    if existing_outputs and max(path.stat().st_mtime_ns for path in existing_outputs) >= source_path.stat().st_mtime_ns:
+        return site_path_for(existing_outputs[0], root)
+
     dest_path = logo_output_dir / f"{squadron_id}{source_path.suffix.lower()}"
     published_path = publish_squadron_logo(source_path, dest_path, logo_max_size, warnings)
     if not published_path:

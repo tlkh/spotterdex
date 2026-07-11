@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="617 Squadron logo">
-  <rect width="120" height="120" rx="14" fill="#0f172a"/>
-  <circle cx="60" cy="60" r="43" fill="#2563eb"/>
-  <path d="M34 68l52-28-18 30 18 11z" fill="#f8fafc"/>
-  <path d="M49 69l-15 19 34-14z" fill="#93c5fd"/>
-  <text x="60" y="99" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#f8fafc">617</text>
-</svg>
-
