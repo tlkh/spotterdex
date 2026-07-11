@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-11T04:50:41+00:00",
+  "generatedAt": "2026-07-11T05:40:40+00:00",
   "pins": [
     {
       "id": "hong-kong-international-airport",
@@ -10,8 +10,8 @@
       "lon": 113.92,
       "enabled": true,
       "heroPhoto": {
-        "image": "assets/generated/photos/location-hero-hong-kong-international-airport.jpg",
-        "thumbnail": "assets/generated/thumbs/location-hero-hong-kong-international-airport.jpg",
+        "image": "assets/generated/photos/aircraft-boeing-747-400-f-kalitta-air-n742ck-da9e13c4.jpg",
+        "thumbnail": "assets/generated/thumbs/aircraft-boeing-747-400-f-kalitta-air-n742ck-da9e13c4.jpg",
         "source": "raw_assets/N742CK.jpg",
         "originalSize": "5203 x 3902",
         "processedSize": "2560 x 1920",
@@ -27,8 +27,8 @@
       "lon": 139.45,
       "enabled": true,
       "heroPhoto": {
-        "image": "assets/generated/photos/location-hero-atsugi-air-base.jpg",
-        "thumbnail": "assets/generated/thumbs/location-hero-atsugi-air-base.jpg",
+        "image": "assets/generated/photos/aircraft-kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-1-fea3d7fc.jpg",
+        "thumbnail": "assets/generated/thumbs/aircraft-kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-1-fea3d7fc.jpg",
         "source": "raw_assets/up3c_1.jpeg",
         "originalSize": "5449 x 3633",
         "processedSize": "2560 x 1707",
@@ -44,8 +44,8 @@
       "lon": 141.6664,
       "enabled": true,
       "heroPhoto": {
-        "image": "assets/generated/photos/location-hero-chitose-air-base.jpg",
-        "thumbnail": "assets/generated/thumbs/location-hero-chitose-air-base.jpg",
+        "image": "assets/generated/photos/location-dsc05932-enhanced-nr-9058866d.jpg",
+        "thumbnail": "assets/generated/thumbs/location-dsc05932-enhanced-nr-9058866d.jpg",
         "source": "raw_assets/DSC05932-Enhanced-NR.jpg",
         "originalSize": "5205 x 3904",
         "processedSize": "2560 x 1920",
@@ -61,8 +61,8 @@
       "lon": 139.528,
       "enabled": true,
       "heroPhoto": {
-        "image": "assets/generated/photos/location-hero-chofu-airport.jpg",
-        "thumbnail": "assets/generated/thumbs/location-hero-chofu-airport.jpg",
+        "image": "assets/generated/photos/aircraft-dornier-228-new-central-air-service-dsc08683-enhanced-nr-2f2c6d0e.jpg",
+        "thumbnail": "assets/generated/thumbs/aircraft-dornier-228-new-central-air-service-dsc08683-enhanced-nr-2f2c6d0e.jpg",
         "source": "raw_assets/DSC08683-Enhanced-NR.jpg",
         "originalSize": "4862 x 3647",
         "processedSize": "2560 x 1920",
@@ -104,8 +104,8 @@
       "lon": 139.78,
       "enabled": true,
       "heroPhoto": {
-        "image": "assets/generated/photos/location-hero-haneda-airport.jpg",
-        "thumbnail": "assets/generated/thumbs/location-hero-haneda-airport.jpg",
+        "image": "assets/generated/photos/location-dsc07323-enhanced-nr-f8ce9154.jpg",
+        "thumbnail": "assets/generated/thumbs/location-dsc07323-enhanced-nr-f8ce9154.jpg",
         "source": "raw_assets/DSC07323-Enhanced-NR.jpg",
         "originalSize": "5348 x 3565",
         "processedSize": "2560 x 1707",
@@ -139,8 +139,8 @@
       "lon": 139.91,
       "enabled": true,
       "heroPhoto": {
-        "image": "assets/generated/photos/location-hero-kisarazu-airfield.jpg",
-        "thumbnail": "assets/generated/thumbs/location-hero-kisarazu-airfield.jpg",
+        "image": "assets/generated/photos/aircraft-mitsubishi-uh-60j-air-rescue-wing-dsc09035-enhanced-nr-cd1eb994.jpg",
+        "thumbnail": "assets/generated/thumbs/aircraft-mitsubishi-uh-60j-air-rescue-wing-dsc09035-enhanced-nr-cd1eb994.jpg",
         "source": "raw_assets/DSC09035-Enhanced-NR.jpeg",
         "originalSize": "5368 x 3579",
         "processedSize": "2560 x 1707",
@@ -156,8 +156,8 @@
       "lon": 131.035,
       "enabled": true,
       "heroPhoto": {
-        "image": "assets/generated/photos/location-hero-kitakyushu-airport.jpg",
-        "thumbnail": "assets/generated/thumbs/location-hero-kitakyushu-airport.jpg",
+        "image": "assets/generated/photos/aircraft-airbus-a320-200-starflyer-dsc07789-enhanced-nr-525eda3b.jpg",
+        "thumbnail": "assets/generated/thumbs/aircraft-airbus-a320-200-starflyer-dsc07789-enhanced-nr-525eda3b.jpg",
         "source": "raw_assets/DSC07789-Enhanced-NR.jpg",
         "originalSize": "4286 x 3215",
         "processedSize": "2560 x 1920",
@@ -182,8 +182,8 @@
       "lon": 136.4067,
       "enabled": true,
       "heroPhoto": {
-        "image": "assets/generated/photos/location-hero-komatsu-air-base.jpg",
-        "thumbnail": "assets/generated/thumbs/location-hero-komatsu-air-base.jpg",
+        "image": "assets/generated/photos/location-dsc01185-enhanced-nr-22b45f58.jpg",
+        "thumbnail": "assets/generated/thumbs/location-dsc01185-enhanced-nr-22b45f58.jpg",
         "source": "raw_assets/DSC01185-Enhanced-NR.jpeg",
         "originalSize": "4702 x 3135",
         "processedSize": "2560 x 1707",
@@ -208,8 +208,8 @@
       "lon": 127.6458,
       "enabled": true,
       "heroPhoto": {
-        "image": "assets/generated/photos/location-hero-naha-air-base.jpg",
-        "thumbnail": "assets/generated/thumbs/location-hero-naha-air-base.jpg",
+        "image": "assets/generated/photos/aircraft-mitsubishi-f-15j-eagle-304th-tactical-fighter-squadron-128925-21302f6e.jpg",
+        "thumbnail": "assets/generated/thumbs/aircraft-mitsubishi-f-15j-eagle-304th-tactical-fighter-squadron-128925-21302f6e.jpg",
         "source": "raw_assets/128925.jpg",
         "originalSize": "6410 x 4808",
         "processedSize": "2560 x 1920",
@@ -234,8 +234,8 @@
       "lon": 141.3814,
       "enabled": true,
       "heroPhoto": {
-        "image": "assets/generated/photos/location-hero-okadama-airport.jpg",
-        "thumbnail": "assets/generated/thumbs/location-hero-okadama-airport.jpg",
+        "image": "assets/generated/photos/location-dsc04369-enhanced-nr-1ede3985.jpg",
+        "thumbnail": "assets/generated/thumbs/location-dsc04369-enhanced-nr-1ede3985.jpg",
         "source": "raw_assets/DSC04369-Enhanced-NR.jpg",
         "originalSize": "5227 x 3920",
         "processedSize": "2560 x 1920",
@@ -251,8 +251,8 @@
       "lon": 131.04,
       "enabled": true,
       "heroPhoto": {
-        "image": "assets/generated/photos/location-hero-tsuiki-air-base.jpg",
-        "thumbnail": "assets/generated/thumbs/location-hero-tsuiki-air-base.jpg",
+        "image": "assets/generated/photos/location-dsc06176-enhanced-nr-31d779f4.jpg",
+        "thumbnail": "assets/generated/thumbs/location-dsc06176-enhanced-nr-31d779f4.jpg",
         "source": "raw_assets/DSC06176-Enhanced-NR.jpeg",
         "originalSize": "4906 x 3271",
         "processedSize": "2560 x 1707",
@@ -268,8 +268,8 @@
       "lon": 139.348,
       "enabled": true,
       "heroPhoto": {
-        "image": "assets/generated/photos/location-hero-yokota-air-base.jpg",
-        "thumbnail": "assets/generated/thumbs/location-hero-yokota-air-base.jpg",
+        "image": "assets/generated/photos/aircraft-lockheed-c-130j-super-hercules-36th-airlift-squadron-dsc09870-enhanced-nr-19381fc8.jpg",
+        "thumbnail": "assets/generated/thumbs/aircraft-lockheed-c-130j-super-hercules-36th-airlift-squadron-dsc09870-enhanced-nr-19381fc8.jpg",
         "source": "raw_assets/DSC09870-Enhanced-NR.jpeg",
         "originalSize": "4841 x 3227",
         "processedSize": "2560 x 1706",
@@ -285,8 +285,8 @@
       "lon": 101.71,
       "enabled": true,
       "heroPhoto": {
-        "image": "assets/generated/photos/location-hero-kuala-lumpur-international-airport.jpg",
-        "thumbnail": "assets/generated/thumbs/location-hero-kuala-lumpur-international-airport.jpg",
+        "image": "assets/generated/photos/aircraft-boeing-737-800-malaysia-airlines-dsc01763-enhanced-nr-086c56e8.jpg",
+        "thumbnail": "assets/generated/thumbs/aircraft-boeing-737-800-malaysia-airlines-dsc01763-enhanced-nr-086c56e8.jpg",
         "source": "raw_assets/DSC01763-Enhanced-NR.jpg",
         "originalSize": "5481 x 4111",
         "processedSize": "2560 x 1920",
@@ -320,8 +320,8 @@
       "lon": 104.0229,
       "enabled": true,
       "heroPhoto": {
-        "image": "assets/generated/photos/location-hero-changi-exhibition-centre.jpg",
-        "thumbnail": "assets/generated/thumbs/location-hero-changi-exhibition-centre.jpg",
+        "image": "assets/generated/photos/aircraft-boeing-ah-64d-apache-longbow-120-squadron-rsaf-apache-flare-09597220.jpg",
+        "thumbnail": "assets/generated/thumbs/aircraft-boeing-ah-64d-apache-longbow-120-squadron-rsaf-apache-flare-09597220.jpg",
         "source": "raw_assets/rsaf_apache_flare.jpg",
         "originalSize": "3312 x 2484",
         "processedSize": "2560 x 1920",
@@ -346,8 +346,8 @@
       "lon": 103.8198,
       "enabled": true,
       "heroPhoto": {
-        "image": "assets/generated/photos/location-hero-singapore.jpg",
-        "thumbnail": "assets/generated/thumbs/location-hero-singapore.jpg",
+        "image": "assets/generated/photos/location-dsc02893-enhanced-nr-f5f562bf.jpg",
+        "thumbnail": "assets/generated/thumbs/location-dsc02893-enhanced-nr-f5f562bf.jpg",
         "source": "raw_assets/DSC02893-Enhanced-NR.jpg",
         "originalSize": "6017 x 4011",
         "processedSize": "2560 x 1707",
@@ -363,8 +363,8 @@
       "lon": 100.607,
       "enabled": true,
       "heroPhoto": {
-        "image": "assets/generated/photos/location-hero-don-muang-royal-thai-air-force-base.jpg",
-        "thumbnail": "assets/generated/thumbs/location-hero-don-muang-royal-thai-air-force-base.jpg",
+        "image": "assets/generated/photos/aircraft-saab-gripen-c-701st-squadron-dsc05725-f52e1198.jpg",
+        "thumbnail": "assets/generated/thumbs/aircraft-saab-gripen-c-701st-squadron-dsc05725-f52e1198.jpg",
         "source": "raw_assets/DSC05725.jpg",
         "originalSize": "6191 x 4643",
         "processedSize": "2560 x 1920",
@@ -380,8 +380,8 @@
       "lon": 106.6519,
       "enabled": true,
       "heroPhoto": {
-        "image": "assets/generated/photos/location-hero-tan-son-nhat-international-airport.jpg",
-        "thumbnail": "assets/generated/thumbs/location-hero-tan-son-nhat-international-airport.jpg",
+        "image": "assets/generated/photos/location-dsc00026-79877ad9.jpg",
+        "thumbnail": "assets/generated/thumbs/location-dsc00026-79877ad9.jpg",
         "source": "raw_assets/DSC00026.jpg",
         "originalSize": "4834 x 3626",
         "processedSize": "2560 x 1920",
@@ -554,8 +554,8 @@
             "aircraft-airbus-a330-mrtt-112-squadron-dsc05179-enhanced-nr-6a1ddfd2"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-airbus-a330-mrtt-112-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-airbus-a330-mrtt-112-squadron.jpg",
+            "image": "assets/generated/photos/aircraft-airbus-a330-mrtt-112-squadron-dsc05206-enhanced-nr-e9e685c7.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-airbus-a330-mrtt-112-squadron-dsc05206-enhanced-nr-e9e685c7.jpg",
             "source": "raw_assets/DSC05206-Enhanced-NR.jpg",
             "originalSize": "5125 x 2883",
             "processedSize": "2560 x 1440",
@@ -578,8 +578,8 @@
             "aircraft-airbus-a330-mrtt-31st-strategic-air-refueling-and-transport-wing-dsc08601-5fe30f1e"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-airbus-a330-mrtt-31st-strategic-air-refueling-and-transport-wing.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-airbus-a330-mrtt-31st-strategic-air-refueling-and-transport-wing.jpg",
+            "image": "assets/generated/photos/aircraft-airbus-a330-mrtt-31st-strategic-air-refueling-and-transport-wing-french-mrtt-2-9ac996d0.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-airbus-a330-mrtt-31st-strategic-air-refueling-and-transport-wing-french-mrtt-2-9ac996d0.jpg",
             "source": "raw_assets/french_mrtt_2.jpg",
             "originalSize": "5154 x 3436",
             "processedSize": "2560 x 1707",
@@ -646,8 +646,8 @@
             "aircraft-bell-uh-1-iroquois-459th-airlift-squadron-usaf-huey-3-dfb3f360"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-bell-uh-1-iroquois-459th-airlift-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-bell-uh-1-iroquois-459th-airlift-squadron.jpg",
+            "image": "assets/generated/photos/aircraft-bell-uh-1-iroquois-459th-airlift-squadron-usaf-huey-3-dfb3f360.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-bell-uh-1-iroquois-459th-airlift-squadron-usaf-huey-3-dfb3f360.jpg",
             "source": "raw_assets/usaf_huey_3.jpeg",
             "originalSize": "4566 x 3044",
             "processedSize": "2560 x 1707",
@@ -876,8 +876,8 @@
             "aircraft-boeing-777-300er-701st-squadron-special-airlift-group-dsc00349-enhanced-nr-4a5c7178"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-boeing-777-300er-701st-squadron-special-airlift-group.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-boeing-777-300er-701st-squadron-special-airlift-group.jpg",
+            "image": "assets/generated/photos/aircraft-boeing-777-300er-701st-squadron-special-airlift-group-dsc00442-enhanced-nr-787427a9.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-boeing-777-300er-701st-squadron-special-airlift-group-dsc00442-enhanced-nr-787427a9.jpg",
             "source": "raw_assets/DSC00442-Enhanced-NR.jpg",
             "originalSize": "5087 x 3391",
             "processedSize": "2560 x 1706",
@@ -1077,8 +1077,8 @@
             "aircraft-boeing-c-40a-clipper-fleet-logistics-support-squadron-51-vr-51-usn-clipper-2-9393a5c9"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-boeing-c-40a-clipper-fleet-logistics-support-squadron-51-vr-51.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-boeing-c-40a-clipper-fleet-logistics-support-squadron-51-vr-51.jpg",
+            "image": "assets/generated/photos/aircraft-boeing-c-40a-clipper-fleet-logistics-support-squadron-51-vr-51-usn-clipper-2-9393a5c9.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-boeing-c-40a-clipper-fleet-logistics-support-squadron-51-vr-51-usn-clipper-2-9393a5c9.jpg",
             "source": "raw_assets/usn_clipper_2.jpeg",
             "originalSize": "4986 x 3324",
             "processedSize": "2560 x 1707",
@@ -1192,8 +1192,8 @@
             "aircraft-boeing-e-4b-nightwatch-1st-airborne-command-control-squadron-dsc04786-enhanced-nr-9d823dac"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-boeing-e-4b-nightwatch-1st-airborne-command-control-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-boeing-e-4b-nightwatch-1st-airborne-command-control-squadron.jpg",
+            "image": "assets/generated/photos/aircraft-boeing-e-4b-nightwatch-1st-airborne-command-control-squadron-dsc04786-enhanced-nr-9d823dac.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-boeing-e-4b-nightwatch-1st-airborne-command-control-squadron-dsc04786-enhanced-nr-9d823dac.jpg",
             "source": "raw_assets/DSC04786-Enhanced-NR.jpg",
             "originalSize": "5464 x 3643",
             "processedSize": "2560 x 1707",
@@ -1293,8 +1293,8 @@
             "aircraft-boeing-e-7a-wedgetail-no-2-squadron-dsc09765-enhanced-nr-5a05a1d6"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-boeing-e-7a-wedgetail-no-2-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-boeing-e-7a-wedgetail-no-2-squadron.jpg",
+            "image": "assets/generated/photos/aircraft-boeing-e-7a-wedgetail-no-2-squadron-dsc09753-enhanced-nr-3cb29a59.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-boeing-e-7a-wedgetail-no-2-squadron-dsc09753-enhanced-nr-3cb29a59.jpg",
             "source": "raw_assets/DSC09753-Enhanced-NR.jpg",
             "originalSize": "5096 x 3822",
             "processedSize": "2560 x 1920",
@@ -1348,8 +1348,8 @@
             "aircraft-boeing-f-15sg-strike-eagle-142-squadron-dsc04980-enhanced-nr-4f6aeb37"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-boeing-f-15sg-strike-eagle-142-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-boeing-f-15sg-strike-eagle-142-squadron.jpg",
+            "image": "assets/generated/photos/aircraft-boeing-f-15sg-strike-eagle-142-squadron-dsc00741-enhanced-nr-42d4626e.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-boeing-f-15sg-strike-eagle-142-squadron-dsc00741-enhanced-nr-42d4626e.jpg",
             "source": "raw_assets/DSC00741-Enhanced-NR.jpg",
             "originalSize": "4367 x 2911",
             "processedSize": "2560 x 1706",
@@ -1405,8 +1405,8 @@
             "aircraft-boeing-f-15sg-strike-eagle-149-squadron-dsc02930-enhanced-nr-4e2489cd"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-boeing-f-15sg-strike-eagle-149-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-boeing-f-15sg-strike-eagle-149-squadron.jpg",
+            "image": "assets/generated/photos/aircraft-boeing-f-15sg-strike-eagle-149-squadron-dsc08780-enhanced-nr-7ae61578.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-boeing-f-15sg-strike-eagle-149-squadron-dsc08780-enhanced-nr-7ae61578.jpg",
             "source": "raw_assets/DSC08780-Enhanced-NR.jpg",
             "originalSize": "3299 x 2199",
             "processedSize": "2560 x 1706",
@@ -1544,8 +1544,8 @@
             "aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc05061-8fd6882b"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-boeing-kc-46-pegasus-405th-air-refueling-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-boeing-kc-46-pegasus-405th-air-refueling-squadron.jpg",
+            "image": "assets/generated/photos/aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc04987-3f87a235.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-boeing-kc-46-pegasus-405th-air-refueling-squadron-dsc04987-3f87a235.jpg",
             "source": "raw_assets/DSC04987.jpg",
             "originalSize": "3333 x 2500",
             "processedSize": "2560 x 1920",
@@ -1599,8 +1599,8 @@
             "aircraft-boeing-kc-767-8-gruppo-italy-kc767-3-11507628"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-boeing-kc-767-8-gruppo.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-boeing-kc-767-8-gruppo.jpg",
+            "image": "assets/generated/photos/aircraft-boeing-kc-767-8-gruppo-italy-kc767-3-11507628.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-boeing-kc-767-8-gruppo-italy-kc767-3-11507628.jpg",
             "source": "raw_assets/italy_kc767_3.jpg",
             "originalSize": "4950 x 3300",
             "processedSize": "2560 x 1707",
@@ -1653,8 +1653,8 @@
             "aircraft-boeing-kc-767j-404th-tactical-airlift-tanker-squadron-dsc09753-enhanced-nr-506f6ab6"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-boeing-kc-767j-404th-tactical-airlift-tanker-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-boeing-kc-767j-404th-tactical-airlift-tanker-squadron.jpg",
+            "image": "assets/generated/photos/aircraft-boeing-kc-767j-404th-tactical-airlift-tanker-squadron-dsc09722-enhanced-nr-61ca9c0f.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-boeing-kc-767j-404th-tactical-airlift-tanker-squadron-dsc09722-enhanced-nr-61ca9c0f.jpg",
             "source": "raw_assets/DSC09722-Enhanced-NR.jpeg",
             "originalSize": "5377 x 3585",
             "processedSize": "2560 x 1707",
@@ -1707,8 +1707,8 @@
             "aircraft-cessna-uc-35-citation-usmc-operational-support-airlift-dsc02424-enhanced-nr-0f9baeca"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-cessna-uc-35-citation-usmc-operational-support-airlift.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-cessna-uc-35-citation-usmc-operational-support-airlift.jpg",
+            "image": "assets/generated/photos/aircraft-cessna-uc-35-citation-usmc-operational-support-airlift-dsc02445-enhanced-nr-4030a48e.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-cessna-uc-35-citation-usmc-operational-support-airlift-dsc02445-enhanced-nr-4030a48e.jpg",
             "source": "raw_assets/DSC02445-Enhanced-NR.jpeg",
             "originalSize": "5267 x 3511",
             "processedSize": "2560 x 1707",
@@ -1952,8 +1952,8 @@
             "aircraft-fokker-50-mpa-121-squadron-dsc07416-enhanced-nr-f9f0e4bf"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-fokker-50-mpa-121-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-fokker-50-mpa-121-squadron.jpg",
+            "image": "assets/generated/photos/aircraft-fokker-50-mpa-121-squadron-dsc07416-enhanced-nr-f9f0e4bf.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-fokker-50-mpa-121-squadron-dsc07416-enhanced-nr-f9f0e4bf.jpg",
             "source": "raw_assets/DSC07416-Enhanced-NR.jpg",
             "originalSize": "4439 x 2959",
             "processedSize": "2560 x 1706",
@@ -2053,8 +2053,8 @@
             "aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04119-f7c081b0"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-general-dynamics-f-16a-103rd-fighter-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-general-dynamics-f-16a-103rd-fighter-squadron.jpg",
+            "image": "assets/generated/photos/aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04848-34e3466b.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-general-dynamics-f-16a-103rd-fighter-squadron-dsc04848-34e3466b.jpg",
             "source": "raw_assets/DSC04848.jpg",
             "originalSize": "7526 x 5644",
             "processedSize": "2560 x 1920",
@@ -2168,8 +2168,8 @@
             "aircraft-grumman-e-2d-hawkeye-603rd-squadron-dsc00567-62eb62be"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-grumman-e-2d-hawkeye-603rd-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-grumman-e-2d-hawkeye-603rd-squadron.jpg",
+            "image": "assets/generated/photos/aircraft-grumman-e-2d-hawkeye-603rd-squadron-dsc04372-9bd22e18.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-grumman-e-2d-hawkeye-603rd-squadron-dsc04372-9bd22e18.jpg",
             "source": "raw_assets/DSC04372.jpg",
             "originalSize": "7093 x 5320",
             "processedSize": "2560 x 1920",
@@ -2225,8 +2225,8 @@
             "aircraft-gulfstream-g550-caew-111-squadron-dsc09958-enhanced-nr-a76eb46b"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-gulfstream-g550-caew-111-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-gulfstream-g550-caew-111-squadron.jpg",
+            "image": "assets/generated/photos/aircraft-gulfstream-g550-caew-111-squadron-dsc09899-enhanced-nr-d6d3edfa.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-gulfstream-g550-caew-111-squadron-dsc09899-enhanced-nr-d6d3edfa.jpg",
             "source": "raw_assets/DSC09899-Enhanced-NR.jpg",
             "originalSize": "4610 x 3073",
             "processedSize": "2560 x 1706",
@@ -2387,8 +2387,8 @@
             "aircraft-kai-t-50b-golden-eagle-black-eagles-dsc02792-enhanced-nr-7741041e"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-kai-t-50b-golden-eagle-black-eagles.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-kai-t-50b-golden-eagle-black-eagles.jpg",
+            "image": "assets/generated/photos/aircraft-kai-t-50b-golden-eagle-black-eagles-dsc05211-enhanced-nr-84290a75.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-kai-t-50b-golden-eagle-black-eagles-dsc05211-enhanced-nr-84290a75.jpg",
             "source": "raw_assets/DSC05211-Enhanced-NR.jpg",
             "originalSize": "2315 x 1543",
             "processedSize": "2560 x 1706",
@@ -2541,8 +2541,8 @@
             "aircraft-kawasaki-ec-2-electronic-warfare-squadron-681203-c50451ad"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-kawasaki-ec-2-electronic-warfare-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-kawasaki-ec-2-electronic-warfare-squadron.jpg",
+            "image": "assets/generated/photos/aircraft-kawasaki-ec-2-electronic-warfare-squadron-681203-c50451ad.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-kawasaki-ec-2-electronic-warfare-squadron-681203-c50451ad.jpg",
             "source": "raw_assets/681203.jpg",
             "originalSize": "4096 x 3072",
             "processedSize": "2560 x 1920",
@@ -2599,8 +2599,8 @@
             "aircraft-kawasaki-oh-1-ninja-1st-attack-helicopter-squadron-dsc05784-62509277"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-kawasaki-oh-1-ninja-1st-attack-helicopter-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-kawasaki-oh-1-ninja-1st-attack-helicopter-squadron.jpg",
+            "image": "assets/generated/photos/aircraft-kawasaki-oh-1-ninja-1st-attack-helicopter-squadron-dsc05132-fdc48fb3.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-kawasaki-oh-1-ninja-1st-attack-helicopter-squadron-dsc05132-fdc48fb3.jpg",
             "source": "raw_assets/DSC05132.jpg",
             "originalSize": "3413 x 2560",
             "processedSize": "2560 x 1920",
@@ -2675,8 +2675,8 @@
             "aircraft-kawasaki-p-1-air-patrol-squadron-3-dsc01604-enhanced-nr-ce8c3704"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-kawasaki-p-1-air-patrol-squadron-3.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-kawasaki-p-1-air-patrol-squadron-3.jpg",
+            "image": "assets/generated/photos/aircraft-kawasaki-p-1-air-patrol-squadron-3-p1-1-4d1b8850.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-kawasaki-p-1-air-patrol-squadron-3-p1-1-4d1b8850.jpg",
             "source": "raw_assets/p1_1.jpeg",
             "originalSize": "5381 x 3587",
             "processedSize": "2560 x 1707",
@@ -2809,8 +2809,8 @@
             "aircraft-kawasaki-t-4-blue-impulse-dsc01459-282fd090"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-kawasaki-t-4-blue-impulse.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-kawasaki-t-4-blue-impulse.jpg",
+            "image": "assets/generated/photos/aircraft-kawasaki-t-4-blue-impulse-dsc02296-7f467880.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-kawasaki-t-4-blue-impulse-dsc02296-7f467880.jpg",
             "source": "raw_assets/DSC02296.jpg",
             "originalSize": "4607 x 3455",
             "processedSize": "2560 x 1920",
@@ -2915,8 +2915,8 @@
             "aircraft-kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-4-2223327b"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-kawasaki-up-3c-orion-air-development-squadron-51-vx-51.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-kawasaki-up-3c-orion-air-development-squadron-51-vx-51.jpg",
+            "image": "assets/generated/photos/aircraft-kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-2-cbf75cd5.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-kawasaki-up-3c-orion-air-development-squadron-51-vx-51-up3c-2-cbf75cd5.jpg",
             "source": "raw_assets/up3c_2.jpeg",
             "originalSize": "5298 x 3532",
             "processedSize": "2560 x 1707",
@@ -3014,8 +3014,8 @@
             "aircraft-learjet-u-36a-81st-air-group-dsc07893-enhanced-nr-55a3c751"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-learjet-u-36a-81st-air-group.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-learjet-u-36a-81st-air-group.jpg",
+            "image": "assets/generated/photos/aircraft-learjet-u-36a-81st-air-group-dsc07893-enhanced-nr-55a3c751.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-learjet-u-36a-81st-air-group-dsc07893-enhanced-nr-55a3c751.jpg",
             "source": "raw_assets/DSC07893-Enhanced-NR.jpeg",
             "originalSize": "5472 x 3648",
             "processedSize": "2560 x 1707",
@@ -3070,8 +3070,8 @@
             "aircraft-lockheed-c-130j-super-hercules-36th-airlift-squadron-dsc08863-enhanced-nr-77c114b0"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-lockheed-c-130j-super-hercules-36th-airlift-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-lockheed-c-130j-super-hercules-36th-airlift-squadron.jpg",
+            "image": "assets/generated/photos/aircraft-lockheed-c-130j-super-hercules-36th-airlift-squadron-dsc09870-enhanced-nr-19381fc8.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-lockheed-c-130j-super-hercules-36th-airlift-squadron-dsc09870-enhanced-nr-19381fc8.jpg",
             "source": "raw_assets/DSC09870-Enhanced-NR.jpeg",
             "originalSize": "4841 x 3227",
             "processedSize": "2560 x 1706",
@@ -3125,8 +3125,8 @@
             "aircraft-lockheed-c-130r-air-transport-squadron-61-jmsdf-c130-2-d35f4b0a"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-lockheed-c-130r-air-transport-squadron-61.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-lockheed-c-130r-air-transport-squadron-61.jpg",
+            "image": "assets/generated/photos/aircraft-lockheed-c-130r-air-transport-squadron-61-jmsdf-c130-2-d35f4b0a.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-lockheed-c-130r-air-transport-squadron-61-jmsdf-c130-2-d35f4b0a.jpg",
             "source": "raw_assets/jmsdf_c130_2.jpeg",
             "originalSize": "5472 x 3648",
             "processedSize": "2560 x 1707",
@@ -3223,8 +3223,8 @@
             "aircraft-lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-5-9775f11f"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-lockheed-martin-f-35a-lightning-ii-32-stormo.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-lockheed-martin-f-35a-lightning-ii-32-stormo.jpg",
+            "image": "assets/generated/photos/aircraft-lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-2-eab2c429.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-lockheed-martin-f-35a-lightning-ii-32-stormo-italy-f35-2-eab2c429.jpg",
             "source": "raw_assets/italy_f35_2.jpg",
             "originalSize": "5472 x 3648",
             "processedSize": "2560 x 1707",
@@ -3271,8 +3271,8 @@
             "aircraft-lockheed-martin-f-35a-lightning-ii-6-stormo-italy-f35-6-c33fcc25"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-lockheed-martin-f-35a-lightning-ii-6-stormo.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-lockheed-martin-f-35a-lightning-ii-6-stormo.jpg",
+            "image": "assets/generated/photos/aircraft-lockheed-martin-f-35a-lightning-ii-6-stormo-italy-f35-1-b8301f41.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-lockheed-martin-f-35a-lightning-ii-6-stormo-italy-f35-1-b8301f41.jpg",
             "source": "raw_assets/italy_f35_1.jpg",
             "originalSize": "5068 x 3379",
             "processedSize": "2560 x 1707",
@@ -3295,8 +3295,8 @@
             "aircraft-lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-4-9fe7adc7"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-lockheed-martin-f-35a-lightning-ii-75-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-lockheed-martin-f-35a-lightning-ii-75-squadron.jpg",
+            "image": "assets/generated/photos/aircraft-lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-1-cae8cfc2.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-1-cae8cfc2.jpg",
             "source": "raw_assets/raaf_f35a_1.jpg",
             "originalSize": "5030 x 3773",
             "processedSize": "2560 x 1920",
@@ -3425,8 +3425,8 @@
             "aircraft-mitsubishi-f-15dj-eagle-tactical-fighter-training-group-dsc02895-enhanced-nr-094aab32"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-mitsubishi-f-15dj-eagle-tactical-fighter-training-group.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-mitsubishi-f-15dj-eagle-tactical-fighter-training-group.jpg",
+            "image": "assets/generated/photos/aircraft-mitsubishi-f-15dj-eagle-tactical-fighter-training-group-dsc02632-enhanced-nr-558e3a8c.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-mitsubishi-f-15dj-eagle-tactical-fighter-training-group-dsc02632-enhanced-nr-558e3a8c.jpg",
             "source": "raw_assets/DSC02632-Enhanced-NR.jpeg",
             "originalSize": "4744 x 3163",
             "processedSize": "2560 x 1707",
@@ -3520,8 +3520,8 @@
             "aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc06371-enhanced-nr-c4a0350d"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron.jpg",
+            "image": "assets/generated/photos/aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc08019-enhanced-nr-e4b578d9.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-mitsubishi-f-15j-eagle-203rd-tactical-fighter-squadron-dsc08019-enhanced-nr-e4b578d9.jpg",
             "source": "raw_assets/DSC08019-Enhanced-NR.jpg",
             "originalSize": "3152 x 2101",
             "processedSize": "2560 x 1706",
@@ -3569,8 +3569,8 @@
             "aircraft-mitsubishi-f-15j-eagle-303rd-tactical-fighter-squadron-dsc01871-enhanced-nr-d86b1f9e"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-mitsubishi-f-15j-eagle-303rd-tactical-fighter-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-mitsubishi-f-15j-eagle-303rd-tactical-fighter-squadron.jpg",
+            "image": "assets/generated/photos/aircraft-mitsubishi-f-15j-eagle-303rd-tactical-fighter-squadron-dsc02504-enhanced-nr-25554ccc.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-mitsubishi-f-15j-eagle-303rd-tactical-fighter-squadron-dsc02504-enhanced-nr-25554ccc.jpg",
             "source": "raw_assets/DSC02504-Enhanced-NR.jpeg",
             "originalSize": "3879 x 2586",
             "processedSize": "2560 x 1707",
@@ -3614,8 +3614,8 @@
             "aircraft-mitsubishi-f-15j-eagle-306th-tactical-fighter-squadron-dsc00968-enhanced-nr-1-aa099e46"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-mitsubishi-f-15j-eagle-306th-tactical-fighter-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-mitsubishi-f-15j-eagle-306th-tactical-fighter-squadron.jpg",
+            "image": "assets/generated/photos/aircraft-mitsubishi-f-15j-eagle-306th-tactical-fighter-squadron-dsc02379-enhanced-nr-aa97f508.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-mitsubishi-f-15j-eagle-306th-tactical-fighter-squadron-dsc02379-enhanced-nr-aa97f508.jpg",
             "source": "raw_assets/DSC02379-Enhanced-NR.jpeg",
             "originalSize": "4639 x 3093",
             "processedSize": "2560 x 1707",
@@ -3742,8 +3742,8 @@
             "aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc04107-enhanced-nr-9221a9bf"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-mitsubishi-f-2a-6th-tactical-fighter-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-mitsubishi-f-2a-6th-tactical-fighter-squadron.jpg",
+            "image": "assets/generated/photos/aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc04506-enhanced-nr-afa719a7.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-mitsubishi-f-2a-6th-tactical-fighter-squadron-dsc04506-enhanced-nr-afa719a7.jpg",
             "source": "raw_assets/DSC04506-Enhanced-NR.jpeg",
             "originalSize": "3813 x 2542",
             "processedSize": "2560 x 1707",
@@ -3784,8 +3784,8 @@
             "aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc04758-enhanced-nr-21949593"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-mitsubishi-f-2a-8th-tactical-fighter-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-mitsubishi-f-2a-8th-tactical-fighter-squadron.jpg",
+            "image": "assets/generated/photos/aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc04557-enhanced-nr-652ee3dd.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-mitsubishi-f-2a-8th-tactical-fighter-squadron-dsc04557-enhanced-nr-652ee3dd.jpg",
             "source": "raw_assets/DSC04557-Enhanced-NR.jpeg",
             "originalSize": "4075 x 2717",
             "processedSize": "2560 x 1707",
@@ -4057,8 +4057,8 @@
             "aircraft-saab-gripen-c-701st-squadron-dsc05725-f52e1198"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-saab-gripen-c-701st-squadron.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-saab-gripen-c-701st-squadron.jpg",
+            "image": "assets/generated/photos/aircraft-saab-gripen-c-701st-squadron-dsc05401-be354c27.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-saab-gripen-c-701st-squadron-dsc05401-be354c27.jpg",
             "source": "raw_assets/DSC05401.jpg",
             "originalSize": "4844 x 3633",
             "processedSize": "2560 x 1920",
@@ -4122,8 +4122,8 @@
             "aircraft-shinmaywa-us-2-air-rescue-squadron-71-ars-71-dsc01818-enhanced-nr-932aedff"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-shinmaywa-us-2-air-rescue-squadron-71-ars-71.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-shinmaywa-us-2-air-rescue-squadron-71-ars-71.jpg",
+            "image": "assets/generated/photos/aircraft-shinmaywa-us-2-air-rescue-squadron-71-ars-71-dsc06396-enhanced-nr-e03fb085.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-shinmaywa-us-2-air-rescue-squadron-71-ars-71-dsc06396-enhanced-nr-e03fb085.jpg",
             "source": "raw_assets/DSC06396-Enhanced-NR.jpeg",
             "originalSize": "5285 x 3523",
             "processedSize": "2560 x 1707",
@@ -4178,8 +4178,8 @@
             "aircraft-sikorsky-mh-60r-seahawk-helicopter-maritime-strike-squadron-51-hsm-51-usn-seahawk-2-1fd7b473"
           ],
           "heroPhoto": {
-            "image": "assets/generated/photos/squadron-hero-sikorsky-mh-60r-seahawk-helicopter-maritime-strike-squadron-51-hsm-51.jpg",
-            "thumbnail": "assets/generated/thumbs/squadron-hero-sikorsky-mh-60r-seahawk-helicopter-maritime-strike-squadron-51-hsm-51.jpg",
+            "image": "assets/generated/photos/aircraft-sikorsky-mh-60r-seahawk-helicopter-maritime-strike-squadron-51-hsm-51-usn-seahawk-1-0fcaee4d.jpg",
+            "thumbnail": "assets/generated/thumbs/aircraft-sikorsky-mh-60r-seahawk-helicopter-maritime-strike-squadron-51-hsm-51-usn-seahawk-1-0fcaee4d.jpg",
             "source": "raw_assets/usn_seahawk_1.jpeg",
             "originalSize": "3138 x 2092",
             "processedSize": "2560 x 1707",
@@ -4247,8 +4247,8 @@
       ],
       "aircraftTypes": [],
       "heroPhoto": {
-        "image": "assets/generated/photos/squadron-hero-japan-air-development-and-test-wing.jpg",
-        "thumbnail": "assets/generated/thumbs/squadron-hero-japan-air-development-and-test-wing.jpg",
+        "image": "assets/generated/photos/location-hero-gifu-air-base.jpg",
+        "thumbnail": "assets/generated/thumbs/location-hero-gifu-air-base.jpg",
         "source": "raw_assets/DSC00962-Enhanced-NR.jpeg",
         "originalSize": "4095 x 2730",
         "processedSize": "2560 x 1707",
@@ -4270,8 +4270,8 @@
       ],
       "aircraftTypes": [],
       "heroPhoto": {
-        "image": "assets/generated/photos/squadron-hero-japan-air-rescue-wing.jpg",
-        "thumbnail": "assets/generated/thumbs/squadron-hero-japan-air-rescue-wing.jpg",
+        "image": "assets/generated/photos/squadron-air-rescue-wing-dsc05672-enhanced-nr-1-2dba6d9c.jpg",
+        "thumbnail": "assets/generated/thumbs/squadron-air-rescue-wing-dsc05672-enhanced-nr-1-2dba6d9c.jpg",
         "source": "raw_assets/DSC05672-Enhanced-NR (1).jpeg",
         "originalSize": "4444 x 2963",
         "processedSize": "2560 x 1707",
@@ -5420,7 +5420,7 @@
       "thumbnail": "assets/generated/thumbs/aircraft-lockheed-martin-f-35a-lightning-ii-75-squadron-raaf-f35a-3-9daa5b98.jpg",
       "source": "raw_assets/raaf_f35a_3.jpg",
       "originalSize": "1761 x 1321",
-      "processedSize": "2560 x 1920",
+      "processedSize": "1920 x 1440",
       "thumbnailSize": "1024 x 768",
       "exif": {
         "Make": "SONY",
@@ -16017,8 +16017,8 @@
       "livery": "",
       "title": "",
       "caption": "ADTW Formation Fly-by",
-      "image": "assets/generated/photos/squadron-air-development-and-test-wing-dsc00962-enhanced-nr-6756f7ee.jpg",
-      "thumbnail": "assets/generated/thumbs/squadron-air-development-and-test-wing-dsc00962-enhanced-nr-6756f7ee.jpg",
+      "image": "assets/generated/photos/location-hero-gifu-air-base.jpg",
+      "thumbnail": "assets/generated/thumbs/location-hero-gifu-air-base.jpg",
       "source": "raw_assets/DSC00962-Enhanced-NR.jpeg",
       "originalSize": "4095 x 2730",
       "processedSize": "2560 x 1707",

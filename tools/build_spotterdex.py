@@ -40,6 +40,7 @@ THUMB_JPEG_SUBSAMPLING = 2
 LOGO_PNG_COLORS = 256
 FULL_JPEG_PROFILE = f"spotterdex-full-jpeg-v4-q{FULL_JPEG_QUALITY}-s{FULL_JPEG_SUBSAMPLING}"
 THUMB_JPEG_PROFILE = f"spotterdex-thumb-jpeg-v4-q{THUMB_JPEG_QUALITY}-s{THUMB_JPEG_SUBSAMPLING}"
+SMALL_SOURCE_MAX_WIDTH = 1920
 EXIF_TAGS = {value: key for key, value in ExifTags.TAGS.items()}
 PROGRESS_LINE_MODE = False
 
@@ -336,6 +337,13 @@ def main() -> int:
         "photos": photos,
     }
 
+    deduplicate_generated_images(
+        manifest=manifest,
+        root=root,
+        photo_output_dir=photo_output_dir,
+        thumb_output_dir=thumb_output_dir,
+        warnings=warnings,
+    )
     validate_manifest(manifest, root, warnings)
 
     json_output.parent.mkdir(parents=True, exist_ok=True)
@@ -2066,6 +2074,110 @@ def process_photo_jobs(
     return results
 
 
+def full_output_width(source_width: int, configured_width: int) -> int:
+    """Choose the full-size derivative width for a source image.
+
+    Sources at or below 1920px are intentionally upscaled to no more than
+    1920px. Larger sources retain the existing configured 2560px target.
+    """
+    requested_width = max(1, int(configured_width))
+    if int(source_width) <= SMALL_SOURCE_MAX_WIDTH:
+        return min(requested_width, SMALL_SOURCE_MAX_WIDTH)
+    return requested_width
+
+
+def _manifest_generated_asset_references(manifest: Dict[str, Any]) -> set[str]:
+    references: set[str] = set()
+
+    def visit(value: Any) -> None:
+        if isinstance(value, dict):
+            for key, item in value.items():
+                if key in {"image", "thumbnail"} and isinstance(item, str):
+                    references.add(item)
+                visit(item)
+        elif isinstance(value, list):
+            for item in value:
+                visit(item)
+
+    visit(manifest)
+    return references
+
+
+def _rewrite_manifest_generated_assets(value: Any, replacements: Dict[str, str]) -> None:
+    if isinstance(value, dict):
+        for key, item in list(value.items()):
+            if key in {"image", "thumbnail"} and isinstance(item, str):
+                value[key] = replacements.get(item, item)
+            else:
+                _rewrite_manifest_generated_assets(item, replacements)
+    elif isinstance(value, list):
+        for item in value:
+            _rewrite_manifest_generated_assets(item, replacements)
+
+
+def deduplicate_generated_images(
+    manifest: Dict[str, Any],
+    root: Path,
+    photo_output_dir: Path,
+    thumb_output_dir: Path,
+    warnings: BuildWarningLog,
+) -> None:
+    """Reuse one generated file for byte-identical photo derivatives.
+
+    Heroes often point at the same source frame as a normal photo. Their
+    semantic filenames are useful while processing, but the published bundle
+    should contain one copy of identical full-size and thumbnail bytes.
+    """
+    referenced_paths = _manifest_generated_asset_references(manifest)
+    replacements: Dict[str, str] = {}
+    removed_files = 0
+    saved_bytes = 0
+
+    for output_dir in (photo_output_dir, thumb_output_dir):
+        if not output_dir.exists():
+            continue
+
+        by_digest: Dict[str, List[Path]] = {}
+        for path in sorted(output_dir.glob("*.jpg")):
+            try:
+                digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            except OSError as exc:
+                warnings.add(f"could not hash generated image {relative_posix(path, root)}: {exc}")
+                continue
+            by_digest.setdefault(digest, []).append(path)
+
+        for paths in by_digest.values():
+            if len(paths) < 2:
+                continue
+            canonical = min(
+                paths,
+                key=lambda path: (
+                    site_path_for(path, root) not in referenced_paths,
+                    site_path_for(path, root),
+                ),
+            )
+            for duplicate in paths:
+                if duplicate == canonical:
+                    continue
+                duplicate_site_path = site_path_for(duplicate, root)
+                try:
+                    duplicate_size = duplicate.stat().st_size
+                    duplicate.unlink()
+                except OSError as exc:
+                    warnings.add(f"could not remove duplicate generated image {duplicate_site_path}: {exc}")
+                    continue
+                replacements[duplicate_site_path] = site_path_for(canonical, root)
+                removed_files += 1
+                saved_bytes += duplicate_size
+
+    if replacements:
+        _rewrite_manifest_generated_assets(manifest, replacements)
+        warnings.info(
+            f"deduplicated {removed_files} generated image files "
+            f"({saved_bytes / (1024 * 1024):.2f} MiB saved)."
+        )
+
+
 def jpeg_matches_profile(image: Image.Image, profile: str) -> bool:
     """Return whether a generated JPEG was encoded with the current web profile."""
     comment = image.info.get("comment", b"")
@@ -2134,6 +2246,9 @@ def process_photo_job(job: Dict[str, Any]) -> Dict[str, Any]:
         with Image.open(source_path) as opened:
             exif = extract_exif(opened)
             original_size = f"{opened.width} x {opened.height}"
+            output_exif = normalized_output_exif(opened)
+            image = ImageOps.exif_transpose(opened).convert("RGB")
+            processed_width = full_output_width(image.width, int(job["target_width"]))
             if reuse_existing:
                 with Image.open(output_path) as processed_image, Image.open(thumb_path) as thumbnail_image:
                     processed_size = processed_image.size
@@ -2143,16 +2258,13 @@ def process_photo_job(job: Dict[str, Any]) -> Dict[str, Any]:
                 # A changed build width or thumbnail width requires a fresh output,
                 # even when the source image has not changed.
                 reuse_existing = (
-                    processed_size[0] == int(job["target_width"])
+                    processed_size[0] == processed_width
                     and thumbnail_size[0] == int(job["thumb_width"])
                     and full_profile_matches
                     and thumb_profile_matches
                 )
             if not reuse_existing:
-                output_exif = normalized_output_exif(opened)
-                image = ImageOps.exif_transpose(opened)
-                image = image.convert("RGB")
-                processed = resize_to_width(image, int(job["target_width"]))
+                processed = resize_to_width(image, processed_width)
                 thumbnail = resize_to_width(image, int(job["thumb_width"]))
                 # Lanczos is Pillow's highest-quality resampling filter. Full frames
                 # retain fine aircraft detail, while compact thumbnails load quickly.
@@ -2273,9 +2385,8 @@ def process_photo(
             exif = extract_exif(opened)
             output_exif = normalized_output_exif(opened)
             original_size = f"{opened.width} x {opened.height}"
-            image = ImageOps.exif_transpose(opened)
-            image = image.convert("RGB")
-            processed = resize_to_width(image, target_width)
+            image = ImageOps.exif_transpose(opened).convert("RGB")
+            processed = resize_to_width(image, full_output_width(image.width, target_width))
             thumbnail = resize_to_width(image, thumb_width)
             save_web_jpeg(
                 processed,
@@ -2488,9 +2599,8 @@ def process_custom_hero(
         with Image.open(source_path) as opened:
             output_exif = normalized_output_exif(opened)
             original_size = f"{opened.width} x {opened.height}"
-            image = ImageOps.exif_transpose(opened)
-            image = image.convert("RGB")
-            processed = resize_to_width(image, target_width)
+            image = ImageOps.exif_transpose(opened).convert("RGB")
+            processed = resize_to_width(image, full_output_width(image.width, target_width))
             thumbnail = resize_to_width(image, thumb_width)
             save_web_jpeg(
                 processed,

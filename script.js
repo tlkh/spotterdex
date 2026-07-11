@@ -3,6 +3,7 @@
   const EMPTY_PHOTOS = Object.freeze([]);
   const RECENT_PHOTO_LIMIT = 8;
   const MOBILE_ARCHIVE_PAGE_SIZE = 12;
+  const MOBILE_ARCHIVE_PREFETCH_OFFSET = Math.max(0, Math.floor(MOBILE_ARCHIVE_PAGE_SIZE / 2) - 1);
   const VIEWER_SWIPE_MIN_DISTANCE = 56;
   const VIEWER_SWIPE_MAX_DURATION = 650;
   const MAP_LABEL_GAP_DESKTOP = 6;
@@ -1890,8 +1891,12 @@
     });
 
     const leaderPane = state.map.createPane("spotterdexLeaderPane");
-    leaderPane.style.zIndex = "590";
+    leaderPane.style.zIndex = "550";
     leaderPane.style.pointerEvents = "none";
+    const markerPane = state.map.getPane("markerPane");
+    if (markerPane) {
+      markerPane.style.zIndex = "600";
+    }
     const labelPane = state.map.createPane("spotterdexLabelPane");
     labelPane.style.zIndex = "650";
     // Let map gestures pass through the full-size pane. Individual label
@@ -3183,7 +3188,9 @@
       <div class="map-sheet-bar">
         <button class="map-sheet-handle" type="button" data-sheet-handle="map" aria-label="${expanded ? "Collapse" : "Expand"} ${escapeAttr(panelLabel)} panel" aria-expanded="${expanded}"></button>
         <strong>${escapeHtml(title)}</strong>
-        <button class="map-sheet-close" type="button" data-map-panel-close aria-label="Close ${escapeAttr(panelLabel)} panel">Close</button>
+        <button class="map-sheet-close" type="button" data-map-panel-close aria-label="Close ${escapeAttr(panelLabel)} panel">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+        </button>
       </div>
     `;
   }
@@ -5161,6 +5168,7 @@
     }
 
     const scrollY = window.scrollY;
+    const scrollAnchor = captureArchiveScrollAnchor(kind);
     state.archiveLoadPending = true;
     try {
       if (kind === "aircraft") {
@@ -5176,9 +5184,91 @@
     } finally {
       state.archiveLoadPending = false;
       window.requestAnimationFrame(() => {
-        window.scrollTo({ top: scrollY, behavior: "auto" });
+        if (!restoreArchiveScrollAnchor(scrollAnchor)) {
+          window.scrollTo({ top: scrollY, behavior: "auto" });
+        }
       });
     }
+  }
+
+  function archiveItemSelector(kind) {
+    if (kind === "aircraft") {
+      return "#dexView .aircraft-card[data-aircraft-id]";
+    }
+    if (kind === "squadrons") {
+      return "#squadronsView .squadron-logo-card[data-squadron-id]";
+    }
+    if (kind === "airshows") {
+      return "#airshowsView .airshow-timeline-card[data-airshow-id]";
+    }
+    return "";
+  }
+
+  function archiveItemKeyAttribute(kind) {
+    if (kind === "aircraft") {
+      return "data-aircraft-id";
+    }
+    if (kind === "squadrons") {
+      return "data-squadron-id";
+    }
+    if (kind === "airshows") {
+      return "data-airshow-id";
+    }
+    return "";
+  }
+
+  function archiveItemElements(kind) {
+    const selector = archiveItemSelector(kind);
+    return selector ? Array.from(document.querySelectorAll(selector)) : [];
+  }
+
+  function archiveVisibleCount(kind) {
+    if (kind === "aircraft") {
+      return state.dexVisibleCount;
+    }
+    if (kind === "squadrons") {
+      return state.squadronVisibleCount;
+    }
+    if (kind === "airshows") {
+      return state.airshowVisibleCount;
+    }
+    return 0;
+  }
+
+  function archiveLoadTarget(kind, visibleCount = archiveVisibleCount(kind)) {
+    const items = archiveItemElements(kind);
+    const batchStart = Math.max(0, visibleCount - MOBILE_ARCHIVE_PAGE_SIZE);
+    return items[batchStart + MOBILE_ARCHIVE_PREFETCH_OFFSET] || null;
+  }
+
+  function captureArchiveScrollAnchor(kind) {
+    const target = archiveLoadTarget(kind);
+    const keyAttribute = archiveItemKeyAttribute(kind);
+    if (!target || !keyAttribute) {
+      return null;
+    }
+    return {
+      kind,
+      key: target.getAttribute(keyAttribute),
+      top: target.getBoundingClientRect().top
+    };
+  }
+
+  function restoreArchiveScrollAnchor(anchor) {
+    if (!anchor || !anchor.key) {
+      return false;
+    }
+    const keyAttribute = archiveItemKeyAttribute(anchor.kind);
+    const target = archiveItemElements(anchor.kind)
+      .find((item) => item.getAttribute(keyAttribute) === anchor.key);
+    if (!target) {
+      return false;
+    }
+    const delta = target.getBoundingClientRect().top - anchor.top;
+    if (Math.abs(delta) > 0.5) {
+      window.scrollBy({ top: delta, behavior: "auto" });
+    }
+    return true;
   }
 
   function disconnectArchiveLoadObserver() {
@@ -5202,6 +5292,8 @@
     }
 
     const loadKind = sentinel.dataset.archiveLoadSentinel;
+    const visibleCount = Number(sentinel.dataset.archiveVisibleCount) || MOBILE_ARCHIVE_PAGE_SIZE;
+    const target = archiveLoadTarget(loadKind, visibleCount) || sentinel;
     if ("IntersectionObserver" in window) {
       state.archiveLoadObserver = new IntersectionObserver((entries, observer) => {
         if (!entries.some((entry) => entry.isIntersecting)) {
@@ -5209,19 +5301,19 @@
         }
         observer.disconnect();
         loadNextArchivePage(loadKind);
-      }, { rootMargin: "0px 0px 640px 0px" });
-      state.archiveLoadObserver.observe(sentinel);
+      }, { rootMargin: "0px 0px 120px 0px" });
+      state.archiveLoadObserver.observe(target);
       return;
     }
 
     const loadIfNearViewport = () => {
-      if (sentinel.getBoundingClientRect().top <= window.innerHeight + 640) {
+      if (target.getBoundingClientRect().top <= window.innerHeight + 120) {
         loadNextArchivePage(loadKind);
       }
     };
     state.archiveLoadFallbackHandler = loadIfNearViewport;
     window.addEventListener("scroll", loadIfNearViewport, { passive: true });
-    loadIfNearViewport();
+    window.requestAnimationFrame(loadIfNearViewport);
   }
 
   function renderArchivePagination(container, visibleCount, totalCount, kind, itemLabel) {
@@ -5238,7 +5330,7 @@
     container.innerHTML = `
       <p>Showing ${visibleCount} of ${totalCount} ${escapeHtml(itemLabel)}</p>
       ${hasMore
-        ? `<span class="archive-load-sentinel" data-archive-load-sentinel="${escapeAttr(kind)}" aria-hidden="true"></span>`
+        ? `<span class="archive-load-sentinel" data-archive-load-sentinel="${escapeAttr(kind)}" data-archive-visible-count="${visibleCount}" aria-hidden="true"></span>`
         : ""}
     `;
     if (hasMore) {
