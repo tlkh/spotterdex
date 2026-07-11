@@ -119,8 +119,8 @@ photos:
   caption: F-2A landing
   airshow: Tsuiki Air Show 2025
 - path: DSC04758-Enhanced-NR.jpeg
-  location: Chitose Air Base
-  pin_id: chitose-air-base
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
   caption: F-2A landing with drag chute at Tsuiki Air Base
   airshow: Tsuiki Air Show 2023
 aircraft_family: fighter

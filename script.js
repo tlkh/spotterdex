@@ -26,8 +26,8 @@
   const SHEET_SNAP_DISTANCE = 52;
   const SHEET_DISMISS_VELOCITY = 0.78;
   const DEFAULT_SHARE_IMAGE_ALT = "Aircraft formation over Gifu Air Base in Japan";
-  const FOCAL_DISTRIBUTION_FIRST_CENTER = 50;
-  const FOCAL_DISTRIBUTION_BIN_WIDTH = 50;
+  const FOCAL_DISTRIBUTION_FIRST_CENTER = 100;
+  const FOCAL_DISTRIBUTION_BIN_WIDTH = 100;
   const AIRCRAFT_FAMILY_DEFINITIONS = [
     { id: "fighter", label: "Fighter" },
     { id: "helicopter", label: "Helicopter" },
@@ -314,6 +314,7 @@
     els.siteHeader = document.querySelector(".site-header");
     els.main = document.getElementById("main");
     els.brand = document.querySelector(".brand");
+    els.brandMark = document.getElementById("fitPinsIconButton");
     els.metaDescription = document.querySelector('meta[name="description"]');
     els.ogTitle = document.querySelector('meta[property="og:title"]');
     els.ogDescription = document.querySelector('meta[property="og:description"]');
@@ -335,6 +336,13 @@
     els.mobileInstallPrompt = document.getElementById("mobileInstallPrompt");
     els.mobileInstallButton = document.getElementById("mobileInstallButton");
     els.mobileInstallDismiss = document.getElementById("mobileInstallDismiss");
+    els.mobileMapLocationCard = document.querySelector(".mobile-map-location-card");
+    els.mobileMapBrand = document.getElementById("mobileMapFitButton");
+    els.mobileMapLocationTitle = document.getElementById("mobileMapLocationTitle");
+    els.mobileMapPhotosCard = document.querySelector(".mobile-map-photos-card");
+    els.mobileMapLocationNav = document.querySelector(".mobile-map-location-nav");
+    els.mobileMapPhotoCount = document.getElementById("mobileMapPhotoCount");
+    els.mobileMapPhotoLocation = document.getElementById("mobileMapPhotoLocation");
     els.appToast = document.getElementById("appToast");
     els.pageLoadingIndicator = document.getElementById("pageLoadingIndicator");
     els.pageLoadingLabel = document.getElementById("pageLoadingLabel");
@@ -657,12 +665,30 @@
   function chooseInitialSelections() {
     const mostRecentLocation = recentLocations()[0];
     const firstEnabledPin = state.data.pins.find((pin) => pin.enabled);
-
-    state.selectedPinId = mostRecentLocation ? mostRecentLocation.pin.id : firstEnabledPin ? firstEnabledPin.id : null;
+    state.selectedPinId = isFocusedMobileLayout()
+      ? null
+      : mostRecentLocation?.pin.id || firstEnabledPin?.id || null;
     state.selectedAircraftId = null;
   }
 
   function setupEvents() {
+    const fitMapFromBrand = (event) => {
+      if (currentPageViewId() !== "mapView") {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      fitMapToPins();
+    };
+
+    els.brandMark?.addEventListener("click", fitMapFromBrand);
+    els.brandMark?.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        fitMapFromBrand(event);
+      }
+    });
+    els.mobileMapBrand?.addEventListener("click", () => fitMapToPins());
+
     if (els.brand) {
       els.brand.addEventListener("click", (event) => {
         if (currentPageViewId() !== "mapView" || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
@@ -684,6 +710,13 @@
     els.mobileInstallDismiss?.addEventListener("click", dismissInstallPrompt);
 
     document.getElementById("fitPinsButton")?.addEventListener("click", fitMapToPins);
+    document.getElementById("fitPinsPanelButton")?.addEventListener("click", fitMapToPins);
+    els.mobileMapLocationNav?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-location-nav]");
+      if (button) {
+        stepRecentLocation(button.dataset.locationNav);
+      }
+    });
     els.mapPanelCoachDismiss?.addEventListener("click", dismissMapPanelCoach);
     document.getElementById("closeViewerButton").addEventListener("click", closeViewer);
     document.getElementById("previousPhotoButton").addEventListener("click", () => stepPhoto(-1));
@@ -1958,6 +1991,36 @@
     els.aircraftCount.textContent = String(state.data.aircraft.length);
     els.photoCount.textContent = String(state.data.photos.length);
     els.locationCount.textContent = String(enabledPins.length);
+    updateMobileMapHeader();
+    updateRecentLocationNav();
+  }
+
+  function updateMobileMapHeader() {
+    if (!els.mobileMapLocationTitle || !els.mobileMapPhotoCount) {
+      return;
+    }
+
+    const enabledPins = state.data.pins.filter((pin) => pin.enabled);
+    const pin = state.pinById.get(state.selectedPinId);
+    const photos = pin ? photosForPin(pin) : EMPTY_PHOTOS;
+    els.mobileMapLocationTitle.textContent = `Browse ${enabledPins.length} spotting location${enabledPins.length === 1 ? "" : "s"}`;
+    els.mobileMapPhotoCount.textContent = String(photos.length);
+    if (els.mobileMapPhotoLocation) {
+      els.mobileMapPhotoLocation.textContent = pin?.name || "No location selected";
+    }
+
+    if (els.mobileMapLocationCard) {
+      els.mobileMapLocationCard.setAttribute("aria-label", "Browse locations");
+    }
+    if (els.mobileMapPhotosCard) {
+      els.mobileMapPhotosCard.disabled = !pin;
+      els.mobileMapPhotosCard.setAttribute(
+        "aria-label",
+        pin
+          ? `Open ${photos.length} photo${photos.length === 1 ? "" : "s"} for ${pin.name}`
+          : "Open photos for the selected location"
+      );
+    }
   }
 
   function renderLocations() {
@@ -1967,6 +2030,7 @@
 
     if (!locations.length) {
       els.locationList.innerHTML = '<div class="empty-state">No recent locations match this search.</div>';
+      updateRecentLocationNav();
       return;
     }
 
@@ -1985,6 +2049,56 @@
         `;
       })
       .join("");
+    updateRecentLocationNav();
+  }
+
+  function updateRecentLocationNav() {
+    if (!els.mobileMapLocationNav) {
+      return;
+    }
+
+    const buttons = new Map(
+      Array.from(els.mobileMapLocationNav.querySelectorAll("[data-location-nav]")).map((button) => [button.dataset.locationNav, button])
+    );
+    const locations = recentLocations();
+    const selectedIndex = locations.findIndex((location) => location.pin.id === state.selectedPinId);
+    const olderButton = buttons.get("older");
+    const newerButton = buttons.get("newer");
+    if (olderButton) {
+      olderButton.disabled = !locations.length || selectedIndex < 0 || selectedIndex >= locations.length - 1;
+    }
+    if (newerButton) {
+      newerButton.disabled = !locations.length || (selectedIndex >= 0 ? selectedIndex === 0 : false);
+    }
+  }
+
+  function stepRecentLocation(direction) {
+    if (direction !== "older" && direction !== "newer") {
+      return;
+    }
+
+    const locations = recentLocations();
+    if (!locations.length) {
+      return;
+    }
+
+    const selectedIndex = locations.findIndex((location) => location.pin.id === state.selectedPinId);
+    let nextIndex = selectedIndex;
+    if (selectedIndex < 0) {
+      nextIndex = direction === "newer" ? 0 : locations.length - 1;
+    } else if (direction === "older") {
+      nextIndex += 1;
+    } else {
+      nextIndex -= 1;
+    }
+
+    if (nextIndex < 0 || nextIndex >= locations.length) {
+      return;
+    }
+    if (isMobileMapLayout()) {
+      setMapPanel(null);
+    }
+    selectPin(locations[nextIndex].pin.id, { openPanel: false });
   }
 
   function initMap() {
@@ -2042,6 +2156,9 @@
     // Let map gestures pass through the full-size pane. Individual label
     // icons opt back into pointer events via .spotterdex-marker-label-shell.
     labelPane.style.pointerEvents = "none";
+    const trafficPane = state.map.createPane("spotterdexTrafficPane");
+    trafficPane.style.zIndex = "600";
+    trafficPane.style.pointerEvents = "none";
     state.mapTrafficLayer = window.L.layerGroup().addTo(state.map);
     state.mapLeaderLayer = window.L.layerGroup().addTo(state.map);
     state.markerLayer = window.L.layerGroup().addTo(state.map);
@@ -3211,6 +3328,7 @@
       const family = families[initialIndex];
       const marker = window.L.marker([pin.lat, pin.lon], {
         icon: mapTrafficIcon(pin, family),
+        pane: "spotterdexTrafficPane",
         interactive: false,
         keyboard: false,
         zIndexOffset: -120
@@ -5004,7 +5122,10 @@
     const firstBoundary = firstCenter - halfWidth;
     const minimum = Math.min(...focalLengths);
     const maximum = Math.max(...focalLengths);
-    const lastCenter = Math.max(firstCenter, Math.ceil((maximum - halfWidth) / width) * width);
+    const lastCenter = Math.max(
+      firstCenter,
+      firstCenter + Math.floor((maximum - firstBoundary) / width) * width
+    );
     const bins = [];
 
     if (minimum < firstBoundary) {
@@ -5021,7 +5142,7 @@
     for (let center = firstCenter; center <= lastCenter; center += width) {
       const start = center - halfWidth;
       const end = center + halfWidth;
-      const includesEnd = center === lastCenter;
+      const includesEnd = false;
       bins.push({
         start,
         end,
@@ -5042,7 +5163,7 @@
     if (start === end) {
       return formatFocalLength(start);
     }
-    return `${Math.round(start)}-${Math.round(end)}mm`;
+    return `${Math.round(start)}-${(end - 0.01).toFixed(2)}mm`;
   }
 
   function focalLengthModeLabel(mode = state.statsFocalMode) {
@@ -5972,6 +6093,8 @@
       state.expandedLocationGroupKeys.clear();
     }
     renderLocations();
+    updateRecentLocationNav();
+    updateMobileMapHeader();
     updateActiveMapMarker(previousPinId, pinId);
 
     if (!isMobileMapLayout()) {
@@ -6400,6 +6523,7 @@
 
   function fitMapToPins(options = {}) {
     if (!state.map || !window.L) {
+      initializeMapWhenReady();
       return;
     }
 

@@ -45,3 +45,9 @@ events:
     scope: aircraft
     entry_path: aircraft/kai-t-50b-golden-eagle/black-eagles/entry.yaml
     index: 2
+- name: NDP 2023
+  hero_photo:
+    scope: location
+    entry_path: map_pins/singapore/pins.yaml
+    index: 6
+    target_pin_id: singapore

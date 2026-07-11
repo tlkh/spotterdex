@@ -74,13 +74,13 @@ photos:
   caption: F-2A parked on the ground at Tsuiki
   airshow: Tsuiki Air Show 2023
 - path: DSC04130-Enhanced-NR.jpeg
-  location: Chitose Air Base
-  pin_id: chitose-air-base
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
   caption: F-2A taking off from Tsuiki Air Base
   airshow: Tsuiki Air Show 2023
 - path: DSC04107-Enhanced-NR.jpeg
-  location: Chitose Air Base
-  pin_id: chitose-air-base
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
   caption: F-2A landing at Tsuiki Air Base
   airshow: Tsuiki Air Show 2023
 aircraft_family: fighter

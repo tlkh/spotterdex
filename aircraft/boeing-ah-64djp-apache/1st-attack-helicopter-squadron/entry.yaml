@@ -38,18 +38,18 @@ photos:
   caption: AH-64DJP Apache at Tsuiki Air Base
   airshow: Tsuiki Air Show 2023
 - path: DSC05490-Enhanced-NR.jpeg
-  location: Chitose Air Base
-  pin_id: chitose-air-base
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
   caption: AH-64DJP Apache at Tsuiki Air Base
   airshow: Tsuiki Air Show 2023
 - path: DSC05622-Enhanced-NR.jpeg
-  location: Chitose Air Base
-  pin_id: chitose-air-base
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
   caption: AH-64DJP Apache at Tsuiki Air Base
   airshow: Tsuiki Air Show 2023
 - path: DSC05547-Enhanced-NR.jpeg
-  location: Chitose Air Base
-  pin_id: chitose-air-base
+  location: Tsuiki Air Base
+  pin_id: tsuiki-air-base
   caption: AH-64DJP Apache at Tsuiki Air Base
   airshow: Tsuiki Air Show 2023
 aircraft_family: helicopter

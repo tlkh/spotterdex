@@ -59,15 +59,15 @@
     <a class="skip-link" href="#main">Skip to content</a>
 
     <header class="site-header">
-      <a class="brand" href="index.html" aria-label="SpotterDex home">
-        <span class="brand-mark" aria-hidden="true">
+      <div class="brand">
+        <button class="brand-mark" id="fitPinsIconButton" type="button" aria-label="Fit all map locations" title="Fit all map locations">
           <img src="assets/icons/spotterdex-app-icon.png" alt="">
-        </span>
-        <span>
+        </button>
+        <a class="brand-copy" href="index.html" aria-label="SpotterDex home">
           <span class="brand-title">SpotterDex</span>
           <span class="brand-subtitle">Timothy's Logbook</span>
-        </span>
-      </a>
+        </a>
+      </div>
 
       <nav class="tab-nav" aria-label="Main views">
         <a class="tab-button is-active" href="index.html" aria-current="page">World Map</a>
@@ -77,19 +77,79 @@
         <a class="tab-button" href="stats.html">Stats</a>
       </nav>
 
-      <select class="nav-select" id="viewSelect" aria-label="Main view">
-        <option value="index.html" selected>World Map</option>
-        <option value="aircraft-dex.html">Aircraft Dex</option>
-        <option value="squadrons.html">Squadrons</option>
-        <option value="airshows.html">Airshows</option>
-        <option value="stats.html">Stats</option>
-      </select>
+      <div class="header-actions">
+        <button class="header-fit-button" type="button" id="fitPinsButton" aria-label="Fit all map locations" title="Fit all map locations">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <circle cx="12" cy="12" r="8.5"></circle>
+            <path d="M3.5 12h17M5.2 7.5h13.6M5.2 16.5h13.6"></path>
+            <path d="M12 3.5c2.4 2.4 3.6 5.2 3.6 8.5s-1.2 6.1-3.6 8.5c-2.4-2.4-3.6-5.2-3.6-8.5S9.6 5.9 12 3.5Z"></path>
+          </svg>
+        </button>
+        <select class="nav-select" id="viewSelect" aria-label="Main view">
+          <option value="index.html" selected>World Map</option>
+          <option value="aircraft-dex.html">Aircraft Dex</option>
+          <option value="squadrons.html">Squadrons</option>
+          <option value="airshows.html">Airshows</option>
+          <option value="stats.html">Stats</option>
+        </select>
+      </div>
+
+      <div class="mobile-map-header" aria-label="Map location controls">
+        <button class="mobile-map-brand" type="button" id="mobileMapFitButton" aria-label="Fit all map locations" title="Fit all map locations">
+          <span class="mobile-map-location-mark" aria-hidden="true">
+            <img src="assets/icons/spotterdex-app-icon.png" alt="">
+          </span>
+          <span class="mobile-map-brand-copy">
+            <strong>SpotterDex</strong>
+            <small>Timothy's Logbook</small>
+          </span>
+        </button>
+        <button
+          class="mobile-map-location-card"
+          type="button"
+          data-map-panel-toggle="locations"
+          aria-controls="mapControlPanel"
+          aria-expanded="false"
+        >
+          <span class="mobile-map-location-copy">
+            <span>Locations</span>
+            <strong id="mobileMapLocationTitle">Browse locations</strong>
+          </span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg>
+        </button>
+      </div>
 
     </header>
 
     <main class="app-shell" id="main">
       <section class="view is-active" id="mapView" data-view>
         <div class="workspace map-workspace">
+          <button
+            class="mobile-map-photos-card"
+            type="button"
+            data-map-panel-toggle="results"
+            aria-controls="mapResults"
+            aria-expanded="false"
+            aria-label="Open photos for the selected location"
+            disabled
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3.5" y="5" width="17" height="14" rx="2"></rect>
+              <circle cx="9" cy="10" r="1.5"></circle>
+              <path d="m5.5 17 4.2-4 3.1 2.6 2.5-2.2 3.2 3.6"></path>
+            </svg>
+            <strong id="mobileMapPhotoCount">0</strong>
+            <span>Photos</span>
+            <small id="mobileMapPhotoLocation">No location selected</small>
+          </button>
+          <div class="mobile-map-location-nav" aria-label="Recent location navigation">
+            <button type="button" data-location-nav="older" aria-label="Older recent location" title="Older recent location" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m14.5 5-7 7 7 7"></path></svg>
+            </button>
+            <button type="button" data-location-nav="newer" aria-label="Newer recent location" title="Newer recent location" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9.5 5 7 7-7 7"></path></svg>
+            </button>
+          </div>
           <button
             class="map-panel-toggle map-panel-toggle-locations"
             type="button"
@@ -163,7 +223,7 @@
 
             <div class="panel-heading">
               <h2>Recent Locations</h2>
-              <button class="plain-button" type="button" id="fitPinsButton">Fit All</button>
+              <button class="plain-button" type="button" id="fitPinsPanelButton" aria-label="Fit all map locations">Fit All</button>
             </div>
             <div class="location-list" id="locationList" aria-live="polite"></div>
           </aside>
