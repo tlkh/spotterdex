@@ -67,12 +67,17 @@
           </section>
           <section class="squadron-directory" aria-label="Squadron logo gallery">
             <div class="squadron-command-bar">
-              <div class="squadron-country-rail" aria-label="Jump to country">
+              <label class="squadron-mobile-search" for="squadronSearch">
+                <span class="field-label">Find a unit</span>
+                <input class="search-input" id="squadronSearch" type="search" autocomplete="off" placeholder="Squadron, aircraft, or country">
+              </label>
+              <div class="squadron-country-rail" aria-label="Browse by country">
                 <p class="eyebrow">Country</p>
                 <nav id="squadronCountryRail" class="squadron-country-nav"></nav>
               </div>
             </div>
             <div class="squadron-country-list" id="squadronLogoGrid"></div>
+            <div class="archive-pagination" id="squadronPagination" aria-live="polite"></div>
           </section>
         </div>
       </section>

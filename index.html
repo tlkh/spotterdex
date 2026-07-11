@@ -104,6 +104,13 @@
             Photos
           </button>
 
+          <button
+            class="map-panel-backdrop"
+            type="button"
+            data-map-panel-close
+            aria-label="Close map panel"
+          ></button>
+
           <div class="map-panel-coach" id="mapPanelCoach" role="status" hidden>
             <p>
               Tap <strong>Locations</strong> to browse pins, or select a marker to open
@@ -115,6 +122,11 @@
           </div>
 
           <aside class="control-panel" id="mapControlPanel" aria-label="Timothy Liu overview">
+            <div class="map-sheet-bar">
+              <span class="map-sheet-handle" aria-hidden="true"></span>
+              <strong>Locations</strong>
+              <button class="map-sheet-close" type="button" data-map-panel-close aria-label="Close Locations panel">Close</button>
+            </div>
             <p class="eyebrow">Spotting logbook</p>
             <h1>Timothy Liu</h1>
 
