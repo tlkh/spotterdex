@@ -9890,6 +9890,13 @@ button.location-unit-chip:focus-visible,
   #mapView #fitPinsPanelButton {
     display: none;
   }
+
+  #mapView #mapResults {
+    top: 0;
+    bottom: 0;
+    height: calc(100dvh - var(--mobile-header-height) - var(--mobile-tab-height));
+    max-height: calc(100dvh - var(--mobile-header-height) - var(--mobile-tab-height));
+  }
 }
 
 /* On phones, the location strip is the handle for a connected top drawer. */

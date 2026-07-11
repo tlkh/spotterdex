@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-11T12:03:33+00:00",
+  "generatedAt": "2026-07-11T12:35:18+00:00",
   "pins": [
     {
       "id": "hong-kong-international-airport",
@@ -2766,7 +2766,7 @@
           "id": "kawasaki-t-4-8th-tactical-fighter-squadron",
           "name": "8th Tactical Fighter Squadron",
           "country": "Japan",
-          "logo": "",
+          "logo": "assets/logos/japan-8th-tactical-fighter-squadron.png",
           "unitType": "squadron",
           "unitLabel": "Squadron",
           "showOnSquadronsPage": true,
@@ -4302,7 +4302,7 @@
       "id": "japan-air-rescue-wing",
       "name": "Air Rescue Wing",
       "country": "Japan",
-      "logo": "",
+      "logo": "assets/logos/japan-air-rescue-wing.png",
       "unitType": "squadron",
       "unitLabel": "Squadron",
       "showOnSquadronsPage": true,

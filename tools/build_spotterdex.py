@@ -306,6 +306,7 @@ def main() -> int:
         warnings=warnings,
         show_progress=show_progress,
     )
+    propagate_squadron_logos(aircraft_entries, squadron_entries)
     location_photos = load_location_photos(
         root=root,
         map_dir=map_dir,
@@ -1339,6 +1340,35 @@ def load_aircraft(
     )
     apply_aircraft_stats(aircraft_entries, photos)
     return aircraft_entries, photos
+
+
+def propagate_squadron_logos(
+    aircraft_entries: List[Dict[str, Any]],
+    squadron_entries: List[Dict[str, Any]],
+) -> None:
+    """Share each unit's resolved logo across all manifest records."""
+    units = list(squadron_entries)
+    for aircraft_entry in aircraft_entries:
+        units.extend(aircraft_entry.get("squadrons", []))
+
+    logos_by_identity: Dict[Tuple[str, str], str] = {}
+    for unit in units:
+        identity = (
+            normalize_key(f"{unit.get('country', '')}-{unit.get('name', '')}"),
+            str(unit.get("unitType", "squadron")),
+        )
+        logo = str(unit.get("logo") or "").strip()
+        if logo and identity not in logos_by_identity:
+            logos_by_identity[identity] = logo
+
+    for unit in units:
+        identity = (
+            normalize_key(f"{unit.get('country', '')}-{unit.get('name', '')}"),
+            str(unit.get("unitType", "squadron")),
+        )
+        logo = logos_by_identity.get(identity)
+        if logo:
+            unit["logo"] = logo
 
 
 def apply_aircraft_stats(aircraft_entries: List[Dict[str, Any]], photos: List[Dict[str, Any]]) -> None:

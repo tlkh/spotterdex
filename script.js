@@ -2003,7 +2003,7 @@
     const enabledPins = state.data.pins.filter((pin) => pin.enabled);
     const pin = state.pinById.get(state.selectedPinId);
     const photos = pin ? photosForPin(pin) : EMPTY_PHOTOS;
-    els.mobileMapLocationTitle.textContent = `Browse ${enabledPins.length} spotting location${enabledPins.length === 1 ? "" : "s"}`;
+    els.mobileMapLocationTitle.textContent = `${enabledPins.length} spot${enabledPins.length === 1 ? "" : "s"}`;
     els.mobileMapPhotoCount.textContent = String(photos.length);
     if (els.mobileMapPhotoLocation) {
       els.mobileMapPhotoLocation.textContent = pin?.name || "No location selected";
@@ -3594,17 +3594,19 @@
   }
 
   function renderLocationIdentityMarks(families, units, options = {}) {
-    const includeFamilies = options.includeFamilies !== false;
-    const familyMarks = includeFamilies ? (families || []).slice(0, 3).map((family) => `
-      <span class="location-identity-mark is-family" title="${escapeAttr(family.label)}">
-        <img src="${escapeAttr(family.lightModeIcon || family.darkIcon || family.icon)}" alt="${escapeAttr(family.label)}">
-      </span>
-    `) : [];
-    const unitMarks = (units || []).filter((unit) => unit.logo).slice(0, 3).map((unit) => `
+    const unitMarks = (units || []).filter((unit) => unit.logo).map((unit) => `
       <span class="location-identity-mark is-unit" title="${escapeAttr(`${unit.name} logo`)}">
         <img src="${escapeAttr(unit.logo)}" loading="lazy" decoding="async" fetchpriority="low" alt="${escapeAttr(`${unit.name} logo`)}">
       </span>
     `);
+    const includeFamilies = options.includeFamilies !== false;
+    const familyMarks = !unitMarks.length && includeFamilies
+      ? (families || []).slice(0, 3).map((family) => `
+          <span class="location-identity-mark is-family" title="${escapeAttr(family.label)}">
+            <img src="${escapeAttr(family.lightModeIcon || family.darkIcon || family.icon)}" alt="${escapeAttr(family.label)}">
+          </span>
+        `)
+      : [];
     if (!familyMarks.length && !unitMarks.length) {
       return "";
     }
