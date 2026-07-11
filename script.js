@@ -3,6 +3,7 @@
   const EMPTY_PHOTOS = Object.freeze([]);
   const RECENT_PHOTO_LIMIT = 8;
   const MOBILE_ARCHIVE_PAGE_SIZE = 12;
+  const MOBILE_DETAIL_PAGE_SIZE = 12;
   const MOBILE_ARCHIVE_PREFETCH_OFFSET = Math.max(0, Math.floor(MOBILE_ARCHIVE_PAGE_SIZE / 2) - 1);
   const VIEWER_SWIPE_MIN_DISTANCE = 56;
   const VIEWER_SWIPE_MAX_DURATION = 650;
@@ -129,6 +130,7 @@
     toastTimer: null,
     mapControlPanelOpen: true,
     renderedViews: new Set(),
+    detailGalleries: new Map(),
     fullDataPromise: null,
     lastHandledHistoryUrl: "",
     isApplyingHash: false
@@ -145,8 +147,6 @@
     state.sessionRestore = readPageSessionState();
     restoreSessionFilters(state.sessionRestore);
     setupEvents();
-    registerServiceWorker();
-    prefetchMobilePageShells();
 
     state.data = prepareData(await loadData());
     chooseInitialSelections();
@@ -160,6 +160,7 @@
     updateMobileAppChrome();
     updateConnectivityUi({ announce: false });
     restoreSessionScroll(state.sessionRestore);
+    schedulePageShellWarmup();
   }
 
   function currentPageViewId() {
@@ -176,11 +177,20 @@
     window.location.assign(url.href);
   }
 
-  function prefetchMobilePageShells() {
-    if (!isFocusedMobileLayout()) {
+  function schedulePageShellWarmup() {
+    const warmup = () => {
+      registerServiceWorker();
+      prefetchPageShells();
+    };
+    if (document.readyState === "complete") {
+      warmup();
       return;
     }
-    const currentPath = window.location.pathname;
+    window.addEventListener("load", warmup, { once: true });
+  }
+
+  function prefetchPageShells() {
+    const currentPath = new URL(pageRouteForView(currentPageViewId()), document.baseURI).pathname;
     unique(Object.values(PAGE_ROUTES)).forEach((route) => {
       const url = new URL(route, document.baseURI);
       if (url.pathname === currentPath) {
@@ -688,6 +698,16 @@
       if (state.renderedViews.has("squadronsView")) {
         renderSquadronsPage();
       }
+      const activeView = document.querySelector("[data-view].is-active")?.id;
+      if (activeView === "aircraftDetailView") {
+        renderAircraftDetail();
+      } else if (activeView === "squadronDetailView") {
+        renderSquadronDetail();
+      } else if (activeView === "airshowDetailView") {
+        renderAirshowDetail();
+      } else if (activeView === "locationDetailView") {
+        renderLocationPage();
+      }
     }, 150));
 
     if (
@@ -897,6 +917,12 @@
     const detailBackButton = event.target.closest("[data-detail-back]");
     if (detailBackButton) {
       setActiveTab(detailBackButton.dataset.detailBack);
+      return;
+    }
+
+    const detailLoadButton = event.target.closest("[data-detail-load-more]");
+    if (detailLoadButton) {
+      appendDetailGalleryPage(detailLoadButton);
       return;
     }
 
@@ -1497,6 +1523,7 @@
       view.hidden = !isActive;
       view.classList.toggle("is-active", isActive);
     });
+    document.body.classList.toggle("is-map-canvas-active", viewId === "mapView");
 
     if (els.viewSelect) {
       els.viewSelect.value = pageRouteForView(navigationViewId);
@@ -2090,6 +2117,11 @@
       })
         .on("click", () => selectPin(pin.id, { pan: false }))
         .addTo(state.markerLayer);
+      const markerElement = marker.getElement();
+      if (markerElement) {
+        markerElement.setAttribute("aria-label", `Select ${pin.name}`);
+        markerElement.setAttribute("title", pin.name);
+      }
       state.markersByPinId.set(pin.id, marker);
     });
     state.activeMapMarkerId = state.selectedPinId;
@@ -2116,7 +2148,7 @@
       const labelMarker = window.L.marker([pin.lat, pin.lon], {
         icon: mapLabelIcon(pin, pin.id === state.selectedPinId, callout, combineMobileCallouts),
         title: `Select ${pin.name}`,
-        keyboard: true,
+        keyboard: false,
         pane: "spotterdexLabelPane",
         zIndexOffset: pin.id === state.selectedPinId ? 900 : 0
       })
@@ -4203,7 +4235,7 @@
   function renderAirshowPhotoGroups(groups) {
     return `
       <div class="airshow-squadron-groups">
-        ${groups.map((group) => {
+        ${groups.map((group, index) => {
           const logo = group.logo
             ? `<span class="airshow-squadron-logo"><img src="${escapeAttr(group.logo)}" alt="${escapeAttr(`${group.title} logo`)}"></span>`
             : "";
@@ -4216,10 +4248,8 @@
                   <h3>${escapeHtml(group.title)}</h3>
                 </div>
                 <span class="count-pill">${group.photos.length}</span>
-              </div>
-              <div class="photo-grid airshow-photo-grid">
-                ${group.photos.map((photo) => renderPhotoCard(photo, "airshow")).join("")}
-              </div>
+                </div>
+              ${renderProgressivePhotoGrid(group.photos, "airshow", `airshow-${index}-${group.key}`, "airshow-photo-grid")}
             </section>
           `;
         }).join("")}
@@ -4516,7 +4546,7 @@
                 </div>
                 <span class="count-pill">${squadronLevelPhotos.length}</span>
               </div>
-              ${renderDetailPhotoGrid(squadronLevelPhotos, "squadron")}
+              ${renderDetailPhotoGrid(squadronLevelPhotos, "squadron", "squadron-level")}
             </section>`
           : ""
       }
@@ -4528,7 +4558,7 @@
           </div>
           <span class="count-pill">${otherPhotos.length}</span>
         </div>
-        ${renderDetailPhotoGrid(otherPhotos, "squadron")}
+        ${renderDetailPhotoGrid(otherPhotos, "squadron", "squadron-aircraft")}
       </section>
     `;
   }
@@ -4592,7 +4622,7 @@
                 </div>
                 <span class="count-pill">${locationPhotos.length}</span>
               </div>
-              ${renderDetailPhotoGrid(locationPhotos, "location")}
+              ${renderDetailPhotoGrid(locationPhotos, "location", "location-tagged")}
             </section>`
           : ""
       }
@@ -4605,7 +4635,7 @@
           </div>
           <span class="count-pill">${otherPhotos.length}</span>
         </div>
-        ${renderDetailPhotoGrid(otherPhotos, "location")}
+        ${renderDetailPhotoGrid(otherPhotos, "location", "location-aircraft")}
       </section>
     `;
   }
@@ -4635,16 +4665,64 @@
     `;
   }
 
-  function renderDetailPhotoGrid(photos, context) {
+  function renderDetailPhotoGrid(photos, context, galleryKey) {
     if (!photos.length) {
       return '<div class="empty-state">No photos found for this section yet.</div>';
     }
 
+    return renderProgressivePhotoGrid(photos, context, galleryKey, "detail-photo-grid");
+  }
+
+  function renderProgressivePhotoGrid(photos, context, galleryKey, className = "") {
+    const key = normalizeKey(galleryKey) || `gallery-${normalizeKey(photos[0]?.id || "photos")}`;
+    const galleryId = `detail-gallery-${key}`;
+    const gridId = `${galleryId}-grid`;
+    const mobile = isFocusedMobileLayout();
+    const visiblePhotos = mobile ? photos.slice(0, MOBILE_DETAIL_PAGE_SIZE) : photos;
+    state.detailGalleries.set(key, { photos, context });
+    const hasMore = visiblePhotos.length < photos.length;
+    const remaining = photos.length - visiblePhotos.length;
+
     return `
-      <div class="photo-grid detail-photo-grid">
-        ${photos.map((photo) => renderPhotoCard(photo, context)).join("")}
+      <div class="detail-gallery" id="${escapeAttr(galleryId)}" data-detail-gallery-visible="${visiblePhotos.length}" data-detail-gallery-total="${photos.length}">
+        <div class="photo-grid ${escapeAttr(className)}" id="${escapeAttr(gridId)}">
+          ${visiblePhotos.map((photo) => renderPhotoCard(photo, context)).join("")}
+        </div>
+        ${hasMore
+          ? `<button class="detail-gallery-load-more" type="button" data-detail-load-more="${escapeAttr(key)}" aria-controls="${escapeAttr(galleryId)}-grid">Show ${remaining} more photo${remaining === 1 ? "" : "s"}</button>`
+          : ""}
       </div>
     `;
+  }
+
+  function appendDetailGalleryPage(button) {
+    if (!isFocusedMobileLayout()) {
+      return;
+    }
+    const key = button.dataset.detailLoadMore || "";
+    const galleryRecord = state.detailGalleries.get(key);
+    const gallery = document.getElementById(`detail-gallery-${key}`);
+    const grid = gallery?.querySelector(".photo-grid");
+    if (!galleryRecord || !gallery || !grid) {
+      return;
+    }
+
+    const visibleCount = Number(gallery.dataset.detailGalleryVisible) || 0;
+    const nextCount = Math.min(visibleCount + MOBILE_DETAIL_PAGE_SIZE, galleryRecord.photos.length);
+    grid.insertAdjacentHTML(
+      "beforeend",
+      galleryRecord.photos
+        .slice(visibleCount, nextCount)
+        .map((photo) => renderPhotoCard(photo, galleryRecord.context))
+        .join("")
+    );
+    gallery.dataset.detailGalleryVisible = String(nextCount);
+    const remaining = galleryRecord.photos.length - nextCount;
+    if (!remaining) {
+      button.remove();
+    } else {
+      button.textContent = `Show ${remaining} more photo${remaining === 1 ? "" : "s"}`;
+    }
   }
 
   function updateStatsFocalMode(mode) {
@@ -5694,15 +5772,13 @@
       <div class="photo-groups photo-groups-${escapeAttr(context)}">
         ${groupPhotos(photos, mode)
           .map(
-            (group) => `
+            (group, index) => `
               <section>
                 <div class="group-header">
                   <h3>${escapeHtml(group.name)}</h3>
                   <span class="count-pill">${group.photos.length}</span>
                 </div>
-                <div class="photo-grid">
-                  ${group.photos.map((photo) => renderPhotoCard(photo, context)).join("")}
-                </div>
+                ${renderProgressivePhotoGrid(group.photos, context, `${context}-${mode}-${index}-${group.name}`)}
               </section>
             `
           )
