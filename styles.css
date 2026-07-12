@@ -206,6 +206,15 @@ img {
   stroke-width: 1.6;
 }
 
+.header-fit-button .globe-earth-land,
+.header-fit-button .globe-earth-outline,
+.mobile-tab-bar .globe-earth-land,
+.mobile-tab-bar .globe-earth-outline {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+
 .tab-nav {
   display: inline-flex;
   gap: 4px;
