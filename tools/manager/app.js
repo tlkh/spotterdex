@@ -1,10 +1,18 @@
     const $ = (id) => document.getElementById(id);
+    const tabAliases = {
+      entries: "aircraft-database",
+      "squadron-sources": "squadron-database",
+      "aircraft-sources": "aircraft-database",
+      locations: "location-heroes"
+    };
+    const savedTab = sessionStorage.getItem("spotterdex-manager.activeTab") || "attach";
+    const savedActiveTab = tabAliases[savedTab] || savedTab;
     const state = {
       data: null,
       selectedAssets: new Set(),
       selectedIssueKey: "",
       assetFilter: "untagged",
-      activeTab: sessionStorage.getItem("spotterdex-manager.activeTab") || "attach",
+      activeTab: savedActiveTab,
       assetsOpen: true,
       masterPage: 1,
       masterPageSize: 20,
@@ -35,14 +43,17 @@
     const viewMeta = {
       attach: ["Attach Photos", "Tag new raw images and maintain their catalog metadata."],
       master: ["Master Photo List", "Search and edit every photo record from one workspace."],
-      entries: ["Photo Sources", "Create and maintain aircraft, unit, and source relationships."],
+      "squadron-database": ["Squadron Database", "Create and maintain unit-level photo records."],
+      "aircraft-database": ["Aircraft Database", "Create and maintain aircraft–squadron photo records."],
+      "locations-database": ["Locations", "Create and maintain catalog locations and map metadata."],
       writeups: ["Page Write-ups", "Edit optional Markdown content for aircraft, squadron, and airshow pages."],
       "bulk-captions": ["Caption Review", "Generate and review caption suggestions for selected photos."],
       missing: ["Missing Fields", "Resolve incomplete catalog metadata from a focused queue."],
       quality: ["Source Quality", "Review image dimensions and conservative quality warnings."],
       airshows: ["Airshows", "Manage event dates, photo assignments, and featured images."],
       squadrons: ["Squadron Heroes", "Choose the featured image for each squadron."],
-      locations: ["Locations", "Maintain map pins and location hero images."],
+      "location-heroes": ["Location Heroes", "Choose featured images for each catalog location."],
+      aircraft: ["Aircraft", "Configure aircraft heroes and card widths."],
       build: ["Build & Publish", "Validate the catalog, build the site, and clean generated files."]
     };
     const missingFieldLabels = {
@@ -205,7 +216,6 @@
     function renderShared() {
       renderStats();
       renderAssetGrid();
-      renderEntryCreationFields();
       renderEntryOptions();
       renderEditTagTargetOptions();
       renderPinOptions();
@@ -217,14 +227,17 @@
       const renderers = {
         attach: renderEntryDetail,
         master: renderMasterView,
-        entries: () => { renderEntryCards(); renderAircraftSettings(); },
+        "squadron-database": renderSquadronSourcePage,
+        "aircraft-database": renderAircraftSourceCards,
+        "locations-database": renderLocationDatabase,
         writeups: renderWriteUpEditor,
         "bulk-captions": renderBulkCaptions,
         airshows: () => { renderAirshowHeroManager(); renderAirshowMissingImages(); renderBulkEvents(); },
         missing: renderMissingFields,
         quality: renderQualityControl,
-        locations: renderLocationHeroManager,
+        "location-heroes": renderLocationHeroManager,
         squadrons: renderSquadronHeroManager,
+        aircraft: renderAircraftSettings,
         build: renderOrphans
       };
       renderers[state.activeTab]?.();
@@ -1076,16 +1089,6 @@
       if (state.activeTab === "attach") renderEntryDetail();
     }
 
-    function renderEntryCreationFields() {
-      const isAircraft = $("newEntryScope").value === "aircraft";
-      document.querySelectorAll("[data-entry-scope-field]").forEach((field) => {
-        const visible = field.dataset.entryScopeField === "aircraft" ? isAircraft : true;
-        field.hidden = !visible;
-      });
-      $("newAircraftType").required = isAircraft;
-      $("newAircraftFamily").required = isAircraft;
-    }
-
     function renderEditTagTargetOptions() {
       const current = $("editTagTarget").value;
       const targetEntries = (state.data?.entries || []).filter((entry) => (
@@ -1314,13 +1317,13 @@
       }).join("");
     }
 
-    function renderEntryCards() {
-      const term = $("entryListSearch").value.trim().toLowerCase();
-      const entries = (state.data.entries || []).filter((entry) => entry.sourceScope !== "location").filter((entry) => {
+    function renderSourceCards({listId, searchId, scope}) {
+      const term = $(searchId).value.trim().toLowerCase();
+      const entries = (state.data.entries || []).filter((entry) => entry.sourceScope === scope).filter((entry) => {
         if (!term) return true;
         return [entry.aircraftType, entry.squadronName, entry.country, entry.entryPath].join(" ").toLowerCase().includes(term);
-      });
-      $("entryCards").innerHTML = entries.map((entry) => `
+      }).sort((left, right) => entryOptionLabel(left).localeCompare(entryOptionLabel(right)));
+      $(listId).innerHTML = entries.map((entry) => `
         <article class="photo-card">
           <div class="mini-title">${escapeHtml(entryOptionLabel(entry))}</div>
           <div class="mini-meta">${escapeHtml(entry.entryPath)}</div>
@@ -1330,6 +1333,18 @@
           </div>
         </article>
       `).join("") || `<div class="empty">No matching entries</div>`;
+    }
+
+    function renderSquadronSourceCards() {
+      renderSourceCards({listId: "squadronSourceCards", searchId: "squadronSourceSearch", scope: "squadron"});
+    }
+
+    function renderAircraftSourceCards() {
+      renderSourceCards({listId: "aircraftSourceCards", searchId: "aircraftSourceSearch", scope: "aircraft"});
+    }
+
+    function renderSquadronSourcePage() {
+      renderSquadronSourceCards();
     }
 
     function aircraftWidthValue(aircraft) {
@@ -1617,6 +1632,31 @@
       return (state.data?.squadronGroups || []).find((group) => group.key === key) || null;
     }
 
+    function renderLocationDatabase() {
+      const list = $("locationDatabaseList");
+      if (!list || !state.data) return;
+      const term = $("locationDatabaseSearch").value.trim().toLowerCase();
+      const pins = (state.data.pins || [])
+        .filter((pin) => {
+          if (!term) return true;
+          return [pin.name, pin.country, pin.icao, pin.id, pin.lat, pin.lon].join(" ").toLowerCase().includes(term);
+        })
+        .sort((left, right) => pinOptionLabel(left).localeCompare(pinOptionLabel(right)));
+      list.innerHTML = pins.map((pin) => {
+        const coordinateLabel = pin.lat === null || pin.lon === null ? "No coordinates" : `${pin.lat}, ${pin.lon}`;
+        const metadata = [pin.country || "Country not set", pin.icao ? `ICAO ${pin.icao}` : "", coordinateLabel].filter(Boolean).join(" · ");
+        return `
+          <article class="photo-card">
+            <div class="mini-title">${escapeHtml(pin.name)}</div>
+            <div class="mini-meta">${escapeHtml(metadata)}<br>${escapeHtml(pin.id)} · ${pin.enabled ? "Enabled" : "Disabled"}</div>
+            <div class="card-actions">
+              <button class="btn secondary" type="button" data-edit-location="${escapeHtml(pin.id)}">Edit</button>
+            </div>
+          </article>
+        `;
+      }).join("") || `<div class="empty">No matching locations</div>`;
+    }
+
     function renderLocationHeroManager() {
       const pins = state.data?.pins || [];
       if (!pins.length) {
@@ -1870,6 +1910,21 @@
           <div class="form-grid"><div class="field"><label>ICAO / map code</label><input name="icao" minlength="2" maxlength="4" placeholder="RJTA or SG"></div><div class="field"><label>ID override</label><input name="id" placeholder="atsugi-air-base"></div></div>
           <div class="form-grid"><div class="field"><label>Latitude</label><input name="lat" required inputmode="decimal"></div><div class="field"><label>Longitude</label><input name="lon" required inputmode="decimal"></div></div>
           <button class="btn primary" type="submit">Create and select</button>
+        </form>`);
+    }
+
+    function openLocationEditor(locationId) {
+      const pin = (state.data?.pins || []).find((item) => item.id === locationId);
+      if (!pin) return toast("This location is no longer available. Reload and try again.");
+      openUtilityDrawer(pin.name, "Location database", `
+        <form class="drawer-form" data-location-edit="${escapeHtml(pin.id)}">
+          <div class="field"><label>Location name</label><input name="name" required value="${escapeHtml(pin.name || "")}"></div>
+          <div class="field"><label>Country</label><input name="country" required value="${escapeHtml(pin.country || "")}"></div>
+          <div class="field"><label>ICAO / map code</label><input name="icao" minlength="2" maxlength="4" value="${escapeHtml(pin.icao || "")}"></div>
+          <div class="form-grid"><div class="field"><label>Latitude</label><input name="lat" required inputmode="decimal" value="${escapeHtml(pin.lat ?? "")}"></div><div class="field"><label>Longitude</label><input name="lon" required inputmode="decimal" value="${escapeHtml(pin.lon ?? "")}"></div></div>
+          <div class="field"><label>Status</label><select name="enabled"><option value="1"${pin.enabled ? " selected" : ""}>Enabled</option><option value="0"${pin.enabled ? "" : " selected"}>Disabled</option></select></div>
+          <p class="subtle">Location ID <code>${escapeHtml(pin.id)}</code> is immutable because photos and links reference it.</p>
+          <button class="btn primary" type="submit">Save Location</button>
         </form>`);
     }
 
@@ -2348,6 +2403,7 @@
       if (!issue || issue.type !== "entry") throw new Error("Choose an entry item.");
       const payload = {
         entryPath: issue.entry.entryPath,
+        unitId: issue.entry.unitId || "",
         scope: issue.entry.sourceScope,
         squadronName: $("missingEntrySquadronName").value,
         country: $("missingEntryCountry").value,
@@ -2375,26 +2431,42 @@
       await loadState(true);
     }
 
-    async function createEntry() {
-      const result = await api("/api/create-entry", {
-        scope: $("newEntryScope").value,
-        aircraftType: $("newAircraftType").value,
-        aircraftFamily: $("newAircraftFamily").value,
-        aircraftDoubleWidth: $("newAircraftDisplayWidth").value,
-        squadronName: $("newSquadronName").value,
-        country: $("newCountry").value,
-        unitType: $("newUnitType").value
-      });
+    async function openCreatedSource(result) {
       toast(result.message);
-      $("newAircraftType").value = "";
-      $("newAircraftFamily").value = "";
-      $("newAircraftDisplayWidth").value = "";
-      $("newSquadronName").value = "";
-      $("newCountry").value = "";
       await loadState(false);
       $("entrySelect").value = result.entryPath;
       setTab("attach");
       renderEntryDetail();
+    }
+
+    async function createSquadronSource() {
+      const result = await api("/api/create-entry", {
+        scope: "squadron",
+        squadronName: $("newSquadronSourceName").value,
+        country: $("newSquadronSourceCountry").value,
+        unitType: $("newSquadronSourceType").value
+      });
+      $("newSquadronSourceName").value = "";
+      $("newSquadronSourceCountry").value = "";
+      await openCreatedSource(result);
+    }
+
+    async function createAircraftSource() {
+      const result = await api("/api/create-entry", {
+        scope: "aircraft",
+        aircraftType: $("newAircraftSourceType").value,
+        aircraftFamily: $("newAircraftSourceFamily").value,
+        aircraftDoubleWidth: $("newAircraftSourceDisplayWidth").value,
+        squadronName: $("newAircraftSourceSquadron").value,
+        country: $("newAircraftSourceCountry").value,
+        unitType: $("newAircraftSourceUnitType").value
+      });
+      $("newAircraftSourceType").value = "";
+      $("newAircraftSourceFamily").value = "";
+      $("newAircraftSourceDisplayWidth").value = "";
+      $("newAircraftSourceSquadron").value = "";
+      $("newAircraftSourceCountry").value = "";
+      await openCreatedSource(result);
     }
 
     async function createPin() {
@@ -2803,10 +2875,11 @@
     function bindEvents() {
       $("assetSearch").addEventListener("input", renderAssetGrid);
       $("entrySearch").addEventListener("input", renderEntryOptions);
-      $("entryListSearch").addEventListener("input", renderEntryCards);
+      $("squadronSourceSearch").addEventListener("input", renderSquadronSourceCards);
+      $("aircraftSourceSearch").addEventListener("input", renderAircraftSourceCards);
+      $("locationDatabaseSearch").addEventListener("input", renderLocationDatabase);
       $("aircraftSettingsSearch").addEventListener("input", renderAircraftSettings);
       $("masterSearch").addEventListener("input", () => { state.masterPage = 1; renderMasterView(); });
-      $("newEntryScope").addEventListener("change", renderEntryCreationFields);
       $("missingSearch").addEventListener("input", renderMissingFields);
       $("missingFilter").addEventListener("change", renderMissingFields);
       $("bulkEventSearch").addEventListener("input", renderBulkEvents);
@@ -2841,6 +2914,27 @@
         }
       });
       $("utilityDrawerBody").addEventListener("submit", async (event) => {
+        const locationForm = event.target.closest("[data-location-edit]");
+        if (locationForm) {
+          event.preventDefault();
+          const submit = locationForm.querySelector("button[type='submit']");
+          const values = Object.fromEntries(new FormData(locationForm));
+          submit.disabled = true;
+          try {
+            const result = await api("/api/update-pin", {
+              locationId: locationForm.dataset.locationEdit,
+              ...values
+            });
+            await loadState(true);
+            closeUtilityDrawer();
+            toast(result.message);
+          } catch (error) {
+            toast(error.message);
+          } finally {
+            submit.disabled = false;
+          }
+          return;
+        }
         const editForm = event.target.closest("[data-entry-edit]");
         if (editForm) {
           event.preventDefault();
@@ -2851,6 +2945,7 @@
             const entry = entryByTargetKey(editForm.dataset.entryEdit);
             const result = await api("/api/update-entry", {
               entryPath: editForm.dataset.entryEdit,
+              unitId: entry?.unitId || "",
               scope: entry.sourceScope,
               ...values
             });
@@ -2947,7 +3042,8 @@
       $("generateAttachCaptionBtn").addEventListener("click", () => generateAttachCaption().catch((error) => toast(error.message)));
       $("savePhotoBtn").addEventListener("click", () => saveEditedPhoto().catch((error) => toast(error.message)));
       $("generateEditCaptionBtn").addEventListener("click", () => generateEditedCaption().catch((error) => toast(error.message)));
-      $("createEntryBtn").addEventListener("click", () => createEntry().catch((error) => toast(error.message)));
+      $("createSquadronSourceBtn").addEventListener("click", () => createSquadronSource().catch((error) => toast(error.message)));
+      $("createAircraftSourceBtn").addEventListener("click", () => createAircraftSource().catch((error) => toast(error.message)));
       $("createPinBtn").addEventListener("click", () => createPin().catch((error) => toast(error.message)));
       $("refreshBulkCaptionsBtn").addEventListener("click", () => {
         resetBulkCaptionQueue();
@@ -3058,6 +3154,10 @@
         if (clear) clearLocationHero(clear.dataset.locationHeroClear).catch((error) => toast(error.message));
         if (asset) setLocationHero(asset.dataset.locationHeroAsset).catch((error) => toast(error.message));
       });
+      $("locationDatabaseList").addEventListener("click", (event) => {
+        const edit = event.target.closest("[data-edit-location]");
+        if (edit) openLocationEditor(edit.dataset.editLocation);
+      });
       $("squadronHeroList").addEventListener("click", (event) => {
         const logo = event.target.closest("[data-unit-logo-save]");
         const photo = event.target.closest("[data-squadron-hero-photo]");
@@ -3097,7 +3197,7 @@
         const input = event.target.closest("[data-bulk-select-mode='tagged']");
         if (input) toggleBulkSelection("tagged", input.dataset.bulkSelectKey, input.checked);
       });
-      $("entryCards").addEventListener("click", (event) => {
+      function handleSourceCardClick(event) {
         const edit = event.target.closest("[data-edit-entry]");
         const button = event.target.closest("[data-open-entry]");
         if (edit) {
@@ -3109,7 +3209,9 @@
         $("entrySelect").value = button.dataset.openEntry;
         setTab("attach");
         renderEntryDetail();
-      });
+      }
+      $("squadronSourceCards").addEventListener("click", handleSourceCardClick);
+      $("aircraftSourceCards").addEventListener("click", handleSourceCardClick);
       $("masterList").addEventListener("click", (event) => {
         const save = event.target.closest("[data-master-save]");
         const detach = event.target.closest("[data-master-detach]");

@@ -324,17 +324,6 @@ img {
   color: var(--dex-ink);
 }
 
-.dex-experience::before {
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  background:
-    repeating-linear-gradient(90deg, transparent 0, transparent calc(12.5% - 1px), rgba(255, 255, 255, 0.025) 12.5%),
-    radial-gradient(circle at 84% 24%, rgba(210, 183, 124, 0.08), transparent 24%);
-  content: "";
-  pointer-events: none;
-}
-
 .dex-hero {
   position: relative;
   display: grid;
@@ -364,15 +353,15 @@ img {
   max-width: none;
   object-fit: cover;
   object-position: center 42%;
-  filter: saturate(0.88) contrast(1.06);
+  filter: saturate(0.8) contrast(1.08);
   animation: dex-hero-reveal 1200ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .dex-hero-scrim {
   z-index: -1;
   background:
-    linear-gradient(90deg, rgba(5, 7, 8, 0.9) 0%, rgba(5, 7, 8, 0.52) 46%, rgba(5, 7, 8, 0.18) 72%),
-    linear-gradient(0deg, rgba(5, 7, 8, 0.94) 0%, transparent 54%);
+    linear-gradient(90deg, rgba(5, 7, 8, 0.92) 0%, rgba(5, 7, 8, 0.57) 50%, rgba(5, 7, 8, 0.22) 78%),
+    linear-gradient(0deg, rgba(5, 7, 8, 0.86), transparent 72%);
 }
 
 .dex-hero-content {
@@ -1443,8 +1432,8 @@ img {
 
 #airshowsView .airshow-timeline-scrim {
   background:
-    linear-gradient(180deg, rgba(4, 7, 8, 0.04) 18%, rgba(4, 7, 8, 0.38) 54%, rgba(4, 7, 8, 0.96) 100%),
-    linear-gradient(90deg, rgba(4, 7, 8, 0.2), transparent 54%);
+    linear-gradient(90deg, rgba(0, 0, 0, 0.36) 0%, rgba(0, 0, 0, 0.14) 62%, rgba(0, 0, 0, 0.02) 100%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.18), transparent 68%);
 }
 
 #airshowsView .airshow-timeline-content {
@@ -1743,22 +1732,13 @@ img {
     linear-gradient(0deg, rgba(0, 0, 0, 0.6), transparent 62%);
 }
 
-.detail-hero.squadron-field-guide-hero .detail-hero-scrim {
-  background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.34) 0%, rgba(0, 0, 0, 0.12) 62%, rgba(0, 0, 0, 0.02) 100%),
-    linear-gradient(0deg, rgba(0, 0, 0, 0.2), transparent 65%);
-}
-
-.detail-hero.location-field-guide-hero .detail-hero-scrim {
-  background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.54) 0%, rgba(0, 0, 0, 0.22) 58%, rgba(0, 0, 0, 0.06) 100%),
-    linear-gradient(0deg, rgba(0, 0, 0, 0.34), transparent 62%);
-}
-
+.detail-hero.airshow-field-guide-hero .detail-hero-scrim,
+.detail-hero.squadron-field-guide-hero .detail-hero-scrim,
+.detail-hero.location-field-guide-hero .detail-hero-scrim,
 .detail-hero.aircraft-field-guide-hero .detail-hero-scrim {
   background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.56) 0%, rgba(0, 0, 0, 0.24) 58%, rgba(0, 0, 0, 0.08) 100%),
-    linear-gradient(0deg, rgba(0, 0, 0, 0.38), transparent 62%);
+    linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.01) 58%, rgba(0, 0, 0, 0.04) 100%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.1), transparent 62%);
 }
 
 .detail-back-button {
@@ -1843,6 +1823,7 @@ img {
   font-size: clamp(2rem, 5.2vw, 4.6rem);
   letter-spacing: -0.045em;
   line-height: 0.98;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.38);
   text-wrap: balance;
 }
 
@@ -5006,11 +4987,10 @@ button.location-unit-chip:focus-visible,
   inset: 0;
   z-index: 1;
   background:
-    linear-gradient(180deg, rgba(4, 7, 8, 0.06) 22%, rgba(4, 7, 8, 0.34) 54%, rgba(4, 7, 8, 0.95) 100%),
-    linear-gradient(90deg, rgba(4, 7, 8, 0.28), transparent 48%);
+    linear-gradient(180deg, rgba(4, 7, 8, 0) 42%, rgba(4, 7, 8, 0.14) 67%, rgba(4, 7, 8, 0.82) 100%),
+    linear-gradient(90deg, rgba(4, 7, 8, 0.24), transparent 52%);
   content: "";
   pointer-events: none;
-  transition: background 420ms ease;
 }
 
 #dexView .aircraft-card:hover,
@@ -5026,13 +5006,6 @@ button.location-unit-chip:focus-visible,
   box-shadow: 0 0 0 2px #d2b77c, 0 24px 62px rgba(0, 0, 0, 0.44);
 }
 
-#dexView .aircraft-card:hover::after,
-#dexView .aircraft-card:focus-visible::after {
-  background:
-    linear-gradient(180deg, rgba(4, 7, 8, 0.02) 14%, rgba(4, 7, 8, 0.22) 48%, rgba(4, 7, 8, 0.92) 100%),
-    linear-gradient(90deg, rgba(4, 7, 8, 0.16), transparent 48%);
-}
-
 #dexView .aircraft-cover,
 #dexView .aircraft-cover img,
 #dexView .empty-cover {
@@ -5046,13 +5019,13 @@ button.location-unit-chip:focus-visible,
 
 #dexView .aircraft-cover img {
   max-width: none;
-  filter: saturate(0.9) contrast(1.03);
+  filter: saturate(0.88) contrast(1.04);
   transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1), filter 520ms ease;
 }
 
 #dexView .aircraft-card:hover .aircraft-cover img,
 #dexView .aircraft-card:focus-visible .aircraft-cover img {
-  filter: saturate(1.03) contrast(1.02);
+  filter: saturate(1.02) contrast(1.03);
   transform: scale(1.055);
 }
 
@@ -6148,10 +6121,6 @@ button.location-unit-chip:focus-visible,
     margin: -14px -10px -24px;
   }
 
-  .dex-experience::before {
-    background: repeating-linear-gradient(90deg, transparent 0, transparent calc(25% - 1px), rgba(255, 255, 255, 0.025) 25%);
-  }
-
   .dex-hero {
     min-height: 0;
     gap: 16px;
@@ -6160,12 +6129,6 @@ button.location-unit-chip:focus-visible,
 
   .dex-hero-media img {
     object-position: 58% center;
-  }
-
-  .dex-hero-scrim {
-    background:
-      linear-gradient(90deg, rgba(5, 7, 8, 0.88) 0%, rgba(5, 7, 8, 0.48) 72%, rgba(5, 7, 8, 0.24) 100%),
-      linear-gradient(0deg, rgba(5, 7, 8, 0.72), transparent 72%);
   }
 
   .dex-hero-content {

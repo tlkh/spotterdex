@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-12T00:54:09+00:00",
+  "generatedAt": "2026-07-12T06:06:41+00:00",
   "entities": {
     "countries": {
       "au": {
@@ -65,7 +65,7 @@
         "id": "atr-72-500",
         "name": "ATR 72-500",
         "family": "medium",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-04-29-firefly-1",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -73,7 +73,7 @@
         "id": "airbus-a300-600st",
         "name": "Airbus A300-600ST",
         "family": "heavy",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-01-17-beluga-2",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -89,13 +89,29 @@
         "id": "airbus-a330-mrtt",
         "name": "Airbus A330 MRTT",
         "family": "heavy",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-08-29-dsc05206-enhanced-nr",
+        "doubleWidth": null,
+        "writeUp": ""
+      },
+      "airbus-a330-200": {
+        "id": "airbus-a330-200",
+        "name": "Airbus A330-200",
+        "family": "heavy",
+        "heroPhotoId": "2024-07-04-dsc08218-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
       "bell-uh-1-iroquois": {
         "id": "bell-uh-1-iroquois",
         "name": "Bell UH-1 Iroquois",
+        "family": "helicopter",
+        "heroPhotoId": "2023-09-18-usaf-huey-3",
+        "doubleWidth": null,
+        "writeUp": ""
+      },
+      "bell-uh-1y-venom": {
+        "id": "bell-uh-1y-venom",
+        "name": "Bell UH-1Y Venom",
         "family": "helicopter",
         "heroPhotoId": "",
         "doubleWidth": null,
@@ -105,7 +121,7 @@
         "id": "boeing-727",
         "name": "Boeing 727",
         "family": "heavy",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-10-01-dsc03837-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -113,7 +129,7 @@
         "id": "boeing-737-800",
         "name": "Boeing 737-800",
         "family": "medium",
-        "heroPhotoId": "",
+        "heroPhotoId": "2025-02-03-dsc01755-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -121,7 +137,7 @@
         "id": "boeing-747-400-f",
         "name": "Boeing 747-400(F)",
         "family": "heavy",
-        "heroPhotoId": "",
+        "heroPhotoId": "2025-04-17-n742ck",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -129,7 +145,7 @@
         "id": "boeing-757",
         "name": "Boeing 757",
         "family": "heavy",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-02-23-honeywell-1",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -137,7 +153,7 @@
         "id": "boeing-777-300er",
         "name": "Boeing 777-300ER",
         "family": "heavy",
-        "heroPhotoId": "",
+        "heroPhotoId": "2024-08-22-dsc00442-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -145,7 +161,7 @@
         "id": "boeing-ah-64d-apache-longbow",
         "name": "Boeing AH-64D Apache Longbow",
         "family": "helicopter",
-        "heroPhotoId": "",
+        "heroPhotoId": "2026-02-03-rsaf-apache-flare",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -153,7 +169,7 @@
         "id": "boeing-ah-64djp-apache",
         "name": "Boeing AH-64DJP Apache",
         "family": "helicopter",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-11-26-dsc05377-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -185,7 +201,7 @@
         "id": "boeing-e-4b-nightwatch",
         "name": "Boeing E-4B Nightwatch",
         "family": "heavy",
-        "heroPhotoId": "",
+        "heroPhotoId": "2024-06-05-dsc04786-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -201,7 +217,7 @@
         "id": "boeing-e-7a-wedgetail",
         "name": "Boeing E-7A Wedgetail",
         "family": "medium",
-        "heroPhotoId": "",
+        "heroPhotoId": "2024-09-29-dsc09765-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -209,7 +225,7 @@
         "id": "boeing-f-15sg-strike-eagle",
         "name": "Boeing F-15SG Strike Eagle",
         "family": "fighter",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-08-04-dsc01749-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -217,7 +233,7 @@
         "id": "boeing-kc-135-stratotanker",
         "name": "Boeing KC-135 Stratotanker",
         "family": "heavy",
-        "heroPhotoId": "",
+        "heroPhotoId": "2024-01-11-metrea-kc135-2",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -225,7 +241,7 @@
         "id": "boeing-kc-46-pegasus",
         "name": "Boeing KC-46 Pegasus",
         "family": "heavy",
-        "heroPhotoId": "",
+        "heroPhotoId": "2025-11-30-dsc04987",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -233,7 +249,7 @@
         "id": "boeing-kc-767",
         "name": "Boeing KC-767",
         "family": "heavy",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-08-04-italy-kc767-1",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -241,7 +257,7 @@
         "id": "boeing-kc-767j",
         "name": "Boeing KC-767J",
         "family": "heavy",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-11-12-dsc09722-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -249,7 +265,7 @@
         "id": "cessna-uc-35-citation",
         "name": "Cessna UC-35 Citation",
         "family": "medium",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-09-23-dsc02445-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -257,7 +273,7 @@
         "id": "dassault-rafale-b",
         "name": "Dassault Rafale B",
         "family": "fighter",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-06-26-rafale-b-1",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -273,7 +289,7 @@
         "id": "dornier-228",
         "name": "Dornier 228",
         "family": "medium",
-        "heroPhotoId": "",
+        "heroPhotoId": "2022-11-23-dsc09504",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -289,7 +305,7 @@
         "id": "fokker-50-mpa",
         "name": "Fokker 50 MPA",
         "family": "medium",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-07-17-dsc07416-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -297,7 +313,7 @@
         "id": "fokker-50-uta",
         "name": "Fokker 50 UTA",
         "family": "medium",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-06-27-dsc08334-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -305,7 +321,7 @@
         "id": "general-dynamics-f-16a",
         "name": "General Dynamics F-16A",
         "family": "fighter",
-        "heroPhotoId": "",
+        "heroPhotoId": "2026-01-10-dsc04426",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -313,7 +329,7 @@
         "id": "grumman-c-2a-greyhound",
         "name": "Grumman C-2A Greyhound",
         "family": "medium",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-02-07-c2-vrc30",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -321,7 +337,7 @@
         "id": "grumman-e-2d-hawkeye",
         "name": "Grumman E-2D Hawkeye",
         "family": "medium",
-        "heroPhotoId": "",
+        "heroPhotoId": "2025-12-11-dsc04372",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -329,7 +345,7 @@
         "id": "gulfstream-g550-caew",
         "name": "Gulfstream G550 CAEW",
         "family": "medium",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-08-04-italy-g550",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -337,7 +353,7 @@
         "id": "hawker-u-125a",
         "name": "Hawker U-125A",
         "family": "medium",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-10-07-dsc02988-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -345,7 +361,7 @@
         "id": "kai-t-50b-golden-eagle",
         "name": "KAI T-50B Golden Eagle",
         "family": "fighter",
-        "heroPhotoId": "",
+        "heroPhotoId": "2024-02-13-dsc02965-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -353,7 +369,7 @@
         "id": "kawasaki-c-2",
         "name": "Kawasaki C-2",
         "family": "heavy",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-11-12-dsc01092-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -369,7 +385,7 @@
         "id": "kawasaki-oh-1-ninja",
         "name": "Kawasaki OH-1 Ninja",
         "family": "helicopter",
-        "heroPhotoId": "",
+        "heroPhotoId": "2025-11-30-dsc05292",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -377,7 +393,7 @@
         "id": "kawasaki-p-1",
         "name": "Kawasaki P-1",
         "family": "heavy",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-09-09-p1-1",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -393,7 +409,7 @@
         "id": "kawasaki-t-4",
         "name": "Kawasaki T-4",
         "family": "fighter",
-        "heroPhotoId": "",
+        "heroPhotoId": "2025-11-30-dsc03282",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -409,7 +425,7 @@
         "id": "kawasaki-up-3c-orion",
         "name": "Kawasaki UP-3C Orion",
         "family": "heavy",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-09-23-dsc01693-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -417,7 +433,7 @@
         "id": "kawasaki-up-3d",
         "name": "Kawasaki UP-3D",
         "family": "heavy",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-11-04-dsc06871-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -425,7 +441,7 @@
         "id": "learjet-u-36a",
         "name": "Learjet U-36A",
         "family": "medium",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-10-01-dsc07893-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -433,7 +449,7 @@
         "id": "lockheed-c-130j-super-hercules",
         "name": "Lockheed C-130J Super Hercules",
         "family": "heavy",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-11-29-dsc08863-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -441,7 +457,7 @@
         "id": "lockheed-c-130r",
         "name": "Lockheed C-130R",
         "family": "heavy",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-09-09-jmsdf-c130-2",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -457,7 +473,7 @@
         "id": "lockheed-martin-f-35a-lightning-ii",
         "name": "Lockheed Martin F-35A Lightning II",
         "family": "fighter",
-        "heroPhotoId": "",
+        "heroPhotoId": "2026-01-31-raaf-f35a-4",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -473,7 +489,7 @@
         "id": "mitsubishi-f-15dj-eagle",
         "name": "Mitsubishi F-15DJ Eagle",
         "family": "fighter",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-10-07-dsc03743-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -481,7 +497,7 @@
         "id": "mitsubishi-f-15j-eagle",
         "name": "Mitsubishi F-15J Eagle",
         "family": "fighter",
-        "heroPhotoId": "",
+        "heroPhotoId": "2026-04-08-128928",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -489,7 +505,7 @@
         "id": "mitsubishi-f-2a",
         "name": "Mitsubishi F-2A",
         "family": "fighter",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-10-06-dsc01453-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -497,7 +513,7 @@
         "id": "mitsubishi-f-2b",
         "name": "Mitsubishi F-2B",
         "family": "fighter",
-        "heroPhotoId": "",
+        "heroPhotoId": "2026-04-07-dsc05940",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -505,7 +521,7 @@
         "id": "mitsubishi-uh-60j",
         "name": "Mitsubishi UH-60J",
         "family": "helicopter",
-        "heroPhotoId": "",
+        "heroPhotoId": "2025-11-30-584621",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -513,7 +529,7 @@
         "id": "saab-gripen-c",
         "name": "Saab Gripen C",
         "family": "fighter",
-        "heroPhotoId": "",
+        "heroPhotoId": "2026-01-10-dsc05407",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -521,6 +537,14 @@
         "id": "shinmaywa-us-2",
         "name": "ShinMaywa US-2",
         "family": "heavy",
+        "heroPhotoId": "2023-11-26-dsc06396-enhanced-nr",
+        "doubleWidth": null,
+        "writeUp": ""
+      },
+      "sikorsky-ch-53e-super-stallion": {
+        "id": "sikorsky-ch-53e-super-stallion",
+        "name": "Sikorsky CH-53E Super Stallion",
+        "family": "helicopter",
         "heroPhotoId": "",
         "doubleWidth": null,
         "writeUp": ""
@@ -571,15 +595,6 @@
         "heroPhotoId": "",
         "writeUp": ""
       },
-      "fr-31st-strategic-air-refueling-and-transport-wing": {
-        "id": "fr-31st-strategic-air-refueling-and-transport-wing",
-        "name": "31st Strategic Air Refueling and Transport Wing",
-        "countryId": "fr",
-        "kind": "squadron",
-        "logo": "assets/logos/fr-31st-strategic-air-refueling-and-transport-wing.png",
-        "heroPhotoId": "2023-06-27-french-mrtt-2",
-        "writeUp": ""
-      },
       "fr-airbus": {
         "id": "fr-airbus",
         "name": "Airbus",
@@ -589,9 +604,18 @@
         "heroPhotoId": "",
         "writeUp": ""
       },
+      "fr-ervts-2-31-esterel": {
+        "id": "fr-ervts-2-31-esterel",
+        "name": "ERVTS 2/31 Est\u00e9rel",
+        "countryId": "fr",
+        "kind": "squadron",
+        "logo": "assets/logos/fr-ervts-2-31-esterel.png",
+        "heroPhotoId": "",
+        "writeUp": ""
+      },
       "fr-escadron-de-chasse-1-4": {
         "id": "fr-escadron-de-chasse-1-4",
-        "name": "Escadron de Chasse 1/4",
+        "name": "Escadron de Chasse 1/4 Gascogne",
         "countryId": "fr",
         "kind": "squadron",
         "logo": "",
@@ -600,7 +624,7 @@
       },
       "fr-escadron-de-chasse-3-30-lorraine": {
         "id": "fr-escadron-de-chasse-3-30-lorraine",
-        "name": "Escadron de Chasse 3/30 \"Lorraine\"",
+        "name": "Escadron de Chasse 3/30 Lorraine",
         "countryId": "fr",
         "kind": "squadron",
         "logo": "",
@@ -1129,6 +1153,15 @@
         "heroPhotoId": "",
         "writeUp": ""
       },
+      "us-hmh-464-heavy-helicopter-squadron": {
+        "id": "us-hmh-464-heavy-helicopter-squadron",
+        "name": "HMH-464 Heavy Helicopter Squadron",
+        "countryId": "us",
+        "kind": "squadron",
+        "logo": "",
+        "heroPhotoId": "",
+        "writeUp": ""
+      },
       "us-hsm-51": {
         "id": "us-hsm-51",
         "name": "Helicopter Maritime Strike Squadron 51 (HSM-51)",
@@ -1153,6 +1186,15 @@
         "countryId": "us",
         "kind": "organisation",
         "logo": "assets/logos/us-kalitta-air.png",
+        "heroPhotoId": "",
+        "writeUp": ""
+      },
+      "us-marine-light-attack-helicopter-squadron-169-hmla-169": {
+        "id": "us-marine-light-attack-helicopter-squadron-169-hmla-169",
+        "name": "Marine Light Attack Helicopter Squadron 169 (HMLA-169)",
+        "countryId": "us",
+        "kind": "squadron",
+        "logo": "",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1227,6 +1269,17 @@
         "lon": 139.528,
         "enabled": true,
         "heroPhotoId": "2023-09-16-dsc08683-enhanced-nr",
+        "writeUp": ""
+      },
+      "jp-mcas-futenma": {
+        "id": "jp-mcas-futenma",
+        "name": "Futenma Air Base",
+        "countryId": "jp",
+        "icao": "ROTM",
+        "lat": 26.2743,
+        "lon": 127.756,
+        "enabled": true,
+        "heroPhotoId": "2025-12-12-dsc00703",
         "writeUp": ""
       },
       "jp-gifu-air-base": {
@@ -1328,17 +1381,6 @@
         "heroPhotoId": "2023-10-06-dsc01185-enhanced-nr",
         "writeUp": ""
       },
-      "jp-mcas-futenma": {
-        "id": "jp-mcas-futenma",
-        "name": "MCAS Futenma",
-        "countryId": "jp",
-        "icao": "ROTM",
-        "lat": 26.2743,
-        "lon": 127.756,
-        "enabled": true,
-        "heroPhotoId": "",
-        "writeUp": ""
-      },
       "jp-naha-air-base": {
         "id": "jp-naha-air-base",
         "name": "Naha Air Base",
@@ -1413,7 +1455,7 @@
         "lat": 5.2963,
         "lon": 100.2762,
         "enabled": true,
-        "heroPhotoId": "",
+        "heroPhotoId": "2024-12-25-dsc01147-enhanced-nr",
         "writeUp": ""
       },
       "sg-changi-airport": {
@@ -2986,6 +3028,266 @@
           "DateTimeOriginal": "2026:01:10 09:27:56",
           "DateTimeDigitized": "2026:01:10 09:27:56",
           "DateTime": "2026:07:04 19:55:31"
+        }
+      },
+      "2025-12-12-dsc00879": {
+        "id": "2025-12-12-dsc00879",
+        "locationId": "jp-mcas-futenma",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "bell-uh-1y-venom",
+            "unitId": "us-marine-light-attack-helicopter-squadron-169-hmla-169",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-12",
+        "sortDate": "2025-12-12",
+        "livery": "",
+        "title": "",
+        "caption": "Bell UH-1Y Venom landing at Futenma Air Base",
+        "image": "assets/generated/photos/2025-12-12-dsc00879.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-12-dsc00879.jpg",
+        "source": "raw_assets/DSC00879.jpg",
+        "originalSize": "4017 x 3013",
+        "processedSize": "2560 x 1920",
+        "thumbnailSize": "1024 x 768",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "840mm",
+          "FocalLengthIn35mmFilm": "840mm",
+          "FNumber": "f/14.0",
+          "ExposureTime": "1/80s",
+          "ExposureBiasValue": "2.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2025:12:12 14:14:55",
+          "DateTimeDigitized": "2025:12:12 14:14:55",
+          "DateTime": "2026:07:12 13:09:46"
+        }
+      },
+      "2025-12-12-dsc00765": {
+        "id": "2025-12-12-dsc00765",
+        "locationId": "jp-mcas-futenma",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "cessna-uc-35-citation",
+            "unitId": "us-usmc-operational-support-airlift",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-12",
+        "sortDate": "2025-12-12",
+        "livery": "",
+        "title": "",
+        "caption": "USMC UC-35 at Futenma Air Base",
+        "image": "assets/generated/photos/2025-12-12-dsc00765.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-12-dsc00765.jpg",
+        "source": "raw_assets/DSC00765.jpg",
+        "originalSize": "4393 x 3295",
+        "processedSize": "2560 x 1920",
+        "thumbnailSize": "1024 x 768",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "840mm",
+          "FocalLengthIn35mmFilm": "1260mm",
+          "FNumber": "f/11.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "500",
+          "DateTimeOriginal": "2025:12:12 13:32:59",
+          "DateTimeDigitized": "2025:12:12 13:32:59",
+          "DateTime": "2026:07:12 13:09:46"
+        }
+      },
+      "2025-12-12-dsc00757": {
+        "id": "2025-12-12-dsc00757",
+        "locationId": "jp-mcas-futenma",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "sikorsky-ch-53e-super-stallion",
+            "unitId": "us-hmh-464-heavy-helicopter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-12",
+        "sortDate": "2025-12-12",
+        "livery": "",
+        "title": "",
+        "caption": "Super Stallion at Futenma Air Base",
+        "image": "assets/generated/photos/2025-12-12-dsc00757.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-12-dsc00757.jpg",
+        "source": "raw_assets/DSC00757.jpg",
+        "originalSize": "3772 x 2829",
+        "processedSize": "2560 x 1920",
+        "thumbnailSize": "1024 x 768",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "840mm",
+          "FocalLengthIn35mmFilm": "1260mm",
+          "FNumber": "f/11.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "320",
+          "DateTimeOriginal": "2025:12:12 13:07:47",
+          "DateTimeDigitized": "2025:12:12 13:07:47",
+          "DateTime": "2026:07:12 14:03:33"
+        }
+      },
+      "2025-12-12-dsc00737": {
+        "id": "2025-12-12-dsc00737",
+        "locationId": "jp-mcas-futenma",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "bell-uh-1y-venom",
+            "unitId": "us-marine-light-attack-helicopter-squadron-169-hmla-169",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-12",
+        "sortDate": "2025-12-12",
+        "livery": "",
+        "title": "",
+        "caption": "Venom at Futenma Air Base",
+        "image": "assets/generated/photos/2025-12-12-dsc00737.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-12-dsc00737.jpg",
+        "source": "raw_assets/DSC00737.jpg",
+        "originalSize": "2728 x 2046",
+        "processedSize": "2560 x 1920",
+        "thumbnailSize": "1024 x 768",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "840mm",
+          "FocalLengthIn35mmFilm": "840mm",
+          "FNumber": "f/11.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "250",
+          "DateTimeOriginal": "2025:12:12 13:01:45",
+          "DateTimeDigitized": "2025:12:12 13:01:45",
+          "DateTime": "2026:07:12 14:03:32"
+        }
+      },
+      "2025-12-12-dsc00733": {
+        "id": "2025-12-12-dsc00733",
+        "locationId": "jp-mcas-futenma",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "sikorsky-ch-53e-super-stallion",
+            "unitId": "us-hmh-464-heavy-helicopter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-12",
+        "sortDate": "2025-12-12",
+        "livery": "",
+        "title": "",
+        "caption": "Super Stallion at Futenma Air Base",
+        "image": "assets/generated/photos/2025-12-12-dsc00733.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-12-dsc00733.jpg",
+        "source": "raw_assets/DSC00733.jpg",
+        "originalSize": "3593 x 2695",
+        "processedSize": "2560 x 1920",
+        "thumbnailSize": "1024 x 768",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "840mm",
+          "FocalLengthIn35mmFilm": "1260mm",
+          "FNumber": "f/11.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "320",
+          "DateTimeOriginal": "2025:12:12 12:51:04",
+          "DateTimeDigitized": "2025:12:12 12:51:04",
+          "DateTime": "2026:07:12 14:03:32"
+        }
+      },
+      "2025-12-12-dsc00703": {
+        "id": "2025-12-12-dsc00703",
+        "locationId": "jp-mcas-futenma",
+        "eventId": "",
+        "subjects": [],
+        "year": "2025",
+        "date": "2025-12-12",
+        "sortDate": "2025-12-12",
+        "livery": "",
+        "title": "",
+        "caption": "Aircraft on the tarmac at Futenma Air Base",
+        "image": "assets/generated/photos/2025-12-12-dsc00703.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-12-dsc00703.jpg",
+        "source": "raw_assets/DSC00703.jpg",
+        "originalSize": "8402 x 5601",
+        "processedSize": "2560 x 1707",
+        "thumbnailSize": "1024 x 683",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "552mm",
+          "FocalLengthIn35mmFilm": "552mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "200",
+          "DateTimeOriginal": "2025:12:12 12:43:22",
+          "DateTimeDigitized": "2025:12:12 12:43:22",
+          "DateTime": "2026:07:12 13:09:44"
+        }
+      },
+      "2025-12-12-dsc00700": {
+        "id": "2025-12-12-dsc00700",
+        "locationId": "jp-mcas-futenma",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "sikorsky-ch-53e-super-stallion",
+            "unitId": "us-hmh-464-heavy-helicopter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-12",
+        "sortDate": "2025-12-12",
+        "livery": "",
+        "title": "",
+        "caption": "USMC Super Stallion at Futenma Air Base",
+        "image": "assets/generated/photos/2025-12-12-dsc00700.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-12-dsc00700.jpg",
+        "source": "raw_assets/DSC00700.jpg",
+        "originalSize": "3550 x 2662",
+        "processedSize": "2560 x 1920",
+        "thumbnailSize": "1024 x 768",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "840mm",
+          "FocalLengthIn35mmFilm": "840mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "160",
+          "DateTimeOriginal": "2025:12:12 12:42:22",
+          "DateTimeDigitized": "2025:12:12 12:42:22",
+          "DateTime": "2026:07:12 13:09:43"
         }
       },
       "2025-12-12-dsc00567": {
@@ -6807,7 +7109,7 @@
         "subjects": [
           {
             "aircraftId": "airbus-a330-mrtt",
-            "unitId": "fr-31st-strategic-air-refueling-and-transport-wing",
+            "unitId": "fr-ervts-2-31-esterel",
             "primary": true
           }
         ],
@@ -6845,7 +7147,7 @@
         "subjects": [
           {
             "aircraftId": "airbus-a330-mrtt",
-            "unitId": "fr-31st-strategic-air-refueling-and-transport-wing",
+            "unitId": "fr-ervts-2-31-esterel",
             "primary": true
           }
         ],
@@ -6874,6 +7176,82 @@
           "DateTimeOriginal": "2024:07:10 12:31:20",
           "DateTimeDigitized": "2024:07:10 12:31:20",
           "DateTime": "2026:07:05 09:37:27"
+        }
+      },
+      "2024-07-04-dsc08248-enhanced-nr": {
+        "id": "2024-07-04-dsc08248-enhanced-nr",
+        "locationId": "sg-singapore",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "airbus-a330-200",
+            "unitId": "fr-ervts-2-31-esterel",
+            "primary": true
+          }
+        ],
+        "year": "2024",
+        "date": "2024-07-04",
+        "sortDate": "2024-07-04",
+        "livery": "",
+        "title": "",
+        "caption": "French VIP transport A330 landing in Singapore",
+        "image": "assets/generated/photos/2024-07-04-dsc08248-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2024-07-04-dsc08248-enhanced-nr.jpg",
+        "source": "raw_assets/DSC08248-Enhanced-NR.jpg",
+        "originalSize": "4465 x 3349",
+        "processedSize": "2560 x 1920",
+        "thumbnailSize": "1024 x 768",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-6700",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "200mm",
+          "FocalLengthIn35mmFilm": "300mm",
+          "FNumber": "f/11.0",
+          "ExposureTime": "1/100s",
+          "ExposureBiasValue": "2.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2024:07:04 12:50:12",
+          "DateTimeDigitized": "2024:07:04 12:50:12",
+          "DateTime": "2026:07:05 09:37:26"
+        }
+      },
+      "2024-07-04-dsc08218-enhanced-nr": {
+        "id": "2024-07-04-dsc08218-enhanced-nr",
+        "locationId": "sg-singapore",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "airbus-a330-200",
+            "unitId": "fr-ervts-2-31-esterel",
+            "primary": true
+          }
+        ],
+        "year": "2024",
+        "date": "2024-07-04",
+        "sortDate": "2024-07-04",
+        "livery": "",
+        "title": "",
+        "caption": "French VIP transport A330 landing in Singapore",
+        "image": "assets/generated/photos/2024-07-04-dsc08218-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2024-07-04-dsc08218-enhanced-nr.jpg",
+        "source": "raw_assets/DSC08218-Enhanced-NR.jpg",
+        "originalSize": "4900 x 3675",
+        "processedSize": "2560 x 1920",
+        "thumbnailSize": "1024 x 768",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-6700",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "250mm",
+          "FocalLengthIn35mmFilm": "375mm",
+          "FNumber": "f/6.3",
+          "ExposureTime": "1/2000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "200",
+          "DateTimeOriginal": "2024:07:04 12:50:01",
+          "DateTimeDigitized": "2024:07:04 12:50:01",
+          "DateTime": "2026:07:05 09:37:26"
         }
       },
       "2024-06-22-dsc02893-enhanced-nr": {
@@ -18857,7 +19235,7 @@
         "subjects": [
           {
             "aircraftId": "airbus-a330-mrtt",
-            "unitId": "fr-31st-strategic-air-refueling-and-transport-wing",
+            "unitId": "fr-ervts-2-31-esterel",
             "primary": true
           }
         ],
@@ -18895,7 +19273,7 @@
         "subjects": [
           {
             "aircraftId": "airbus-a330-mrtt",
-            "unitId": "fr-31st-strategic-air-refueling-and-transport-wing",
+            "unitId": "fr-ervts-2-31-esterel",
             "primary": true
           }
         ],
@@ -20202,10 +20580,18 @@
         "2023-05-23-dsc00026-enhanced-nr",
         "2023-05-23-dsc00014-enhanced-nr"
       ],
+      "airbus-a330-200": [
+        "2024-07-04-dsc08248-enhanced-nr",
+        "2024-07-04-dsc08218-enhanced-nr"
+      ],
       "bell-uh-1-iroquois": [
         "2023-09-18-usaf-huey-3",
         "2023-09-18-usaf-huey-2",
         "2023-09-18-usaf-huey-1"
+      ],
+      "bell-uh-1y-venom": [
+        "2025-12-12-dsc00879",
+        "2025-12-12-dsc00737"
       ],
       "boeing-727": [
         "2023-10-01-dsc03885-enhanced-nr",
@@ -20338,6 +20724,7 @@
         "2023-11-12-dsc09722-enhanced-nr"
       ],
       "cessna-uc-35-citation": [
+        "2025-12-12-dsc00765",
         "2023-09-23-dsc02445-enhanced-nr",
         "2023-09-23-dsc02424-enhanced-nr"
       ],
@@ -20731,6 +21118,11 @@
         "2023-10-06-dsc01818-enhanced-nr",
         "2023-10-06-dsc01758-enhanced-nr"
       ],
+      "sikorsky-ch-53e-super-stallion": [
+        "2025-12-12-dsc00757",
+        "2025-12-12-dsc00733",
+        "2025-12-12-dsc00700"
+      ],
       "sikorsky-mh-60r-seahawk": [
         "2023-09-23-usn-seahawk-2",
         "2023-09-23-usn-seahawk-1"
@@ -20755,15 +21147,17 @@
         "2023-10-01-dsc03885-enhanced-nr",
         "2023-10-01-dsc03837-enhanced-nr"
       ],
-      "fr-31st-strategic-air-refueling-and-transport-wing": [
-        "2024-07-10-dsc08601",
-        "2024-07-10-dsc08561-enhanced-nr",
-        "2023-06-27-french-mrtt-2",
-        "2023-06-27-french-mrtt-1"
-      ],
       "fr-airbus": [
         "2023-01-17-beluga-2",
         "2023-01-17-beluga-1"
+      ],
+      "fr-ervts-2-31-esterel": [
+        "2024-07-10-dsc08601",
+        "2024-07-10-dsc08561-enhanced-nr",
+        "2024-07-04-dsc08248-enhanced-nr",
+        "2024-07-04-dsc08218-enhanced-nr",
+        "2023-06-27-french-mrtt-2",
+        "2023-06-27-french-mrtt-1"
       ],
       "fr-escadron-de-chasse-1-4": [
         "2023-06-27-rafale-b-2",
@@ -21317,6 +21711,11 @@
       "us-vr-57": [
         "2023-06-30-wsss-clipper-1"
       ],
+      "us-hmh-464-heavy-helicopter-squadron": [
+        "2025-12-12-dsc00757",
+        "2025-12-12-dsc00733",
+        "2025-12-12-dsc00700"
+      ],
       "us-hsm-51": [
         "2023-09-23-usn-seahawk-2",
         "2023-09-23-usn-seahawk-1"
@@ -21328,6 +21727,10 @@
       "us-kalitta-air": [
         "2025-04-17-n742ck"
       ],
+      "us-marine-light-attack-helicopter-squadron-169-hmla-169": [
+        "2025-12-12-dsc00879",
+        "2025-12-12-dsc00737"
+      ],
       "us-metrea": [
         "2024-01-11-metrea-kc135-3",
         "2024-01-11-metrea-kc135-2",
@@ -21337,6 +21740,7 @@
         "2023-05-16-wolfhound-1"
       ],
       "us-usmc-operational-support-airlift": [
+        "2025-12-12-dsc00765",
         "2023-09-23-dsc02445-enhanced-nr",
         "2023-09-23-dsc02424-enhanced-nr"
       ]
@@ -21395,6 +21799,15 @@
       "jp-chofu-airport": [
         "2023-09-16-dsc08683-enhanced-nr",
         "2023-09-16-dsc08592-enhanced-nr"
+      ],
+      "jp-mcas-futenma": [
+        "2025-12-12-dsc00879",
+        "2025-12-12-dsc00765",
+        "2025-12-12-dsc00757",
+        "2025-12-12-dsc00737",
+        "2025-12-12-dsc00733",
+        "2025-12-12-dsc00703",
+        "2025-12-12-dsc00700"
       ],
       "jp-gifu-air-base": [
         "2026-04-08-xx8523",
@@ -21563,7 +21976,6 @@
         "2023-10-06-dsc00543-enhanced-nr",
         "2023-10-06-dsc00151-enhanced-nr"
       ],
-      "jp-mcas-futenma": [],
       "jp-naha-air-base": [
         "2025-12-12-dsc00567",
         "2025-12-12-128925",
@@ -21738,6 +22150,8 @@
         "2024-09-29-dsc09753-enhanced-nr",
         "2024-07-10-dsc08601",
         "2024-07-10-dsc08561-enhanced-nr",
+        "2024-07-04-dsc08248-enhanced-nr",
+        "2024-07-04-dsc08218-enhanced-nr",
         "2024-06-22-dsc02893-enhanced-nr",
         "2024-06-05-dsc04820-enhanced-nr",
         "2024-06-05-dsc04786-enhanced-nr",
@@ -22229,11 +22643,17 @@
         "jp-starflyer"
       ],
       "airbus-a330-mrtt": [
-        "fr-31st-strategic-air-refueling-and-transport-wing",
+        "fr-ervts-2-31-esterel",
         "sg-112-squadron"
+      ],
+      "airbus-a330-200": [
+        "fr-ervts-2-31-esterel"
       ],
       "bell-uh-1-iroquois": [
         "us-459th-airlift-squadron"
+      ],
+      "bell-uh-1y-venom": [
+        "us-marine-light-attack-helicopter-squadron-169-hmla-169"
       ],
       "boeing-727": [
         "bm-malibu-consulting-corp"
@@ -22415,6 +22835,9 @@
       ],
       "shinmaywa-us-2": [
         "jp-air-rescue-squadron-71-ars-71"
+      ],
+      "sikorsky-ch-53e-super-stallion": [
+        "us-hmh-464-heavy-helicopter-squadron"
       ],
       "sikorsky-mh-60r-seahawk": [
         "us-hsm-51"

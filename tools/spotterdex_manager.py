@@ -1297,12 +1297,23 @@ class SpotterDexManager:
     def _database_update_entry(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         entry_path = clean_text(payload.get("entryPath"))
         parts = self._database_entry_parts(entry_path)
+        requested_unit_id = clean_text(payload.get("unitId"))
 
         def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
             if parts[1] == "aircraft":
+                if len(parts) != 4:
+                    raise ValueError("Database aircraft entry reference is invalid.")
                 aircraft_id, unit_id = parts[2], parts[3]
+                if requested_unit_id and requested_unit_id != unit_id:
+                    raise ValueError("The selected unit no longer matches this entry.")
                 name = clean_text(payload.get("aircraftType"))
                 family = normalize_aircraft_family(payload.get("aircraftFamily"))
+                relationship = connection.execute(
+                    "SELECT 1 FROM aircraft_units WHERE aircraft_id=? AND unit_id=?",
+                    (aircraft_id, unit_id),
+                ).fetchone()
+                if not relationship:
+                    raise ValueError("The selected aircraft entry no longer exists.")
                 if name:
                     connection.execute("UPDATE aircraft SET name=? WHERE id=?", (name, aircraft_id))
                 if family:
@@ -1314,23 +1325,46 @@ class SpotterDexManager:
                         (None if double_width is None else int(double_width), aircraft_id),
                     )
             elif parts[1] == "unit":
+                if len(parts) != 3:
+                    raise ValueError("Database unit entry reference is invalid.")
                 unit_id = parts[2]
+                if requested_unit_id and requested_unit_id != unit_id:
+                    raise ValueError("The selected unit no longer matches this entry.")
             else:
                 raise ValueError("Only aircraft and unit entries can be edited here.")
+            if requested_unit_id:
+                unit_id = requested_unit_id
             unit_name = clean_text(payload.get("squadronName"))
+            if not unit_name:
+                raise ValueError("Unit name is required.")
             country = clean_text(payload.get("country"))
             kind = clean_text(payload.get("unitType")) or "squadron"
+            if kind not in {"squadron", "organisation"}:
+                raise ValueError("Unit type is invalid.")
+            unit = connection.execute(
+                "SELECT name,country_id FROM units WHERE id=?",
+                (unit_id,),
+            ).fetchone()
+            if not unit:
+                raise ValueError("The selected unit no longer exists.")
             country_id = self._database_country_id(connection, country) if country else None
+            effective_country_id = country_id or str(unit[1])
+            duplicate = connection.execute(
+                "SELECT name FROM units WHERE country_id=? AND name=? AND kind=? AND id<>?",
+                (effective_country_id, unit_name, kind, unit_id),
+            ).fetchone()
+            if duplicate:
+                raise ValueError(f"A unit named '{unit_name}' already exists in this country and type.")
             connection.execute(
-                "UPDATE units SET name=COALESCE(NULLIF(?,''),name),kind=?,country_id=COALESCE(?,country_id) WHERE id=?",
-                (unit_name, kind, country_id, unit_id),
+                "UPDATE units SET name=?,kind=?,country_id=? WHERE id=?",
+                (unit_name, kind, effective_country_id, unit_id),
             )
             if parts[1] == "unit" and "squadronLogo" in payload:
                 connection.execute(
                     "UPDATE units SET logo_source=? WHERE id=?",
                     (clean_text(payload.get("squadronLogo")), unit_id),
                 )
-            return {"ok": True, "message": "Entry metadata updated."}
+            return {"ok": True, "unitId": unit_id, "unitName": unit_name, "message": f"Entry metadata updated for {unit_name}."}
 
         return self._database_write(operation)
 
@@ -1529,6 +1563,42 @@ class SpotterDexManager:
                 (location_id, name, country_id, clean_text(payload.get("icao")).upper(), lat, lon, 1),
             )
             return {"ok": True, "message": "Pin created.", "pinId": location_id, "pinPath": f"db:location:{location_id}"}
+
+        return self._database_write(operation)
+
+    def _database_update_pin(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        location_id = clean_text(payload.get("locationId"))
+        name = clean_text(payload.get("name"))
+        country_name = clean_text(payload.get("country"))
+        icao = clean_text(payload.get("icao")).upper()
+        if not location_id or not name or not country_name:
+            raise ValueError("Location id, name, and country are required.")
+        latitude = parse_float(payload.get("lat"), "Latitude")
+        longitude = parse_float(payload.get("lon"), "Longitude")
+        if not -90 <= latitude <= 90 or not -180 <= longitude <= 180:
+            raise ValueError("Coordinates are outside valid latitude/longitude ranges.")
+        enabled_value = payload.get("enabled", True)
+        enabled = 0 if clean_text(enabled_value).lower() in {"0", "false", "no", "off", "disabled"} else 1
+
+        def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            location = connection.execute(
+                "SELECT name,country_id FROM locations WHERE id=?",
+                (location_id,),
+            ).fetchone()
+            if not location:
+                raise ValueError("Location not found.")
+            country_id = self._database_country_id(connection, country_name)
+            duplicate = connection.execute(
+                "SELECT 1 FROM locations WHERE country_id=? AND name=? AND id<>?",
+                (country_id, name, location_id),
+            ).fetchone()
+            if duplicate:
+                raise ValueError(f"A location named '{name}' already exists in this country.")
+            connection.execute(
+                "UPDATE locations SET name=?,country_id=?,icao=?,latitude=?,longitude=?,enabled=? WHERE id=?",
+                (name, country_id, icao, latitude, longitude, enabled, location_id),
+            )
+            return {"ok": True, "locationId": location_id, "name": name, "message": f"Location updated: {name}."}
 
         return self._database_write(operation)
 
@@ -2418,6 +2488,11 @@ class SpotterDexManager:
             "pinId": pin_id,
             "pinPath": relative_posix(yaml_path, self.root),
         }
+
+    def update_pin(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        if not self.database_path.exists():
+            raise ValueError("Location editing is available for the canonical database only.")
+        return self._database_update_pin(payload)
 
     def create_event(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         if not self.database_path.exists():
@@ -3309,6 +3384,7 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
                 "/api/delete-master-photo": self.context.manager.delete_master_photo,
                 "/api/create-entry": self.context.manager.create_entry,
                 "/api/create-pin": self.context.manager.create_pin,
+                "/api/update-pin": self.context.manager.update_pin,
                 "/api/create-event": self.context.manager.create_event,
                 "/api/set-pin-hero": self.context.manager.set_pin_hero,
                 "/api/clear-build-cache": self.context.manager.clear_build_cache,

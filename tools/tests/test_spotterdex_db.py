@@ -133,6 +133,44 @@ class DatabaseTests(unittest.TestCase):
             self.assertIn("squadronLogo", state["squadrons"][0]["entryMissingFields"])
             self.assertGreaterEqual(state["project"]["missingEntryFieldCount"], 1)
 
+            location_result = manager.update_pin(
+                {
+                    "locationId": "jp-test-base",
+                    "name": "Renamed Test Base",
+                    "country": "Japan",
+                    "icao": "RJZY",
+                    "lat": "35.1",
+                    "lon": "136.1",
+                    "enabled": "1",
+                }
+            )
+            self.assertEqual(location_result["locationId"], "jp-test-base")
+            self.assertEqual(location_result["name"], "Renamed Test Base")
+            location = next(pin for pin in manager.get_state()["pins"] if pin["id"] == "jp-test-base")
+            self.assertEqual(location["name"], "Renamed Test Base")
+            self.assertEqual(location["icao"], "RJZY")
+
+            rename_result = manager.update_entry(
+                {
+                    "entryPath": "db:aircraft:kawasaki-t-4:jp-test-unit",
+                    "unitId": "jp-test-unit",
+                    "scope": "aircraft",
+                    "aircraftType": "Kawasaki T-4",
+                    "aircraftFamily": "light",
+                    "squadronName": "Renamed Test Unit",
+                    "country": "Japan",
+                    "unitType": "squadron",
+                }
+            )
+            self.assertEqual(rename_result["unitId"], "jp-test-unit")
+            self.assertEqual(rename_result["unitName"], "Renamed Test Unit")
+            state = manager.get_state()
+            self.assertEqual(
+                {entry["squadronName"] for entry in state["entries"] if entry.get("unitId") == "jp-test-unit"},
+                {"Renamed Test Unit"},
+            )
+            self.assertIn("Renamed Test Unit", (root / "content" / "spotterdex.sql").read_text("utf-8"))
+
             (raw / "logos").mkdir()
             Image.new("RGBA", (24, 24), "gold").save(raw / "logos" / "test-unit.png")
             logo_result = manager.update_unit_logo(

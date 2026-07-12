@@ -40,7 +40,9 @@
         <div class="nav-group">
           <span class="nav-group-label">Catalog</span>
           <button class="tab" data-tab="master" type="button">Master List</button>
-          <button class="tab" data-tab="entries" type="button">Sources</button>
+          <button class="tab" data-tab="squadron-database" type="button">Squadron Database</button>
+          <button class="tab" data-tab="aircraft-database" type="button">Aircraft Database</button>
+          <button class="tab" data-tab="locations-database" type="button">Locations</button>
           <button class="tab" data-tab="writeups" type="button">Write-ups</button>
         </div>
         <div class="nav-group">
@@ -54,10 +56,14 @@
           </button>
         </div>
         <div class="nav-group">
-          <span class="nav-group-label">Publish</span>
+          <span class="nav-group-label">Display Settings</span>
           <button class="tab" data-tab="airshows" type="button">Airshows</button>
           <button class="tab" data-tab="squadrons" type="button">Squadrons</button>
-          <button class="tab" data-tab="locations" type="button">Locations</button>
+          <button class="tab" data-tab="location-heroes" type="button">Location Heroes</button>
+          <button class="tab" data-tab="aircraft" type="button">Aircraft</button>
+        </div>
+        <div class="nav-group">
+          <span class="nav-group-label">Publish</span>
           <button class="tab" data-tab="build" type="button">Build</button>
         </div>
         <div class="stats" id="stats"></div>
@@ -328,24 +334,51 @@
           <div class="quality-list" id="qualityList"></div>
         </section>
 
-        <section class="view" id="entriesView">
+        <section class="view" id="squadron-databaseView">
           <div class="split">
             <div class="section">
-              <h2>Create Photo Source</h2>
+              <h2>Create Squadron Record</h2>
+              <div class="subtle">Create a unit-level photo source for squadron or organisation photos without assigning an aircraft type.</div>
               <div class="field">
-                <label for="newEntryScope">Tag Level</label>
-                <select id="newEntryScope">
-                  <option value="aircraft">Aircraft</option>
+                <label for="newSquadronSourceName">Unit Name</label>
+                <input id="newSquadronSourceName" type="text" placeholder="Air Transport Squadron 61">
+              </div>
+              <div class="field">
+                <label for="newSquadronSourceCountry">Country</label>
+                <input id="newSquadronSourceCountry" type="text" placeholder="Japan">
+              </div>
+              <div class="field">
+                <label for="newSquadronSourceType">Unit Type</label>
+                <select id="newSquadronSourceType">
                   <option value="squadron">Squadron</option>
+                  <option value="organisation">Organisation</option>
                 </select>
               </div>
-              <div class="field" data-entry-scope-field="aircraft">
-                <label for="newAircraftType">Aircraft Type (Aircraft only)</label>
-                <input id="newAircraftType" type="text" placeholder="Lockheed C-130R">
+              <button class="btn primary" id="createSquadronSourceBtn" type="button">+ Squadron Record</button>
+            </div>
+            <div class="section">
+              <h2>Squadron Database</h2>
+              <div class="field">
+                <label for="squadronSourceSearch">Search</label>
+                <input id="squadronSourceSearch" type="search" placeholder="unit or country">
               </div>
-              <div class="field" data-entry-scope-field="aircraft">
-                <label for="newAircraftFamily">Aircraft Family</label>
-                <select id="newAircraftFamily">
+              <div class="photo-list" id="squadronSourceCards"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="aircraft-databaseView">
+          <div class="split">
+            <div class="section">
+              <h2>Create Aircraft Record</h2>
+              <div class="subtle">Create a photo source for one aircraft type and its associated squadron or organisation.</div>
+              <div class="field">
+                <label for="newAircraftSourceType">Aircraft Type</label>
+                <input id="newAircraftSourceType" type="text" placeholder="Lockheed C-130R">
+              </div>
+              <div class="field">
+                <label for="newAircraftSourceFamily">Aircraft Family</label>
+                <select id="newAircraftSourceFamily">
                   <option value="">Select a family</option>
                   <option value="fighter">Fighter</option>
                   <option value="helicopter">Helicopter</option>
@@ -354,9 +387,9 @@
                   <option value="heavy">Heavy</option>
                 </select>
               </div>
-              <div class="field" data-entry-scope-field="aircraft">
-                <label for="newAircraftDisplayWidth">Aircraft Card Width</label>
-                <select id="newAircraftDisplayWidth">
+              <div class="field">
+                <label for="newAircraftSourceDisplayWidth">Aircraft Card Width</label>
+                <select id="newAircraftSourceDisplayWidth">
                   <option value="">Automatic (archive layout)</option>
                   <option value="0">Standard width</option>
                   <option value="1">Double width</option>
@@ -364,47 +397,78 @@
                 <div class="subtle">Optional. You can change this later for any aircraft type.</div>
               </div>
               <div class="field">
-                <label for="newSquadronName">Unit Name</label>
-                <input id="newSquadronName" type="text" placeholder="Air Transport Squadron 61">
+                <label for="newAircraftSourceSquadron">Unit Name</label>
+                <input id="newAircraftSourceSquadron" type="text" placeholder="Air Transport Squadron 61">
               </div>
               <div class="field">
-                <label for="newCountry">Country</label>
-                <input id="newCountry" type="text" placeholder="Japan">
+                <label for="newAircraftSourceCountry">Country</label>
+                <input id="newAircraftSourceCountry" type="text" placeholder="Japan">
               </div>
               <div class="field">
-                <label for="newUnitType">Unit Type</label>
-                <select id="newUnitType">
+                <label for="newAircraftSourceUnitType">Unit Type</label>
+                <select id="newAircraftSourceUnitType">
                   <option value="squadron">Squadron</option>
                   <option value="organisation">Organisation</option>
                 </select>
               </div>
-              <button class="btn primary" id="createEntryBtn" type="button">+ Entry</button>
+              <button class="btn primary" id="createAircraftSourceBtn" type="button">+ Aircraft Record</button>
             </div>
             <div class="section">
-              <h2>Entries</h2>
+              <h2>Aircraft Database</h2>
               <div class="field">
-                <label for="entryListSearch">Search</label>
-                <input id="entryListSearch" type="search" placeholder="aircraft, unit, country">
+                <label for="aircraftSourceSearch">Search</label>
+                <input id="aircraftSourceSearch" type="search" placeholder="aircraft, unit, country">
               </div>
-              <div class="photo-list" id="entryCards"></div>
+              <div class="photo-list" id="aircraftSourceCards"></div>
             </div>
           </div>
-          <section class="airshow-management-section" aria-labelledby="aircraftSettingsHeading">
-            <div class="bar">
-              <div>
-                <h2 class="panel-title" id="aircraftSettingsHeading">Aircraft Type Settings</h2>
-                <div class="subtle" id="aircraftSettingsSummary">Choose an optional hero photo and card width for each aircraft type.</div>
-              </div>
-              <div class="field compact-field">
-                <label for="aircraftSettingsSearch">Search aircraft types</label>
-                <input id="aircraftSettingsSearch" type="search" placeholder="type or family">
-              </div>
-            </div>
-            <div class="group-hero-list" id="aircraftSettingsList"></div>
-          </section>
         </section>
 
-        <section class="view" id="locationsView">
+        <section class="view" id="locations-databaseView">
+          <div class="split">
+            <section class="section">
+              <h2>Create Location</h2>
+              <div class="subtle">Add a map location to the catalog. Location IDs are assigned once and remain immutable.</div>
+              <div class="form-grid">
+                <div class="field">
+                  <label for="pinCountry">Country</label>
+                  <input id="pinCountry" type="text" placeholder="Japan">
+                </div>
+                <div class="field">
+                  <label for="pinName">Name</label>
+                  <input id="pinName" type="text" placeholder="Atsugi Air Base">
+                </div>
+                <div class="field">
+                  <label for="pinIcao">ICAO</label>
+                  <input id="pinIcao" type="text" minlength="2" maxlength="4" placeholder="RJTA or SG">
+                </div>
+                <div class="field">
+                  <label for="pinId">ID</label>
+                  <input id="pinId" type="text" placeholder="atsugi-air-base">
+                </div>
+                <div class="field">
+                  <label for="pinLat">Latitude</label>
+                  <input id="pinLat" type="text" inputmode="decimal" placeholder="35.4547">
+                </div>
+                <div class="field">
+                  <label for="pinLon">Longitude</label>
+                  <input id="pinLon" type="text" inputmode="decimal" placeholder="139.4500">
+                </div>
+              </div>
+              <button class="btn primary" id="createPinBtn" type="button">+ Location</button>
+            </section>
+            <section class="section">
+              <h2>Locations</h2>
+              <div class="field">
+                <label for="locationDatabaseSearch">Search</label>
+                <input id="locationDatabaseSearch" type="search" placeholder="name, country, ICAO, ID">
+              </div>
+              <div class="photo-list" id="locationDatabaseList"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="location-heroesView">
           <div class="bar">
             <div>
               <h2 class="panel-title">Location Manager</h2>
@@ -417,39 +481,6 @@
               <div class="subtle">Every location is listed below. Click a tagged image to make it the location hero, or use one selected raw asset.</div>
             </div>
             <div class="group-hero-list" id="locationHeroList"></div>
-          </section>
-          <section class="airshow-management-section" aria-labelledby="createPinHeading">
-            <div>
-              <h3 class="panel-title" id="createPinHeading">Create Pin</h3>
-              <div class="subtle">Add a location to the map before tagging photos to it.</div>
-            </div>
-            <div class="form-grid">
-              <div class="field">
-                <label for="pinCountry">Country</label>
-                <input id="pinCountry" type="text" placeholder="Japan">
-              </div>
-              <div class="field">
-                <label for="pinName">Name</label>
-                <input id="pinName" type="text" placeholder="Atsugi Air Base">
-              </div>
-              <div class="field">
-                <label for="pinIcao">ICAO</label>
-                <input id="pinIcao" type="text" minlength="2" maxlength="4" placeholder="RJTA or SG">
-              </div>
-              <div class="field">
-                <label for="pinId">ID</label>
-                <input id="pinId" type="text" placeholder="atsugi-air-base">
-              </div>
-              <div class="field">
-                <label for="pinLat">Latitude</label>
-                <input id="pinLat" type="text" inputmode="decimal" placeholder="35.4547">
-              </div>
-              <div class="field">
-                <label for="pinLon">Longitude</label>
-                <input id="pinLon" type="text" inputmode="decimal" placeholder="139.4500">
-              </div>
-            </div>
-            <button class="btn primary" id="createPinBtn" type="button">+ Pin</button>
           </section>
         </section>
 
@@ -466,6 +497,22 @@
               <div class="subtle">Each squadron has one shared logo and hero, reused across every associated aircraft type.</div>
             </div>
             <div class="group-hero-list" id="squadronHeroList"></div>
+          </section>
+        </section>
+
+        <section class="view" id="aircraftView">
+          <div class="bar">
+            <div>
+              <h2 class="panel-title">Aircraft Display Settings</h2>
+              <div class="subtle" id="aircraftSettingsSummary">Choose an optional hero photo and card width for each aircraft type.</div>
+            </div>
+            <div class="field compact-field">
+              <label for="aircraftSettingsSearch">Search aircraft types</label>
+              <input id="aircraftSettingsSearch" type="search" placeholder="type or family">
+            </div>
+          </div>
+          <section class="airshow-management-section" aria-labelledby="aircraftSettingsHeading">
+            <div class="group-hero-list" id="aircraftSettingsList"></div>
           </section>
         </section>
 

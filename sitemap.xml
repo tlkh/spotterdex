@@ -206,6 +206,41 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://tlkh.github.io/spotterdex/share/photo/2025-12-12-dsc00879/</loc>
+    <lastmod>2025-12-12</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/photo/2025-12-12-dsc00765/</loc>
+    <lastmod>2025-12-12</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/photo/2025-12-12-dsc00757/</loc>
+    <lastmod>2025-12-12</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/photo/2025-12-12-dsc00737/</loc>
+    <lastmod>2025-12-12</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/photo/2025-12-12-dsc00733/</loc>
+    <lastmod>2025-12-12</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/photo/2025-12-12-dsc00703/</loc>
+    <lastmod>2025-12-12</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/photo/2025-12-12-dsc00700/</loc>
+    <lastmod>2025-12-12</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://tlkh.github.io/spotterdex/share/photo/2025-12-12-dsc00567/</loc>
     <lastmod>2025-12-12</lastmod>
     <priority>0.6</priority>
@@ -728,6 +763,16 @@
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/photo/2024-07-10-dsc08561-enhanced-nr/</loc>
     <lastmod>2024-07-10</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/photo/2024-07-04-dsc08248-enhanced-nr/</loc>
+    <lastmod>2024-07-04</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/photo/2024-07-04-dsc08218-enhanced-nr/</loc>
+    <lastmod>2024-07-04</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
@@ -2516,7 +2561,17 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://tlkh.github.io/spotterdex/share/aircraft/airbus-a330-200/</loc>
+    <lastmod>2026-07-12</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/bell-uh-1-iroquois/</loc>
+    <lastmod>2026-07-12</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/aircraft/bell-uh-1y-venom/</loc>
     <lastmod>2026-07-12</lastmod>
     <priority>0.7</priority>
   </url>
@@ -2786,6 +2841,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://tlkh.github.io/spotterdex/share/aircraft/sikorsky-ch-53e-super-stallion/</loc>
+    <lastmod>2026-07-12</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/sikorsky-mh-60r-seahawk/</loc>
     <lastmod>2026-07-12</lastmod>
     <priority>0.7</priority>
@@ -2807,6 +2867,11 @@
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/location/jp-chofu-airport/</loc>
+    <lastmod>2026-07-12</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/location/jp-mcas-futenma/</loc>
     <lastmod>2026-07-12</lastmod>
     <priority>0.7</priority>
   </url>
@@ -2996,7 +3061,7 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tlkh.github.io/spotterdex/share/squadron/fr-31st-strategic-air-refueling-and-transport-wing/</loc>
+    <loc>https://tlkh.github.io/spotterdex/share/squadron/fr-ervts-2-31-esterel/</loc>
     <lastmod>2026-07-12</lastmod>
     <priority>0.7</priority>
   </url>
@@ -3281,7 +3346,17 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://tlkh.github.io/spotterdex/share/squadron/us-hmh-464-heavy-helicopter-squadron/</loc>
+    <lastmod>2026-07-12</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/us-hsm-51/</loc>
+    <lastmod>2026-07-12</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/squadron/us-marine-light-attack-helicopter-squadron-169-hmla-169/</loc>
     <lastmod>2026-07-12</lastmod>
     <priority>0.7</priority>
   </url>

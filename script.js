@@ -3732,6 +3732,11 @@
 
   function renderMapLocationPanel(profile) {
     const { pin, heroPhoto, heroAsset, units, photos } = profile;
+    const squadronSection = renderLocationExpandableSection(pin, photos, "squadron");
+    const typeSection = renderLocationExpandableSection(pin, photos, "type");
+    const locationSection = squadronSection || typeSection
+      ? ""
+      : renderLocationExpandableSection(pin, photos, "location");
     const heroImage = heroPhoto
       ? heroPhoto.image || heroPhoto.thumbnail
       : heroAsset
@@ -3762,8 +3767,9 @@
           <span aria-hidden="true">→</span>
         </button>
         <div class="location-expandable-list">
-          ${renderLocationExpandableSection(pin, photos, "squadron")}
-          ${renderLocationExpandableSection(pin, photos, "type")}
+          ${squadronSection}
+          ${typeSection}
+          ${locationSection}
         </div>
       </section>
     `;
