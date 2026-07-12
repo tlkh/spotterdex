@@ -569,6 +569,7 @@ class SpotterDexManager:
                     "squadronLogoExists": bool(logo_path and logo_path.is_file()),
                     "squadronHero": hero_source,
                     "squadronHeroAssetPath": hero_source,
+                    "writeUp": clean_text(unit.get("write_up")),
                     # Logos belong to the unit, not to each aircraft/unit
                     # relationship. The unit entry below is the sole editor and
                     # missing-field record for this shared value.
@@ -610,6 +611,7 @@ class SpotterDexManager:
                     "squadronLogoExists": bool(logo_path and logo_path.is_file()),
                     "squadronHero": hero_source,
                     "squadronHeroAssetPath": hero_source,
+                    "writeUp": clean_text(unit.get("write_up")),
                     "entryMissingFields": ["squadronLogo"] if not (logo_path and logo_path.is_file()) else [],
                     "photoCount": len(records),
                     "missingPhotoCount": sum(record.get("exists") is False for record in records),
@@ -695,6 +697,7 @@ class SpotterDexManager:
                     "heroPhotoId": clean_text(aircraft_row.get("hero_photo_id")),
                     "heroAssetPath": hero_source,
                     "heroExists": bool(hero_source and (self.raw_assets_dir / hero_source).is_file()),
+                    "writeUp": clean_text(aircraft_row.get("write_up")),
                     "photoCount": len(candidate_photos),
                     "photos": candidate_photos,
                 }
@@ -771,7 +774,7 @@ class SpotterDexManager:
             item["path"],
         ))
         airshow_events = [
-            {"id": event["id"], "name": event["name"], "hero": reference_by_photo.get(event.get("hero_photo_id"), {})}
+            {"id": event["id"], "name": event["name"], "writeUp": clean_text(event.get("write_up")), "hero": reference_by_photo.get(event.get("hero_photo_id"), {})}
             for event in events.values()
         ]
         squadron_groups = self._squadron_groups(entries)
@@ -1270,6 +1273,24 @@ class SpotterDexManager:
             )
             label = "Automatic" if double_width is None else "Double width" if double_width else "Standard width"
             return {"ok": True, "message": f"{aircraft[0]} set to {label.lower()}."}
+
+        return self._database_write(operation)
+
+    def _database_update_write_up(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        entity_type = clean_text(payload.get("entityType"))
+        entity_id = clean_text(payload.get("entityId"))
+        write_up = str(payload.get("writeUp") or "").strip()
+        tables = {"aircraft": "aircraft", "squadron": "units", "airshow": "events"}
+        table = tables.get(entity_type)
+        if not table or not entity_id:
+            raise ValueError("Choose an aircraft, squadron, or airshow page.")
+
+        def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            entity = connection.execute(f'SELECT name FROM "{table}" WHERE id=?', (entity_id,)).fetchone()
+            if not entity:
+                raise ValueError("The selected page no longer exists.")
+            connection.execute(f'UPDATE "{table}" SET write_up=? WHERE id=?', (write_up, entity_id))
+            return {"ok": True, "message": f"Write-up saved for {entity[0]}."}
 
         return self._database_write(operation)
 
@@ -2301,6 +2322,11 @@ class SpotterDexManager:
             raise ValueError("Aircraft settings are available for the canonical database only.")
         return self._database_update_aircraft_settings(payload)
 
+    def update_write_up(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        if not self.database_path.exists():
+            raise ValueError("Write-up editing is available for the canonical database only.")
+        return self._database_update_write_up(payload)
+
     def create_entry(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         if self.database_path.exists():
             return self._database_create_entry(payload)
@@ -2762,6 +2788,7 @@ class SpotterDexManager:
                     "unitTargetKey": f"db:unit:{clean_text(entry.get('unitId'))}" if entry.get("unitId") else "",
                     "logo": clean_text(entry.get("squadronLogo")),
                     "logoExists": bool(entry.get("squadronLogoExists")),
+                    "writeUp": clean_text(entry.get("writeUp")),
                     "photoCount": 0,
                     "photos": [],
                     "hero": {},
@@ -2773,6 +2800,8 @@ class SpotterDexManager:
             if entry.get("sourceScope") == "squadron" or not group.get("logo"):
                 group["logo"] = clean_text(entry.get("squadronLogo"))
                 group["logoExists"] = bool(entry.get("squadronLogoExists"))
+            if entry.get("writeUp"):
+                group["writeUp"] = clean_text(entry.get("writeUp"))
             hero_asset_path = clean_text(entry.get("squadronHeroAssetPath"))
             if hero_asset_path:
                 group["hero"] = {
@@ -3267,6 +3296,7 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
                 "/api/update-unit-logo": self.context.manager.update_unit_logo,
                 "/api/delete-entry": self.context.manager.delete_entry,
                 "/api/update-aircraft-settings": self.context.manager.update_aircraft_settings,
+                "/api/update-write-up": self.context.manager.update_write_up,
                 "/api/update-photo": self.context.manager.update_photo,
                 "/api/update-master-photo": self.context.manager.update_master_photo,
                 "/api/bulk-update-photos": self.context.manager.bulk_update_photos,

@@ -1934,6 +1934,40 @@ img {
   margin-top: 1em;
 }
 
+.detail-write-up-copy h2,
+.detail-write-up-copy h3,
+.detail-write-up-copy h4 {
+  margin: 1.35em 0 0.45em;
+  font-family: var(--font);
+  line-height: 1.25;
+}
+
+.detail-write-up-copy h2:first-child,
+.detail-write-up-copy h3:first-child,
+.detail-write-up-copy h4:first-child {
+  margin-top: 0;
+}
+
+.detail-write-up-copy ul,
+.detail-write-up-copy ol {
+  margin: 0.8em 0;
+  padding-left: 1.35em;
+}
+
+.detail-write-up-copy blockquote {
+  margin: 1em 0;
+  padding-left: 1em;
+  border-left: 2px solid var(--line-strong);
+  color: var(--muted);
+}
+
+.detail-write-up-copy code {
+  padding: 0.12em 0.3em;
+  border-radius: 3px;
+  background: var(--surface-strong);
+  font-size: 0.9em;
+}
+
 .detail-summary .eyebrow {
   margin-bottom: 4px;
 }

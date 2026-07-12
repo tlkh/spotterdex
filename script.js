@@ -5064,18 +5064,75 @@
     if (!text) {
       return "";
     }
-    const paragraphs = text
-      .split(/\n\s*\n/)
-      .map((paragraph) => paragraph.trim())
-      .filter(Boolean)
-      .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, "<br>")}</p>`)
-      .join("");
     return `
       <section class="detail-write-up" aria-label="${escapeAttr(label)}">
         <p class="eyebrow">${escapeHtml(label)}</p>
-        <div class="detail-write-up-copy">${paragraphs}</div>
+        <div class="detail-write-up-copy">${renderSafeMarkdown(text)}</div>
       </section>
     `;
+  }
+
+  function renderSafeMarkdown(markdown) {
+    const lines = String(markdown || "").replace(/\r\n?/g, "\n").split("\n");
+    const output = [];
+    let paragraph = [];
+    let listType = "";
+    const flushParagraph = () => {
+      if (paragraph.length) output.push(`<p>${paragraph.map(renderMarkdownInline).join("<br>")}</p>`);
+      paragraph = [];
+    };
+    const closeList = () => {
+      if (listType) output.push(`</${listType}>`);
+      listType = "";
+    };
+
+    lines.forEach((line) => {
+      const heading = line.match(/^(#{2,4})\s+(.+)$/);
+      const unordered = line.match(/^\s*[-*]\s+(.+)$/);
+      const ordered = line.match(/^\s*\d+[.)]\s+(.+)$/);
+      const quote = line.match(/^>\s?(.*)$/);
+      if (!line.trim()) {
+        flushParagraph();
+        closeList();
+      } else if (heading) {
+        flushParagraph();
+        closeList();
+        const level = heading[1].length;
+        output.push(`<h${level}>${renderMarkdownInline(heading[2])}</h${level}>`);
+      } else if (unordered || ordered) {
+        flushParagraph();
+        const nextType = unordered ? "ul" : "ol";
+        if (listType !== nextType) {
+          closeList();
+          listType = nextType;
+          output.push(`<${listType}>`);
+        }
+        output.push(`<li>${renderMarkdownInline((unordered || ordered)[1])}</li>`);
+      } else if (quote) {
+        flushParagraph();
+        closeList();
+        output.push(`<blockquote>${renderMarkdownInline(quote[1])}</blockquote>`);
+      } else {
+        closeList();
+        paragraph.push(line.trim());
+      }
+    });
+    flushParagraph();
+    closeList();
+    return output.join("");
+  }
+
+  function renderMarkdownInline(value) {
+    let html = escapeHtml(value);
+    html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
+    html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    html = html.replace(/(^|[^*])\*([^*]+)\*/g, "$1<em>$2</em>");
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, href) => {
+      const decodedHref = href.replace(/&amp;/g, "&");
+      if (!/^(https?:\/\/|mailto:|\/|#)/i.test(decodedHref)) return text;
+      return `<a href="${escapeAttr(decodedHref)}"${/^https?:\/\//i.test(decodedHref) ? ' target="_blank" rel="noopener noreferrer"' : ""}>${text}</a>`;
+    });
+    return html;
   }
 
   function renderDetailHero({ backView, backLabel, eyebrow, title, description, image, alt, mark = "", actions = "", className = "" }) {

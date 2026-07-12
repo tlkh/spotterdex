@@ -1115,6 +1115,42 @@
       padding-top: 0;
       border-top: 0;
     }
+    .write-up-toolbar {
+      display: grid;
+      grid-template-columns: minmax(150px, 0.35fr) minmax(260px, 1fr);
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .write-up-editor-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 0.8fr);
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .write-up-source textarea {
+      min-height: 52vh;
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      line-height: 1.55;
+    }
+    .write-up-preview {
+      min-height: 52vh;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: #fff;
+      line-height: 1.65;
+    }
+    .write-up-preview h2,
+    .write-up-preview h3,
+    .write-up-preview h4 {
+      margin: 1.2em 0 0.45em;
+    }
+    .write-up-preview p:first-child,
+    .write-up-preview h2:first-child,
+    .write-up-preview h3:first-child {
+      margin-top: 10px;
+    }
     .airshow-hero-list,
     .group-hero-list {
       display: grid;

@@ -41,6 +41,7 @@
           <span class="nav-group-label">Catalog</span>
           <button class="tab" data-tab="master" type="button">Master List</button>
           <button class="tab" data-tab="entries" type="button">Sources</button>
+          <button class="tab" data-tab="writeups" type="button">Write-ups</button>
         </div>
         <div class="nav-group">
           <span class="nav-group-label">Review</span>
@@ -466,6 +467,41 @@
             </div>
             <div class="group-hero-list" id="squadronHeroList"></div>
           </section>
+        </section>
+
+        <section class="view" id="writeupsView">
+          <div class="bar">
+            <div>
+              <h2 class="panel-title">Page Write-ups</h2>
+              <div class="subtle">Add optional Markdown content to aircraft, squadron, and airshow pages.</div>
+            </div>
+            <button class="btn primary" id="saveWriteUpBtn" type="button">Save Write-up</button>
+          </div>
+          <div class="write-up-toolbar">
+            <div class="field">
+              <label for="writeUpType">Page type</label>
+              <select id="writeUpType">
+                <option value="aircraft">Aircraft</option>
+                <option value="squadron">Squadron</option>
+                <option value="airshow">Airshow</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="writeUpEntity">Page</label>
+              <select id="writeUpEntity"></select>
+            </div>
+          </div>
+          <div class="write-up-editor-grid">
+            <div class="field write-up-source">
+              <label for="writeUpMarkdown">Markdown</label>
+              <textarea id="writeUpMarkdown" spellcheck="true" placeholder="Write an introduction, history, notable details, or spotting notes…"></textarea>
+              <p class="subtle">Supports paragraphs, ## headings, **bold**, *italic*, links, blockquotes, and ordered or unordered lists.</p>
+            </div>
+            <section class="write-up-preview" aria-labelledby="writeUpPreviewHeading">
+              <div class="subtle" id="writeUpPreviewHeading">Preview</div>
+              <div id="writeUpPreview"></div>
+            </section>
+          </div>
         </section>
 
         <section class="view" id="buildView">

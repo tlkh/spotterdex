@@ -36,6 +36,7 @@
       attach: ["Attach Photos", "Tag new raw images and maintain their catalog metadata."],
       master: ["Master Photo List", "Search and edit every photo record from one workspace."],
       entries: ["Photo Sources", "Create and maintain aircraft, unit, and source relationships."],
+      writeups: ["Page Write-ups", "Edit optional Markdown content for aircraft, squadron, and airshow pages."],
       "bulk-captions": ["Caption Review", "Generate and review caption suggestions for selected photos."],
       missing: ["Missing Fields", "Resolve incomplete catalog metadata from a focused queue."],
       quality: ["Source Quality", "Review image dimensions and conservative quality warnings."],
@@ -217,6 +218,7 @@
         attach: renderEntryDetail,
         master: renderMasterView,
         entries: () => { renderEntryCards(); renderAircraftSettings(); },
+        writeups: renderWriteUpEditor,
         "bulk-captions": renderBulkCaptions,
         airshows: () => { renderAirshowHeroManager(); renderAirshowMissingImages(); renderBulkEvents(); },
         missing: renderMissingFields,
@@ -226,6 +228,77 @@
         build: renderOrphans
       };
       renderers[state.activeTab]?.();
+    }
+
+    function writeUpEntities(type = $("writeUpType")?.value || "aircraft") {
+      if (type === "squadron") {
+        return (state.data?.squadronGroups || []).map((item) => ({id: item.unitId, name: `${item.name} (${item.country})`, writeUp: item.writeUp || ""})).filter((item) => item.id);
+      }
+      if (type === "airshow") {
+        return (state.data?.airshowEvents || []).map((item) => ({id: item.id, name: item.name, writeUp: item.writeUp || ""}));
+      }
+      return (state.data?.aircraftCatalog || []).map((item) => ({id: item.id, name: item.name, writeUp: item.writeUp || ""}));
+    }
+
+    function renderWriteUpEditor(preferredId = "") {
+      const type = $("writeUpType").value;
+      const entities = writeUpEntities(type);
+      const previousId = preferredId || $("writeUpEntity").value;
+      $("writeUpEntity").innerHTML = entities.length
+        ? entities.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}${item.writeUp ? " · written" : ""}</option>`).join("")
+        : '<option value="">No pages available</option>';
+      if (entities.some((item) => item.id === previousId)) $("writeUpEntity").value = previousId;
+      loadSelectedWriteUp();
+    }
+
+    function loadSelectedWriteUp() {
+      const entity = writeUpEntities().find((item) => item.id === $("writeUpEntity").value);
+      $("writeUpMarkdown").value = entity?.writeUp || "";
+      renderWriteUpPreview();
+      $("saveWriteUpBtn").disabled = !entity;
+    }
+
+    function renderWriteUpPreview() {
+      const markdown = $("writeUpMarkdown").value.trim();
+      if (!markdown) {
+        $("writeUpPreview").innerHTML = '<p class="subtle">Nothing to preview yet.</p>';
+        return;
+      }
+      const blocks = markdown.split(/\n\s*\n/).map((block) => block.trim()).filter(Boolean).map((block) => {
+        const heading = block.match(/^(#{2,4})\s+(.+)$/s);
+        if (heading && !heading[2].includes("\n")) return `<h${heading[1].length}>${managerMarkdownInline(heading[2])}</h${heading[1].length}>`;
+        const lines = block.split("\n");
+        if (lines.every((line) => /^\s*[-*]\s+/.test(line))) return `<ul>${lines.map((line) => `<li>${managerMarkdownInline(line.replace(/^\s*[-*]\s+/, ""))}</li>`).join("")}</ul>`;
+        return `<p>${lines.map(managerMarkdownInline).join("<br>")}</p>`;
+      });
+      $("writeUpPreview").innerHTML = blocks.join("");
+    }
+
+    function managerMarkdownInline(value) {
+      let html = escapeHtml(value);
+      html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
+      html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+      html = html.replace(/(^|[^*])\*([^*]+)\*/g, "$1<em>$2</em>");
+      html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/gi, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+      return html;
+    }
+
+    async function saveWriteUp() {
+      const entityType = $("writeUpType").value;
+      const entityId = $("writeUpEntity").value;
+      if (!entityId) return;
+      const button = $("saveWriteUpBtn");
+      button.disabled = true;
+      try {
+        const result = await api("/api/update-write-up", {entityType, entityId, writeUp: $("writeUpMarkdown").value});
+        await loadState(true);
+        $("writeUpType").value = entityType;
+        renderWriteUpEditor(entityId);
+        toast(result.message);
+      } catch (error) {
+        toast(error.message);
+        button.disabled = false;
+      }
     }
 
     function renderStats() {
@@ -2894,6 +2967,10 @@
       });
       $("findOrphansBtn").addEventListener("click", () => findOrphans().catch((error) => toast(error.message)));
       $("deleteOrphansBtn").addEventListener("click", () => deleteOrphans().catch((error) => toast(error.message)));
+      $("writeUpType").addEventListener("change", () => renderWriteUpEditor());
+      $("writeUpEntity").addEventListener("change", loadSelectedWriteUp);
+      $("writeUpMarkdown").addEventListener("input", renderWriteUpPreview);
+      $("saveWriteUpBtn").addEventListener("click", () => saveWriteUp());
       $("orphanList").addEventListener("click", (event) => {
         const button = event.target.closest("[data-delete-orphan]");
         if (button) deleteOrphans([button.dataset.deleteOrphan]).catch((error) => toast(error.message));
