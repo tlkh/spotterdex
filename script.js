@@ -41,7 +41,11 @@
   const REDUCED_MOTION_MEDIA_QUERY = "(prefers-reduced-motion: reduce)";
   const LEAFLET_SCRIPT_URL = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
   const LEAFLET_SCRIPT_INTEGRITY = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
+  const MAPLIBRE_SCRIPT_URL = "https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js";
+  const MAPLIBRE_LEAFLET_SCRIPT_URL = "https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.3/leaflet-maplibre-gl.js";
+  const OPENFREEMAP_DARK_STYLE_URL = "https://tiles.openfreemap.org/styles/dark";
   let leafletLoadPromise = null;
+  let openFreeMapLoadPromise = null;
   let statsExifLoadPromise = null;
   const PAGE_ROUTES = {
     mapView: "index.html",
@@ -281,7 +285,7 @@
     `);
     document.body.insertAdjacentHTML("beforeend", `
       <nav class="mobile-tab-bar" id="mobileTabBar" aria-label="Primary navigation">
-        ${mobileTabLink("mapView", "index.html", "Map", '<path d="M4 6.5 9 4l6 2.5L20 4v13.5L15 20l-6-2.5L4 20Z"></path><path d="M9 4v13.5M15 6.5V20"></path>')}
+        ${mobileTabLink("mapView", "index.html", "Map", '<circle cx="12" cy="12" r="9"></circle><path d="M7 3.5V5a3 3 0 0 0 3 3h.5a2 2 0 0 1 2 2 2 2 0 0 0 2 2H17a2 2 0 0 1 2 2v1.5M4.2 17H7a2 2 0 0 1 2 2v1.5M14.8 20.5V18a2 2 0 0 1 2-2h3.7"></path>')}
         ${mobileTabLink("dexView", "aircraft-dex.html", "Aircraft", '<path d="M3 13.5 10 11V5.5a2 2 0 0 1 4 0V11l7 2.5v2l-7-.8V19l2 1v1l-4-1-4 1v-1l2-1v-4.3l-7 .8Z"></path>')}
         ${mobileTabLink("squadronsView", "squadrons.html", "Squadrons", '<circle cx="12" cy="10" r="8"></circle><path class="squadron-patch-compass" d="M12 3v4M4.5 10h3M16.5 10h3"></path><path class="squadron-patch-eagle" d="M12 10.5C10 7.8 7.8 6.8 5 7c.8 3 2.8 5 6 6l-1.8 3 2.8-1 2.8 1-1.8-3c3.2-1 5.2-3 6-6-2.8-.2-5 .8-7 3.5Z"></path><path d="M5 17.5 3.5 20 8 21l4-1 4 1 4.5-1-1.5-2.5"></path>')}
         ${mobileTabLink("airshowsView", "airshows.html", "Airshows", '<path class="airshow-formation-trails" d="M12 9.2v9.2M7 15.2V22M17 15.2V22"></path><g class="airshow-formation-jets"><path transform="translate(12 5) scale(.68)" d="M0-4c.8 0 1.1.8 1.1 2v2l4.2 2v1.5l-4.2-.9v2l1.5 1v.9L0 5.8l-2.6.7v-.9l1.5-1v-2l-4.2.9V2l4.2-2v-2c0-1.2.3-2 1.1-2Z"></path><path transform="translate(7 11) scale(.68)" d="M0-4c.8 0 1.1.8 1.1 2v2l4.2 2v1.5l-4.2-.9v2l1.5 1v.9L0 5.8l-2.6.7v-.9l1.5-1v-2l-4.2.9V2l4.2-2v-2c0-1.2.3-2 1.1-2Z"></path><path transform="translate(17 11) scale(.68)" d="M0-4c.8 0 1.1.8 1.1 2v2l4.2 2v1.5l-4.2-.9v2l1.5 1v.9L0 5.8l-2.6.7v-.9l1.5-1v-2l-4.2.9V2l4.2-2v-2c0-1.2.3-2 1.1-2Z"></path></g>')}
@@ -2257,27 +2261,36 @@
       inertia: true
     });
 
-    let consecutiveTileErrors = 0;
-    const tileLayer = window.L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      keepBuffer: mobileLayout ? 1 : 2,
-      updateWhenIdle: mobileLayout,
-      updateWhenZooming: true,
-      updateInterval: mobileLayout ? 180 : 200,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(state.map);
-    tileLayer.on("tileerror", () => {
-      consecutiveTileErrors += 1;
-      if (consecutiveTileErrors >= 3 && els.mapFallback) {
-        els.mapFallback.hidden = false;
+    const tileLayer = window.L.maplibreGL({
+      style: OPENFREEMAP_DARK_STYLE_URL,
+      attributionControl: {
+        customAttribution: '<a href="https://openfreemap.org/">OpenFreeMap</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }
     });
-    tileLayer.on("tileload", () => {
-      consecutiveTileErrors = 0;
-      if (!state.connectivityOffline && els.mapFallback) {
-        els.mapFallback.hidden = true;
+    tileLayer.once("add", () => {
+      const vectorMap = tileLayer.getMaplibreMap();
+      if (!vectorMap) {
+        if (els.mapFallback) {
+          els.mapFallback.hidden = false;
+        }
+        return;
       }
+
+      let basemapReady = false;
+      const basemapLoadTimeout = window.setTimeout(() => {
+        if (!basemapReady && els.mapFallback) {
+          els.mapFallback.hidden = false;
+        }
+      }, 12000);
+      vectorMap.on("load", () => {
+        basemapReady = true;
+        window.clearTimeout(basemapLoadTimeout);
+        if (!state.connectivityOffline && els.mapFallback) {
+          els.mapFallback.hidden = true;
+        }
+      });
     });
+    tileLayer.addTo(state.map);
 
     const leaderPane = state.map.createPane("spotterdexLeaderPane");
     leaderPane.style.zIndex = "550";
@@ -2333,6 +2346,7 @@
     }
 
     loadLeaflet()
+      .then(() => loadOpenFreeMap())
       .then(() => {
         if (state.map || !els.worldMap) {
           return;
@@ -2373,6 +2387,37 @@
       document.head.append(script);
     });
     return leafletLoadPromise;
+  }
+
+  function loadOpenFreeMap() {
+    if (window.L?.maplibreGL) {
+      return Promise.resolve(window.L.maplibreGL);
+    }
+    if (openFreeMapLoadPromise) {
+      return openFreeMapLoadPromise;
+    }
+
+    openFreeMapLoadPromise = loadRuntimeScript(MAPLIBRE_SCRIPT_URL, "maplibreRuntime")
+      .then(() => loadRuntimeScript(MAPLIBRE_LEAFLET_SCRIPT_URL, "maplibreLeafletRuntime"))
+      .then(() => {
+        if (!window.L?.maplibreGL) {
+          throw new Error("OpenFreeMap Leaflet bridge did not initialize");
+        }
+        return window.L.maplibreGL;
+      });
+    return openFreeMapLoadPromise;
+  }
+
+  function loadRuntimeScript(src, dataAttribute) {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = src;
+      script.async = true;
+      script.dataset[dataAttribute] = "true";
+      script.addEventListener("load", resolve, { once: true });
+      script.addEventListener("error", () => reject(new Error(`${src} request failed`)), { once: true });
+      document.head.append(script);
+    });
   }
 
   function observeMapSize() {
@@ -3847,7 +3892,6 @@
     const isExpanded = state.expandedLocationGroupKeys.has(groupKey);
     const latest = group.photos[0];
     const image = latest?.thumbnail || latest?.image || "";
-    const remaining = group.photos.slice(1);
     const photoCount = `${group.photos.length} photo${group.photos.length === 1 ? "" : "s"}`;
     const singlePhotoId = group.photos.length === 1 && latest?.id ? latest.id : "";
 
@@ -3861,9 +3905,9 @@
             ? `data-location-single-photo-id="${escapeAttr(singlePhotoId)}" aria-label="Open ${escapeAttr(`${group.title} photo`)}"`
             : `aria-expanded="${isExpanded ? "true" : "false"}" aria-controls="location-group-${escapeAttr(slugify(groupKey))}"`}
         >
-          <span class="location-type-latest">
+          ${isExpanded && !singlePhotoId ? "" : `<span class="location-type-latest">
             ${image ? `<img data-deferred-src="${escapeAttr(image)}" alt="">` : '<span class="location-type-fallback">No photo</span>'}
-          </span>
+          </span>`}
           <span class="location-type-copy">
             <strong>${escapeHtml(group.title)}</strong>
             <span class="location-type-meta">
@@ -3875,9 +3919,7 @@
         ${
           isExpanded && !singlePhotoId
             ? `<div class="location-type-archive" id="location-group-${escapeAttr(slugify(groupKey))}">
-                ${remaining.length
-                  ? `<div class="photo-grid location-group-photo-grid">${remaining.map((photo) => renderPhotoCard(photo, "map")).join("")}</div>`
-                  : '<p class="muted">This is the only frame in the group.</p>'}
+                <div class="photo-grid location-group-photo-grid">${group.photos.map((photo) => renderPhotoCard(photo, "map")).join("")}</div>
               </div>`
             : ""
         }
@@ -4640,7 +4682,7 @@
       }
     });
 
-    const familyMarks = Array.from(families.values()).slice(0, 3).map((family) => `
+    const familyMarks = squadrons.size ? [] : Array.from(families.values()).slice(0, 3).map((family) => `
       <span class="airshow-identity-mark is-family" title="${escapeAttr(family.label)}">
         <img src="${escapeAttr(family.darkIcon || family.mapIcon || family.icon)}" alt="${escapeAttr(family.label)}">
       </span>
@@ -4656,7 +4698,7 @@
     }
 
     return `
-      <span class="airshow-identity-marks" aria-label="Aircraft families and squadron logos">
+      <span class="airshow-identity-marks" aria-label="${squadronMarks.length ? "Squadron logos" : "Aircraft family icons"}">
         ${familyMarks.join("")}
         ${squadronMarks.join("")}
       </span>
@@ -6238,7 +6280,11 @@
         <span class="photo-body">
           <strong>${escapeHtml(photoSubjectLabel(photo))}</strong>
           ${photo.livery ? `<span class="photo-livery">${escapeHtml(photo.livery)}</span>` : ""}
-          <span>${escapeHtml(photoContextLabel(photo))} - ${escapeHtml(displayPhotoDate(photo))}</span>
+          <span class="photo-meta">
+            <span class="photo-context">${escapeHtml(photoContextLabel(photo))}</span>
+            <span class="photo-meta-separator" aria-hidden="true"> - </span>
+            <span class="photo-date">${escapeHtml(displayPhotoDate(photo))}</span>
+          </span>
         </span>
       </button>
     `;
@@ -7981,7 +8027,7 @@
 
   function normalizeIcao(value) {
     const code = String(value || "").trim().toUpperCase();
-    return /^[A-Z0-9]{4}$/.test(code) ? code : "";
+    return /^[A-Z0-9]{2,4}$/.test(code) ? code : "";
   }
 
   function normalizeUnitType(value) {

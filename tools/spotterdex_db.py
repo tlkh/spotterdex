@@ -264,8 +264,8 @@ def validate_database(connection: sqlite3.Connection, *, raw_assets_dir: Path | 
                 errors.append(f"Invalid semantic id in {table}: {row[0]}")
 
     for row in connection.execute("SELECT id,icao FROM locations WHERE icao<>''"):
-        if not re.fullmatch(r"[A-Z]{4}", str(row[1])):
-            errors.append(f"Location {row[0]} has invalid ICAO code: {row[1]}")
+        if not re.fullmatch(r"[A-Z0-9]{2,4}", str(row[1])):
+            errors.append(f"Location {row[0]} has invalid map code: {row[1]}")
 
     for table, columns in (("events", ("starts_on", "ends_on")), ("photos", ("date_override",))):
         for row in connection.execute(f'SELECT id,{",".join(columns)} FROM "{table}"'):

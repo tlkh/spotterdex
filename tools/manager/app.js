@@ -1794,7 +1794,7 @@
         <form class="drawer-form" data-inline-create="location">
           <div class="field"><label>Country</label><input name="country" required placeholder="Japan"></div>
           <div class="field"><label>Name</label><input name="name" required placeholder="Atsugi Air Base"></div>
-          <div class="form-grid"><div class="field"><label>ICAO</label><input name="icao" maxlength="4" placeholder="RJTA"></div><div class="field"><label>ID override</label><input name="id" placeholder="atsugi-air-base"></div></div>
+          <div class="form-grid"><div class="field"><label>ICAO / map code</label><input name="icao" minlength="2" maxlength="4" placeholder="RJTA or SG"></div><div class="field"><label>ID override</label><input name="id" placeholder="atsugi-air-base"></div></div>
           <div class="form-grid"><div class="field"><label>Latitude</label><input name="lat" required inputmode="decimal"></div><div class="field"><label>Longitude</label><input name="lon" required inputmode="decimal"></div></div>
           <button class="btn primary" type="submit">Create and select</button>
         </form>`);

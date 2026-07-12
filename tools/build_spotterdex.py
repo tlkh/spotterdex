@@ -2388,8 +2388,8 @@ def validate_manifest(manifest: Dict[str, Any], root: Path, warnings: BuildWarni
         elif not -90 <= lat <= 90 or not -180 <= lon <= 180:
             warnings.add(f"pin has out-of-range coordinates: {pin.get('name')}")
 
-        if icao and not re.fullmatch(r"[A-Z0-9]{4}", icao):
-            warnings.add(f"pin has invalid ICAO code: {pin.get('name')} -> {icao}")
+        if icao and not re.fullmatch(r"[A-Z0-9]{2,4}", icao):
+            warnings.add(f"pin has invalid map code: {pin.get('name')} -> {icao}")
 
         if pin.get("enabled") is not False:
             enabled_pin_ids.add(pin_id)

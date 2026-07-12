@@ -31,7 +31,7 @@
     <meta name="twitter:image:alt" content="Aircraft formation over Gifu Air Base in Japan">
     <link rel="canonical" href="https://tlkh.github.io/spotterdex/">
     <link rel="preconnect" href="https://unpkg.com" crossorigin>
-    <link rel="preconnect" href="https://tile.openstreetmap.org" crossorigin>
+    <link rel="preconnect" href="https://tiles.openfreemap.org" crossorigin>
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -48,6 +48,12 @@
         crossorigin=""
       >
     </noscript>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css"
+      media="print"
+      onload="this.media='all'"
+    >
     <link rel="icon" type="image/png" href="assets/icons/spotterdex-app-icon.png">
     <link rel="apple-touch-icon" sizes="180x180" type="image/png" href="assets/icons/spotterdex-apple-touch-icon-v3.png">
     <link rel="manifest" href="manifest.webmanifest">
@@ -230,7 +236,7 @@
 
           <div class="map-column">
             <section class="map-stage" aria-label="World map with aircraft spotting pins">
-              <div class="world-map" id="worldMap" role="img" aria-label="OpenStreetMap showing aircraft spotting locations"></div>
+              <div class="world-map" id="worldMap" role="img" aria-label="Dark world map showing aircraft spotting locations"></div>
               <p class="map-fallback" id="mapFallback" hidden>
                 <span>Map tiles require a connection. Cached locations remain available.</span>
                 <a href="aircraft-dex.html">Browse Aircraft Dex</a>

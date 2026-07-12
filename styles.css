@@ -2331,7 +2331,7 @@ h3 {
 }
 
 .leaflet-tile {
-  filter: brightness(0.62) invert(1) contrast(0.9) hue-rotate(180deg) saturate(0.75);
+  filter: none;
 }
 
 .leaflet-control-attribution,
@@ -2998,6 +2998,10 @@ h3 {
   background: color-mix(in srgb, var(--surface) 82%, var(--surface-strong));
 }
 
+.location-type-group.is-expanded .location-type-toggle {
+  grid-template-rows: auto;
+}
+
 .location-type-toggle {
   display: grid;
   width: 100%;
@@ -3093,8 +3097,68 @@ h3 {
 }
 
 .location-type-archive .location-group-photo-grid {
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-top: 8px;
+}
+
+@media (min-width: 641px) {
+  #mapView .location-type-archive .photo-card {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0;
+  }
+
+  #mapView .location-type-archive .photo-card .photo-body {
+    display: flex;
+    min-width: 0;
+    gap: 6px;
+    align-items: center;
+    padding: 30px 10px 9px;
+    background: linear-gradient(180deg, transparent 0%, rgba(5, 7, 8, 0.12) 28%, rgba(5, 7, 8, 0.82) 100%);
+  }
+
+  #mapView .location-type-archive .photo-card .photo-body strong {
+    display: none;
+  }
+
+  #mapView .location-type-archive .photo-card .photo-meta {
+    display: grid;
+    min-width: 0;
+    gap: 1px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.72rem;
+    line-height: 1.3;
+    opacity: 1;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.72);
+  }
+
+  #mapView .location-type-archive .photo-card .photo-context,
+  #mapView .location-type-archive .photo-card .photo-date {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #mapView .location-type-archive .photo-card .photo-context {
+    font-weight: 700;
+    opacity: 1;
+  }
+
+  #mapView .location-type-archive .photo-card .photo-date {
+    font-weight: 400;
+    opacity: 0.78;
+  }
+
+  #mapView .location-type-archive .photo-card .photo-meta-separator {
+    display: none;
+  }
+
+  #mapView .location-type-archive .photo-card .photo-body .photo-livery {
+    flex: 0 1 auto;
+    padding: 2px 6px;
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(5, 7, 8, 0.62);
+    font-size: 0.62rem;
+  }
 }
 
 .location-group-photo-grid {
@@ -6143,7 +6207,7 @@ button.location-unit-chip:focus-visible,
 
   #dexView .aircraft-grid {
     grid-template-columns: 1fr;
-    grid-auto-rows: 242px;
+    grid-auto-rows: 194px;
     gap: 10px;
   }
 
@@ -6158,7 +6222,7 @@ button.location-unit-chip:focus-visible,
   }
 
   #dexView .aircraft-title {
-    font-size: clamp(1.45rem, 7vw, 2.1rem);
+    font-size: clamp(1.18rem, 5.8vw, 1.68rem);
   }
 }
 
@@ -6294,7 +6358,7 @@ button.location-unit-chip:focus-visible,
   }
 
   #squadronsView .squadron-logo-body h2 {
-    font-size: clamp(1.45rem, 7vw, 2.1rem);
+    font-size: clamp(1.18rem, 5.8vw, 1.68rem);
   }
 
   #squadronsView .squadron-card-logo,
@@ -8276,7 +8340,7 @@ button.location-unit-chip:focus-visible,
   }
 
   body[data-page-view="mapView"] .leaflet-tile-pane {
-    filter: brightness(0.62) invert(1) contrast(0.9) hue-rotate(180deg) saturate(0.75);
+    filter: none;
   }
 
   #mapView .map-workspace::after {
@@ -8648,7 +8712,11 @@ button.location-unit-chip:focus-visible,
 
   #airshowsView .airshow-timeline-card {
     width: 100%;
-    min-height: 230px;
+    min-height: 207px;
+  }
+
+  #airshowsView .airshow-timeline-content strong {
+    font-size: clamp(1.35rem, 6.2vw, 2rem);
   }
 
   /* Stats section jump control */
@@ -9323,16 +9391,23 @@ button.location-unit-chip:focus-visible,
     right: 0;
     bottom: 0;
     left: 0;
-    z-index: 25;
+    z-index: 2147480000;
     display: grid;
     min-height: var(--mobile-tab-height);
     grid-template-columns: repeat(5, minmax(0, 1fr));
     align-items: start;
     padding: 5px 4px max(5px, env(safe-area-inset-bottom));
     border-top: 1px solid rgba(255, 255, 255, 0.12);
-    background: color-mix(in srgb, #0d0f10 94%, transparent);
+    background: rgba(13, 15, 16, 0.985);
     box-shadow: 0 -10px 32px rgba(0, 0, 0, 0.24);
-    backdrop-filter: blur(22px) saturate(1.15);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+    will-change: transform;
+    isolation: isolate;
+    visibility: visible;
+    opacity: 1;
   }
 
   .mobile-tab-bar a {
