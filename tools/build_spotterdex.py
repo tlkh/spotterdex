@@ -10,6 +10,7 @@ import hashlib
 import json
 import re
 import shutil
+import sqlite3
 import sys
 import unicodedata
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -27,6 +28,11 @@ try:
     from PIL import ExifTags, Image, ImageDraw, ImageOps
 except ImportError as exc:  # pragma: no cover - user environment guard
     raise SystemExit("Missing Pillow. Install with: python3 -m pip install -r requirements.txt") from exc
+
+try:
+    from spotterdex_db import connect_database, rows_as_dicts, snapshot_is_current, validate_database
+except ImportError:  # Support importing as tools.build_spotterdex.
+    from tools.spotterdex_db import connect_database, rows_as_dicts, snapshot_is_current, validate_database
 
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp"}
@@ -87,6 +93,9 @@ SHARE_PAGE_CSS = (
     "font-size:12px;color:#aaa39a}"
     ".sp-title{margin:0 0 12px;font-size:clamp(1.5rem,3.5vw,2.25rem);line-height:1.15}"
     ".sp-desc{margin:0 0 20px;color:#cfc9bf;max-width:60ch}"
+    ".sp-write-up{margin:0 0 24px;padding:18px 20px;background:#211e1b;border:1px solid #37322d;border-radius:8px;max-width:78ch}"
+    ".sp-write-up-label{margin:0 0 8px;text-transform:uppercase;letter-spacing:.14em;font-size:12px;color:#aaa39a}"
+    ".sp-write-up p:last-child{margin-bottom:0}"
     ".sp-meta{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;margin:0 0 24px;"
     "font-size:14px}"
     ".sp-meta dt{color:#aaa39a}"
@@ -171,18 +180,8 @@ def parse_args() -> argparse.Namespace:
     root = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(description="Build SpotterDex static data and resized JPEG photos.")
     parser.add_argument("--root", type=Path, default=root, help="Project root directory.")
-    parser.add_argument("--map-dir", default="map_pins", help="Directory containing country pin folders.")
-    parser.add_argument("--aircraft-dir", default="aircraft", help="Directory containing aircraft/type/squadron folders.")
-    parser.add_argument(
-        "--squadron-dir",
-        default="squadrons",
-        help="Directory containing squadron-only entry folders.",
-    )
-    parser.add_argument(
-        "--airshow-dir",
-        default="airshows",
-        help="Directory containing airshow event metadata.",
-    )
+    parser.add_argument("--database", default="content/spotterdex.sqlite3", help="Canonical SQLite catalog path.")
+    parser.add_argument("--sql-snapshot", default="content/spotterdex.sql", help="Deterministic SQL snapshot path.")
     parser.add_argument(
         "--raw-assets-dir",
         default="raw_assets",
@@ -192,16 +191,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--thumb-output", default="assets/generated/thumbs", help="Generated thumbnail output directory.")
     parser.add_argument("--logo-output", default="assets/logos", help="Published squadron logo output directory.")
     parser.add_argument("--json-output", default="data/spotterdex.json", help="Generated JSON manifest path.")
-    parser.add_argument("--js-output", default="data/spotterdex-data.js", help="Generated JS manifest path.")
+    parser.add_argument("--js-output", default="data/spotterdex-core.js", help="Generated shared JS manifest path.")
     parser.add_argument(
         "--exif-js-output",
         default="data/spotterdex-exif.js",
         help="Stats-only generated EXIF JS manifest path.",
-    )
-    parser.add_argument(
-        "--map-js-output",
-        default="data/spotterdex-map-data.js",
-        help="Minified map-page JS manifest path.",
     )
     parser.add_argument("--share-output", default="share", help="Generated social preview page directory.")
     parser.add_argument("--sitemap-output", default="sitemap.xml", help="Generated sitemap path (relative to root).")
@@ -243,6 +237,12 @@ def main() -> int:
     PROGRESS_LINE_MODE = args.progress_lines
     root = args.root.resolve()
     warnings = BuildWarningLog()
+
+    database_path = root / args.database
+    if database_path.exists():
+        return build_database_catalog(args, root, warnings)
+    print(f"Canonical database not found: {relative_posix(database_path, root)}", file=sys.stderr)
+    return 1
 
     map_dir = root / args.map_dir
     aircraft_dir = root / args.aircraft_dir
@@ -405,6 +405,470 @@ def main() -> int:
     return 0
 
 
+def build_database_catalog(args: argparse.Namespace, root: Path, warnings: BuildWarningLog) -> int:
+    """Build the static site from the canonical normalized SQLite catalog."""
+    database_path = (root / args.database).resolve()
+    snapshot_path = (root / args.sql_snapshot).resolve()
+    raw_assets_dir = (root / args.raw_assets_dir).resolve()
+    photo_output_dir = (root / args.photo_output).resolve()
+    thumb_output_dir = (root / args.thumb_output).resolve()
+    logo_output_dir = (root / args.logo_output).resolve()
+    json_output = (root / args.json_output).resolve()
+    js_output = (root / args.js_output).resolve()
+    exif_js_output = (root / args.exif_js_output).resolve()
+    share_output_dir = (root / args.share_output).resolve()
+    sitemap_output = (root / args.sitemap_output).resolve()
+    robots_output = (root / args.robots_output).resolve()
+
+    connection = connect_database(database_path, read_only=True)
+    try:
+        for error in validate_database(connection, raw_assets_dir=raw_assets_dir):
+            warnings.add(error)
+        if not snapshot_is_current(connection, snapshot_path):
+            warnings.add("content/spotterdex.sql is stale; export the deterministic database snapshot")
+
+        countries = rows_as_dicts(connection, "SELECT id,name FROM countries ORDER BY id")
+        aircraft_rows = rows_as_dicts(connection, "SELECT * FROM aircraft ORDER BY name")
+        unit_rows = rows_as_dicts(connection, "SELECT * FROM units ORDER BY country_id,name")
+        location_rows = rows_as_dicts(connection, "SELECT * FROM locations ORDER BY country_id,name")
+        event_rows = rows_as_dicts(connection, "SELECT * FROM events ORDER BY COALESCE(ends_on,''),name DESC")
+        aircraft_units = rows_as_dicts(connection, "SELECT aircraft_id,unit_id FROM aircraft_units ORDER BY aircraft_id,unit_id")
+        event_locations = rows_as_dicts(connection, "SELECT event_id,location_id FROM event_locations ORDER BY event_id,location_id")
+        photo_rows = rows_as_dicts(connection, "SELECT * FROM photos ORDER BY id")
+        subject_rows = rows_as_dicts(
+            connection,
+            "SELECT photo_id,position,aircraft_id,unit_id,is_primary FROM photo_subjects ORDER BY photo_id,position",
+        )
+    finally:
+        connection.close()
+
+    country_by_id = {row["id"]: row for row in countries}
+    aircraft_by_id = {row["id"]: row for row in aircraft_rows}
+    unit_by_id = {row["id"]: row for row in unit_rows}
+    location_by_id = {row["id"]: row for row in location_rows}
+    event_by_id = {row["id"]: row for row in event_rows}
+    subjects_by_photo: Dict[str, List[Dict[str, Any]]] = {}
+    for subject in subject_rows:
+        subjects_by_photo.setdefault(str(subject["photo_id"]), []).append(subject)
+
+    logo_by_unit: Dict[str, str] = {}
+    for unit in unit_rows:
+        logo_by_unit[unit["id"]] = publish_database_logo(
+            root=root,
+            raw_assets_dir=raw_assets_dir,
+            logo_output_dir=logo_output_dir,
+            unit=unit,
+            max_size=args.logo_max_size,
+            warnings=warnings,
+        )
+
+    pin_lookup = {normalize_key(row["name"]): row["id"] for row in location_rows}
+    photo_jobs: List[Dict[str, Any]] = []
+    photo_context: Dict[int, Dict[str, Any]] = {}
+    for photo in photo_rows:
+        subjects = subjects_by_photo.get(str(photo["id"]), [])
+        primary = next((subject for subject in subjects if subject.get("is_primary")), subjects[0] if subjects else {})
+        aircraft = aircraft_by_id.get(primary.get("aircraft_id")) or {}
+        unit = unit_by_id.get(primary.get("unit_id")) or {}
+        location = location_by_id[str(photo["location_id"])]
+        event = event_by_id.get(photo.get("event_id")) or {}
+        country_id = str(unit.get("country_id") or location["country_id"])
+        country = country_by_id[country_id]["name"]
+        tag_scope = "aircraft" if aircraft else ("squadron" if unit else "location")
+        photo_item = {
+            "path": photo["source_path"],
+            "location": location["name"],
+            "pin_id": location["id"],
+            "airshow": event.get("name", ""),
+            "date": photo.get("date_override") or "",
+            "title": photo.get("title") or "",
+            "caption": photo.get("caption") or "",
+            "livery": photo.get("livery") or "",
+        }
+        order = len(photo_jobs)
+        photo_jobs.append(
+            {
+                "order": order,
+                "label": photo["source_path"],
+                "root": str(root),
+                "source_path": str((raw_assets_dir / str(photo["source_path"])).resolve()),
+                "output_path": str(photo_output_dir / f"{photo['id']}.jpg"),
+                "thumb_path": str(thumb_output_dir / f"{photo['id']}.jpg"),
+                "photo_id": photo["id"],
+                "photo_item": photo_item,
+                "type_name": aircraft.get("name", ""),
+                "aircraft_family": aircraft.get("family", ""),
+                "aircraft_id": aircraft.get("id", ""),
+                "squadron_name": unit.get("name", ""),
+                "squadron_id": unit.get("id", ""),
+                "unit_type": unit.get("kind", ""),
+                "country": country,
+                "tag_scope": tag_scope,
+                "source_ref": {"photoId": photo["id"]},
+                "target_width": args.width,
+                "thumb_width": args.thumb_width,
+                "pin_lookup": pin_lookup,
+                "make_demo_images": args.make_demo_images,
+            }
+        )
+        photo_context[order] = {"database": photo, "subjects": subjects}
+
+    progress = ProgressBar("Processing catalog photos", len(photo_jobs), enabled=not args.no_progress)
+    results = process_photo_jobs(photo_jobs, normalize_worker_count(args.workers), progress)
+    photos: List[Dict[str, Any]] = []
+    normalized_subjects: Dict[str, List[Dict[str, Any]]] = {}
+    for order, result in sorted(results.items()):
+        for message in result.get("notes", []):
+            warnings.info(message)
+        for message in result.get("warnings", []):
+            warnings.add(message)
+        record = result.get("record")
+        if not record:
+            continue
+        context = photo_context[order]
+        record["subjects"] = [
+            {
+                **({"aircraftId": subject["aircraft_id"]} if subject.get("aircraft_id") else {}),
+                **({"unitId": subject["unit_id"]} if subject.get("unit_id") else {}),
+                "primary": bool(subject.get("is_primary")),
+            }
+            for subject in context["subjects"]
+        ]
+        normalized_subjects[record["id"]] = record["subjects"]
+        photos.append(record)
+
+    photos.sort(key=lambda item: (item.get("sortDate", ""), item["id"]), reverse=True)
+    photos_by_id = {photo["id"]: photo for photo in photos}
+
+    photo_ids_by_aircraft: Dict[str, List[str]] = {row["id"]: [] for row in aircraft_rows}
+    photo_ids_by_unit: Dict[str, List[str]] = {row["id"]: [] for row in unit_rows}
+    photo_ids_by_location: Dict[str, List[str]] = {row["id"]: [] for row in location_rows}
+    photo_ids_by_event: Dict[str, List[str]] = {row["id"]: [] for row in event_rows}
+    for photo in photos:
+        photo_ids_by_location[photo["pinId"]].append(photo["id"])
+        database_photo = next(row for row in photo_rows if row["id"] == photo["id"])
+        if database_photo.get("event_id"):
+            photo_ids_by_event[str(database_photo["event_id"])].append(photo["id"])
+        for subject in normalized_subjects[photo["id"]]:
+            if subject.get("aircraftId") and photo["id"] not in photo_ids_by_aircraft[subject["aircraftId"]]:
+                photo_ids_by_aircraft[subject["aircraftId"]].append(photo["id"])
+            if subject.get("unitId") and photo["id"] not in photo_ids_by_unit[subject["unitId"]]:
+                photo_ids_by_unit[subject["unitId"]].append(photo["id"])
+
+    unit_ids_by_aircraft: Dict[str, List[str]] = {row["id"]: [] for row in aircraft_rows}
+    for relation in aircraft_units:
+        unit_ids_by_aircraft[relation["aircraft_id"]].append(relation["unit_id"])
+
+    legacy_units: Dict[str, Dict[str, Any]] = {}
+    for unit in unit_rows:
+        record: Dict[str, Any] = {
+            "id": unit["id"],
+            "name": unit["name"],
+            "country": country_by_id[unit["country_id"]]["name"],
+            "logo": logo_by_unit[unit["id"]],
+            "unitType": unit["kind"],
+            "unitLabel": unit_display_label(unit["kind"]),
+            "showOnSquadronsPage": unit["kind"] == "squadron",
+            "photoIds": photo_ids_by_unit[unit["id"]],
+            "aircraftTypes": [
+                aircraft_by_id[aid]["name"]
+                for aid, unit_ids in unit_ids_by_aircraft.items()
+                if unit["id"] in unit_ids
+            ],
+            "writeUp": unit.get("write_up") or "",
+        }
+        hero = photos_by_id.get(unit.get("hero_photo_id"))
+        if hero:
+            record["heroPhoto"] = hero_asset_record(hero)
+        legacy_units[unit["id"]] = record
+
+    legacy_aircraft: List[Dict[str, Any]] = []
+    for aircraft in aircraft_rows:
+        photo_ids = photo_ids_by_aircraft[aircraft["id"]]
+        entry = {
+            "id": aircraft["id"],
+            "typeName": aircraft["name"],
+            "aircraftFamily": aircraft["family"],
+            "countries": sorted(
+                {
+                    legacy_units[unit_id]["country"]
+                    for unit_id in unit_ids_by_aircraft[aircraft["id"]]
+                }
+            ),
+            "squadrons": [dict(legacy_units[unit_id]) for unit_id in unit_ids_by_aircraft[aircraft["id"]]],
+            "photoIds": photo_ids,
+            "coverPhoto": aircraft.get("hero_photo_id") or (photo_ids[0] if photo_ids else None),
+            "doubleWidth": None if aircraft.get("double_width") is None else bool(aircraft.get("double_width")),
+            "writeUp": aircraft.get("write_up") or "",
+        }
+        legacy_aircraft.append(entry)
+    apply_aircraft_stats(legacy_aircraft, photos)
+
+    pins = [
+        {
+            "id": row["id"],
+            "name": row["name"],
+            "country": country_by_id[row["country_id"]]["name"],
+            "icao": row["icao"],
+            "lat": row["latitude"],
+            "lon": row["longitude"],
+            "enabled": bool(row["enabled"]),
+            "writeUp": row.get("write_up") or "",
+            **({"heroPhotoId": row["hero_photo_id"]} if row.get("hero_photo_id") else {}),
+        }
+        for row in location_rows
+    ]
+    airshows = [
+        {
+            "id": row["id"],
+            "name": row["name"],
+            "photoIds": photo_ids_by_event[row["id"]],
+            "photoCount": len(photo_ids_by_event[row["id"]]),
+            "firstDate": row.get("starts_on") or "",
+            "latestDate": row.get("ends_on") or "",
+            "writeUp": row.get("write_up") or "",
+            **({"heroPhotoId": row["hero_photo_id"]} if row.get("hero_photo_id") else {}),
+        }
+        for row in event_rows
+    ]
+    legacy_manifest = {
+        "generatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "pins": pins,
+        "aircraft": legacy_aircraft,
+        "squadrons": list(legacy_units.values()),
+        "airshows": airshows,
+        "photos": photos,
+    }
+    apply_squadron_stats(legacy_manifest["squadrons"], photos)
+    remove_unreferenced_logos(legacy_manifest, logo_output_dir, root, warnings)
+    deduplicate_generated_images(legacy_manifest, root, photo_output_dir, thumb_output_dir, warnings)
+    validate_manifest(legacy_manifest, root, warnings)
+
+    full_manifest = normalized_v2_manifest(
+        generated_at=legacy_manifest["generatedAt"],
+        countries=countries,
+        aircraft_rows=aircraft_rows,
+        unit_rows=unit_rows,
+        location_rows=location_rows,
+        event_rows=event_rows,
+        aircraft_units=aircraft_units,
+        event_locations=event_locations,
+        photos=photos,
+        logo_by_unit=logo_by_unit,
+        indexes={
+            "photoIdsByAircraft": photo_ids_by_aircraft,
+            "photoIdsByUnit": photo_ids_by_unit,
+            "photoIdsByLocation": photo_ids_by_location,
+            "photoIdsByEvent": photo_ids_by_event,
+            "unitIdsByAircraft": unit_ids_by_aircraft,
+        },
+    )
+    core_manifest = normalized_core_manifest(full_manifest)
+    exif_manifest = {
+        "payload": "exif",
+        "schemaVersion": 2,
+        "generatedAt": full_manifest["generatedAt"],
+        "photos": {
+            photo_id: photo.get("exif", {})
+            for photo_id, photo in full_manifest["entities"]["photos"].items()
+            if photo.get("exif")
+        },
+    }
+
+    json_output.parent.mkdir(parents=True, exist_ok=True)
+    js_output.parent.mkdir(parents=True, exist_ok=True)
+    exif_js_output.parent.mkdir(parents=True, exist_ok=True)
+    json_output.write_text(json.dumps(full_manifest, indent=2, ensure_ascii=True) + "\n", "utf-8")
+    js_output.write_text(
+        "window.SPOTTERDEX_DATA=" + json.dumps(core_manifest, ensure_ascii=True, separators=(",", ":")) + ";\n",
+        "utf-8",
+    )
+    exif_js_output.write_text(
+        "window.SPOTTERDEX_EXIF=" + json.dumps(exif_manifest, ensure_ascii=True, separators=(",", ":")) + ";\n",
+        "utf-8",
+    )
+
+    share_records = social_preview_records(legacy_manifest)
+    share_count = write_social_preview_pages(share_records, share_output_dir, args.site_url)
+    sitemap_path, robots_path, sitemap_count = write_seo_files(
+        root=root,
+        site_url=args.site_url,
+        manifest=legacy_manifest,
+        share_records=share_records,
+        sitemap_output=sitemap_output,
+        robots_output=robots_output,
+    )
+    warnings.print()
+    print(
+        f"Built SQLite catalog: {len(aircraft_rows)} aircraft, {len(unit_rows)} units, "
+        f"{len(photos)} photos, {len(location_rows)} locations, {len(event_rows)} events."
+    )
+    print(f"Wrote {relative_posix(json_output, root)}")
+    print(f"Wrote {relative_posix(js_output, root)}")
+    print(f"Wrote {relative_posix(exif_js_output, root)}")
+    print(f"Wrote {share_count} social preview pages under {relative_posix(share_output_dir, root)}")
+    print(f"Wrote {relative_posix(sitemap_path, root)} ({sitemap_count} URLs)")
+    print(f"Wrote {relative_posix(robots_path, root)}")
+    if args.strict and warnings.has_warnings():
+        print("Build completed with validation warnings.", file=sys.stderr)
+        return 1
+    return 0
+
+
+def publish_database_logo(
+    root: Path,
+    raw_assets_dir: Path,
+    logo_output_dir: Path,
+    unit: Dict[str, Any],
+    max_size: int,
+    warnings: BuildWarningLog,
+) -> str:
+    value = str(unit.get("logo_source") or "").strip()
+    if not value:
+        return ""
+    root_candidate = (root / value).resolve()
+    raw_candidate = (raw_assets_dir / value).resolve()
+    source_path = root_candidate if root_candidate.exists() else raw_candidate
+    if not source_path.exists():
+        warnings.add(f"unit logo not found for {unit['name']}: {value}")
+        return ""
+    try:
+        source_path.relative_to(logo_output_dir)
+        return site_path_for(source_path, root)
+    except ValueError:
+        pass
+    logo_output_dir.mkdir(parents=True, exist_ok=True)
+    destination = logo_output_dir / f"{unit['id']}{source_path.suffix.lower()}"
+    published = publish_squadron_logo(source_path, destination, max_size, warnings)
+    return site_path_for(published, root) if published else ""
+
+
+def hero_asset_record(photo: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        key: photo[key]
+        for key in ("image", "thumbnail", "source", "originalSize", "processedSize", "thumbnailSize")
+        if photo.get(key)
+    }
+
+
+def normalized_v2_manifest(
+    *,
+    generated_at: str,
+    countries: List[Dict[str, Any]],
+    aircraft_rows: List[Dict[str, Any]],
+    unit_rows: List[Dict[str, Any]],
+    location_rows: List[Dict[str, Any]],
+    event_rows: List[Dict[str, Any]],
+    aircraft_units: List[Dict[str, Any]],
+    event_locations: List[Dict[str, Any]],
+    photos: List[Dict[str, Any]],
+    logo_by_unit: Dict[str, str],
+    indexes: Dict[str, Dict[str, List[str]]],
+) -> Dict[str, Any]:
+    event_location_ids: Dict[str, List[str]] = {}
+    for relation in event_locations:
+        event_location_ids.setdefault(relation["event_id"], []).append(relation["location_id"])
+    photo_entities: Dict[str, Dict[str, Any]] = {}
+    event_by_name = {row["name"]: row["id"] for row in event_rows}
+    for photo in photos:
+        photo_entities[photo["id"]] = {
+            "id": photo["id"],
+            "locationId": photo["pinId"],
+            "eventId": event_by_name.get(photo.get("airshow", ""), ""),
+            "subjects": photo.get("subjects", []),
+            "year": photo.get("year", ""),
+            "date": photo.get("date", ""),
+            "sortDate": photo.get("sortDate", ""),
+            "livery": photo.get("livery", ""),
+            "title": photo.get("title", ""),
+            "caption": photo.get("caption", ""),
+            "image": photo.get("image", ""),
+            "thumbnail": photo.get("thumbnail", ""),
+            "source": photo.get("source", ""),
+            "originalSize": photo.get("originalSize", ""),
+            "processedSize": photo.get("processedSize", ""),
+            "thumbnailSize": photo.get("thumbnailSize", ""),
+            "exif": photo.get("exif", {}),
+        }
+    return {
+        "schemaVersion": 2,
+        "generatedAt": generated_at,
+        "entities": {
+            "countries": {row["id"]: {"id": row["id"], "name": row["name"]} for row in countries},
+            "aircraft": {
+                row["id"]: {
+                    "id": row["id"],
+                    "name": row["name"],
+                    "family": row["family"],
+                    "heroPhotoId": row.get("hero_photo_id") or "",
+                    "doubleWidth": None if row.get("double_width") is None else bool(row.get("double_width")),
+                    "writeUp": row.get("write_up") or "",
+                }
+                for row in aircraft_rows
+            },
+            "units": {
+                row["id"]: {
+                    "id": row["id"],
+                    "name": row["name"],
+                    "countryId": row["country_id"],
+                    "kind": row["kind"],
+                    "logo": logo_by_unit.get(row["id"], ""),
+                    "heroPhotoId": row.get("hero_photo_id") or "",
+                    "writeUp": row.get("write_up") or "",
+                }
+                for row in unit_rows
+            },
+            "locations": {
+                row["id"]: {
+                    "id": row["id"],
+                    "name": row["name"],
+                    "countryId": row["country_id"],
+                    "icao": row["icao"],
+                    "lat": row["latitude"],
+                    "lon": row["longitude"],
+                    "enabled": bool(row["enabled"]),
+                    "heroPhotoId": row.get("hero_photo_id") or "",
+                    "writeUp": row.get("write_up") or "",
+                }
+                for row in location_rows
+            },
+            "events": {
+                row["id"]: {
+                    "id": row["id"],
+                    "name": row["name"],
+                    "startsOn": row.get("starts_on") or "",
+                    "endsOn": row.get("ends_on") or "",
+                    "locationIds": event_location_ids.get(row["id"], []),
+                    "heroPhotoId": row.get("hero_photo_id") or "",
+                    "writeUp": row.get("write_up") or "",
+                }
+                for row in event_rows
+            },
+            "photos": photo_entities,
+        },
+        "indexes": indexes,
+    }
+
+
+def normalized_core_manifest(manifest: Dict[str, Any]) -> Dict[str, Any]:
+    entities = {key: dict(value) for key, value in manifest["entities"].items()}
+    entities["photos"] = {
+        photo_id: {
+            key: value
+            for key, value in photo.items()
+            if key not in {"source", "originalSize", "processedSize", "exif"}
+        }
+        for photo_id, photo in manifest["entities"]["photos"].items()
+    }
+    return {
+        "schemaVersion": 2,
+        "payload": "core",
+        "generatedAt": manifest["generatedAt"],
+        "entities": entities,
+        "indexes": manifest["indexes"],
+    }
+
+
 DIRECTORY_PHOTO_OMIT_FIELDS = {
     "exif",
     "originalSize",
@@ -458,6 +922,7 @@ def map_page_manifest(manifest: Dict[str, Any]) -> Dict[str, Any]:
         "showOnSquadronsPage",
         "unitLabel",
         "unitType",
+        "writeUp",
     }
     photo_fields = {
         "aircraftFamily",
@@ -492,6 +957,7 @@ def map_page_manifest(manifest: Dict[str, Any]) -> Dict[str, Any]:
                 "id": entry.get("id"),
                 "typeName": entry.get("typeName"),
                 "aircraftFamily": entry.get("aircraftFamily"),
+                "writeUp": entry.get("writeUp", ""),
                 "countries": entry.get("countries", []),
                 "squadrons": [compact_unit(unit) for unit in entry.get("squadrons", [])],
             }
@@ -666,6 +1132,7 @@ def social_preview_records(manifest: Dict[str, Any]) -> List[Dict[str, Any]]:
                     "heading": type_name,
                     "count": len(photo_ids),
                     "countries": countries,
+                    "writeUp": str(aircraft.get("writeUp") or aircraft.get("write_up") or "").strip(),
                 },
             )
         )
@@ -695,6 +1162,7 @@ def social_preview_records(manifest: Dict[str, Any]) -> List[Dict[str, Any]]:
                     "country": country,
                     "icao": str(pin.get("icao") or "").strip(),
                     "count": len(pin_photos),
+                    "writeUp": str(pin.get("writeUp") or pin.get("write_up") or "").strip(),
                 },
             )
         )
@@ -718,6 +1186,7 @@ def social_preview_records(manifest: Dict[str, Any]) -> List[Dict[str, Any]]:
                 extra={
                     "heading": name,
                     "count": len(photo_ids),
+                    "writeUp": str(airshow.get("writeUp") or airshow.get("write_up") or "").strip(),
                 },
             )
         )
@@ -740,6 +1209,7 @@ def social_preview_records(manifest: Dict[str, Any]) -> List[Dict[str, Any]]:
                     "heading": name,
                     "country": country,
                     "count": len(photo_ids),
+                    "writeUp": str(squadron.get("writeUp") or squadron.get("write_up") or "").strip(),
                 },
             )
         )
@@ -760,16 +1230,18 @@ def aggregate_social_squadrons(manifest: Dict[str, Any]) -> List[Dict[str, Any]]
         country = str(unit.get("country") or "").strip()
         if not name:
             return
-        unit_id = slugify(f"{country}-{name}")
+        unit_id = str(unit.get("id") or slugify(f"{country}-{name}"))
         record = by_id.setdefault(
             unit_id,
-            {"id": unit_id, "name": name, "country": country, "photoIds": [], "heroPhoto": None},
+            {"id": unit_id, "name": name, "country": country, "photoIds": [], "heroPhoto": None, "writeUp": ""},
         )
         record["photoIds"] = unique_values(
             [*record["photoIds"], *[str(value) for value in unit.get("photoIds", [])]]
         )
         if not record["heroPhoto"] and isinstance(unit.get("heroPhoto"), dict):
             record["heroPhoto"] = unit["heroPhoto"]
+        if not record["writeUp"]:
+            record["writeUp"] = str(unit.get("writeUp") or unit.get("write_up") or "").strip()
 
     for unit in manifest.get("squadrons", []):
         add_unit(unit)
@@ -843,6 +1315,7 @@ def social_preview_document(record: Dict[str, Any], site_url: str, entity_id: st
     if json_ld:
         json_ld_block = f'\n    <script type="application/ld+json">{json_ld}</script>'
     meta_block = render_share_meta(record)
+    write_up_block = render_social_write_up(record.get("writeUp"), kind)
     return f"""<!doctype html>
 <html lang="en">
   <head>
@@ -884,7 +1357,7 @@ def social_preview_document(record: Dict[str, Any], site_url: str, entity_id: st
       </figure>
       <p class="sp-eyebrow">{eyebrow}</p>
       <h1 class="sp-title">{heading}</h1>
-      <p class="sp-desc">{description}</p>{meta_block}
+      <p class="sp-desc">{description}</p>{write_up_block}{meta_block}
       <a class="sp-cta" href="{app_link_attr}">{cta_label}</a>
       <p class="sp-note"><a href="../../../index.html">Back to SpotterDex</a></p>
     </main>
@@ -932,6 +1405,27 @@ def render_share_meta(record: Dict[str, Any]) -> str:
     if not rows:
         return ""
     return "\n      <dl class=\"sp-meta\">\n" + "\n".join(rows) + "\n      </dl>"
+
+
+def render_social_write_up(value: Any, kind: str) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    label = f"About this {SHARE_EYEBROWS.get(kind, 'field guide').lower()}"
+    paragraphs = []
+    for paragraph in re.split(r"\n\s*\n", text):
+        paragraph = paragraph.strip()
+        if not paragraph:
+            continue
+        paragraphs.append(f"        <p>{html.escape(paragraph, quote=True).replace(chr(10), '<br>')}</p>")
+    if not paragraphs:
+        return ""
+    return (
+        '\n      <section class="sp-write-up">'
+        f'<p class="sp-write-up-label">{html.escape(label, quote=True)}</p>'
+        + "".join(paragraphs)
+        + "</section>"
+    )
 
 
 def _count_label(value: Any) -> str:
@@ -1100,6 +1594,7 @@ def load_pins(
                 "lat": lat,
                 "lon": lon,
                 "enabled": pin_item.get("enabled", True) is not False,
+                "writeUp": read_write_up_value(pin_item.get("write_up"), pin_item.get("writeUp")),
             }
 
             if hero_photo_id:
@@ -1190,6 +1685,8 @@ def load_aircraft(
         unit_type = read_unit_type(data, squadron_data)
         aircraft_family = read_aircraft_family(data, aircraft_data)
         country = str(data.get("country") or squadron_data.get("country") or "").strip()
+        aircraft_write_up = read_aircraft_write_up(data, aircraft_data)
+        squadron_write_up = read_squadron_write_up(data, squadron_data)
         aircraft_id = slugify(type_name)
         squadron_id = slugify(f"{aircraft_id}-{squadron_name}")
         logo_id = slugify(f"{country}-{squadron_name}")
@@ -1230,7 +1727,16 @@ def load_aircraft(
                 "squadrons": [],
                 "photoIds": [],
                 "coverPhoto": None,
+                "writeUp": "",
             },
+        )
+        merge_entity_write_up(
+            aircraft_entry,
+            aircraft_write_up,
+            entity_label=f"aircraft {type_name}",
+            source_path=yaml_path,
+            root=root,
+            warnings=warnings,
         )
         if country and country not in aircraft_entry["countries"]:
             aircraft_entry["countries"].append(country)
@@ -1247,13 +1753,30 @@ def load_aircraft(
                 "unitLabel": unit_display_label(unit_type),
                 "showOnSquadronsPage": unit_type == "squadron",
                 "photoIds": [],
+                "writeUp": "",
             }
+            merge_entity_write_up(
+                squadron_entry,
+                squadron_write_up,
+                entity_label=f"squadron {squadron_name}",
+                source_path=yaml_path,
+                root=root,
+                warnings=warnings,
+            )
             if squadron_hero:
                 squadron_entry["heroPhoto"] = squadron_hero
             squadron_by_key[squadron_key] = squadron_entry
             aircraft_entry["squadrons"].append(squadron_entry)
         elif not squadron_entry.get("heroPhoto") and squadron_hero:
             squadron_entry["heroPhoto"] = squadron_hero
+        merge_entity_write_up(
+            squadron_entry,
+            squadron_write_up,
+            entity_label=f"squadron {squadron_name}",
+            source_path=yaml_path,
+            root=root,
+            warnings=warnings,
+        )
 
         photo_items = data.get("photos") or []
         if isinstance(photo_items, dict):
@@ -1495,12 +2018,29 @@ def load_squadron_photos(
                 "showOnSquadronsPage": unit_type == "squadron",
                 "photoIds": [],
                 "aircraftTypes": [],
+                "writeUp": "",
             }
+            merge_entity_write_up(
+                squadron_entry,
+                read_squadron_write_up(data, squadron_data, standalone=True),
+                entity_label=f"squadron {squadron_name}",
+                source_path=yaml_path,
+                root=root,
+                warnings=warnings,
+            )
             if hero:
                 squadron_entry["heroPhoto"] = hero
             squadrons_by_key[squadron_key] = squadron_entry
         elif not squadron_entry.get("logo") and logo:
             squadron_entry["logo"] = logo
+        merge_entity_write_up(
+            squadron_entry,
+            read_squadron_write_up(data, squadron_data, standalone=True),
+            entity_label=f"squadron {squadron_name}",
+            source_path=yaml_path,
+            root=root,
+            warnings=warnings,
+        )
         if not squadron_entry.get("heroPhoto") and hero:
             squadron_entry["heroPhoto"] = hero
 
@@ -1700,6 +2240,7 @@ def load_airshows(
 ) -> List[Dict[str, Any]]:
     """Aggregate tagged photos into event timeline records with optional source-photo heroes."""
     configured_heroes: Dict[str, Dict[str, Any]] = {}
+    configured_write_ups: Dict[str, str] = {}
     events_path = airshow_dir / "events.yaml"
     if not events_path.exists():
         alternate_path = airshow_dir / "events.yml"
@@ -1726,6 +2267,7 @@ def load_airshows(
                     warnings.add(f"duplicate airshow event metadata: {name}")
                     continue
                 configured_heroes[event_key] = read_airshow_hero_ref(item)
+                configured_write_ups[event_key] = read_write_up_value(item.get("write_up"), item.get("writeUp"))
 
     photos_by_event: Dict[str, List[Dict[str, Any]]] = {}
     event_names: Dict[str, str] = {}
@@ -1754,6 +2296,7 @@ def load_airshows(
             "photoCount": len(ordered_photos),
             "firstDate": dated_photos[0].get("sortDate", "") if dated_photos else "",
             "latestDate": dated_photos[-1].get("sortDate", "") if dated_photos else "",
+            "writeUp": configured_write_ups.get(event_key, ""),
         }
         if hero:
             record["heroPhotoId"] = hero["id"]
@@ -2554,6 +3097,66 @@ def read_pin_hero_fields(pin_item: Dict[str, Any]) -> Tuple[str, Any]:
         hero_source = hero_block
 
     return str(hero_photo_id).strip() if hero_photo_id else "", hero_source_from_value(hero_source)
+
+
+def read_write_up_value(*values: Any) -> str:
+    """Read an optional page write-up while keeping intentional line breaks."""
+    for value in values:
+        if value is None:
+            continue
+        text = str(value).strip()
+        if text:
+            return text
+    return ""
+
+
+def read_aircraft_write_up(data: Dict[str, Any], aircraft_data: Dict[str, Any]) -> str:
+    return read_write_up_value(
+        data.get("aircraft_write_up"),
+        data.get("aircraftWriteUp"),
+        aircraft_data.get("write_up"),
+        aircraft_data.get("writeUp"),
+        data.get("write_up"),
+        data.get("writeUp"),
+    )
+
+
+def read_squadron_write_up(
+    data: Dict[str, Any],
+    squadron_data: Dict[str, Any],
+    standalone: bool = False,
+) -> str:
+    values = [
+        data.get("squadron_write_up"),
+        data.get("squadronWriteUp"),
+        squadron_data.get("write_up"),
+        squadron_data.get("writeUp"),
+    ]
+    if standalone:
+        values.extend((data.get("write_up"), data.get("writeUp")))
+    return read_write_up_value(*values)
+
+
+def merge_entity_write_up(
+    record: Dict[str, Any],
+    write_up: str,
+    entity_label: str,
+    source_path: Path,
+    root: Path,
+    warnings: BuildWarningLog,
+) -> None:
+    """Keep one write-up for an aggregate entity and report conflicting sources."""
+    value = read_write_up_value(write_up)
+    if not value:
+        return
+    existing = read_write_up_value(record.get("writeUp"), record.get("write_up"))
+    if existing and existing != value:
+        warnings.add(
+            f"conflicting write-ups for {entity_label}; keeping the first value "
+            f"and ignoring {relative_posix(source_path, root)}"
+        )
+        return
+    record["writeUp"] = existing or value
 
 
 def read_squadron_hero_source(data: Dict[str, Any], squadron_data: Dict[str, Any]) -> Any:

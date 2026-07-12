@@ -434,11 +434,134 @@
       }
     }
 
+    data = legacyViewOfNormalizedCatalog(data);
+
     if (currentPageViewId() === "statsView") {
       await loadStatsExifBundle();
       data = applyStatsExif(data);
     }
     return data;
+  }
+
+  function legacyViewOfNormalizedCatalog(rawData) {
+    if (Number(rawData?.schemaVersion) !== 2 || !rawData?.entities || !rawData?.indexes) {
+      return rawData;
+    }
+    const entities = rawData.entities;
+    const indexes = rawData.indexes;
+    const countries = entities.countries || {};
+    const aircraftEntities = entities.aircraft || {};
+    const unitEntities = entities.units || {};
+    const locationEntities = entities.locations || {};
+    const eventEntities = entities.events || {};
+    const photoEntities = entities.photos || {};
+
+    const photos = Object.values(photoEntities).map((photo) => {
+      const subjects = Array.isArray(photo.subjects) ? photo.subjects : [];
+      const primary = subjects.find((subject) => subject?.primary) || subjects[0] || {};
+      const aircraft = aircraftEntities[primary.aircraftId] || {};
+      const unit = unitEntities[primary.unitId] || {};
+      const location = locationEntities[photo.locationId] || {};
+      const event = eventEntities[photo.eventId] || {};
+      const country = countries[unit.countryId || location.countryId] || {};
+      const tagScope = aircraft.id ? "aircraft" : unit.id ? "squadron" : "location";
+      return {
+        ...photo,
+        tagScope,
+        aircraftId: aircraft.id || "",
+        aircraftType: aircraft.name || "",
+        aircraftFamily: aircraft.family || "",
+        squadronId: unit.id || "",
+        squadronName: unit.name || "",
+        unitType: unit.kind || "",
+        unitLabel: unit.kind === "organisation" ? "Organisation" : unit.id ? "Squadron" : "",
+        country: country.name || "",
+        locationName: location.name || "Unknown location",
+        pinId: location.id || photo.locationId || "",
+        airshow: event.name || ""
+      };
+    });
+    const photoById = new Map(photos.map((photo) => [photo.id, photo]));
+    const unitRecord = (unit) => {
+      const country = countries[unit.countryId] || {};
+      const hero = photoById.get(unit.heroPhotoId);
+      const photoIds = indexes.photoIdsByUnit?.[unit.id] || [];
+      return {
+        id: unit.id,
+        name: unit.name,
+        country: country.name || "",
+        logo: unit.logo || "",
+        unitType: unit.kind || "squadron",
+        unitLabel: unit.kind === "organisation" ? "Organisation" : "Squadron",
+        showOnSquadronsPage: unit.kind !== "organisation",
+        photoIds,
+        photoCount: photoIds.length,
+        heroPhoto: hero ? {
+          image: hero.image,
+          thumbnail: hero.thumbnail,
+          source: hero.source || "",
+          originalSize: hero.originalSize || "",
+          processedSize: hero.processedSize || "",
+          thumbnailSize: hero.thumbnailSize || ""
+        } : null,
+        writeUp: unit.writeUp || ""
+      };
+    };
+    const units = Object.values(unitEntities).map(unitRecord);
+    const unitById = new Map(units.map((unit) => [unit.id, unit]));
+    const pins = Object.values(locationEntities).map((location) => ({
+      id: location.id,
+      name: location.name,
+      country: countries[location.countryId]?.name || "",
+      icao: location.icao || "",
+      lat: location.lat,
+      lon: location.lon,
+      enabled: location.enabled !== false,
+      heroPhotoId: location.heroPhotoId || "",
+      writeUp: location.writeUp || ""
+    }));
+    const aircraft = Object.values(aircraftEntities).map((entry) => {
+      const unitIds = indexes.unitIdsByAircraft?.[entry.id] || [];
+      const entryUnits = unitIds.map((unitId) => unitById.get(unitId)).filter(Boolean);
+      const photoIds = indexes.photoIdsByAircraft?.[entry.id] || [];
+      const aircraftPhotoIds = new Set(photoIds);
+      return {
+        id: entry.id,
+        typeName: entry.name,
+        aircraftFamily: entry.family,
+        countries: unique(entryUnits.map((unit) => unit.country).filter(Boolean)),
+        squadrons: entryUnits.map((unit) => {
+          const unitPhotoIds = unit.photoIds.filter((photoId) => aircraftPhotoIds.has(photoId));
+          return {...unit, photoIds: unitPhotoIds, photoCount: unitPhotoIds.length};
+        }),
+        photoIds,
+        coverPhoto: entry.heroPhotoId || photoIds[0] || null,
+        doubleWidth: entry.doubleWidth === true || entry.doubleWidth === 1
+          ? true
+          : entry.doubleWidth === false || entry.doubleWidth === 0
+            ? false
+            : null,
+        writeUp: entry.writeUp || ""
+      };
+    });
+    const airshows = Object.values(eventEntities).map((event) => ({
+      id: event.id,
+      name: event.name,
+      photoIds: indexes.photoIdsByEvent?.[event.id] || [],
+      heroPhotoId: event.heroPhotoId || "",
+      firstDate: event.startsOn || "",
+      latestDate: event.endsOn || "",
+      writeUp: event.writeUp || ""
+    }));
+    return {
+      payload: rawData.payload || "full",
+      generatedAt: rawData.generatedAt || null,
+      pins,
+      aircraft,
+      squadrons: units,
+      airshows,
+      photos
+    };
   }
 
   function loadStatsExifBundle() {
@@ -495,6 +618,7 @@
         name: pin.name || "Unnamed location",
         country: pin.country || "",
         icao: normalizeIcao(pin.icao || pin.icaoCode || pin.icao_code),
+        writeUp: normalizeWriteUp(pin.writeUp || pin.write_up),
         lat: Number(pin.lat),
         lon: Number(pin.lon),
         enabled: pin.enabled !== false
@@ -535,6 +659,12 @@
         ...entry,
         id: String(entry.id || slugify(entry.typeName || "aircraft")),
         typeName: entry.typeName || entry.aircraftType || "Unknown aircraft",
+        doubleWidth: entry.doubleWidth === true || entry.doubleWidth === 1
+          ? true
+          : entry.doubleWidth === false || entry.doubleWidth === 0
+            ? false
+            : null,
+        writeUp: normalizeWriteUp(entry.writeUp || entry.write_up),
         countries: Array.isArray(entry.countries) ? entry.countries : [],
         squadrons: Array.isArray(entry.squadrons) ? entry.squadrons.map(normalizeUnitRecord) : [],
         photoIds: Array.isArray(entry.photoIds) ? entry.photoIds : [],
@@ -596,6 +726,7 @@
       name: squadron.name || unknownUnitName(unitType),
       country: squadron.country || "",
       logo: squadron.logo || "",
+      writeUp: normalizeWriteUp(squadron.writeUp || squadron.write_up),
       heroPhoto: squadron.heroPhoto && typeof squadron.heroPhoto === "object" ? squadron.heroPhoto : null,
       photoIds: Array.isArray(squadron.photoIds) ? squadron.photoIds : [],
       unitType,
@@ -618,6 +749,7 @@
           name,
           photoIds: [],
           heroPhotoId: String(rawAirshow?.heroPhotoId || rawAirshow?.hero_photo_id || ""),
+          writeUp: normalizeWriteUp(rawAirshow?.writeUp || rawAirshow?.write_up),
           firstDate: String(rawAirshow?.firstDate || ""),
           latestDate: String(rawAirshow?.latestDate || "")
         });
@@ -626,6 +758,9 @@
       airshow.photoIds.push(...(Array.isArray(rawAirshow?.photoIds) ? rawAirshow.photoIds.map(String) : []));
       if (!airshow.heroPhotoId && rawAirshow?.heroPhotoId) {
         airshow.heroPhotoId = String(rawAirshow.heroPhotoId);
+      }
+      if (!airshow.writeUp) {
+        airshow.writeUp = normalizeWriteUp(rawAirshow?.writeUp || rawAirshow?.write_up);
       }
       return airshow;
     };
@@ -1740,7 +1875,7 @@
         const photos = photosForAircraft(aircraft);
         const cover = state.photoById.get(aircraft.coverPhoto) || photos[0];
         title = `${aircraft.typeName} field guide | SpotterDex`;
-        description = `${photos.length} photographed frame${photos.length === 1 ? "" : "s"} of ${aircraft.typeName}, organised by unit and location.`;
+        description = pageDescription(aircraft.writeUp, `${photos.length} photographed frame${photos.length === 1 ? "" : "s"} of ${aircraft.typeName}, organised by unit and location.`);
         image = cover?.image || cover?.thumbnail || defaultImage;
         imageAlt = cover
           ? `${photoSubjectLabel(cover)} photographed at ${cover.locationName}`
@@ -1753,7 +1888,7 @@
         const profile = locationProfile(pin, photos);
         const hero = profile.heroPhoto || profile.heroAsset || photos[0];
         title = `${pin.name} field guide | SpotterDex`;
-        description = `${photos.length} photographed frame${photos.length === 1 ? "" : "s"} at ${pin.name}${pin.country ? `, ${pin.country}` : ""}.`;
+        description = pageDescription(pin.writeUp, `${photos.length} photographed frame${photos.length === 1 ? "" : "s"} at ${pin.name}${pin.country ? `, ${pin.country}` : ""}.`);
         image = hero?.image || hero?.thumbnail || defaultImage;
         imageAlt = hero
           ? `${photoSubjectLabel(hero)} photographed at ${hero.locationName || pin.name}`
@@ -1765,7 +1900,7 @@
         const photos = photosForSquadronRecord(squadron);
         const hero = squadronCardHero(squadron) || photos[0];
         title = `${squadron.name} | SpotterDex`;
-        description = `${photos.length} aviation photograph${photos.length === 1 ? "" : "s"} from ${squadron.name}${squadron.country ? ` in ${squadron.country}` : ""}.`;
+        description = pageDescription(squadron.writeUp, `${photos.length} aviation photograph${photos.length === 1 ? "" : "s"} from ${squadron.name}${squadron.country ? ` in ${squadron.country}` : ""}.`);
         image = hero?.image || hero?.thumbnail || defaultImage;
         imageAlt = hero
           ? `${photoSubjectLabel(hero)} photographed at ${hero.locationName}`
@@ -1777,7 +1912,7 @@
         const photos = photosForAirshow(airshow);
         const hero = airshowHeroPhoto(airshow, photos) || photos[0];
         title = `${airshow.name} | SpotterDex`;
-        description = `${photos.length} aviation photograph${photos.length === 1 ? "" : "s"} from ${airshow.name}.`;
+        description = pageDescription(airshow.writeUp, `${photos.length} aviation photograph${photos.length === 1 ? "" : "s"} from ${airshow.name}.`);
         image = hero?.image || hero?.thumbnail || defaultImage;
         imageAlt = hero
           ? `${photoSubjectLabel(hero)} photographed at ${hero.locationName}`
@@ -4384,6 +4519,7 @@
         actions: renderFieldGuideActions("Airshow field report"),
         className: "airshow-field-guide-hero"
       })}
+      ${renderPageWriteUp(airshow.writeUp, "About this airshow")}
 
       <div class="entry-stat-grid" aria-label="Airshow statistics">
         ${statTile("Photos", photos.length)}
@@ -4612,13 +4748,14 @@
       if (!isSquadronUnit(squadron)) {
         return;
       }
-      const key = normalizeKey(`${squadron.country || ""}-${squadron.name || ""}`);
+      const key = String(squadron.id || normalizeKey(`${squadron.country || ""}-${squadron.name || ""}`));
       if (!byKey.has(key)) {
         byKey.set(key, {
           id: key,
           name: squadron.name || "Unknown squadron",
           country: squadron.country || "",
           logo: squadron.logo || "",
+          writeUp: normalizeWriteUp(squadron.writeUp || squadron.write_up),
           heroPhoto: squadron.heroPhoto || null,
           aircraftTypes: [],
           photoIds: []
@@ -4631,6 +4768,9 @@
       }
       if (!record.heroPhoto && squadron.heroPhoto) {
         record.heroPhoto = squadron.heroPhoto;
+      }
+      if (!record.writeUp && squadron.writeUp) {
+        record.writeUp = squadron.writeUp;
       }
       if (aircraftType) {
         record.aircraftTypes.push(aircraftType);
@@ -4756,6 +4896,7 @@
         mark: logo,
         className: "squadron-field-guide-hero"
       })}
+      ${renderPageWriteUp(squadron.writeUp, "About this squadron")}
       <section class="detail-summary">
         <div>
           <p class="eyebrow">Aircraft types</p>
@@ -4825,6 +4966,7 @@
         actions: renderFieldGuideActions("Location field guide"),
         className: "location-field-guide-hero"
       })}
+      ${renderPageWriteUp(pin.writeUp, "About this location")}
       <section class="detail-summary location-page-summary">
         <div>
           <p class="eyebrow">Location profile</p>
@@ -4872,6 +5014,25 @@
       <div class="detail-hero-actions" aria-label="${escapeAttr(label)} actions">
         <button class="detail-hero-action" type="button" data-copy-field-guide="Copy link">Copy link</button>
       </div>
+    `;
+  }
+
+  function renderPageWriteUp(writeUp, label) {
+    const text = normalizeWriteUp(writeUp);
+    if (!text) {
+      return "";
+    }
+    const paragraphs = text
+      .split(/\n\s*\n/)
+      .map((paragraph) => paragraph.trim())
+      .filter(Boolean)
+      .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, "<br>")}</p>`)
+      .join("");
+    return `
+      <section class="detail-write-up" aria-label="${escapeAttr(label)}">
+        <p class="eyebrow">${escapeHtml(label)}</p>
+        <div class="detail-write-up-copy">${paragraphs}</div>
+      </section>
     `;
   }
 
@@ -5776,7 +5937,11 @@
     let usedColumns = 0;
 
     entries.forEach((entry) => {
-      const wantsWide = candidates.has(entry.id) && wideSpan > normalSpan;
+      const wantsWide = entry.doubleWidth === true
+        || (entry.doubleWidth !== false && candidates.has(entry.id));
+      if (entry.doubleWidth === true && wideSpan > normalSpan && usedColumns + wideSpan > columns) {
+        usedColumns = 0;
+      }
       let span = normalSpan;
 
       if (wantsWide && usedColumns + wideSpan <= columns) {
@@ -5842,6 +6007,7 @@
         actions: renderFieldGuideActions("Aircraft field guide"),
         className: "aircraft-field-guide-hero"
       })}
+      ${renderPageWriteUp(entry.writeUp, "About this aircraft")}
       <section class="detail-summary detail-aircraft-summary">
         <div>
           <p class="eyebrow">Archive view</p>
@@ -6668,7 +6834,8 @@
         return response.json();
       })
       .then((fullData) => {
-        const fullPhotos = new Map((fullData.photos || []).map((photo) => [String(photo.id || ""), photo]));
+        const hydrated = legacyViewOfNormalizedCatalog(fullData);
+        const fullPhotos = new Map((hydrated.photos || []).map((photo) => [String(photo.id || ""), photo]));
         state.data.photos.forEach((photo) => Object.assign(photo, fullPhotos.get(photo.id) || {}));
         state.data.payload = "full";
         return true;
@@ -7362,7 +7529,7 @@
     if (!squadron || !isSquadronUnit(squadron)) {
       return "";
     }
-    return normalizeKey(`${squadron.country || ""}-${squadron.name || ""}`);
+    return String(squadron.id || normalizeKey(`${squadron.country || ""}-${squadron.name || ""}`));
   }
 
   function squadronPageIdForPhoto(photo) {
@@ -7801,6 +7968,15 @@
 
   function normalizeText(value) {
     return String(value || "").trim().toLowerCase();
+  }
+
+  function normalizeWriteUp(value) {
+    return String(value || "").trim();
+  }
+
+  function pageDescription(writeUp, fallback) {
+    const text = normalizeWriteUp(writeUp).replace(/\s+/g, " ");
+    return text ? text.slice(0, 260) : fallback;
   }
 
   function normalizeIcao(value) {

@@ -6,7 +6,7 @@
   <title>SpotterDex Manager</title>
   <link rel="stylesheet" href="app.css">
 </head>
-<body>
+<body data-active-tab="attach" data-assets-open="true">
   <div class="shell">
     <header>
       <div class="brand">
@@ -16,22 +16,63 @@
           <div class="subtle" id="projectRoot"></div>
         </div>
       </div>
-      <div class="stats" id="stats"></div>
+      <div class="view-context" aria-live="polite">
+        <strong id="viewTitle">Attach Photos</strong>
+        <span id="viewDescription">Tag new raw images and maintain their catalog metadata.</span>
+      </div>
       <div class="actions">
+        <button class="btn ghost assets-toggle" id="toggleAssetsBtn" type="button" aria-controls="assetPanel" aria-expanded="true">
+          Assets <span class="button-count" id="assetSelectionBadge">0</span>
+        </button>
         <button class="btn ghost" id="reloadBtn" type="button">Reload</button>
-        <button class="btn ghost" id="clearBuildCacheBtn" type="button">Clear build cache</button>
         <button class="btn primary" id="buildBtn" type="button">Build</button>
       </div>
     </header>
 
-    <main>
-      <section class="panel">
+    <div class="app-body">
+      <nav class="manager-nav" aria-label="Manager views">
+        <div class="nav-group">
+          <span class="nav-group-label">Attach</span>
+          <button class="tab active" data-tab="attach" type="button" aria-current="page">
+            <span>Photos</span><span class="nav-badge" id="newAssetNavBadge">0</span>
+          </button>
+        </div>
+        <div class="nav-group">
+          <span class="nav-group-label">Catalog</span>
+          <button class="tab" data-tab="master" type="button">Master List</button>
+          <button class="tab" data-tab="entries" type="button">Sources</button>
+        </div>
+        <div class="nav-group">
+          <span class="nav-group-label">Review</span>
+          <button class="tab" data-tab="bulk-captions" type="button">Captions</button>
+          <button class="tab" data-tab="missing" type="button">
+            <span>Missing</span><span class="nav-badge warn" id="missingNavBadge">0</span>
+          </button>
+          <button class="tab" data-tab="quality" type="button">
+            <span>Quality</span><span class="nav-badge warn" id="qualityNavBadge">0</span>
+          </button>
+        </div>
+        <div class="nav-group">
+          <span class="nav-group-label">Publish</span>
+          <button class="tab" data-tab="airshows" type="button">Airshows</button>
+          <button class="tab" data-tab="squadrons" type="button">Squadrons</button>
+          <button class="tab" data-tab="locations" type="button">Locations</button>
+          <button class="tab" data-tab="build" type="button">Build</button>
+        </div>
+        <div class="stats" id="stats"></div>
+      </nav>
+
+      <div class="workspace-stage">
+      <aside class="panel asset-panel" id="assetPanel" aria-label="Raw Assets">
         <div class="panel-head">
           <div>
             <h2 class="panel-title">Raw Assets</h2>
             <div class="subtle" id="selectedCount">0 selected</div>
           </div>
-          <button class="btn ghost" id="clearSelectionBtn" type="button">Clear</button>
+          <div class="card-actions">
+            <button class="btn ghost" id="clearSelectionBtn" type="button">Clear</button>
+            <button class="btn ghost asset-close" id="closeAssetsBtn" type="button" aria-label="Close Raw Assets">Close</button>
+          </div>
         </div>
         <div class="asset-tools">
           <div class="field">
@@ -48,21 +89,10 @@
           </div>
         </div>
         <div class="asset-grid" id="assetGrid"></div>
-      </section>
+      </aside>
 
-      <section class="panel workspace">
-        <nav class="tabs" aria-label="Manager views">
-          <button class="tab active" data-tab="attach" type="button">Attach</button>
-          <button class="tab" data-tab="bulk-captions" type="button">Bulk Captions</button>
-          <button class="tab" data-tab="airshows" type="button">Airshows</button>
-          <button class="tab" data-tab="missing" type="button">Missing</button>
-          <button class="tab" data-tab="quality" type="button">Quality</button>
-          <button class="tab" data-tab="entries" type="button">Entries</button>
-          <button class="tab" data-tab="squadrons" type="button">Squadrons</button>
-          <button class="tab" data-tab="locations" type="button">Locations</button>
-          <button class="tab" data-tab="build" type="button">Build Log</button>
-        </nav>
-
+      <main class="manager-main">
+      <section class="workspace">
         <section class="view active" id="attachView">
           <div class="form-grid">
             <div class="field wide">
@@ -70,15 +100,15 @@
               <input id="entrySearch" type="search" placeholder="aircraft, unit, location, country">
             </div>
             <div class="field wide">
-              <label for="entrySelect">Tag Images To</label>
+              <div class="field-label-row"><label for="entrySelect">Tag Images To</label><span><button class="text-action" id="createSourceInlineBtn" type="button">New</button><button class="text-action" id="inspectSourceBtn" type="button">Inspect</button></span></div>
               <select id="entrySelect"></select>
             </div>
             <div class="field">
-              <label for="pinSelect">Location</label>
+              <div class="field-label-row"><label for="pinSelect">Location</label><span><button class="text-action" id="createLocationInlineBtn" type="button">New</button><button class="text-action" id="inspectLocationBtn" type="button">Inspect</button></span></div>
               <select id="pinSelect"></select>
             </div>
             <div class="field wide">
-              <label for="airshowInput">Airshow Event (optional)</label>
+              <div class="field-label-row"><label for="airshowInput">Airshow Event (optional)</label><span><button class="text-action" id="createEventInlineBtn" type="button">New</button><button class="text-action" id="inspectEventBtn" type="button">Inspect</button></span></div>
               <input id="airshowInput" type="text" placeholder="Singapore Airshow 2026">
             </div>
             <div class="field wide">
@@ -121,6 +151,7 @@
             <h2 class="panel-title">Tagged Photos</h2>
             <button class="btn ghost" id="clearEditorBtn" type="button">Clear Editor</button>
           </div>
+          <div id="taggedBulkEditor"></div>
           <div class="split">
             <div class="section">
               <h2>Edit Photo</h2>
@@ -168,6 +199,25 @@
               <div class="photo-list" id="photoList"></div>
             </div>
           </div>
+        </section>
+
+        <section class="view" id="masterView">
+          <div class="bar">
+            <div>
+              <h2 class="panel-title">Master Photo List</h2>
+              <div class="subtle" id="masterSummary">Every current database photo appears once, regardless of how many subjects it has.</div>
+            </div>
+          </div>
+          <div class="form-grid master-tools">
+            <div class="field wide">
+              <label for="masterSearch">Search all photo values</label>
+              <input id="masterSearch" type="search" placeholder="path, aircraft, unit, location, event, caption">
+            </div>
+          </div>
+          <div class="subtle master-note">Save changes per row. “Detach raw image” removes only the catalog record; the original file stays in <code>raw_assets/</code>.</div>
+          <div id="masterBulkEditor"></div>
+          <div class="master-list" id="masterList"></div>
+          <div class="pagination" id="masterPagination" aria-label="Master photo pages"></div>
         </section>
 
         <section class="view" id="bulk-captionsView">
@@ -303,6 +353,15 @@
                   <option value="heavy">Heavy</option>
                 </select>
               </div>
+              <div class="field" data-entry-scope-field="aircraft">
+                <label for="newAircraftDisplayWidth">Aircraft Card Width</label>
+                <select id="newAircraftDisplayWidth">
+                  <option value="">Automatic (archive layout)</option>
+                  <option value="0">Standard width</option>
+                  <option value="1">Double width</option>
+                </select>
+                <div class="subtle">Optional. You can change this later for any aircraft type.</div>
+              </div>
               <div class="field">
                 <label for="newSquadronName">Unit Name</label>
                 <input id="newSquadronName" type="text" placeholder="Air Transport Squadron 61">
@@ -318,10 +377,6 @@
                   <option value="organisation">Organisation</option>
                 </select>
               </div>
-              <div class="field wide">
-                <label for="newSquadronLogo">Squadron Logo (optional)</label>
-                <input id="newSquadronLogo" type="text" placeholder="jasdf_adtw.png">
-              </div>
               <button class="btn primary" id="createEntryBtn" type="button">+ Entry</button>
             </div>
             <div class="section">
@@ -333,6 +388,19 @@
               <div class="photo-list" id="entryCards"></div>
             </div>
           </div>
+          <section class="airshow-management-section" aria-labelledby="aircraftSettingsHeading">
+            <div class="bar">
+              <div>
+                <h2 class="panel-title" id="aircraftSettingsHeading">Aircraft Type Settings</h2>
+                <div class="subtle" id="aircraftSettingsSummary">Choose an optional hero photo and card width for each aircraft type.</div>
+              </div>
+              <div class="field compact-field">
+                <label for="aircraftSettingsSearch">Search aircraft types</label>
+                <input id="aircraftSettingsSearch" type="search" placeholder="type or family">
+              </div>
+            </div>
+            <div class="group-hero-list" id="aircraftSettingsList"></div>
+          </section>
         </section>
 
         <section class="view" id="locationsView">
@@ -387,14 +455,14 @@
         <section class="view" id="squadronsView">
           <div class="bar">
             <div>
-              <h2 class="panel-title">Squadron Hero Photos</h2>
-              <div class="subtle" id="squadronHeroSummary">Review every squadron and select its featured image.</div>
+              <h2 class="panel-title">Squadron Settings</h2>
+              <div class="subtle" id="squadronHeroSummary">Review each squadron's shared logo and featured image.</div>
             </div>
           </div>
           <section class="airshow-management-section" aria-labelledby="squadronHeroHeading">
             <div>
               <h3 class="panel-title" id="squadronHeroHeading">All Squadrons</h3>
-              <div class="subtle">Click a tagged image to feature it on that squadron's page. A squadron may draw images from multiple aircraft entries.</div>
+              <div class="subtle">Each squadron has one shared logo and hero, reused across every associated aircraft type.</div>
             </div>
             <div class="group-hero-list" id="squadronHeroList"></div>
           </section>
@@ -406,7 +474,11 @@
               <h2 class="panel-title">Build Output</h2>
               <div class="subtle" id="buildStatus">Ready</div>
             </div>
-            <button class="btn primary" id="buildBtn2" type="button">Build</button>
+            <div class="card-actions">
+              <button class="btn ghost" id="backupDatabaseBtn" type="button">Backup Database</button>
+              <button class="btn ghost" id="clearBuildCacheBtn" type="button">Clear Build Cache</button>
+              <button class="btn primary" id="buildBtn2" type="button">Build</button>
+            </div>
           </div>
           <pre class="console" id="buildLog"></pre>
           <div class="build-summary" id="buildSummary"></div>
@@ -425,9 +497,22 @@
           </section>
         </section>
       </section>
-    </main>
+      </main>
+      </div>
+    </div>
   </div>
   <div class="toast" id="toast"></div>
+  <div class="utility-scrim" id="utilityScrim" hidden></div>
+  <aside class="utility-drawer" id="utilityDrawer" aria-hidden="true" aria-labelledby="utilityDrawerTitle">
+    <div class="utility-drawer-head">
+      <div>
+        <div class="subtle" id="utilityDrawerEyebrow">Manager tool</div>
+        <h2 id="utilityDrawerTitle">Details</h2>
+      </div>
+      <button class="btn ghost" id="closeUtilityDrawerBtn" type="button">Close</button>
+    </div>
+    <div class="utility-drawer-body" id="utilityDrawerBody"></div>
+  </aside>
   <dialog class="asset-preview-modal" id="assetPreviewModal" aria-labelledby="assetPreviewTitle">
     <div class="asset-preview-dialog">
       <div class="bar">

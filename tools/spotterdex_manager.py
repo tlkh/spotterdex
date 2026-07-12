@@ -2,8 +2,7 @@
 """Local SpotterDex data manager.
 
 This intentionally stays dependency-light: it uses the Python standard library
-for the web server plus the same PyYAML and Pillow dependencies as the existing
-SpotterDex build script.
+for the web server and SQLite catalog plus Pillow for image inspection.
 """
 
 from __future__ import annotations
@@ -18,6 +17,7 @@ import os
 import queue
 import re
 import shutil
+import sqlite3
 import subprocess
 import sys
 import threading
@@ -50,6 +50,11 @@ try:
 except ImportError:  # Support importing this module as tools.spotterdex_manager.
     from tools.prompts import CAPTION_SYSTEM_PROMPT, build_caption_prompt
 
+try:
+    from spotterdex_db import connect_database, export_snapshot, snapshot_is_current, validate_database
+except ImportError:  # Support importing as tools.spotterdex_manager.
+    from tools.spotterdex_db import connect_database, export_snapshot, snapshot_is_current, validate_database
+
 
 ROOT = Path(__file__).resolve().parents[1]
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp"}
@@ -68,7 +73,10 @@ GENERATED_ORPHAN_DIRS = ("assets/generated/photos", "assets/generated/thumbs")
 NVIDIA_CAPTION_ENDPOINT = "https://inference-api.nvidia.com/v1/chat/completions"
 NVIDIA_CAPTION_MODEL = "nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
 NVIDIA_CAPTION_IMAGE_WIDTH = 768
-NVIDIA_CAPTION_TIMEOUT_SECONDS = 75
+NVIDIA_CAPTION_TIMEOUT_SECONDS = 180
+NVIDIA_CAPTION_MAX_TOKENS = 16384
+NVIDIA_CAPTION_REASONING_BUDGET = 8192
+DOTENV_PATH = ROOT / ".env"
 MIN_SOURCE_PHOTO_WIDTH = 2560
 QUALITY_ANALYSIS_MAX_DIMENSION = 256
 UNDEREXPOSED_MEAN_LUMINANCE = 58
@@ -139,6 +147,9 @@ class RequestContext:
 class SpotterDexManager:
     def __init__(self, root: Path) -> None:
         self.root = root.resolve()
+        self.database_path = self.root / "content" / "spotterdex.sqlite3"
+        self.sql_snapshot_path = self.root / "content" / "spotterdex.sql"
+        self._database_write_lock = threading.RLock()
         self.aircraft_dir = self.root / "aircraft"
         self.squadron_dir = self.root / "squadrons"
         self.map_dir = self.root / "map_pins"
@@ -178,6 +189,34 @@ class SpotterDexManager:
             "removedFiles": file_count,
             "removedBytes": byte_count,
             "message": f"Cleared {file_count} cached file(s) and reset {metadata_count} image metadata record(s).",
+        }
+
+    def backup_database(self, _payload: Dict[str, Any]) -> Dict[str, Any]:
+        if not self.database_path.exists():
+            raise ValueError("The canonical database does not exist.")
+        backup_dir = self.root / "content" / "backups"
+        backup_dir.mkdir(parents=True, exist_ok=True)
+        backup_path = backup_dir / f"spotterdex-{time.strftime('%Y%m%d-%H%M%S')}.sqlite3"
+        source = self._database_connection(read_only=True)
+        destination = sqlite3.connect(backup_path)
+        try:
+            source.backup(destination)
+        finally:
+            destination.close()
+            source.close()
+        connection = self._database_connection(read_only=True)
+        try:
+            export_snapshot(connection, self.sql_snapshot_path)
+            errors = validate_database(connection, raw_assets_dir=self.raw_assets_dir)
+        finally:
+            connection.close()
+        if errors:
+            backup_path.unlink(missing_ok=True)
+            raise ValueError("Database integrity check failed: " + "; ".join(errors))
+        return {
+            "ok": True,
+            "backupPath": relative_posix(backup_path, self.root),
+            "message": f"Database backup created at {relative_posix(backup_path, self.root)}; SQL snapshot refreshed.",
         }
 
     def _load_quality_ack(self) -> Dict[str, Dict[str, Any]]:
@@ -281,6 +320,8 @@ class SpotterDexManager:
         }
 
     def get_state(self) -> Dict[str, Any]:
+        if self.database_path.exists():
+            return self._get_database_state()
         tag_map: Dict[str, List[Dict[str, Any]]] = {}
         pins, pin_by_id, pin_by_name = self._scan_pins(tag_map)
         aircraft = self._scan_aircraft(tag_map, pin_by_id, pin_by_name)
@@ -349,6 +390,1241 @@ class SpotterDexManager:
             "assets": assets,
             "airshowEvents": airshow_events,
         }
+
+    def _database_connection(self, *, read_only: bool = False) -> sqlite3.Connection:
+        return connect_database(self.database_path, read_only=read_only)
+
+    def _database_write(self, operation: Any) -> Any:
+        """Serialize a validated database mutation and refresh the SQL snapshot."""
+        with self._database_write_lock:
+            connection = self._database_connection()
+            try:
+                connection.execute("BEGIN")
+                result = operation(connection)
+                errors = validate_database(connection, raw_assets_dir=self.raw_assets_dir)
+                if errors:
+                    raise ValueError("Database update failed validation: " + "; ".join(errors))
+                connection.commit()
+                export_snapshot(connection, self.sql_snapshot_path)
+                return result
+            except Exception:
+                connection.rollback()
+                raise
+            finally:
+                connection.close()
+
+    def _database_asset_path(self, value: Any) -> Path:
+        text = clean_text(value)
+        root_candidate = (self.root / text).resolve()
+        return root_candidate if root_candidate.exists() else (self.raw_assets_dir / text).resolve()
+
+    @staticmethod
+    def _database_entry_parts(entry_path: str) -> Tuple[str, ...]:
+        parts = tuple(str(entry_path or "").split(":"))
+        if len(parts) < 3 or parts[0] != "db":
+            raise ValueError("Database entry reference is invalid.")
+        return parts
+
+    def _database_entry_photo_ids(self, connection: sqlite3.Connection, entry_path: str) -> List[str]:
+        parts = self._database_entry_parts(entry_path)
+        if parts[1] == "aircraft" and len(parts) == 4:
+            rows = connection.execute(
+                "SELECT DISTINCT photo_id FROM photo_subjects WHERE aircraft_id=? AND unit_id=? ORDER BY photo_id",
+                (parts[2], parts[3]),
+            )
+        elif parts[1] == "unit" and len(parts) == 3:
+            rows = connection.execute(
+                "SELECT photo_id FROM photo_subjects WHERE aircraft_id IS NULL AND unit_id=? ORDER BY photo_id",
+                (parts[2],),
+            )
+        elif parts[1] == "location" and len(parts) == 3:
+            rows = connection.execute(
+                "SELECT p.id FROM photos p WHERE p.location_id=? "
+                "AND NOT EXISTS(SELECT 1 FROM photo_subjects s WHERE s.photo_id=p.id) ORDER BY p.id",
+                (parts[2],),
+            )
+        else:
+            raise ValueError("Database entry reference is invalid.")
+        return [str(row[0]) for row in rows]
+
+    def _database_photo_id(self, connection: sqlite3.Connection, payload: Dict[str, Any]) -> str:
+        ids = self._database_entry_photo_ids(connection, clean_text(payload.get("entryPath")))
+        try:
+            index = int(payload.get("index"))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("Photo index is invalid.") from exc
+        if index < 0 or index >= len(ids):
+            raise ValueError("Photo index is invalid.")
+        return ids[index]
+
+    def _get_database_state(self) -> Dict[str, Any]:
+        tag_map: Dict[str, List[Dict[str, Any]]] = {}
+        connection = self._database_connection(read_only=True)
+        try:
+            countries = {row["id"]: dict(row) for row in connection.execute("SELECT * FROM countries")}
+            aircraft = {row["id"]: dict(row) for row in connection.execute("SELECT * FROM aircraft")}
+            units = {row["id"]: dict(row) for row in connection.execute("SELECT * FROM units")}
+            locations = {row["id"]: dict(row) for row in connection.execute("SELECT * FROM locations")}
+            events = {row["id"]: dict(row) for row in connection.execute("SELECT * FROM events")}
+            photos = {row["id"]: dict(row) for row in connection.execute("SELECT * FROM photos")}
+            subjects: Dict[str, List[Dict[str, Any]]] = {}
+            for row in connection.execute("SELECT * FROM photo_subjects ORDER BY photo_id,position"):
+                subjects.setdefault(str(row["photo_id"]), []).append(dict(row))
+            relations = [dict(row) for row in connection.execute("SELECT * FROM aircraft_units ORDER BY aircraft_id,unit_id")]
+            integrity_errors = validate_database(connection, raw_assets_dir=self.raw_assets_dir)
+            snapshot_current = snapshot_is_current(connection, self.sql_snapshot_path)
+        finally:
+            connection.close()
+
+        photo_record_cache: Dict[str, Dict[str, Any]] = {}
+        for photo_id, photo in photos.items():
+            location = locations[photo["location_id"]]
+            event = events.get(photo.get("event_id")) or {}
+            source_path = self.raw_assets_dir / photo["source_path"]
+            exists = source_path.is_file()
+            exif_date = read_image_capture_date(source_path, self._exif_date_cache) if exists else ""
+            width, height = read_image_dimensions(source_path, self._image_dimension_cache) if exists else (0, 0)
+            photo_item = {
+                "path": photo["source_path"],
+                "location": location["name"],
+                "date": photo.get("date_override") or "",
+                "caption": photo.get("caption") or "",
+            }
+            missing_fields = missing_photo_fields(photo_item, exists, location["name"], exif_date)
+            photo_record_cache[photo_id] = {
+                "photoId": photo_id,
+                "path": photo["source_path"],
+                "sourceAssetPath": photo["source_path"] if exists else "",
+                "exists": exists,
+                "sourceWidth": width,
+                "sourceHeight": height,
+                "sourceUnderMinimumWidth": bool(width and width < MIN_SOURCE_PHOTO_WIDTH),
+                "location": location["name"],
+                "pinId": location["id"],
+                "date": photo.get("date_override") or "",
+                "year": (photo.get("date_override") or exif_date or "")[:4],
+                "exifDate": exif_date,
+                "airshow": event.get("name", ""),
+                "livery": photo.get("livery") or "",
+                "title": photo.get("title") or "",
+                "caption": photo.get("caption") or "",
+                "captionAiAssisted": bool(photo.get("caption_ai_assisted")),
+                "missingFields": missing_fields,
+                "missingFieldLabels": [MISSING_FIELD_LABELS[field] for field in missing_fields],
+            }
+
+        def indexed_records(ids: List[str], entry_path: str, kind: str, label: str) -> List[Dict[str, Any]]:
+            records: List[Dict[str, Any]] = []
+            for index, photo_id in enumerate(ids):
+                record = dict(photo_record_cache[photo_id])
+                record["index"] = index
+                records.append(record)
+                source = record.get("sourceAssetPath")
+                if source:
+                    tag_map.setdefault(source, []).append(
+                        {"kind": kind, "label": label, "location": record["location"], "path": entry_path, "index": index}
+                    )
+            return records
+
+        aircraft_entries: List[Dict[str, Any]] = []
+        unit_entries: List[Dict[str, Any]] = []
+        location_entries: List[Dict[str, Any]] = []
+        aircraft_catalog: List[Dict[str, Any]] = []
+        pins: List[Dict[str, Any]] = []
+        reference_by_photo: Dict[str, Dict[str, Any]] = {}
+
+        for relation in relations:
+            aircraft_row = aircraft[relation["aircraft_id"]]
+            unit = units[relation["unit_id"]]
+            entry_path = f"db:aircraft:{aircraft_row['id']}:{unit['id']}"
+            ids = sorted(
+                photo_id
+                for photo_id, values in subjects.items()
+                if any(value.get("aircraft_id") == aircraft_row["id"] and value.get("unit_id") == unit["id"] for value in values)
+            )
+            records = indexed_records(ids, entry_path, "photo", f"{aircraft_row['name']} / {unit['name']}")
+            for record in records:
+                reference_by_photo.setdefault(record["photoId"], {"scope": "aircraft", "entryPath": entry_path, "targetPinId": "", "index": record["index"]})
+            logo_path = self._database_asset_path(unit.get("logo_source")) if unit.get("logo_source") else None
+            hero_photo = photos.get(unit.get("hero_photo_id")) or {}
+            hero_source = clean_text(hero_photo.get("source_path"))
+            aircraft_entries.append(
+                {
+                    "targetKey": entry_path,
+                    "sourceScope": "aircraft",
+                    "entryPath": entry_path,
+                    "entryDir": "content",
+                    "aircraftId": aircraft_row["id"],
+                    "unitId": unit["id"],
+                    "aircraftType": aircraft_row["name"],
+                    "aircraftDoubleWidth": (
+                        None if aircraft_row.get("double_width") is None else bool(aircraft_row.get("double_width"))
+                    ),
+                    "squadronName": unit["name"],
+                    "country": countries[unit["country_id"]]["name"],
+                    "unitType": unit["kind"],
+                    "unitLabel": "Organisation" if unit["kind"] == "organisation" else "Squadron",
+                    "aircraftFamily": aircraft_row["family"],
+                    "squadronLogo": unit.get("logo_source") or "",
+                    "squadronLogoExists": bool(logo_path and logo_path.is_file()),
+                    "squadronHero": hero_source,
+                    "squadronHeroAssetPath": hero_source,
+                    # Logos belong to the unit, not to each aircraft/unit
+                    # relationship. The unit entry below is the sole editor and
+                    # missing-field record for this shared value.
+                    "entryMissingFields": [],
+                    "photoCount": len(records),
+                    "missingPhotoCount": sum(record.get("exists") is False for record in records),
+                    "missingFieldPhotoCount": sum(bool(record.get("missingFields")) for record in records),
+                    "photos": records,
+                }
+            )
+
+        for unit in units.values():
+            entry_path = f"db:unit:{unit['id']}"
+            ids = sorted(
+                photo_id
+                for photo_id, values in subjects.items()
+                if any(value.get("aircraft_id") is None and value.get("unit_id") == unit["id"] for value in values)
+            )
+            records = indexed_records(ids, entry_path, "squadron photo", unit["name"])
+            for record in records:
+                reference_by_photo.setdefault(record["photoId"], {"scope": "squadron", "entryPath": entry_path, "targetPinId": "", "index": record["index"]})
+            logo_path = self._database_asset_path(unit.get("logo_source")) if unit.get("logo_source") else None
+            hero_photo = photos.get(unit.get("hero_photo_id")) or {}
+            hero_source = clean_text(hero_photo.get("source_path"))
+            unit_entries.append(
+                {
+                    "targetKey": entry_path,
+                    "sourceScope": "squadron",
+                    "entryPath": entry_path,
+                    "entryDir": "content",
+                    "unitId": unit["id"],
+                    "aircraftType": "",
+                    "squadronName": unit["name"],
+                    "country": countries[unit["country_id"]]["name"],
+                    "unitType": unit["kind"],
+                    "unitLabel": "Organisation" if unit["kind"] == "organisation" else "Squadron",
+                    "aircraftFamily": "",
+                    "squadronLogo": unit.get("logo_source") or "",
+                    "squadronLogoExists": bool(logo_path and logo_path.is_file()),
+                    "squadronHero": hero_source,
+                    "squadronHeroAssetPath": hero_source,
+                    "entryMissingFields": ["squadronLogo"] if not (logo_path and logo_path.is_file()) else [],
+                    "photoCount": len(records),
+                    "missingPhotoCount": sum(record.get("exists") is False for record in records),
+                    "missingFieldPhotoCount": sum(bool(record.get("missingFields")) for record in records),
+                    "photos": records,
+                }
+            )
+
+        for location in locations.values():
+            entry_path = f"db:location:{location['id']}"
+            ids = sorted(photo_id for photo_id, photo in photos.items() if photo["location_id"] == location["id"] and not subjects.get(photo_id))
+            records = indexed_records(ids, entry_path, "location photo", location["name"])
+            for record in records:
+                reference_by_photo.setdefault(record["photoId"], {"scope": "location", "entryPath": entry_path, "targetPinId": location["id"], "index": record["index"]})
+            hero_photo = photos.get(location.get("hero_photo_id")) or {}
+            hero_source = clean_text(hero_photo.get("source_path"))
+            pin = {
+                "key": entry_path,
+                "id": location["id"],
+                "name": location["name"],
+                "country": countries[location["country_id"]]["name"],
+                "icao": location.get("icao") or "",
+                "lat": location["latitude"],
+                "lon": location["longitude"],
+                "enabled": bool(location["enabled"]),
+                "pinPath": entry_path,
+                "pinIndex": 0,
+                "heroPhoto": hero_source,
+                "heroAssetPath": hero_source,
+                "heroExists": bool(hero_source and (self.raw_assets_dir / hero_source).is_file()),
+                "photoCount": sum(photo["location_id"] == location["id"] for photo in photos.values()),
+                "photos": records,
+            }
+            pins.append(pin)
+            location_entries.append(
+                {
+                    "targetKey": f"location::{entry_path}",
+                    "sourceScope": "location",
+                    "entryPath": entry_path,
+                    "pinId": location["id"],
+                    "entryDir": "content",
+                    "aircraftType": "",
+                    "squadronName": "",
+                    "country": pin["country"],
+                    "unitType": "",
+                    "unitLabel": "Location",
+                    "aircraftFamily": "",
+                    "squadronLogo": "",
+                    "squadronLogoExists": False,
+                    "entryMissingFields": [],
+                    "photoCount": len(records),
+                    "missingPhotoCount": sum(record.get("exists") is False for record in records),
+                    "missingFieldPhotoCount": sum(bool(record.get("missingFields")) for record in records),
+                    "photos": records,
+                    "locationName": location["name"],
+                }
+            )
+
+        for aircraft_row in aircraft.values():
+            candidate_photos: List[Dict[str, Any]] = []
+            seen_photo_ids: set[str] = set()
+            for entry in aircraft_entries:
+                if entry.get("aircraftId") != aircraft_row["id"]:
+                    continue
+                for photo in entry.get("photos", []):
+                    photo_id = clean_text(photo.get("photoId"))
+                    if not photo_id or photo_id in seen_photo_ids:
+                        continue
+                    candidate = dict(photo)
+                    candidate["entryTargetKey"] = entry["targetKey"]
+                    candidate_photos.append(candidate)
+                    seen_photo_ids.add(photo_id)
+            hero_photo = photos.get(aircraft_row.get("hero_photo_id")) or {}
+            hero_source = clean_text(hero_photo.get("source_path"))
+            aircraft_catalog.append(
+                {
+                    "id": aircraft_row["id"],
+                    "name": aircraft_row["name"],
+                    "family": aircraft_row["family"],
+                    "doubleWidth": (
+                        None if aircraft_row.get("double_width") is None else bool(aircraft_row.get("double_width"))
+                    ),
+                    "heroPhotoId": clean_text(aircraft_row.get("hero_photo_id")),
+                    "heroAssetPath": hero_source,
+                    "heroExists": bool(hero_source and (self.raw_assets_dir / hero_source).is_file()),
+                    "photoCount": len(candidate_photos),
+                    "photos": candidate_photos,
+                }
+            )
+
+        for unit in units.values():
+            logo = clean_text(unit.get("logo_source"))
+            if logo and (self.raw_assets_dir / logo).is_file():
+                tag_map.setdefault(logo, []).append({"kind": "logo", "label": unit["name"], "path": f"db:unit:{unit['id']}"})
+            hero = photos.get(unit.get("hero_photo_id")) or {}
+            if hero.get("source_path"):
+                tag_map.setdefault(hero["source_path"], []).append({"kind": "squadron hero", "label": unit["name"], "path": f"db:unit:{unit['id']}"})
+        for location in locations.values():
+            hero = photos.get(location.get("hero_photo_id")) or {}
+            if hero.get("source_path"):
+                tag_map.setdefault(hero["source_path"], []).append({"kind": "pin hero", "label": location["name"], "path": f"db:location:{location['id']}"})
+        for aircraft_row in aircraft.values():
+            hero = photos.get(aircraft_row.get("hero_photo_id")) or {}
+            if hero.get("source_path"):
+                tag_map.setdefault(hero["source_path"], []).append({"kind": "aircraft hero", "label": aircraft_row["name"], "path": f"db:aircraft:{aircraft_row['id']}"})
+
+        entries = aircraft_entries + unit_entries + location_entries
+        assets = self._scan_assets(tag_map)
+        master_photos: List[Dict[str, Any]] = []
+        for photo_id, photo in photos.items():
+            location = locations[photo["location_id"]]
+            event = events.get(photo.get("event_id")) or {}
+            subject_items: List[Dict[str, Any]] = []
+            for subject in subjects.get(photo_id, []):
+                aircraft_row = aircraft.get(subject.get("aircraft_id")) if subject.get("aircraft_id") else None
+                unit = units.get(subject.get("unit_id")) if subject.get("unit_id") else None
+                if not aircraft_row and not unit:
+                    continue
+                subject_item = {
+                    "aircraftId": aircraft_row["id"] if aircraft_row else "",
+                    "aircraftType": aircraft_row["name"] if aircraft_row else "",
+                    "unitId": unit["id"] if unit else "",
+                    "unitName": unit["name"] if unit else "",
+                    "country": countries[unit["country_id"]]["name"] if unit else "",
+                    "isPrimary": bool(subject.get("is_primary")),
+                }
+                subject_item["entryPath"] = (
+                    f"db:aircraft:{subject_item['aircraftId']}:{subject_item['unitId']}"
+                    if subject_item["aircraftId"]
+                    else f"db:unit:{subject_item['unitId']}"
+                )
+                subject_items.append(subject_item)
+            record = photo_record_cache[photo_id]
+            master_photos.append(
+                {
+                    "id": photo_id,
+                    "path": photo["source_path"],
+                    "sourceAssetPath": record["sourceAssetPath"],
+                    "exists": record["exists"],
+                    "sourceWidth": record["sourceWidth"],
+                    "sourceHeight": record["sourceHeight"],
+                    "locationId": location["id"],
+                    "location": location["name"],
+                    "country": countries[location["country_id"]]["name"],
+                    "eventId": photo.get("event_id") or "",
+                    "airshow": event.get("name", ""),
+                    "date": photo.get("date_override") or "",
+                    "exifDate": record["exifDate"],
+                    "title": photo.get("title") or "",
+                    "caption": photo.get("caption") or "",
+                    "livery": photo.get("livery") or "",
+                    "captionAiAssisted": bool(photo.get("caption_ai_assisted")),
+                    "subjects": subject_items,
+                }
+            )
+        master_photos.sort(key=lambda item: (
+            not bool(item.get("date") or item.get("exifDate")),
+            -(capture_date_sort_value(item.get("date") or item.get("exifDate") or "")),
+            item["path"],
+        ))
+        airshow_events = [
+            {"id": event["id"], "name": event["name"], "hero": reference_by_photo.get(event.get("hero_photo_id"), {})}
+            for event in events.values()
+        ]
+        squadron_groups = self._squadron_groups(entries)
+        return {
+            "project": {
+                "root": self.root.as_posix(),
+                "databasePath": relative_posix(self.database_path, self.root),
+                "databaseIntegrity": "ok" if not integrity_errors else "error",
+                "databaseErrors": integrity_errors,
+                "sqlSnapshotCurrent": snapshot_current,
+                "aircraftCount": len(aircraft),
+                "squadronEntryCount": len(units),
+                "locationEntryCount": len(location_entries),
+                "photoCount": len(master_photos),
+                "pinCount": len(pins),
+                "assetCount": len(assets),
+                "taggedAssetCount": sum(1 for asset in assets if asset["tags"]),
+                "untaggedAssetCount": sum(1 for asset in assets if not asset["tags"]),
+                "missingPhotoCount": sum(not record["exists"] for record in photo_record_cache.values()),
+                "missingFieldPhotoCount": sum(bool(record["missingFields"]) for record in photo_record_cache.values()),
+                "missingEntryFieldCount": sum(1 for entry in entries if entry.get("entryMissingFields")),
+                "underResolutionAssetCount": sum(1 for asset in assets if asset.get("isPhotoSource") and asset.get("isUnderResolution")),
+                "exposureIssueAssetCount": sum(1 for asset in assets if asset.get("hasExposureIssue")),
+                "colourBalanceIssueAssetCount": sum(1 for asset in assets if asset.get("hasColourBalanceIssue")),
+                "qualityIssueAssetCount": sum(1 for asset in assets if asset.get("isPhotoSource") and (asset.get("isUnderResolution") or asset.get("qualityFlags"))),
+                "acknowledgedQualityCount": sum(1 for asset in assets if asset.get("qualityAcknowledged")),
+                "minimumSourcePhotoWidth": MIN_SOURCE_PHOTO_WIDTH,
+            },
+            "aircraft": sorted(aircraft_entries, key=lambda item: (item["aircraftType"], item["country"], item["squadronName"])),
+            "aircraftCatalog": sorted(aircraft_catalog, key=lambda item: (item["name"], item["id"])),
+            "squadrons": sorted(unit_entries, key=lambda item: (item["country"], item["squadronName"])),
+            "squadronGroups": squadron_groups,
+            "entries": entries,
+            "masterPhotos": master_photos,
+            "pins": sorted(pins, key=lambda item: (item["country"], item["name"])),
+            "assets": assets,
+            "airshowEvents": sorted(airshow_events, key=lambda item: item["name"]),
+        }
+
+    @staticmethod
+    def _unique_database_id(connection: sqlite3.Connection, table: str, base: str) -> str:
+        candidate = slugify(base)
+        suffix = 2
+        while connection.execute(f'SELECT 1 FROM "{table}" WHERE id=?', (candidate,)).fetchone():
+            candidate = f"{slugify(base)}-{suffix}"
+            suffix += 1
+        return candidate
+
+    @staticmethod
+    def _database_country_id(connection: sqlite3.Connection, country_name: str) -> str:
+        row = connection.execute("SELECT id FROM countries WHERE lower(name)=lower(?)", (country_name,)).fetchone()
+        if not row:
+            raise ValueError(f"Unknown country '{country_name}'. Add it through a catalog migration first.")
+        return str(row[0])
+
+    def _ensure_database_event(
+        self,
+        connection: sqlite3.Connection,
+        name: str,
+        location_id: str,
+        capture_date: str = "",
+    ) -> Optional[str]:
+        name = clean_text(name)
+        if not name:
+            return None
+        row = connection.execute("SELECT id FROM events WHERE lower(name)=lower(?)", (name,)).fetchone()
+        if row:
+            event_id = str(row[0])
+        else:
+            country = connection.execute("SELECT country_id FROM locations WHERE id=?", (location_id,)).fetchone()
+            prefix = str(country[0]) if country else "global"
+            event_id = self._unique_database_id(connection, "events", f"{prefix}-{name}")
+            connection.execute(
+                "INSERT INTO events(id,name,starts_on,ends_on) VALUES(?,?,?,?)",
+                (event_id, name, capture_date or None, capture_date or None),
+            )
+        connection.execute(
+            "INSERT OR IGNORE INTO event_locations(event_id,location_id) VALUES(?,?)",
+            (event_id, location_id),
+        )
+        if capture_date:
+            connection.execute(
+                "UPDATE events SET starts_on=CASE WHEN starts_on IS NULL OR starts_on>? THEN ? ELSE starts_on END, "
+                "ends_on=CASE WHEN ends_on IS NULL OR ends_on<? THEN ? ELSE ends_on END WHERE id=?",
+                (capture_date, capture_date, capture_date, capture_date, event_id),
+            )
+        return event_id
+
+    def _database_target_subject(self, entry_path: str) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+        parts = self._database_entry_parts(entry_path)
+        if parts[1] == "aircraft" and len(parts) == 4:
+            return parts[2], parts[3], None
+        if parts[1] == "unit" and len(parts) == 3:
+            return None, parts[2], None
+        if parts[1] == "location" and len(parts) == 3:
+            return None, None, parts[2]
+        raise ValueError("Database target is invalid.")
+
+    def _database_append_photos(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        asset_paths = payload.get("assetPaths") or []
+        if not isinstance(asset_paths, list) or not asset_paths:
+            raise ValueError("Select at least one raw asset.")
+        entry_path = clean_text(payload.get("entryPath"))
+        squadron_target = payload.get("squadronTarget")
+
+        def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            nonlocal entry_path
+            if squadron_target and not entry_path:
+                country_id = self._database_country_id(connection, clean_text(squadron_target.get("country")))
+                unit = connection.execute(
+                    "SELECT id FROM units WHERE country_id=? AND lower(name)=lower(?)",
+                    (country_id, clean_text(squadron_target.get("squadronName"))),
+                ).fetchone()
+                if not unit:
+                    raise ValueError("The selected unit no longer exists.")
+                entry_path = f"db:unit:{unit[0]}"
+            aircraft_id, unit_id, target_location_id = self._database_target_subject(entry_path)
+            location_id = target_location_id or clean_text(payload.get("pinId"))
+            if not connection.execute("SELECT 1 FROM locations WHERE id=?", (location_id,)).fetchone():
+                raise ValueError("Choose a valid location.")
+            date_override = normalize_date_value(payload.get("date")) or None
+            appended: List[str] = []
+            skipped: List[str] = []
+            for value in asset_paths:
+                source_path = self._raw_asset_path(value)
+                if not source_path.is_file() or source_path.suffix.lower() not in IMAGE_EXTENSIONS:
+                    skipped.append(f"{value} (missing or unsupported)")
+                    continue
+                source_rel = relative_posix(source_path, self.raw_assets_dir)
+                if connection.execute("SELECT 1 FROM photos WHERE source_path=?", (source_rel,)).fetchone():
+                    skipped.append(f"{source_rel} (already cataloged)")
+                    continue
+                exif_date = read_image_capture_date(source_path, self._exif_date_cache)
+                capture_date = date_override or exif_date
+                prefix = capture_date if re.fullmatch(r"\d{4}-\d{2}-\d{2}", capture_date or "") else "undated"
+                photo_id = self._unique_database_id(connection, "photos", f"{prefix}-{source_path.stem}")
+                event_id = self._ensure_database_event(
+                    connection,
+                    clean_text(payload.get("airshow")),
+                    location_id,
+                    capture_date or "",
+                )
+                connection.execute(
+                    "INSERT INTO photos(id,source_path,location_id,event_id,date_override,caption,livery,caption_ai_assisted) "
+                    "VALUES(?,?,?,?,?,?,?,?)",
+                    (
+                        photo_id,
+                        source_rel,
+                        location_id,
+                        event_id,
+                        date_override,
+                        clean_text(payload.get("caption")),
+                        clean_text(payload.get("livery")),
+                        1 if payload.get("captionAiAssisted") else 0,
+                    ),
+                )
+                if aircraft_id or unit_id:
+                    connection.execute(
+                        "INSERT INTO photo_subjects(photo_id,position,aircraft_id,unit_id,is_primary) VALUES(?,?,?,?,1)",
+                        (photo_id, 0, aircraft_id, unit_id),
+                    )
+                appended.append(source_rel)
+            return {"ok": True, "message": f"Attached {len(appended)} asset(s).", "appended": appended, "skipped": skipped}
+
+        return self._database_write(operation)
+
+    def _database_update_photo(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        incoming = payload.get("photo") or {}
+        if not isinstance(incoming, dict):
+            raise ValueError("Photo payload must be an object.")
+
+        def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            photo_id = self._database_photo_id(connection, payload)
+            current = connection.execute("SELECT * FROM photos WHERE id=?", (photo_id,)).fetchone()
+            if not current:
+                raise ValueError("Photo no longer exists.")
+            source_path = clean_text(incoming.get("path"))
+            if not source_path:
+                raise ValueError("Photo path is required.")
+            location_id = clean_text(incoming.get("pin_id")) or str(current["location_id"])
+            if not connection.execute("SELECT 1 FROM locations WHERE id=?", (location_id,)).fetchone():
+                raise ValueError("Choose a valid location.")
+            date_override = normalize_date_value(incoming.get("date")) or None
+            source_abs = self.raw_assets_dir / source_path
+            capture_date = date_override or (read_image_capture_date(source_abs, self._exif_date_cache) if source_abs.is_file() else "")
+            event_id = self._ensure_database_event(connection, clean_text(incoming.get("airshow")), location_id, capture_date)
+            connection.execute(
+                "UPDATE photos SET source_path=?,location_id=?,event_id=?,date_override=?,title=?,caption=?,livery=?,caption_ai_assisted=? WHERE id=?",
+                (
+                    source_path,
+                    location_id,
+                    event_id,
+                    date_override,
+                    clean_text(incoming.get("title")),
+                    clean_text(incoming.get("caption")),
+                    clean_text(incoming.get("livery")),
+                    1 if payload_caption_is_ai_assisted(incoming) or current["caption_ai_assisted"] else 0,
+                    photo_id,
+                ),
+            )
+            destination = clean_text(payload.get("tagTargetEntryPath"))
+            squadron = payload.get("tagTargetSquadron")
+            if squadron and not destination:
+                country_id = self._database_country_id(connection, clean_text(squadron.get("country")))
+                unit = connection.execute(
+                    "SELECT id FROM units WHERE country_id=? AND lower(name)=lower(?)",
+                    (country_id, clean_text(squadron.get("squadronName"))),
+                ).fetchone()
+                if not unit:
+                    raise ValueError("The selected unit no longer exists.")
+                destination = f"db:unit:{unit[0]}"
+            if destination and destination != clean_text(payload.get("entryPath")):
+                aircraft_id, unit_id, _ = self._database_target_subject(destination)
+                connection.execute("DELETE FROM photo_subjects WHERE photo_id=?", (photo_id,))
+                if aircraft_id or unit_id:
+                    connection.execute(
+                        "INSERT INTO photo_subjects(photo_id,position,aircraft_id,unit_id,is_primary) VALUES(?,?,?,?,1)",
+                        (photo_id, 0, aircraft_id, unit_id),
+                    )
+            return {"ok": True, "message": "Photo updated."}
+
+        return self._database_write(operation)
+
+    def _database_update_master_photo(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        incoming = payload.get("photo") or {}
+        if not isinstance(incoming, dict):
+            raise ValueError("Photo payload must be an object.")
+        photo_id = clean_text(payload.get("photoId"))
+        if not photo_id:
+            raise ValueError("Photo id is required.")
+
+        def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            current = connection.execute("SELECT * FROM photos WHERE id=?", (photo_id,)).fetchone()
+            if not current:
+                raise ValueError("Photo no longer exists.")
+            location_id = clean_text(incoming.get("locationId")) or str(current["location_id"])
+            if not connection.execute("SELECT 1 FROM locations WHERE id=?", (location_id,)).fetchone():
+                raise ValueError("Choose a valid location.")
+            date_override = normalize_date_value(incoming.get("date")) or None
+            source_abs = self.raw_assets_dir / current["source_path"]
+            capture_date = date_override or (
+                read_image_capture_date(source_abs, self._exif_date_cache) if source_abs.is_file() else ""
+            )
+            event_id = self._ensure_database_event(
+                connection,
+                clean_text(incoming.get("airshow")),
+                location_id,
+                capture_date,
+            )
+            connection.execute(
+                "UPDATE photos SET location_id=?,event_id=?,date_override=?,title=?,caption=?,livery=? WHERE id=?",
+                (
+                    location_id,
+                    event_id,
+                    date_override,
+                    clean_text(incoming.get("title")),
+                    clean_text(incoming.get("caption")),
+                    clean_text(incoming.get("livery")),
+                    photo_id,
+                ),
+            )
+            return {"ok": True, "message": "Master photo updated.", "photoId": photo_id}
+
+        return self._database_write(operation)
+
+    def _database_bulk_update_photos(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        references = payload.get("photos") or []
+        fields = payload.get("fields") or {}
+        if not isinstance(references, list) or not references:
+            raise ValueError("Choose at least one photo.")
+        if not isinstance(fields, dict) or not fields:
+            raise ValueError("Choose at least one field to update.")
+        unknown_fields = set(fields) - {"locationId", "date", "airshow", "livery", "caption"}
+        if unknown_fields:
+            raise ValueError("Bulk update contains unsupported fields: " + ", ".join(sorted(unknown_fields)))
+
+        def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            photo_ids: List[str] = []
+            for reference in references:
+                if not isinstance(reference, dict):
+                    raise ValueError("Photo references are invalid.")
+                photo_id = clean_text(reference.get("photoId"))
+                if not photo_id:
+                    photo_id = self._database_photo_id(connection, reference)
+                if not connection.execute("SELECT 1 FROM photos WHERE id=?", (photo_id,)).fetchone():
+                    raise ValueError("A selected photo no longer exists.")
+                if photo_id not in photo_ids:
+                    photo_ids.append(photo_id)
+
+            location_id = None
+            if "locationId" in fields:
+                location_id = clean_text(fields.get("locationId"))
+                if not location_id or not connection.execute("SELECT 1 FROM locations WHERE id=?", (location_id,)).fetchone():
+                    raise ValueError("Choose a valid location.")
+
+            for photo_id in photo_ids:
+                current = connection.execute("SELECT * FROM photos WHERE id=?", (photo_id,)).fetchone()
+                next_location_id = location_id or str(current["location_id"])
+                next_date = current["date_override"]
+                if "date" in fields:
+                    next_date = normalize_date_value(fields.get("date")) or None
+
+                next_event_id = current["event_id"]
+                if "airshow" in fields:
+                    event_name = clean_text(fields.get("airshow"))
+                    source_abs = self.raw_assets_dir / current["source_path"]
+                    capture_date = next_date or (
+                        read_image_capture_date(source_abs, self._exif_date_cache) if source_abs.is_file() else ""
+                    )
+                    next_event_id = self._ensure_database_event(
+                        connection,
+                        event_name,
+                        next_location_id,
+                        capture_date,
+                    )
+                elif location_id is not None and next_event_id:
+                    connection.execute(
+                        "INSERT OR IGNORE INTO event_locations(event_id,location_id) VALUES(?,?)",
+                        (next_event_id, next_location_id),
+                    )
+
+                assignments: List[str] = []
+                values: List[Any] = []
+                if location_id is not None:
+                    assignments.append("location_id=?")
+                    values.append(next_location_id)
+                if "date" in fields:
+                    assignments.append("date_override=?")
+                    values.append(next_date)
+                if "airshow" in fields:
+                    assignments.append("event_id=?")
+                    values.append(next_event_id)
+                if "livery" in fields:
+                    assignments.append("livery=?")
+                    values.append(clean_text(fields.get("livery")))
+                if "caption" in fields:
+                    assignments.append("caption=?")
+                    values.append(clean_text(fields.get("caption")))
+                if assignments:
+                    values.append(photo_id)
+                    connection.execute(
+                        f"UPDATE photos SET {','.join(assignments)} WHERE id=?",
+                        values,
+                    )
+
+            return {
+                "ok": True,
+                "updated": len(photo_ids),
+                "message": f"Updated {len(photo_ids)} photo(s).",
+            }
+
+        return self._database_write(operation)
+
+    @staticmethod
+    def _database_clear_photo_hero_references(connection: sqlite3.Connection, photo_id: str) -> None:
+        for table in ("aircraft", "units", "locations", "events"):
+            connection.execute(f"UPDATE {table} SET hero_photo_id=NULL WHERE hero_photo_id=?", (photo_id,))
+
+    def _database_delete_master_photo(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        photo_id = clean_text(payload.get("photoId"))
+        if not photo_id:
+            raise ValueError("Photo id is required.")
+
+        def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            source = connection.execute("SELECT source_path FROM photos WHERE id=?", (photo_id,)).fetchone()
+            if not source:
+                raise ValueError("Photo no longer exists.")
+            self._database_clear_photo_hero_references(connection, photo_id)
+            connection.execute("DELETE FROM photos WHERE id=?", (photo_id,))
+            return {
+                "ok": True,
+                "message": "Raw image detached from the database. The file remains in raw_assets.",
+                "removed": {"id": photo_id, "path": source[0]},
+            }
+
+        return self._database_write(operation)
+
+    def _database_bulk_update_airshow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        references = payload.get("photos") or []
+        if not isinstance(references, list) or not references:
+            raise ValueError("Choose at least one photo to tag.")
+        event_name = clean_text(payload.get("airshow"))
+
+        def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            photo_ids = list(dict.fromkeys(self._database_photo_id(connection, ref) for ref in references if isinstance(ref, dict)))
+            updated = 0
+            for photo_id in photo_ids:
+                photo = connection.execute("SELECT location_id,date_override,event_id,source_path FROM photos WHERE id=?", (photo_id,)).fetchone()
+                source = self.raw_assets_dir / photo["source_path"]
+                capture_date = photo["date_override"] or (read_image_capture_date(source, self._exif_date_cache) if source.is_file() else "")
+                event_id = self._ensure_database_event(connection, event_name, photo["location_id"], capture_date) if event_name else None
+                if photo["event_id"] != event_id:
+                    connection.execute("UPDATE photos SET event_id=? WHERE id=?", (event_id, photo_id))
+                    updated += 1
+            action = f"Set event '{event_name}'" if event_name else "Cleared event"
+            return {"ok": True, "updated": updated, "unchanged": len(photo_ids) - updated, "message": f"{action} on {updated} photo(s)."}
+
+        return self._database_write(operation)
+
+    def _database_set_airshow_hero(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        event_name = clean_text(payload.get("eventName"))
+        if not event_name:
+            raise ValueError("An event name is required.")
+
+        def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            event = connection.execute("SELECT id FROM events WHERE lower(name)=lower(?)", (event_name,)).fetchone()
+            if not event:
+                raise ValueError("Event not found.")
+            hero = payload.get("hero")
+            photo_id = self._database_photo_id(connection, hero) if isinstance(hero, dict) else None
+            if photo_id:
+                tagged = connection.execute("SELECT 1 FROM photos WHERE id=? AND event_id=?", (photo_id, event[0])).fetchone()
+                if not tagged:
+                    raise ValueError("Choose a photo tagged with this event.")
+            connection.execute("UPDATE events SET hero_photo_id=? WHERE id=?", (photo_id, event[0]))
+            return {"ok": True, "message": f"{'Set' if photo_id else 'Cleared'} hero photo for {event_name}."}
+
+        return self._database_write(operation)
+
+    def _database_set_unit_hero(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        hero = payload.get("hero")
+        name = clean_text(payload.get("squadronName"))
+        country = clean_text(payload.get("country"))
+
+        def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            photo_id = self._database_photo_id(connection, hero) if isinstance(hero, dict) else None
+            if photo_id:
+                subject = connection.execute(
+                    "SELECT unit_id FROM photo_subjects WHERE photo_id=? AND unit_id IS NOT NULL ORDER BY is_primary DESC,position LIMIT 1",
+                    (photo_id,),
+                ).fetchone()
+                if not subject:
+                    raise ValueError("Choose a unit-tagged photo.")
+                unit_id = str(subject[0])
+                unit_name = connection.execute("SELECT name FROM units WHERE id=?", (unit_id,)).fetchone()[0]
+            else:
+                country_id = self._database_country_id(connection, country)
+                unit = connection.execute("SELECT id,name FROM units WHERE country_id=? AND lower(name)=lower(?)", (country_id, name)).fetchone()
+                if not unit:
+                    raise ValueError("Unit not found.")
+                unit_id, unit_name = str(unit[0]), str(unit[1])
+            connection.execute("UPDATE units SET hero_photo_id=? WHERE id=?", (photo_id, unit_id))
+            return {"ok": True, "message": f"{'Set' if photo_id else 'Cleared'} hero photo for {unit_name}."}
+
+        return self._database_write(operation)
+
+    def _database_set_aircraft_hero(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        aircraft_id = clean_text(payload.get("aircraftId"))
+        photo_id = clean_text(payload.get("photoId")) or None
+        if not aircraft_id:
+            raise ValueError("Aircraft type is required.")
+
+        def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            aircraft = connection.execute("SELECT name FROM aircraft WHERE id=?", (aircraft_id,)).fetchone()
+            if not aircraft:
+                raise ValueError("Aircraft type not found.")
+            if photo_id:
+                tagged = connection.execute(
+                    "SELECT 1 FROM photo_subjects WHERE photo_id=? AND aircraft_id=? LIMIT 1",
+                    (photo_id, aircraft_id),
+                ).fetchone()
+                if not tagged:
+                    raise ValueError("Choose a photo tagged with this aircraft type.")
+            connection.execute("UPDATE aircraft SET hero_photo_id=? WHERE id=?", (photo_id, aircraft_id))
+            return {
+                "ok": True,
+                "message": f"{'Set' if photo_id else 'Cleared'} hero photo for {aircraft[0]}.",
+            }
+
+        return self._database_write(operation)
+
+    def _database_delete_photo(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            photo_id = self._database_photo_id(connection, payload)
+            source = connection.execute("SELECT source_path FROM photos WHERE id=?", (photo_id,)).fetchone()
+            self._database_clear_photo_hero_references(connection, photo_id)
+            connection.execute("DELETE FROM photos WHERE id=?", (photo_id,))
+            return {"ok": True, "message": "Photo removed.", "removed": {"id": photo_id, "path": source[0] if source else ""}}
+        return self._database_write(operation)
+
+    def _database_update_aircraft_settings(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        aircraft_id = clean_text(payload.get("aircraftId"))
+        if not aircraft_id:
+            raise ValueError("Aircraft type is required.")
+        if "doubleWidth" not in payload:
+            raise ValueError("Choose an aircraft card width.")
+        double_width = normalize_optional_boolean(payload.get("doubleWidth"))
+
+        def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            aircraft = connection.execute("SELECT name FROM aircraft WHERE id=?", (aircraft_id,)).fetchone()
+            if not aircraft:
+                raise ValueError("Aircraft type not found.")
+            connection.execute(
+                "UPDATE aircraft SET double_width=? WHERE id=?",
+                (None if double_width is None else int(double_width), aircraft_id),
+            )
+            label = "Automatic" if double_width is None else "Double width" if double_width else "Standard width"
+            return {"ok": True, "message": f"{aircraft[0]} set to {label.lower()}."}
+
+        return self._database_write(operation)
+
+    def _database_update_entry(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        entry_path = clean_text(payload.get("entryPath"))
+        parts = self._database_entry_parts(entry_path)
+
+        def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            if parts[1] == "aircraft":
+                aircraft_id, unit_id = parts[2], parts[3]
+                name = clean_text(payload.get("aircraftType"))
+                family = normalize_aircraft_family(payload.get("aircraftFamily"))
+                if name:
+                    connection.execute("UPDATE aircraft SET name=? WHERE id=?", (name, aircraft_id))
+                if family:
+                    connection.execute("UPDATE aircraft SET family=? WHERE id=?", (family, aircraft_id))
+                if "aircraftDoubleWidth" in payload:
+                    double_width = normalize_optional_boolean(payload.get("aircraftDoubleWidth"))
+                    connection.execute(
+                        "UPDATE aircraft SET double_width=? WHERE id=?",
+                        (None if double_width is None else int(double_width), aircraft_id),
+                    )
+            elif parts[1] == "unit":
+                unit_id = parts[2]
+            else:
+                raise ValueError("Only aircraft and unit entries can be edited here.")
+            unit_name = clean_text(payload.get("squadronName"))
+            country = clean_text(payload.get("country"))
+            kind = clean_text(payload.get("unitType")) or "squadron"
+            country_id = self._database_country_id(connection, country) if country else None
+            connection.execute(
+                "UPDATE units SET name=COALESCE(NULLIF(?,''),name),kind=?,country_id=COALESCE(?,country_id) WHERE id=?",
+                (unit_name, kind, country_id, unit_id),
+            )
+            if parts[1] == "unit" and "squadronLogo" in payload:
+                connection.execute(
+                    "UPDATE units SET logo_source=? WHERE id=?",
+                    (clean_text(payload.get("squadronLogo")), unit_id),
+                )
+            return {"ok": True, "message": "Entry metadata updated."}
+
+        return self._database_write(operation)
+
+    def _database_update_unit_logo(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        unit_id = clean_text(payload.get("unitId"))
+        logo_source = clean_text(payload.get("logoSource"))
+
+        def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            unit = connection.execute("SELECT name FROM units WHERE id=?", (unit_id,)).fetchone()
+            if not unit:
+                raise ValueError("Squadron not found.")
+            connection.execute("UPDATE units SET logo_source=? WHERE id=?", (logo_source, unit_id))
+            action = "cleared" if not logo_source else "updated"
+            return {"ok": True, "message": f"{unit[0]} logo {action}."}
+
+        return self._database_write(operation)
+
+    def _database_delete_entry(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        source_path = clean_text(payload.get("entryPath"))
+        mode = clean_text(payload.get("mode"))
+        destination_path = clean_text(payload.get("destinationEntryPath"))
+        if mode not in {"transfer", "untag"}:
+            raise ValueError("Choose whether to transfer or untag affected photos.")
+        source = self._database_entry_parts(source_path)
+        if source[1] not in {"aircraft", "unit"}:
+            raise ValueError("Only aircraft and unit sources can be deleted here.")
+        destination = self._database_entry_parts(destination_path) if mode == "transfer" else None
+        if destination and destination[1] not in {"aircraft", "unit"}:
+            raise ValueError("Choose an aircraft or unit destination.")
+        if destination_path == source_path:
+            raise ValueError("Choose a different destination entry.")
+
+        def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            if source[1] == "aircraft":
+                source_aircraft_id, source_unit_id = source[2], source[3]
+                exists = connection.execute(
+                    "SELECT 1 FROM aircraft_units WHERE aircraft_id=? AND unit_id=?",
+                    (source_aircraft_id, source_unit_id),
+                ).fetchone()
+                if not exists:
+                    raise ValueError("Source entry not found.")
+                affected_rows = connection.execute(
+                    "SELECT DISTINCT photo_id FROM photo_subjects WHERE aircraft_id=? AND unit_id=?",
+                    (source_aircraft_id, source_unit_id),
+                ).fetchall()
+                source_label = connection.execute(
+                    "SELECT a.name || ' / ' || u.name FROM aircraft a JOIN units u ON u.id=? WHERE a.id=?",
+                    (source_unit_id, source_aircraft_id),
+                ).fetchone()[0]
+            else:
+                source_aircraft_id, source_unit_id = None, source[2]
+                unit = connection.execute("SELECT name FROM units WHERE id=?", (source_unit_id,)).fetchone()
+                if not unit:
+                    raise ValueError("Source unit not found.")
+                affected_rows = connection.execute(
+                    "SELECT DISTINCT photo_id FROM photo_subjects WHERE unit_id=?",
+                    (source_unit_id,),
+                ).fetchall()
+                source_label = unit[0]
+
+            dest_aircraft_id: Optional[str] = None
+            dest_unit_id: Optional[str] = None
+            if destination:
+                if destination[1] == "aircraft":
+                    dest_aircraft_id, dest_unit_id = destination[2], destination[3]
+                    if not connection.execute(
+                        "SELECT 1 FROM aircraft_units WHERE aircraft_id=? AND unit_id=?",
+                        (dest_aircraft_id, dest_unit_id),
+                    ).fetchone():
+                        raise ValueError("Destination entry not found.")
+                else:
+                    dest_unit_id = destination[2]
+                    if not connection.execute("SELECT 1 FROM units WHERE id=?", (dest_unit_id,)).fetchone():
+                        raise ValueError("Destination unit not found.")
+                if source[1] == "unit" and dest_unit_id == source_unit_id:
+                    raise ValueError("Choose a destination outside the unit being deleted.")
+
+            affected_photo_ids = [str(row[0]) for row in affected_rows]
+            for photo_id in affected_photo_ids:
+                subjects = [dict(row) for row in connection.execute(
+                    "SELECT position,aircraft_id,unit_id,is_primary FROM photo_subjects WHERE photo_id=? ORDER BY position",
+                    (photo_id,),
+                )]
+                removed_primary = False
+                survivors: List[Dict[str, Any]] = []
+                for subject in subjects:
+                    matches = (
+                        subject.get("unit_id") == source_unit_id
+                        and (source[1] == "unit" or subject.get("aircraft_id") == source_aircraft_id)
+                    )
+                    if matches:
+                        removed_primary = removed_primary or bool(subject.get("is_primary"))
+                    else:
+                        survivors.append(subject)
+                if mode == "transfer":
+                    destination_index = next((index for index, item in enumerate(survivors) if item.get("aircraft_id") == dest_aircraft_id and item.get("unit_id") == dest_unit_id), None)
+                    if destination_index is None:
+                        survivors.append({"aircraft_id": dest_aircraft_id, "unit_id": dest_unit_id, "is_primary": 0})
+                        destination_index = len(survivors) - 1
+                    if removed_primary:
+                        for item in survivors:
+                            item["is_primary"] = 0
+                        survivors[destination_index]["is_primary"] = 1
+                if survivors and not any(item.get("is_primary") for item in survivors):
+                    survivors[0]["is_primary"] = 1
+                connection.execute("DELETE FROM photo_subjects WHERE photo_id=?", (photo_id,))
+                for position, subject in enumerate(survivors):
+                    connection.execute(
+                        "INSERT INTO photo_subjects(photo_id,position,aircraft_id,unit_id,is_primary) VALUES(?,?,?,?,?)",
+                        (photo_id, position, subject.get("aircraft_id"), subject.get("unit_id"), int(bool(subject.get("is_primary")))),
+                    )
+
+            if source[1] == "aircraft":
+                connection.execute(
+                    "DELETE FROM aircraft_units WHERE aircraft_id=? AND unit_id=?",
+                    (source_aircraft_id, source_unit_id),
+                )
+            else:
+                connection.execute("DELETE FROM units WHERE id=?", (source_unit_id,))
+            connection.execute(
+                "DELETE FROM aircraft WHERE NOT EXISTS(SELECT 1 FROM aircraft_units au WHERE au.aircraft_id=aircraft.id) "
+                "AND NOT EXISTS(SELECT 1 FROM photo_subjects ps WHERE ps.aircraft_id=aircraft.id)"
+            )
+            action = "transferred" if mode == "transfer" else "untagged"
+            return {"ok": True, "message": f"Deleted {source_label}; {action} {len(affected_photo_ids)} photo(s).", "affectedPhotos": len(affected_photo_ids)}
+
+        return self._database_write(operation)
+
+    def _database_create_entry(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        scope = clean_text(payload.get("scope")) or "aircraft"
+        aircraft_name = clean_text(payload.get("aircraftType"))
+        family = normalize_aircraft_family(payload.get("aircraftFamily"))
+        unit_name = clean_text(payload.get("squadronName"))
+        country_name = clean_text(payload.get("country"))
+        kind = clean_text(payload.get("unitType")) or "squadron"
+        logo = clean_text(payload.get("squadronLogo"))
+        aircraft_double_width = (
+            normalize_optional_boolean(payload.get("aircraftDoubleWidth"))
+            if "aircraftDoubleWidth" in payload
+            else None
+        )
+        if not unit_name or not country_name or (scope == "aircraft" and (not aircraft_name or not family)):
+            raise ValueError("Complete the required aircraft/unit fields.")
+
+        def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            country_id = self._database_country_id(connection, country_name)
+            unit = connection.execute(
+                "SELECT id FROM units WHERE country_id=? AND lower(name)=lower(?) AND kind=?",
+                (country_id, unit_name, kind),
+            ).fetchone()
+            if unit:
+                unit_id = str(unit[0])
+            else:
+                unit_id = self._unique_database_id(connection, "units", f"{country_id}-{unit_name}")
+                connection.execute(
+                    "INSERT INTO units(id,name,country_id,kind,logo_source) VALUES(?,?,?,?,?)",
+                    (unit_id, unit_name, country_id, kind, logo),
+                )
+            if scope == "aircraft":
+                aircraft = connection.execute("SELECT id FROM aircraft WHERE lower(name)=lower(?)", (aircraft_name,)).fetchone()
+                if aircraft:
+                    aircraft_id = str(aircraft[0])
+                    if "aircraftDoubleWidth" in payload:
+                        connection.execute(
+                            "UPDATE aircraft SET double_width=? WHERE id=?",
+                            (None if aircraft_double_width is None else int(aircraft_double_width), aircraft_id),
+                        )
+                else:
+                    aircraft_id = self._unique_database_id(connection, "aircraft", aircraft_name)
+                    connection.execute(
+                        "INSERT INTO aircraft(id,name,family,double_width) VALUES(?,?,?,?)",
+                        (aircraft_id, aircraft_name, family, None if aircraft_double_width is None else int(aircraft_double_width)),
+                    )
+                connection.execute("INSERT OR IGNORE INTO aircraft_units(aircraft_id,unit_id) VALUES(?,?)", (aircraft_id, unit_id))
+                entry_path = f"db:aircraft:{aircraft_id}:{unit_id}"
+            else:
+                entry_path = f"db:unit:{unit_id}"
+            return {"ok": True, "message": "Entry created.", "entryPath": entry_path, "scope": scope}
+
+        return self._database_write(operation)
+
+    def _database_create_pin(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        country = clean_text(payload.get("country"))
+        name = clean_text(payload.get("name"))
+        lat = parse_float(payload.get("lat"), "Latitude")
+        lon = parse_float(payload.get("lon"), "Longitude")
+        if not country or not name or not -90 <= lat <= 90 or not -180 <= lon <= 180:
+            raise ValueError("Valid country, location name, latitude, and longitude are required.")
+
+        def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            country_id = self._database_country_id(connection, country)
+            requested = clean_text(payload.get("id")) or name
+            location_id = self._unique_database_id(connection, "locations", f"{country_id}-{requested}")
+            connection.execute(
+                "INSERT INTO locations(id,name,country_id,icao,latitude,longitude,enabled) VALUES(?,?,?,?,?,?,?)",
+                (location_id, name, country_id, clean_text(payload.get("icao")).upper(), lat, lon, 1),
+            )
+            return {"ok": True, "message": "Pin created.", "pinId": location_id, "pinPath": f"db:location:{location_id}"}
+
+        return self._database_write(operation)
+
+    def _database_create_event(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        name = clean_text(payload.get("name"))
+        location_id = clean_text(payload.get("locationId"))
+        starts_on = normalize_date_value(payload.get("startsOn"))
+        ends_on = normalize_date_value(payload.get("endsOn")) or starts_on
+        if not name or not location_id:
+            raise ValueError("Event name and location are required.")
+        if starts_on and ends_on and starts_on > ends_on:
+            raise ValueError("Event end date cannot be before its start date.")
+
+        def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            location = connection.execute("SELECT country_id FROM locations WHERE id=?", (location_id,)).fetchone()
+            if not location:
+                raise ValueError("Event location not found.")
+            if connection.execute("SELECT 1 FROM events WHERE lower(name)=lower(?)", (name,)).fetchone():
+                raise ValueError("An event with this name already exists.")
+            event_id = self._unique_database_id(connection, "events", f"{location[0]}-{name}")
+            connection.execute(
+                "INSERT INTO events(id,name,starts_on,ends_on) VALUES(?,?,?,?)",
+                (event_id, name, starts_on or None, ends_on or None),
+            )
+            connection.execute(
+                "INSERT INTO event_locations(event_id,location_id) VALUES(?,?)",
+                (event_id, location_id),
+            )
+            return {"ok": True, "message": "Event created.", "eventId": event_id, "name": name}
+
+        return self._database_write(operation)
+
+    def _database_set_pin_hero(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        pin_id = clean_text(payload.get("pinId"))
+        clear = payload.get("clear") is True
+        asset_rel = clean_text(payload.get("assetPath"))
+
+        def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            if not connection.execute("SELECT 1 FROM locations WHERE id=?", (pin_id,)).fetchone():
+                raise ValueError("Location not found.")
+            photo_id = None
+            if not clear:
+                row = connection.execute("SELECT id FROM photos WHERE source_path=?", (asset_rel,)).fetchone()
+                if not row:
+                    raise ValueError("Location heroes must use an image already stored in the photo catalog.")
+                photo_id = str(row[0])
+            connection.execute("UPDATE locations SET hero_photo_id=? WHERE id=?", (photo_id, pin_id))
+            return {"ok": True, "message": "Location hero cleared." if clear else "Location hero updated."}
+
+        return self._database_write(operation)
+
+    def _database_generate_caption(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        connection = self._database_connection(read_only=True)
+        try:
+            entry_path = clean_text(payload.get("entryPath"))
+            aircraft_id, unit_id, location_target = self._database_target_subject(entry_path)
+            aircraft_name = connection.execute("SELECT name FROM aircraft WHERE id=?", (aircraft_id,)).fetchone()[0] if aircraft_id else ""
+            unit_name = ""
+            unit_type = ""
+            country = ""
+            if unit_id:
+                unit = connection.execute(
+                    "SELECT u.name,u.kind,c.name AS country FROM units u "
+                    "JOIN countries c ON c.id=u.country_id WHERE u.id=?",
+                    (unit_id,),
+                ).fetchone()
+                if unit:
+                    unit_name = str(unit["name"])
+                    unit_type = "organisation" if unit["kind"] == "organisation" else "squadron"
+                    country = str(unit["country"])
+            if location_target:
+                location_row = connection.execute(
+                    "SELECT l.name,c.name AS country FROM locations l "
+                    "JOIN countries c ON c.id=l.country_id WHERE l.id=?",
+                    (location_target,),
+                ).fetchone()
+                if location_row:
+                    country = country or str(location_row["country"])
+            asset = clean_text(payload.get("assetPath"))
+            location = clean_text(payload.get("locationName"))
+            airshow = clean_text(payload.get("airshow"))
+            livery = clean_text(payload.get("livery"))
+            if asset:
+                source_path = self._raw_asset_path(asset)
+            else:
+                photo_id = self._database_photo_id(connection, payload)
+                photo = connection.execute(
+                    "SELECT p.source_path,p.livery,l.name AS location,c.name AS country,e.name AS event FROM photos p "
+                    "JOIN locations l ON l.id=p.location_id "
+                    "JOIN countries c ON c.id=l.country_id "
+                    "LEFT JOIN events e ON e.id=p.event_id WHERE p.id=?",
+                    (photo_id,),
+                ).fetchone()
+                source_path = self.raw_assets_dir / photo["source_path"]
+                location = location or photo["location"]
+                country = country or photo["country"]
+                airshow = airshow or (photo["event"] or "")
+                livery = livery or (photo["livery"] or "")
+        finally:
+            connection.close()
+        if not source_path.is_file() or source_path.suffix.lower() not in IMAGE_EXTENSIONS:
+            raise CaptionAssistError("The selected photo source is unavailable.")
+        draft = clean_text(payload.get("draftCaption"))
+        caption = request_nvidia_caption(
+            prompt=build_caption_prompt(
+                country=country,
+                aircraft_type=aircraft_name,
+                squadron_name=unit_name,
+                unit_type=unit_type,
+                location=location,
+                airshow=airshow,
+                livery=livery,
+                draft_caption=draft,
+            ),
+            image_url=caption_image_data_url(source_path),
+        )
+        return {"ok": True, "caption": caption, "message": "Caption suggestion ready. Review it, then save the photo."}
 
     def _photo_target(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         scope = clean_text(payload.get("scope")) or "aircraft"
@@ -448,6 +1724,8 @@ class SpotterDexManager:
         )
 
     def append_photos(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        if self.database_path.exists():
+            return self._database_append_photos(payload)
         asset_paths = payload.get("assetPaths") or []
         if not isinstance(asset_paths, list) or not asset_paths:
             raise ValueError("Select at least one raw asset.")
@@ -527,6 +1805,8 @@ class SpotterDexManager:
         }
 
     def update_photo(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        if self.database_path.exists():
+            return self._database_update_photo(payload)
         target = self._photo_target(payload)
         index = int(payload.get("index"))
         photos = target["photos"]
@@ -610,6 +1890,8 @@ class SpotterDexManager:
 
     def bulk_update_airshow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Set or clear an event tag across an explicit set of source photo records."""
+        if self.database_path.exists():
+            return self._database_bulk_update_airshow(payload)
         photo_refs = payload.get("photos") or []
         if not isinstance(photo_refs, list) or not photo_refs:
             raise ValueError("Choose at least one photo to tag.")
@@ -680,6 +1962,9 @@ class SpotterDexManager:
         return {"ok": True, "updated": updated, "unchanged": unchanged, "message": f"{action} on {updated} photo(s).{detail}"}
 
     def _load_airshow_events(self) -> List[Dict[str, Any]]:
+        if self.database_path.exists():
+            state = self._get_database_state()
+            return state["airshowEvents"]
         if not self.airshow_events_path.exists():
             return []
         data = read_yaml(self.airshow_events_path)
@@ -701,6 +1986,8 @@ class SpotterDexManager:
         return events
 
     def set_airshow_hero(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        if self.database_path.exists():
+            return self._database_set_airshow_hero(payload)
         event_name = clean_text(payload.get("eventName"))
         if not event_name:
             raise ValueError("An event name is required.")
@@ -781,6 +2068,8 @@ class SpotterDexManager:
 
     def set_squadron_hero(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Select one tagged squadron image as the aggregate squadron-page hero."""
+        if self.database_path.exists():
+            return self._database_set_unit_hero(payload)
         hero_payload = payload.get("hero")
         squadron_name = clean_text(payload.get("squadronName"))
         country = clean_text(payload.get("country"))
@@ -838,10 +2127,19 @@ class SpotterDexManager:
             return {"ok": True, "message": f"Set hero photo for {squadron_name}."}
         return {"ok": True, "message": f"Cleared hero photo for {squadron_name}."}
 
+    def set_aircraft_hero(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        if not self.database_path.exists():
+            raise ValueError("Aircraft hero settings are available for the canonical database only.")
+        return self._database_set_aircraft_hero(payload)
+
     def generate_caption(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Generate a non-persistent caption suggestion from a source image."""
+        if self.database_path.exists():
+            return self._database_generate_caption(payload)
         squadron_target = payload.get("squadronTarget")
         target: Optional[Dict[str, Any]] = None
+        country = clean_text(payload.get("country"))
+        unit_type = ""
         if squadron_target:
             if not isinstance(squadron_target, dict):
                 raise CaptionAssistError("Squadron target is invalid.")
@@ -849,6 +2147,8 @@ class SpotterDexManager:
             squadron_name = clean_text(squadron_target.get("squadronName"))
             if not squadron_name:
                 raise CaptionAssistError("Choose a squadron before generating a caption.")
+            unit_type = clean_text(squadron_target.get("unitType")) or "squadron"
+            country = country or clean_text(squadron_target.get("country"))
             location = clean_text(payload.get("locationName"))
         else:
             try:
@@ -859,6 +2159,8 @@ class SpotterDexManager:
             entry_data = target["data"]
             aircraft_type = read_aircraft_type(entry_data, entry_path) if target["scope"] == "aircraft" else ""
             squadron_name = read_squadron_name(entry_data, entry_path) if target["scope"] != "location" else ""
+            unit_type = clean_text(entry_data.get("unit_type")) or ("squadron" if squadron_name else "")
+            country = country or clean_text(entry_data.get("country"))
             location = target["locationName"] if target["scope"] == "location" else clean_text(payload.get("locationName"))
         airshow = clean_text(payload.get("airshow"))
         livery = clean_text(payload.get("livery"))
@@ -900,8 +2202,10 @@ class SpotterDexManager:
 
         image_url = caption_image_data_url(source_path)
         prompt = build_caption_prompt(
+            country=country,
             aircraft_type=aircraft_type,
             squadron_name=squadron_name,
+            unit_type=unit_type,
             location=location,
             airshow=airshow,
             livery=livery,
@@ -915,6 +2219,8 @@ class SpotterDexManager:
         }
 
     def delete_photo(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        if self.database_path.exists():
+            return self._database_delete_photo(payload)
         target = self._photo_target(payload)
         index = int(payload.get("index"))
         photos = target["photos"]
@@ -929,7 +2235,24 @@ class SpotterDexManager:
             "removed": removed if isinstance(removed, dict) else str(removed),
         }
 
+    def update_master_photo(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        if not self.database_path.exists():
+            raise ValueError("The master photo view is available for the canonical database only.")
+        return self._database_update_master_photo(payload)
+
+    def bulk_update_photos(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        if not self.database_path.exists():
+            raise ValueError("Bulk photo editing is available for the canonical database only.")
+        return self._database_bulk_update_photos(payload)
+
+    def delete_master_photo(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        if not self.database_path.exists():
+            raise ValueError("The master photo view is available for the canonical database only.")
+        return self._database_delete_master_photo(payload)
+
     def update_entry(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        if self.database_path.exists():
+            return self._database_update_entry(payload)
         entry_path = self._project_path(payload.get("entryPath") or "")
         scope = clean_text(payload.get("scope")) or "aircraft"
         allowed_dir = self.squadron_dir if scope == "squadron" else self.aircraft_dir
@@ -963,7 +2286,24 @@ class SpotterDexManager:
         write_yaml(entry_path, data)
         return {"ok": True, "message": "Entry metadata updated."}
 
+    def update_unit_logo(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        if not self.database_path.exists():
+            raise ValueError("Shared unit logos are available for the canonical database only.")
+        return self._database_update_unit_logo(payload)
+
+    def delete_entry(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        if not self.database_path.exists():
+            raise ValueError("Entry deletion is available for the canonical database only.")
+        return self._database_delete_entry(payload)
+
+    def update_aircraft_settings(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        if not self.database_path.exists():
+            raise ValueError("Aircraft settings are available for the canonical database only.")
+        return self._database_update_aircraft_settings(payload)
+
     def create_entry(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        if self.database_path.exists():
+            return self._database_create_entry(payload)
         scope = clean_text(payload.get("scope")) or "aircraft"
         aircraft_type = clean_text(payload.get("aircraftType"))
         aircraft_family = normalize_aircraft_family(payload.get("aircraftFamily"))
@@ -1006,6 +2346,8 @@ class SpotterDexManager:
         }
 
     def create_pin(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        if self.database_path.exists():
+            return self._database_create_pin(payload)
         country = clean_text(payload.get("country"))
         name = clean_text(payload.get("name"))
         icao = clean_text(payload.get("icao")).upper()
@@ -1051,7 +2393,14 @@ class SpotterDexManager:
             "pinPath": relative_posix(yaml_path, self.root),
         }
 
+    def create_event(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        if not self.database_path.exists():
+            raise ValueError("Inline event creation is available for the canonical database only.")
+        return self._database_create_event(payload)
+
     def set_pin_hero(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        if self.database_path.exists():
+            return self._database_set_pin_hero(payload)
         pin_path = self._project_path(payload.get("pinPath") or "")
         pin_id = clean_text(payload.get("pinId"))
         if not pin_path or not pin_path.exists() or not self._is_within(pin_path, self.map_dir):
@@ -1409,11 +2758,21 @@ class SpotterDexManager:
                     "key": key,
                     "name": name,
                     "country": country,
+                    "unitId": clean_text(entry.get("unitId")),
+                    "unitTargetKey": f"db:unit:{clean_text(entry.get('unitId'))}" if entry.get("unitId") else "",
+                    "logo": clean_text(entry.get("squadronLogo")),
+                    "logoExists": bool(entry.get("squadronLogoExists")),
                     "photoCount": 0,
                     "photos": [],
                     "hero": {},
                 },
             )
+            if entry.get("unitId"):
+                group["unitId"] = clean_text(entry.get("unitId"))
+                group["unitTargetKey"] = f"db:unit:{group['unitId']}"
+            if entry.get("sourceScope") == "squadron" or not group.get("logo"):
+                group["logo"] = clean_text(entry.get("squadronLogo"))
+                group["logoExists"] = bool(entry.get("squadronLogoExists"))
             hero_asset_path = clean_text(entry.get("squadronHeroAssetPath"))
             if hero_asset_path:
                 group["hero"] = {
@@ -1905,16 +3264,25 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
             routes = {
                 "/api/attach": self.context.manager.append_photos,
                 "/api/update-entry": self.context.manager.update_entry,
+                "/api/update-unit-logo": self.context.manager.update_unit_logo,
+                "/api/delete-entry": self.context.manager.delete_entry,
+                "/api/update-aircraft-settings": self.context.manager.update_aircraft_settings,
                 "/api/update-photo": self.context.manager.update_photo,
+                "/api/update-master-photo": self.context.manager.update_master_photo,
+                "/api/bulk-update-photos": self.context.manager.bulk_update_photos,
                 "/api/bulk-airshow": self.context.manager.bulk_update_airshow,
                 "/api/set-airshow-hero": self.context.manager.set_airshow_hero,
                 "/api/set-squadron-hero": self.context.manager.set_squadron_hero,
+                "/api/set-aircraft-hero": self.context.manager.set_aircraft_hero,
                 "/api/generate-caption": self.context.manager.generate_caption,
                 "/api/delete-photo": self.context.manager.delete_photo,
+                "/api/delete-master-photo": self.context.manager.delete_master_photo,
                 "/api/create-entry": self.context.manager.create_entry,
                 "/api/create-pin": self.context.manager.create_pin,
+                "/api/create-event": self.context.manager.create_event,
                 "/api/set-pin-hero": self.context.manager.set_pin_hero,
                 "/api/clear-build-cache": self.context.manager.clear_build_cache,
+                "/api/backup-database": self.context.manager.backup_database,
                 "/api/acknowledge-quality": self.context.manager.set_quality_acknowledgement,
                 "/api/find-orphans": self.context.manager.find_orphans,
                 "/api/delete-orphans": self.context.manager.delete_orphans,
@@ -2732,6 +4100,21 @@ def clean_text(value: Any) -> str:
     return str(value or "").strip()
 
 
+def normalize_optional_boolean(value: Any) -> Optional[bool]:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return value
+    text = clean_text(value).lower()
+    if text in {"", "auto", "automatic", "default", "null", "none"}:
+        return None
+    if text in {"1", "true", "yes", "on", "double", "double-width"}:
+        return True
+    if text in {"0", "false", "no", "off", "standard", "standard-width"}:
+        return False
+    raise ValueError("Aircraft card width must be Automatic, Standard, or Double.")
+
+
 def normalize_airshow_hero_ref(value: Any) -> Dict[str, Any]:
     if not isinstance(value, dict):
         return {}
@@ -2799,11 +4182,42 @@ def nvidia_caption_endpoint() -> str:
     raise CaptionAssistError("NVIDIA_CAPTION_ENDPOINT must be a /v1 base URL or /v1/chat/completions endpoint.")
 
 
+def load_local_env(path: Optional[Path] = None) -> None:
+    """Load simple KEY=VALUE settings from the local, ignored manager .env file.
+
+    Explicit process environment variables win over values in .env. Values are
+    loaded only into the manager process and are never included in browser state,
+    generated data, or error messages.
+    """
+    env_path = path or DOTENV_PATH
+    try:
+        lines = env_path.read_text("utf-8").splitlines()
+    except OSError:
+        return
+
+    key_pattern = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+    for raw_line in lines:
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[7:].lstrip()
+        key, separator, value = line.partition("=")
+        key = key.strip()
+        if not separator or not key_pattern.fullmatch(key):
+            continue
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+            value = value[1:-1]
+        os.environ.setdefault(key, value)
+
+
 def resolve_nvidia_caption_key() -> str:
+    load_local_env()
     value = clean_text(os.getenv("LLM_API_KEY"))
     if value:
         return value
-    raise CaptionAssistError("Caption assist is not configured. Set LLM_API_KEY in the manager environment and restart it.")
+    raise CaptionAssistError("Caption assist is not configured. Set LLM_API_KEY in the manager environment or in the manager .env file.")
 
 
 def extract_caption_from_response(payload: Any) -> str:
@@ -2832,6 +4246,7 @@ def extract_caption_from_response(payload: Any) -> str:
 
 
 def request_nvidia_caption(*, prompt: str, image_url: str) -> str:
+    load_local_env()
     api_key = resolve_nvidia_caption_key()
     model = clean_text(os.getenv("NVIDIA_CAPTION_MODEL")) or NVIDIA_CAPTION_MODEL
     body = {
@@ -2839,7 +4254,7 @@ def request_nvidia_caption(*, prompt: str, image_url: str) -> str:
         "messages": [
             {
                 "role": "system",
-                "content": CAPTION_SYSTEM_PROMPT,
+                "content": f"/think\n{CAPTION_SYSTEM_PROMPT}",
             },
             {
                 "role": "user",
@@ -2850,7 +4265,8 @@ def request_nvidia_caption(*, prompt: str, image_url: str) -> str:
             },
         ],
         "temperature": 0.25,
-        "max_tokens": 9999,
+        "max_tokens": NVIDIA_CAPTION_MAX_TOKENS,
+        "reasoning_budget": NVIDIA_CAPTION_REASONING_BUDGET,
         "stream": False,
     }
     request = Request(
@@ -2947,7 +4363,7 @@ def make_handler(manager: SpotterDexManager) -> type[SpotterDexHandler]:
 def snapshot_generated_outputs(root: Path) -> Dict[str, Dict[str, Any]]:
     targets = [
         root / "data" / "spotterdex.json",
-        root / "data" / "spotterdex-data.js",
+        root / "data" / "spotterdex-core.js",
         root / "assets" / "generated" / "photos",
         root / "assets" / "generated" / "thumbs",
         root / "assets" / "logos",
@@ -3016,11 +4432,13 @@ def scan_orphaned_generated(root: Path) -> Dict[str, Any]:
         }
 
     photos = manifest.get("photos")
+    if int(manifest.get("schemaVersion") or 0) == 2 and isinstance(manifest.get("entities"), dict):
+        photos = manifest["entities"].get("photos")
     referenced: set[str] = set()
     collect_referenced_generated(manifest, referenced)
     # Guard against nuking everything when the manifest is empty or malformed: a
     # build that produced zero photos would otherwise flag the entire directory.
-    if not isinstance(photos, list) or not photos:
+    if not isinstance(photos, (list, dict)) or not photos:
         return {
             "orphans": [],
             "referencedCount": len(referenced),
@@ -3115,6 +4533,17 @@ def read_manifest_counts(root: Path) -> Dict[str, Any]:
             "readError": True,
         }
 
+    if int(data.get("schemaVersion") or 0) == 2 and isinstance(data.get("entities"), dict):
+        entities = data["entities"]
+        units = list((entities.get("units") or {}).values())
+        return {
+            "aircraft": len(entities.get("aircraft") or {}),
+            "photos": len(entities.get("photos") or {}),
+            "pins": len(entities.get("locations") or {}),
+            "squadrons": sum(1 for unit in units if unit.get("kind", "squadron") == "squadron"),
+            "organisations": sum(1 for unit in units if unit.get("kind") == "organisation"),
+            "generatedAt": clean_text(data.get("generatedAt")),
+        }
     aircraft = data.get("aircraft") if isinstance(data.get("aircraft"), list) else []
     squadrons = [
         squadron
@@ -3161,7 +4590,22 @@ def build_generated_summary(
         "warnings": warnings,
         "notes": notes,
         "commitScope": recommended_commit_scope(root, changes),
+        "databaseStatus": read_database_status(root),
     }
+
+
+def read_database_status(root: Path) -> Dict[str, Any]:
+    database_path = root / "content" / "spotterdex.sqlite3"
+    snapshot_path = root / "content" / "spotterdex.sql"
+    if not database_path.exists():
+        return {"integrity": "missing", "snapshotCurrent": False, "errors": ["Canonical database is missing."]}
+    connection = connect_database(database_path, read_only=True)
+    try:
+        errors = validate_database(connection, raw_assets_dir=root / "raw_assets")
+        current = snapshot_is_current(connection, snapshot_path)
+    finally:
+        connection.close()
+    return {"integrity": "ok" if not errors else "error", "snapshotCurrent": current, "errors": errors}
 
 
 def diff_generated_snapshots(
@@ -3260,18 +4704,14 @@ def classify_build_line(line: str) -> str:
         return "warning"
     if text.startswith("note:"):
         return "note"
-    if re.match(r"^(loading map pins|reading aircraft yaml|reading squadron yaml|reading location photos|processing(?: .+)? photos):", text):
+    if re.match(r"^(loading map pins|reading aircraft yaml|reading squadron yaml|reading location photos|processing(?: .+)? photos|processing catalog photos):", text):
         return "progress"
     return "log"
 
 
 def recommended_commit_scope(root: Path, changes: Dict[str, Any]) -> Dict[str, Any]:
     changed_files = git_changed_files(root)
-    source_yaml = [
-        path
-        for path in changed_files
-        if (path.startswith("aircraft/") or path.startswith("squadrons/") or path.startswith("map_pins/")) and path.endswith((".yaml", ".yml"))
-    ]
+    source_catalog = [path for path in changed_files if path in {"content/spotterdex.sqlite3", "content/spotterdex.sql"}]
     generated_data = [path for path in changed_files if path.startswith("data/")]
     generated_photos = [path for path in changed_files if path.startswith("assets/generated/photos/")]
     generated_thumbs = [path for path in changed_files if path.startswith("assets/generated/thumbs/")]
@@ -3279,9 +4719,9 @@ def recommended_commit_scope(root: Path, changes: Dict[str, Any]) -> Dict[str, A
 
     sections = [
         {
-            "label": "Source YAML",
-            "files": source_yaml,
-            "include": bool(source_yaml),
+            "label": "Canonical catalog",
+            "files": source_catalog,
+            "include": bool(source_catalog),
         },
         {
             "label": "Generated data",
@@ -3307,11 +4747,10 @@ def recommended_commit_scope(root: Path, changes: Dict[str, Any]) -> Dict[str, A
     return {
         "sections": sections,
         "recommendedGlobs": [
-            "aircraft/**/entry.yaml",
-            "squadrons/**/entry.yaml",
-            "map_pins/**/pins.yaml",
+            "content/spotterdex.sqlite3",
+            "content/spotterdex.sql",
             "data/spotterdex.json",
-            "data/spotterdex-data.js",
+            "data/spotterdex-core.js",
             "assets/generated/photos/",
             "assets/generated/thumbs/",
             "assets/logos/",

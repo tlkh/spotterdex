@@ -1,4 +1,4 @@
-const CACHE_VERSION = "spotterdex-v4";
+const CACHE_VERSION = "spotterdex-v5-sqlite";
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const THUMB_CACHE = `${CACHE_VERSION}-thumbs`;
 const PHOTO_CACHE = `${CACHE_VERSION}-photos`;
@@ -14,8 +14,7 @@ const SHELL_PATHS = [
   "styles.css",
   "script.js",
   "manifest.webmanifest",
-  "data/spotterdex-data.js",
-  "data/spotterdex-map-data.js",
+  "data/spotterdex-core.js",
   "assets/icons/spotterdex-app-icon.png",
   "assets/icons/spotterdex-app-icon-192.png",
   "assets/icons/spotterdex-app-icon-maskable-512.png",

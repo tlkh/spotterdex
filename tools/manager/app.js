@@ -4,7 +4,14 @@
       selectedAssets: new Set(),
       selectedIssueKey: "",
       assetFilter: "untagged",
-      activeTab: "attach",
+      activeTab: sessionStorage.getItem("spotterdex-manager.activeTab") || "attach",
+      assetsOpen: true,
+      masterPage: 1,
+      masterPageSize: 20,
+      bulkEdit: {
+        master: new Set(),
+        tagged: new Set()
+      },
       qualityShowAcknowledged: false,
       captionAssist: {
         attachAssetPath: "",
@@ -24,6 +31,18 @@
         items: [],
         message: ""
       }
+    };
+    const viewMeta = {
+      attach: ["Attach Photos", "Tag new raw images and maintain their catalog metadata."],
+      master: ["Master Photo List", "Search and edit every photo record from one workspace."],
+      entries: ["Photo Sources", "Create and maintain aircraft, unit, and source relationships."],
+      "bulk-captions": ["Caption Review", "Generate and review caption suggestions for selected photos."],
+      missing: ["Missing Fields", "Resolve incomplete catalog metadata from a focused queue."],
+      quality: ["Source Quality", "Review image dimensions and conservative quality warnings."],
+      airshows: ["Airshows", "Manage event dates, photo assignments, and featured images."],
+      squadrons: ["Squadron Heroes", "Choose the featured image for each squadron."],
+      locations: ["Locations", "Maintain map pins and location hero images."],
+      build: ["Build & Publish", "Validate the catalog, build the site, and clean generated files."]
     };
     const missingFieldLabels = {
       source: "Source image",
@@ -169,10 +188,20 @@
       const response = await fetch("/api/state");
       state.data = await readApiJson(response);
       state.selectedAssets = new Set([...previous].filter((path) => state.data.assets.some((asset) => asset.path === path)));
-      renderAll();
+      const validMasterPhotoIds = new Set((state.data.masterPhotos || []).map((photo) => photo.id));
+      state.bulkEdit.master = new Set([...state.bulkEdit.master].filter((photoId) => validMasterPhotoIds.has(photoId)));
+      const validTaggedKeys = new Set();
+      for (const entry of state.data.entries || []) {
+        for (const photo of entry.photos || []) {
+          if (!photo.invalid) validTaggedKeys.add(photoSelectionKey(entry, photo));
+        }
+      }
+      state.bulkEdit.tagged = new Set([...state.bulkEdit.tagged].filter((key) => validTaggedKeys.has(key)));
+      renderShared();
+      renderActiveView();
     }
 
-    function renderAll() {
+    function renderShared() {
       renderStats();
       renderAssetGrid();
       renderEntryCreationFields();
@@ -180,14 +209,23 @@
       renderEditTagTargetOptions();
       renderPinOptions();
       renderSelectedStrip();
-      renderEntryDetail();
-      renderEntryCards();
-      renderLocationHeroManager();
-      renderSquadronHeroManager();
-      renderMissingFields();
-      renderQualityControl();
-      renderBulkCaptions();
-      renderBulkEvents();
+    }
+
+    function renderActiveView() {
+      if (!state.data) return;
+      const renderers = {
+        attach: renderEntryDetail,
+        master: renderMasterView,
+        entries: () => { renderEntryCards(); renderAircraftSettings(); },
+        "bulk-captions": renderBulkCaptions,
+        airshows: () => { renderAirshowHeroManager(); renderAirshowMissingImages(); renderBulkEvents(); },
+        missing: renderMissingFields,
+        quality: renderQualityControl,
+        locations: renderLocationHeroManager,
+        squadrons: renderSquadronHeroManager,
+        build: renderOrphans
+      };
+      renderers[state.activeTab]?.();
     }
 
     function renderStats() {
@@ -196,15 +234,18 @@
       $("stats").innerHTML = [
         ["Assets", project.assetCount],
         ["New", project.untaggedAssetCount],
-        ["Used", project.taggedAssetCount],
         ["Aircraft", project.aircraftCount],
-        ["Squadrons", project.squadronEntryCount || 0],
-        ["Locations", project.locationEntryCount || 0],
-        ["Pins", project.pinCount],
-        ["Missing", project.missingPhotoCount],
-        ["Fields", (project.missingFieldPhotoCount || 0) + (project.missingEntryFieldCount || 0)],
-        ["Quality Issue:", project.qualityIssueAssetCount || 0]
-      ].map(([label, value]) => `<span class="pill">${label} <strong>${value}</strong></span>`).join("");
+        ["Units", project.squadronEntryCount || 0],
+        ["Locations", project.pinCount || project.locationEntryCount || 0],
+        ["Database", project.databaseIntegrity === "ok" && project.sqlSnapshotCurrent ? "Healthy" : "Review",
+          project.databaseIntegrity === "ok" && project.sqlSnapshotCurrent ? "status-good" : "status-warn"]
+      ].map(([label, value, status = ""]) => `<span class="pill ${status}">${label}<strong>${value}</strong></span>`).join("");
+      const missingCount = (project.missingPhotoCount || 0)
+        + (project.missingFieldPhotoCount || 0)
+        + (project.missingEntryFieldCount || 0);
+      $("newAssetNavBadge").textContent = project.untaggedAssetCount || 0;
+      $("missingNavBadge").textContent = missingCount;
+      $("qualityNavBadge").textContent = project.qualityIssueAssetCount || 0;
     }
 
     function assetMatchesSearch(asset, term) {
@@ -228,6 +269,34 @@
       });
     }
 
+    function renderAssetCard(asset) {
+      const selected = state.selectedAssets.has(asset.path) ? " selected" : "";
+      const tag = asset.tags.length
+        ? `<span class="tag">${escapeHtml(asset.tags[0].kind)}</span>`
+        : `<span class="tag warn">new</span>`;
+      const captureLine = asset.captureDate ? `Captured: ${asset.captureDate}` : "No capture date";
+      const tagLines = asset.tags.map((item) => `${item.kind}: ${item.label || item.path || ""}`);
+      const title = [captureLine, ...tagLines].join("\n");
+      const resolutionTag = asset.isUnderResolution
+        ? `<span class="tag warn">${escapeHtml(asset.dimensionsLabel)}</span>`
+        : `<span class="asset-dim">${escapeHtml(asset.dimensionsLabel)}</span>`;
+      const qualityTags = (asset.qualityFlags || []).filter((flag) => flag.severity !== "info").map((flag) => {
+        const short = flag.short || flag.label || "Quality";
+        const detail = [flag.label, flag.detail].filter(Boolean).join(" - ");
+        return `<span class="tag warn" title="${escapeHtml(detail)}">${escapeHtml(short)}</span>`;
+      }).join("");
+      return `
+        <article class="asset-card${selected}">
+          <button class="asset-select" type="button" data-asset="${escapeHtml(asset.path)}" aria-pressed="${state.selectedAssets.has(asset.path)}" title="${escapeHtml(title)}">
+            <img src="${thumbUrl(asset.path)}" loading="lazy" alt="${escapeHtml(asset.name)}">
+            <div class="asset-name">${escapeHtml(asset.name)}</div>
+            <div class="asset-meta"><span class="asset-size">${escapeHtml(asset.sizeLabel)}</span>${resolutionTag}${qualityTags}${tag}</div>
+          </button>
+          <button class="asset-preview" type="button" data-asset-preview="${escapeHtml(asset.path)}">Open full preview</button>
+        </article>
+      `;
+    }
+
     function renderAssetGrid() {
       const assets = filteredAssets();
       $("selectedCount").textContent = `${state.selectedAssets.size} selected`;
@@ -240,33 +309,26 @@
         return;
       }
 
-      $("assetGrid").innerHTML = assets.map((asset) => {
-        const selected = state.selectedAssets.has(asset.path) ? " selected" : "";
-        const tag = asset.tags.length
-          ? `<span class="tag">${escapeHtml(asset.tags[0].kind)}</span>`
-          : `<span class="tag warn">new</span>`;
-        const captureLine = asset.captureDate ? `Captured: ${asset.captureDate}` : "No capture date";
-        const tagLines = asset.tags.map((item) => `${item.kind}: ${item.label || item.path || ""}`);
-        const title = [captureLine, ...tagLines].join("\n");
-        const resolutionTag = asset.isUnderResolution
-          ? `<span class="tag warn">${escapeHtml(asset.dimensionsLabel)}</span>`
-          : `<span class="asset-dim">${escapeHtml(asset.dimensionsLabel)}</span>`;
-        const qualityTags = (asset.qualityFlags || []).filter((flag) => flag.severity !== "info").map((flag) => {
-          const short = flag.short || flag.label || "Quality";
-          const detail = [flag.label, flag.detail].filter(Boolean).join(" - ");
-          return `<span class="tag warn" title="${escapeHtml(detail)}">${escapeHtml(short)}</span>`;
-        }).join("");
-        return `
-          <article class="asset-card${selected}">
-            <button class="asset-select" type="button" data-asset="${escapeHtml(asset.path)}" aria-pressed="${state.selectedAssets.has(asset.path)}" title="${escapeHtml(title)}">
-              <img src="${thumbUrl(asset.path)}" loading="lazy" alt="${escapeHtml(asset.name)}">
-              <div class="asset-name">${escapeHtml(asset.name)}</div>
-              <div class="asset-meta"><span class="asset-size">${escapeHtml(asset.sizeLabel)}</span>${resolutionTag}${qualityTags}${tag}</div>
-            </button>
-            <button class="asset-preview" type="button" data-asset-preview="${escapeHtml(asset.path)}">Open full preview</button>
-          </article>
-        `;
-      }).join("");
+      const grouped = new Map();
+      for (const asset of assets) {
+        const date = asset.captureDate || "undated";
+        if (!grouped.has(date)) grouped.set(date, []);
+        grouped.get(date).push(asset);
+      }
+      const orderedGroups = [...grouped.entries()].sort(([left], [right]) => {
+        if (left === "undated") return 1;
+        if (right === "undated") return -1;
+        return right.localeCompare(left);
+      });
+      $("assetGrid").innerHTML = orderedGroups.map(([date, dateAssets]) => `
+        <section class="asset-date-group" aria-labelledby="asset-date-${escapeHtml(date)}">
+          <div class="asset-date-heading">
+            <h3 id="asset-date-${escapeHtml(date)}">${escapeHtml(date === "undated" ? "Undated" : formatEventDate(date))}</h3>
+            <span class="subtle">${dateAssets.length} image${dateAssets.length === 1 ? "" : "s"}</span>
+          </div>
+          <div class="asset-date-grid">${dateAssets.map(renderAssetCard).join("")}</div>
+        </section>
+      `).join("");
     }
 
     function openAssetPreview(path) {
@@ -379,6 +441,7 @@
     }
 
     function renderSelectedStrip() {
+      $("assetSelectionBadge").textContent = state.selectedAssets.size;
       const selected = [...state.selectedAssets];
       $("selectedStrip").innerHTML = selected.length
         ? selected.map((path) => `
@@ -829,10 +892,10 @@
             <div class="bulk-caption-content">
               <div class="mini-title">${escapeHtml(photo.path)}</div>
               <div class="mini-meta">${escapeHtml(metadata)}<br>${escapeHtml(candidate.entry.entryPath)}</div>
-              <details>
-                <summary class="mini-meta">Current caption</summary>
-                <div class="mini-meta" style="margin-top: 6px;">${escapeHtml(photo.caption || "")}</div>
-              </details>
+              <div class="bulk-caption-current">
+                <div class="mini-meta"><strong>Current caption</strong></div>
+                <div class="mini-meta">${escapeHtml(photo.caption || "")}</div>
+              </div>
               ${review}
             </div>
           </article>
@@ -937,7 +1000,7 @@
       if (entries.some((entry) => entry.targetKey === current)) {
         $("entrySelect").value = current;
       }
-      renderEntryDetail();
+      if (state.activeTab === "attach") renderEntryDetail();
     }
 
     function renderEntryCreationFields() {
@@ -986,7 +1049,144 @@
       }
     }
 
+    function photoSelectionKey(entry, photo) {
+      return photo.photoId || `${entry.targetKey}::${photo.index}`;
+    }
+
+    function findBulkSelection(mode, key) {
+      if (mode === "master") {
+        const photo = (state.data?.masterPhotos || []).find((item) => item.id === key);
+        return photo ? {photo, entry: null} : null;
+      }
+      for (const entry of state.data?.entries || []) {
+        const photo = (entry.photos || []).find((item) => !item.invalid && photoSelectionKey(entry, item) === key);
+        if (photo) return {photo, entry};
+      }
+      return null;
+    }
+
+    function bulkPhotoReference(selection) {
+      if (selection.photo.id && !selection.entry) return {photoId: selection.photo.id};
+      if (selection.photo.photoId) return {photoId: selection.photo.photoId};
+      return {...entryRequestFields(selection.entry), index: selection.photo.index};
+    }
+
+    function bulkEditorMarkup(mode) {
+      const locationOptions = (state.data?.pins || []).map((pin) => (
+        `<option value="${escapeHtml(pin.id)}">${escapeHtml(pinOptionLabel(pin))}</option>`
+      )).join("");
+      return `
+        <section class="bulk-editor" data-bulk-editor="${mode}">
+          <div class="bulk-editor-head">
+            <div>
+              <strong>Bulk edit selected photos</strong>
+              <span class="subtle" data-bulk-selected-count>0 selected</span>
+            </div>
+            <div class="card-actions">
+              <button class="btn ghost" type="button" data-bulk-select-all>Select visible</button>
+              <button class="btn ghost" type="button" data-bulk-clear>Clear selection</button>
+            </div>
+          </div>
+          <div class="bulk-editor-grid">
+            <div class="bulk-field">
+              <label><input type="checkbox" data-bulk-apply-field="locationId"> Apply location</label>
+              <select data-bulk-field="locationId">
+                <option value="">Choose a location</option>
+                ${locationOptions}
+              </select>
+            </div>
+            <div class="bulk-field">
+              <label><input type="checkbox" data-bulk-apply-field="date"> Apply date</label>
+              <input data-bulk-field="date" type="date">
+            </div>
+            <div class="bulk-field wide">
+              <label><input type="checkbox" data-bulk-apply-field="airshow"> Apply event</label>
+              <input data-bulk-field="airshow" type="text" placeholder="Blank clears the event">
+            </div>
+            <div class="bulk-field wide">
+              <label><input type="checkbox" data-bulk-apply-field="livery"> Apply livery</label>
+              <input data-bulk-field="livery" type="text" placeholder="Blank clears the livery">
+            </div>
+            <div class="bulk-field wide">
+              <label><input type="checkbox" data-bulk-apply-field="caption"> Apply caption</label>
+              <textarea data-bulk-field="caption" rows="3" placeholder="Blank clears the caption"></textarea>
+            </div>
+          </div>
+          <div class="bulk-editor-foot">
+            <span class="subtle">Only checked fields change. Blank checked fields clear existing values.</span>
+            <button class="btn secondary" type="button" data-bulk-submit disabled>Apply to selected</button>
+          </div>
+        </section>
+      `;
+    }
+
+    function updateBulkEditorStatus(mode) {
+      const editor = document.querySelector(`[data-bulk-editor="${mode}"]`);
+      if (!editor) return;
+      const selectedCount = state.bulkEdit[mode].size;
+      const hasField = [...editor.querySelectorAll("[data-bulk-apply-field]")].some((input) => input.checked);
+      editor.querySelector("[data-bulk-selected-count]").textContent = `${selectedCount} selected`;
+      editor.querySelector("[data-bulk-clear]").disabled = selectedCount === 0;
+      editor.querySelector("[data-bulk-submit]").disabled = selectedCount === 0 || !hasField;
+    }
+
+    function renderBulkEditor(mode, containerId) {
+      const container = $(containerId);
+      if (!container) return;
+      container.innerHTML = bulkEditorMarkup(mode);
+      updateBulkEditorStatus(mode);
+    }
+
+    function toggleBulkSelection(mode, key, selected) {
+      if (selected) state.bulkEdit[mode].add(key);
+      else state.bulkEdit[mode].delete(key);
+      const input = document.querySelector(`[data-bulk-select-mode="${mode}"][data-bulk-select-key="${CSS.escape(key)}"]`);
+      input?.closest(".photo-card, .master-row")?.classList.toggle("selected", selected);
+      updateBulkEditorStatus(mode);
+    }
+
+    function clearBulkSelection(mode) {
+      state.bulkEdit[mode].clear();
+      document.querySelectorAll(`[data-bulk-select-mode="${mode}"]`).forEach((input) => {
+        input.checked = false;
+        input.closest(".photo-card, .master-row")?.classList.remove("selected");
+      });
+      updateBulkEditorStatus(mode);
+    }
+
+    function selectAllBulkVisible(mode) {
+      document.querySelectorAll(`[data-bulk-select-mode="${mode}"]`).forEach((input) => {
+        input.checked = true;
+        state.bulkEdit[mode].add(input.dataset.bulkSelectKey);
+        input.closest(".photo-card, .master-row")?.classList.add("selected");
+      });
+      updateBulkEditorStatus(mode);
+    }
+
+    async function applyBulkEdit(mode) {
+      const editor = document.querySelector(`[data-bulk-editor="${mode}"]`);
+      if (!editor) return;
+      const selections = [...state.bulkEdit[mode]].map((key) => findBulkSelection(mode, key)).filter(Boolean);
+      if (!selections.length) throw new Error("Select at least one photo.");
+      const fields = {};
+      editor.querySelectorAll("[data-bulk-apply-field]").forEach((input) => {
+        if (!input.checked) return;
+        const field = input.dataset.bulkApplyField;
+        fields[field] = editor.querySelector(`[data-bulk-field="${field}"]`).value;
+      });
+      if (!Object.keys(fields).length) throw new Error("Choose at least one field to update.");
+      const result = await api("/api/bulk-update-photos", {
+        photos: selections.map(bulkPhotoReference),
+        fields
+      });
+      state.bulkEdit[mode].clear();
+      if (mode === "tagged") clearEditor();
+      toast(result.message);
+      await loadState(true);
+    }
+
     function renderEntryDetail() {
+      renderBulkEditor("tagged", "taggedBulkEditor");
       const entry = selectedEntry();
       if (!entry) {
         $("entrySummary").textContent = "";
@@ -996,7 +1196,7 @@
         return;
       }
       if (entry.sourceScope === "squadron-target") {
-        $("entrySummary").textContent = `Squadron-only tag: ${entry.squadronName} (${entry.country}). The manager will create or reuse squadrons/${entry.squadronName} without an aircraft type.`;
+        $("entrySummary").textContent = `Unit-only tag: ${entry.squadronName} (${entry.country}). The manager will reuse the canonical unit without assigning an aircraft type.`;
         $("pinSelect").disabled = false;
         $("editLocation").disabled = false;
         $("photoList").innerHTML = `<div class="empty">Selected raw assets will be attached to this squadron-only source.</div>`;
@@ -1016,8 +1216,10 @@
       }
       $("photoList").innerHTML = entry.photos.map((photo) => {
         if (photo.invalid) {
-          return `<article class="photo-card"><div class="missing">Invalid YAML item</div><div class="mini-meta">${escapeHtml(photo.raw)}</div></article>`;
+          return `<article class="photo-card"><div class="missing">Invalid catalog item</div><div class="mini-meta">${escapeHtml(photo.raw)}</div></article>`;
         }
+        const selectionKey = photoSelectionKey(entry, photo);
+        const selected = state.bulkEdit.tagged.has(selectionKey);
         const media = photo.exists && photo.sourceAssetPath
           ? `<img src="${thumbUrl(photo.sourceAssetPath)}" loading="lazy" alt="${escapeHtml(photo.path)}">`
           : `<div class="missing">Missing source</div>`;
@@ -1025,8 +1227,9 @@
         const airshow = photo.airshow ? `<br>Airshow: ${escapeHtml(photo.airshow)}` : "";
         const livery = photo.livery ? `<br>Livery: ${escapeHtml(photo.livery)}` : "";
         return `
-          <article class="photo-card">
+          <article class="photo-card${selected ? " selected" : ""}">
             ${media}
+            <label class="photo-select"><input type="checkbox" data-bulk-select-mode="tagged" data-bulk-select-key="${escapeHtml(selectionKey)}"${selected ? " checked" : ""}> Select for bulk edit</label>
             <div class="mini-title">${escapeHtml(photo.path)}</div>
             <div class="mini-meta">${escapeHtml(location)}${airshow}${livery}<br>${escapeHtml(photo.year || photo.date || "")}</div>
             <div class="card-actions">
@@ -1040,7 +1243,7 @@
 
     function renderEntryCards() {
       const term = $("entryListSearch").value.trim().toLowerCase();
-      const entries = (state.data.entries || []).filter((entry) => {
+      const entries = (state.data.entries || []).filter((entry) => entry.sourceScope !== "location").filter((entry) => {
         if (!term) return true;
         return [entry.aircraftType, entry.squadronName, entry.country, entry.entryPath].join(" ").toLowerCase().includes(term);
       });
@@ -1050,9 +1253,216 @@
           <div class="mini-meta">${escapeHtml(entry.entryPath)}</div>
           <div class="card-actions">
             <button class="btn ghost" type="button" data-open-entry="${escapeHtml(entry.targetKey)}">Open</button>
+            <button class="btn secondary" type="button" data-edit-entry="${escapeHtml(entry.targetKey)}">Edit</button>
           </div>
         </article>
       `).join("") || `<div class="empty">No matching entries</div>`;
+    }
+
+    function aircraftWidthValue(aircraft) {
+      if (aircraft.doubleWidth === true) return "1";
+      if (aircraft.doubleWidth === false) return "0";
+      return "";
+    }
+
+    function aircraftSettingsPhotos(aircraft) {
+      const photos = [...(aircraft.photos || [])]
+        .sort((left, right) => (
+          effectiveEventDate(right).localeCompare(effectiveEventDate(left))
+          || String(left.path || "").localeCompare(String(right.path || ""))
+        ));
+      const hasHeroCandidate = photos.some((photo) => photo.photoId === aircraft.heroPhotoId);
+      if (aircraft.heroPhotoId && !hasHeroCandidate) {
+        photos.unshift({
+          photoId: aircraft.heroPhotoId,
+          path: aircraft.heroAssetPath,
+          sourceAssetPath: aircraft.heroAssetPath,
+          exists: aircraft.heroExists,
+          customHero: true
+        });
+      }
+      return photos;
+    }
+
+    function renderAircraftSettings() {
+      const list = $("aircraftSettingsList");
+      if (!list || !state.data) return;
+      const all = state.data.aircraftCatalog || [];
+      const term = $("aircraftSettingsSearch").value.trim().toLowerCase();
+      const aircraft = all.filter((item) => (
+        !term || [item.name, item.family, item.id].join(" ").toLowerCase().includes(term)
+      ));
+      const configuredCount = all.filter((item) => item.doubleWidth !== null && item.doubleWidth !== undefined).length;
+      $("aircraftSettingsSummary").textContent = all.length
+        ? `${aircraft.length} of ${all.length} aircraft type${all.length === 1 ? "" : "s"} shown · ${configuredCount} with an explicit card width. Hero photos are optional.`
+        : "Aircraft type settings are available when the canonical database is loaded.";
+      if (!aircraft.length) {
+        list.innerHTML = `<div class="empty">No aircraft types match this search.</div>`;
+        return;
+      }
+
+      list.innerHTML = aircraft.map((item) => {
+        const photos = aircraftSettingsPhotos(item);
+        const hasHero = Boolean(item.heroPhotoId);
+        const picker = photos.length
+          ? `<div class="group-hero-picker">${photos.map((photo) => {
+              const available = Boolean(photo.exists && photo.sourceAssetPath);
+              const selectable = Boolean(available && !photo.customHero);
+              const selected = photo.photoId === item.heroPhotoId;
+              const media = available
+                ? `<img src="${thumbUrl(photo.sourceAssetPath)}" loading="lazy" alt="${escapeHtml(photo.path || item.name)}">`
+                : `<div class="missing">Missing source</div>`;
+              const label = photo.customHero
+                ? "Current hero"
+                : [photo.location || "Tagged photo", formatEventDate(effectiveEventDate(photo))].filter(Boolean).join(" - ");
+              return `
+                <button class="group-hero-photo${selected ? " selected" : ""}" type="button"${selectable ? ` data-aircraft-hero-aircraft="${escapeHtml(item.id)}" data-aircraft-hero-photo="${escapeHtml(photo.photoId)}"` : ""} aria-pressed="${selected}"${selectable ? "" : " disabled"}>
+                  ${media}
+                  <span>${escapeHtml(label)}</span>
+                </button>
+              `;
+            }).join("")}</div>`
+          : `<p class="subtle">No photos are currently tagged to this aircraft type.</p>`;
+        return `
+          <article class="group-hero-card${hasHero ? "" : " needs-hero"}" data-aircraft-settings-row="${escapeHtml(item.id)}">
+            <div class="bulk-event-date-head">
+              <div>
+                <h3>${escapeHtml(item.name)}</h3>
+                <p class="subtle">${escapeHtml(item.family)} · ${item.photoCount} tagged photo${item.photoCount === 1 ? "" : "s"} · ${hasHero ? "Hero selected" : "No hero selected"}</p>
+              </div>
+              <div class="card-actions">
+                <button class="btn ghost" type="button" data-aircraft-hero-clear="${escapeHtml(item.id)}"${hasHero ? "" : " disabled"}>Clear Hero</button>
+              </div>
+            </div>
+            ${picker}
+            <div class="aircraft-settings-footer">
+              <div class="field">
+                <label for="aircraft-width-${escapeHtml(item.id)}">Aircraft card width</label>
+                <select id="aircraft-width-${escapeHtml(item.id)}" data-aircraft-width="${escapeHtml(item.id)}">
+                  <option value="">Automatic (archive layout)</option>
+                  <option value="0"${aircraftWidthValue(item) === "0" ? " selected" : ""}>Standard width</option>
+                  <option value="1"${aircraftWidthValue(item) === "1" ? " selected" : ""}>Double width</option>
+                </select>
+              </div>
+              <button class="btn secondary" type="button" data-aircraft-settings-save="${escapeHtml(item.id)}">Save Width</button>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function masterPhotoMatchesSearch(photo, term) {
+      if (!term) return true;
+      const subjects = (photo.subjects || []).flatMap((subject) => [
+        subject.aircraftType,
+        subject.unitName,
+        subject.country,
+        subject.entryPath
+      ]);
+      return [
+        photo.id,
+        photo.path,
+        photo.location,
+        photo.country,
+        photo.airshow,
+        photo.date,
+        photo.exifDate,
+        photo.title,
+        photo.livery,
+        photo.caption,
+        ...subjects
+      ].join(" ").toLowerCase().includes(term);
+    }
+
+    function masterLocationOptions(selectedId) {
+      return (state.data?.pins || []).map((pin) => (
+        `<option value="${escapeHtml(pin.id)}"${pin.id === selectedId ? " selected" : ""}>${escapeHtml(pinOptionLabel(pin))}</option>`
+      )).join("");
+    }
+
+    function masterSubjectLabel(photo) {
+      const subjects = (photo.subjects || []).map((subject) => (
+        [subject.aircraftType, subject.unitName].filter(Boolean).join(" / ")
+      )).filter(Boolean);
+      return subjects.length ? subjects.join(" · ") : "Location-only photo";
+    }
+
+    function renderMasterView() {
+      if (!state.data || !$("masterList")) return;
+      renderBulkEditor("master", "masterBulkEditor");
+      const all = state.data.masterPhotos || [];
+      const term = $("masterSearch").value.trim().toLowerCase();
+      const photos = all.filter((photo) => masterPhotoMatchesSearch(photo, term));
+      const pageCount = Math.max(1, Math.ceil(photos.length / state.masterPageSize));
+      state.masterPage = Math.min(Math.max(1, state.masterPage), pageCount);
+      const start = (state.masterPage - 1) * state.masterPageSize;
+      const pagePhotos = photos.slice(start, start + state.masterPageSize);
+      $("masterSummary").textContent = `${photos.length} of ${all.length} database photos · page ${state.masterPage} of ${pageCount}`;
+      if (!photos.length) {
+        $("masterList").innerHTML = `<div class="empty">No database photos match this search.</div>`;
+        $("masterPagination").innerHTML = "";
+        return;
+      }
+      $("masterList").innerHTML = pagePhotos.map((photo) => {
+        const media = photo.exists && photo.sourceAssetPath
+          ? `<img src="${thumbUrl(photo.sourceAssetPath)}" loading="lazy" alt="${escapeHtml(photo.path)}">`
+          : `<div class="missing">Missing source</div>`;
+        const dateMeta = photo.date ? `Override: ${photo.date}` : `EXIF: ${photo.exifDate || "none"}`;
+        const subjectLabel = masterSubjectLabel(photo);
+        const selected = state.bulkEdit.master.has(photo.id);
+        return `
+          <article class="master-row${selected ? " selected" : ""}" data-master-row="${escapeHtml(photo.id)}">
+            <div class="master-media">${media}</div>
+            <div class="master-content">
+              <div class="master-heading">
+                <div>
+                  <div class="mini-title">${escapeHtml(photo.path)}</div>
+                  <div class="mini-meta">${escapeHtml(photo.id)} · ${escapeHtml(dateMeta)} · ${photo.captionAiAssisted ? "AI-assisted caption" : ""}</div>
+                </div>
+                <div class="master-heading-actions">
+                  <label class="photo-select"><input type="checkbox" data-bulk-select-mode="master" data-bulk-select-key="${escapeHtml(photo.id)}"${selected ? " checked" : ""}> Select</label>
+                  <span class="tag${photo.exists ? "" : " warn"}">${photo.exists ? "source present" : "source missing"}</span>
+                </div>
+              </div>
+              <div class="master-subjects"><strong>Subjects:</strong> ${escapeHtml(subjectLabel)}</div>
+              <div class="form-grid master-fields">
+                <div class="field">
+                  <label>Location</label>
+                  <select data-master-field="locationId">${masterLocationOptions(photo.locationId)}</select>
+                </div>
+                <div class="field">
+                  <label>Date override</label>
+                  <input data-master-field="date" type="date" value="${escapeHtml(photo.date || "")}">
+                </div>
+                <div class="field wide">
+                  <label>Airshow event</label>
+                  <input data-master-field="airshow" type="text" value="${escapeHtml(photo.airshow || "")}" placeholder="Optional event name">
+                </div>
+                <div class="field wide">
+                  <label>Title</label>
+                  <input data-master-field="title" type="text" value="${escapeHtml(photo.title || "")}" placeholder="Optional title">
+                </div>
+                <div class="field wide">
+                  <label>Livery</label>
+                  <input data-master-field="livery" type="text" value="${escapeHtml(photo.livery || "")}" placeholder="Optional livery">
+                </div>
+                <div class="field wide">
+                  <label>Caption</label>
+                  <textarea data-master-field="caption" rows="3">${escapeHtml(photo.caption || "")}</textarea>
+                </div>
+              </div>
+              <div class="card-actions">
+                <button class="btn secondary" type="button" data-master-save="${escapeHtml(photo.id)}">Save changes</button>
+                <button class="btn danger" type="button" data-master-detach="${escapeHtml(photo.id)}">Detach raw image</button>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+      $("masterPagination").innerHTML = `
+        <button class="btn ghost" type="button" data-master-page="${state.masterPage - 1}"${state.masterPage === 1 ? " disabled" : ""}>Previous</button>
+        <span>${start + 1}–${Math.min(start + state.masterPageSize, photos.length)} of ${photos.length}</span>
+        <button class="btn ghost" type="button" data-master-page="${state.masterPage + 1}"${state.masterPage === pageCount ? " disabled" : ""}>Next</button>`;
     }
 
     function entryByTargetKey(targetKey) {
@@ -1095,7 +1505,7 @@
       };
 
       const entries = state.data?.entries || [];
-      // Keep location-scoped YAML photos at the front of their own picker. This
+      // Keep location-scoped catalog photos at the front of their own picker. This
       // makes a recently tagged pin photo available even when the location has
       // many aircraft and squadron frames associated with it.
       const locationEntries = entries.filter((entry) => (
@@ -1234,11 +1644,18 @@
         const photos = squadronGroupPhotos(group);
         const taggedPhotoCount = photos.filter(({photo}) => !photo.customHero).length;
         const hasHero = Boolean(hero.assetPath);
+        const logoStatus = group.logo
+          ? (group.logoExists ? "Logo source available" : "Logo source missing")
+          : "No logo selected";
         const picker = photos.length
           ? `<div class="group-hero-picker">${photos.map(({entry, photo}) => {
               const available = Boolean(photo.exists && photo.sourceAssetPath);
               const selectable = Boolean(available && !photo.customHero);
-              const selected = Boolean(photo.customHero || (hero.entryTargetKey === entry.targetKey && hero.assetPath === photo.sourceAssetPath));
+              // A squadron hero is stored on the unit, but its source photo may
+              // live under any aircraft entry for that unit. Match the unique
+              // raw source path rather than the entry that happened to store
+              // the unit-level hero reference.
+              const selected = Boolean(photo.customHero || (hero.assetPath && hero.assetPath === photo.sourceAssetPath));
               const media = available
                 ? `<img src="${thumbUrl(photo.sourceAssetPath)}" loading="lazy" alt="${escapeHtml(photo.path)}">`
                 : `<div class="missing">Missing source</div>`;
@@ -1262,10 +1679,173 @@
               </div>
               <button class="btn ghost" type="button" data-squadron-hero-clear="${escapeHtml(group.key)}"${hasHero ? "" : " disabled"}>Clear Hero</button>
             </div>
+            <div class="unit-logo-editor" data-unit-logo-row="${escapeHtml(group.key)}">
+              <div class="field">
+                <label for="unit-logo-${escapeHtml(group.key)}">Shared squadron logo</label>
+                <input id="unit-logo-${escapeHtml(group.key)}" type="text" data-unit-logo-input value="${escapeHtml(group.logo || "")}" placeholder="logos/squadron-logo.png">
+              </div>
+              <div class="unit-logo-status">
+                <span class="tag${group.logoExists ? "" : " warn"}">${escapeHtml(logoStatus)}</span>
+                <span class="subtle">Used by every aircraft type in this squadron.</span>
+              </div>
+              <button class="btn secondary" type="button" data-unit-logo-save="${escapeHtml(group.key)}"${group.unitId ? "" : " disabled"}>Save Logo</button>
+            </div>
             ${picker}
           </article>
         `;
       }).join("");
+    }
+
+    async function saveUnitLogo(groupKey, button) {
+      const group = (state.data?.squadronGroups || []).find((item) => item.key === groupKey);
+      const row = button.closest("[data-unit-logo-row]");
+      const input = row?.querySelector("[data-unit-logo-input]");
+      if (!group?.unitId || !input) throw new Error("This squadron is no longer available. Reload and try again.");
+      button.disabled = true;
+      try {
+        const result = await api("/api/update-unit-logo", {
+          unitId: group.unitId,
+          logoSource: input.value
+        });
+        toast(result.message);
+        await loadState(true);
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function openUtilityDrawer(title, eyebrow, content) {
+      $("utilityDrawerTitle").textContent = title;
+      $("utilityDrawerEyebrow").textContent = eyebrow;
+      $("utilityDrawerBody").innerHTML = content;
+      $("utilityScrim").hidden = false;
+      $("utilityDrawer").setAttribute("aria-hidden", "false");
+      document.body.dataset.utilityOpen = "true";
+      requestAnimationFrame(() => $("utilityDrawerBody").querySelector("input, select, button")?.focus());
+    }
+
+    function closeUtilityDrawer() {
+      $("utilityDrawer").setAttribute("aria-hidden", "true");
+      $("utilityScrim").hidden = true;
+      delete document.body.dataset.utilityOpen;
+    }
+
+    function pinSelectOptions(selectedId = "") {
+      return (state.data?.pins || []).map((pin) => (
+        `<option value="${escapeHtml(pin.id)}"${pin.id === selectedId ? " selected" : ""}>${escapeHtml(pinOptionLabel(pin))}</option>`
+      )).join("");
+    }
+
+    function openInlineSourceCreator() {
+      openUtilityDrawer("Create photo source", "Inline creation", `
+        <form class="drawer-form" data-inline-create="source">
+          <div class="field"><label>Tag level</label><select name="scope"><option value="aircraft">Aircraft and unit</option><option value="squadron">Unit only</option></select></div>
+          <div class="field" data-inline-aircraft><label>Aircraft type</label><input name="aircraftType" required placeholder="Lockheed C-130R"></div>
+          <div class="field" data-inline-aircraft><label>Aircraft family</label><select name="aircraftFamily"><option value="fighter">Fighter</option><option value="helicopter">Helicopter</option><option value="light">Light</option><option value="medium">Medium</option><option value="heavy">Heavy</option></select></div>
+          <div class="field"><label>Unit name</label><input name="unitName" required placeholder="Air Transport Squadron 61"></div>
+          <div class="field"><label>Country</label><input name="country" required placeholder="Japan"></div>
+          <div class="field"><label>Unit type</label><select name="unitType"><option value="squadron">Squadron</option><option value="organisation">Organisation</option></select></div>
+          <p class="subtle">Existing aircraft and units are reused automatically when their names match.</p>
+          <button class="btn primary" type="submit">Create and select</button>
+        </form>`);
+    }
+
+    function sourceDestinationOptions(sourceKey) {
+      const source = entryByTargetKey(sourceKey);
+      return (state.data?.entries || [])
+        .filter((entry) => (
+          entry.sourceScope !== "location"
+          && entry.targetKey !== sourceKey
+          && !(source?.sourceScope === "squadron" && entry.unitId === source.unitId)
+        ))
+        .sort((left, right) => entryOptionLabel(left).localeCompare(entryOptionLabel(right)))
+        .map((entry) => `<option value="${escapeHtml(entry.targetKey)}">${escapeHtml(entryOptionLabel(entry))}</option>`)
+        .join("");
+    }
+
+    function openEntryEditor(targetKey) {
+      const entry = entryByTargetKey(targetKey);
+      if (!entry || entry.sourceScope === "location") return toast("This source is managed in the Locations workspace.");
+      const isAircraft = entry.sourceScope === "aircraft";
+      const unitWarning = isAircraft
+        ? "Deleting this entry removes only this aircraft–unit relationship."
+        : "Deleting this unit also removes every aircraft relationship owned by the unit.";
+      openUtilityDrawer(entryOptionLabel(entry), "Edit photo source", `
+        <form class="drawer-form" data-entry-edit="${escapeHtml(entry.targetKey)}">
+          ${isAircraft ? `<div class="field"><label>Aircraft type</label><input name="aircraftType" required value="${escapeHtml(entry.aircraftType || "")}"></div><div class="field"><label>Aircraft family</label><select name="aircraftFamily">${["fighter","helicopter","light","medium","heavy"].map((family) => `<option value="${family}"${entry.aircraftFamily === family ? " selected" : ""}>${family[0].toUpperCase()}${family.slice(1)}</option>`).join("")}</select></div>` : ""}
+          <div class="field"><label>Unit name</label><input name="squadronName" required value="${escapeHtml(entry.squadronName || "")}"></div>
+          <div class="field"><label>Country</label><input name="country" required value="${escapeHtml(entry.country || "")}"></div>
+          <div class="field"><label>Unit type</label><select name="unitType"><option value="squadron"${entry.unitType === "squadron" ? " selected" : ""}>Squadron</option><option value="organisation"${entry.unitType === "organisation" ? " selected" : ""}>Organisation</option></select></div>
+          ${isAircraft ? "" : `<div class="field"><label>Shared unit logo</label><input name="squadronLogo" value="${escapeHtml(entry.squadronLogo || "")}" placeholder="logos/unit-logo.png"></div>`}
+          <button class="btn primary" type="submit">Save Entry</button>
+        </form>
+        <section class="drawer-danger-zone" data-entry-delete-zone="${escapeHtml(entry.targetKey)}">
+          <h3>Delete entry</h3>
+          <p class="subtle">${escapeHtml(unitWarning)} Photo records and raw files are never deleted.</p>
+          <label class="choice-row"><input type="radio" name="deleteMode" value="transfer" checked> Transfer affected photos to another entry</label>
+          <div class="field" data-transfer-destination><label>Destination entry</label><select data-delete-destination><option value="">Choose destination</option>${sourceDestinationOptions(entry.targetKey)}</select></div>
+          <label class="choice-row"><input type="radio" name="deleteMode" value="untag"> Untag affected photos</label>
+          <button class="btn danger" type="button" data-delete-entry-confirm="${escapeHtml(entry.targetKey)}">Delete Entry</button>
+        </section>`);
+    }
+
+    function openInlineLocationCreator() {
+      openUtilityDrawer("Create location", "Inline creation", `
+        <form class="drawer-form" data-inline-create="location">
+          <div class="field"><label>Country</label><input name="country" required placeholder="Japan"></div>
+          <div class="field"><label>Name</label><input name="name" required placeholder="Atsugi Air Base"></div>
+          <div class="form-grid"><div class="field"><label>ICAO</label><input name="icao" maxlength="4" placeholder="RJTA"></div><div class="field"><label>ID override</label><input name="id" placeholder="atsugi-air-base"></div></div>
+          <div class="form-grid"><div class="field"><label>Latitude</label><input name="lat" required inputmode="decimal"></div><div class="field"><label>Longitude</label><input name="lon" required inputmode="decimal"></div></div>
+          <button class="btn primary" type="submit">Create and select</button>
+        </form>`);
+    }
+
+    function openInlineEventCreator() {
+      const selected = selectedPin();
+      openUtilityDrawer("Create event", "Inline creation", `
+        <form class="drawer-form" data-inline-create="event">
+          <div class="field"><label>Event name</label><input name="name" required value="${escapeHtml($("airshowInput").value)}" placeholder="Singapore Airshow 2026"></div>
+          <div class="field"><label>Location</label><select name="locationId" required><option value="">Choose a location</option>${pinSelectOptions(selected?.id || "")}</select></div>
+          <div class="form-grid"><div class="field"><label>Starts on</label><input name="startsOn" type="date" value="${escapeHtml($("photoDate").value)}"></div><div class="field"><label>Ends on</label><input name="endsOn" type="date" value="${escapeHtml($("photoDate").value)}"></div></div>
+          <button class="btn primary" type="submit">Create and select</button>
+        </form>`);
+    }
+
+    function inspectorPhotos(photos) {
+      const available = (photos || []).filter((photo) => photo.sourceAssetPath).slice(0, 8);
+      if (!available.length) return `<div class="empty">No related photos</div>`;
+      return `<div class="inspector-photo-grid">${available.map((photo) => `<img src="${thumbUrl(photo.sourceAssetPath)}" loading="lazy" alt="${escapeHtml(photo.path)}">`).join("")}</div>`;
+    }
+
+    function inspectSelectedSource() {
+      const entry = selectedEntry();
+      if (!entry) return toast("Choose a photo source first.");
+      const related = (state.data.entries || []).filter((item) => item.unitId && item.unitId === entry.unitId);
+      const photoCount = related.reduce((total, item) => total + (item.photos?.length || 0), 0);
+      openUtilityDrawer(entry.aircraftType || entry.squadronName || "Photo source", "Entity inspector", `
+        <div class="inspector-stack">
+          <div class="inspector-facts"><span>Scope<strong>${escapeHtml(entry.sourceScope)}</strong></span><span>Country<strong>${escapeHtml(entry.country || "—")}</strong></span><span>Photos<strong>${photoCount}</strong></span><span>Issues<strong>${(entry.entryMissingFields || []).length}</strong></span></div>
+          ${entry.aircraftType ? `<section><h3>Aircraft</h3><p><strong>${escapeHtml(entry.aircraftType)}</strong><br><span class="subtle">${escapeHtml(entry.aircraftFamily || "Family not set")} · ${escapeHtml(entry.aircraftId || "")}</span></p></section>` : ""}
+          <section><h3>Unit</h3><p><strong>${escapeHtml(entry.squadronName || "—")}</strong><br><span class="subtle">${escapeHtml(entry.unitLabel || entry.unitType || "Unit")} · ${escapeHtml(entry.unitId || "")}</span></p><p class="subtle">Logo: ${escapeHtml(entry.squadronLogo || "not set")} · Hero: ${escapeHtml(entry.squadronHero || "not set")}</p></section>
+          <section><h3>Related photos</h3>${inspectorPhotos(related.flatMap((item) => item.photos || []))}</section>
+        </div>`);
+    }
+
+    function inspectSelectedLocation() {
+      const pin = selectedPin();
+      if (!pin) return toast("Choose a location first.");
+      const photos = (state.data.masterPhotos || []).filter((photo) => photo.locationId === pin.id);
+      openUtilityDrawer(pin.name, "Location inspector", `<div class="inspector-stack"><div class="inspector-facts"><span>Country<strong>${escapeHtml(pin.country)}</strong></span><span>ICAO<strong>${escapeHtml(pin.icao || "—")}</strong></span><span>Photos<strong>${photos.length}</strong></span><span>Hero<strong>${pin.heroAssetPath ? "Set" : "Missing"}</strong></span></div><p class="subtle">${escapeHtml(pin.id)} · ${pin.lat}, ${pin.lon}</p><section><h3>Related photos</h3>${inspectorPhotos(photos)}</section></div>`);
+    }
+
+    function inspectSelectedEvent() {
+      const name = $("airshowInput").value.trim();
+      if (!name) return toast("Enter or choose an event first.");
+      const event = (state.data.airshowEvents || []).find((item) => item.name.toLowerCase() === name.toLowerCase());
+      const photos = (state.data.masterPhotos || []).filter((photo) => String(photo.airshow || "").toLowerCase() === name.toLowerCase());
+      const locations = [...new Set(photos.map((photo) => photo.locationName || photo.location).filter(Boolean))];
+      const dates = photos.map((photo) => photo.date || photo.exifDate).filter(Boolean).sort();
+      openUtilityDrawer(event?.name || name, "Event inspector", `<div class="inspector-stack"><div class="inspector-facts"><span>Catalogued<strong>${event ? "Yes" : "No"}</strong></span><span>Photos<strong>${photos.length}</strong></span><span>Locations<strong>${locations.length}</strong></span><span>Date range<strong>${dates.length ? `${escapeHtml(dates[0])}–${escapeHtml(dates.at(-1))}` : "—"}</strong></span></div><p class="subtle">${escapeHtml(locations.join(" · ") || "No linked locations")}</p><section><h3>Related photos</h3>${inspectorPhotos(photos)}</section></div>`);
     }
 
     function allMissingIssues() {
@@ -1372,8 +1952,8 @@
     }
 
     function renderMissingEntryEditor(issue) {
-      $("missingEditor").innerHTML = `
-        <div class="form-grid">
+      const isUnitEntry = issue.entry.sourceScope === "squadron";
+      const aircraftFields = isUnitEntry ? "" : `
           <div class="field wide">
             <label for="missingEntryAircraftType">Aircraft Type</label>
             <input id="missingEntryAircraftType" type="text" value="${escapeHtml(issue.entry.aircraftType || "")}">
@@ -1388,15 +1968,21 @@
               <option value="heavy"${issue.entry.aircraftFamily === "heavy" ? " selected" : ""}>Heavy</option>
               <option value="helicopter"${issue.entry.aircraftFamily === "helicopter" ? " selected" : ""}>Helicopter</option>
             </select>
-          </div>
+          </div>`;
+      const logoField = isUnitEntry ? `
+          <div class="field wide">
+            <label for="missingEntrySquadronLogo">Shared Unit Logo</label>
+            <input id="missingEntrySquadronLogo" type="text" value="${escapeHtml(issue.entry.squadronLogo || "")}" placeholder="logos/unit-logo.png">
+            <div class="subtle">This single source is reused for every aircraft type assigned to the unit.</div>
+          </div>` : "";
+      $("missingEditor").innerHTML = `
+        <div class="form-grid">
+          ${aircraftFields}
           <div class="field wide">
             <label for="missingEntrySquadronName">Unit Name</label>
             <input id="missingEntrySquadronName" type="text" value="${escapeHtml(issue.entry.squadronName || "")}">
           </div>
-          <div class="field wide">
-            <label for="missingEntrySquadronLogo">Squadron Logo</label>
-            <input id="missingEntrySquadronLogo" type="text" value="${escapeHtml(issue.entry.squadronLogo || "")}" placeholder="logo.png or ../../../assets/logos/unit.svg">
-          </div>
+          ${logoField}
           <div class="field">
             <label for="missingEntryCountry">Country</label>
             <input id="missingEntryCountry" type="text" value="${escapeHtml(issue.entry.country || "")}">
@@ -1619,6 +2205,45 @@
       await loadState(true);
     }
 
+    function masterField(row, name) {
+      return row.querySelector(`[data-master-field="${name}"]`);
+    }
+
+    async function saveMasterPhoto(photoId, button) {
+      const row = button.closest("[data-master-row]");
+      if (!row) return;
+      button.disabled = true;
+      try {
+        const result = await api("/api/update-master-photo", {
+          photoId,
+          photo: {
+            locationId: masterField(row, "locationId").value,
+            date: masterField(row, "date").value,
+            airshow: masterField(row, "airshow").value,
+            title: masterField(row, "title").value,
+            livery: masterField(row, "livery").value,
+            caption: masterField(row, "caption").value
+          }
+        });
+        toast(result.message);
+        await loadState(true);
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    async function detachMasterPhoto(photoId) {
+      const photo = (state.data?.masterPhotos || []).find((item) => item.id === photoId);
+      if (!photo) return;
+      const confirmed = window.confirm(
+        `Detach this raw image from the database?\n\n${photo.path}\n\nThe file in raw_assets will not be deleted.`
+      );
+      if (!confirmed) return;
+      const result = await api("/api/delete-master-photo", {photoId});
+      toast(result.message);
+      await loadState(true);
+    }
+
     async function saveMissingPhoto() {
       const issue = getSelectedIssue();
       if (!issue || issue.type !== "photo") throw new Error("Choose a photo item.");
@@ -1648,16 +2273,20 @@
     async function saveMissingEntry() {
       const issue = getSelectedIssue();
       if (!issue || issue.type !== "entry") throw new Error("Choose an entry item.");
-      const result = await api("/api/update-entry", {
+      const payload = {
         entryPath: issue.entry.entryPath,
         scope: issue.entry.sourceScope,
-        aircraftType: $("missingEntryAircraftType").value,
-        aircraftFamily: $("missingEntryAircraftFamily").value,
         squadronName: $("missingEntrySquadronName").value,
-        squadronLogo: $("missingEntrySquadronLogo").value,
         country: $("missingEntryCountry").value,
         unitType: $("missingEntryUnitType").value
-      });
+      };
+      if (issue.entry.sourceScope === "squadron") {
+        payload.squadronLogo = $("missingEntrySquadronLogo").value;
+      } else {
+        payload.aircraftType = $("missingEntryAircraftType").value;
+        payload.aircraftFamily = $("missingEntryAircraftFamily").value;
+      }
+      const result = await api("/api/update-entry", payload);
       toast(result.message);
       state.selectedIssueKey = "";
       await loadState(true);
@@ -1678,17 +2307,17 @@
         scope: $("newEntryScope").value,
         aircraftType: $("newAircraftType").value,
         aircraftFamily: $("newAircraftFamily").value,
+        aircraftDoubleWidth: $("newAircraftDisplayWidth").value,
         squadronName: $("newSquadronName").value,
         country: $("newCountry").value,
-        unitType: $("newUnitType").value,
-        squadronLogo: $("newSquadronLogo").value
+        unitType: $("newUnitType").value
       });
       toast(result.message);
       $("newAircraftType").value = "";
       $("newAircraftFamily").value = "";
+      $("newAircraftDisplayWidth").value = "";
       $("newSquadronName").value = "";
       $("newCountry").value = "";
-      $("newSquadronLogo").value = "";
       await loadState(false);
       $("entrySelect").value = result.entryPath;
       setTab("attach");
@@ -1759,6 +2388,26 @@
       await loadState(true);
     }
 
+    async function setAircraftHero(aircraftId, photoId = "") {
+      const aircraft = (state.data?.aircraftCatalog || []).find((item) => item.id === aircraftId);
+      if (!aircraft) throw new Error("This aircraft type is no longer available. Reload and try again.");
+      const result = await api("/api/set-aircraft-hero", {aircraftId: aircraft.id, photoId});
+      toast(result.message);
+      await loadState(true);
+    }
+
+    async function saveAircraftSettings(aircraftId, button) {
+      const row = button.closest("[data-aircraft-settings-row]");
+      const select = row?.querySelector("[data-aircraft-width]");
+      if (!select) throw new Error("Choose an aircraft card width first.");
+      const result = await api("/api/update-aircraft-settings", {
+        aircraftId,
+        doubleWidth: select.value
+      });
+      toast(result.message);
+      await loadState(true);
+    }
+
     function appendBuildLog(line, stream = "stdout") {
       const prefix = stream === "stderr" ? "stderr" : "stdout";
       $("buildLog").textContent += `${prefix}: ${line}\n`;
@@ -1771,6 +2420,7 @@
       const warnings = summary.warnings || [];
       const notes = summary.notes || [];
       const scope = summary.commitScope || {sections: [], recommendedGlobs: [], excluded: []};
+      const database = summary.databaseStatus || {};
       const totalChanges = Object.values(changes.totals || {}).reduce((sum, value) => sum + Number(value || 0), 0);
 
       $("buildSummary").innerHTML = `
@@ -1792,6 +2442,14 @@
           <div class="summary-card">
             <h3>Warnings</h3>
             ${renderWarningList(warnings, notes)}
+          </div>
+          <div class="summary-card">
+            <h3>Canonical Database</h3>
+            <div class="mini-meta">
+              Integrity: ${escapeHtml(database.integrity || "unknown")}<br>
+              SQL snapshot: ${database.snapshotCurrent ? "current" : "stale"}
+            </div>
+            ${database.errors?.length ? renderWarningList(database.errors, []) : ""}
           </div>
           <div class="summary-card">
             <h3>Commit Scope</h3>
@@ -2031,14 +2689,34 @@
       }
     }
 
+    function setAssetDrawer(open, restoreFocus = false) {
+      state.assetsOpen = Boolean(open);
+      document.body.dataset.assetsOpen = String(state.assetsOpen);
+      $("toggleAssetsBtn").setAttribute("aria-expanded", String(state.assetsOpen));
+      $("assetPanel").setAttribute("aria-hidden", String(!state.assetsOpen));
+      $("assetPanel").inert = !state.assetsOpen;
+      if (!state.assetsOpen && restoreFocus) $("toggleAssetsBtn").focus();
+    }
+
     function setTab(name) {
+      if (!viewMeta[name]) name = "attach";
       state.activeTab = name;
+      sessionStorage.setItem("spotterdex-manager.activeTab", name);
+      document.body.dataset.activeTab = name;
       document.querySelectorAll(".tab").forEach((button) => {
-        button.classList.toggle("active", button.dataset.tab === name);
+        const active = button.dataset.tab === name;
+        button.classList.toggle("active", active);
+        if (active) button.setAttribute("aria-current", "page");
+        else button.removeAttribute("aria-current");
       });
       document.querySelectorAll(".view").forEach((view) => {
         view.classList.toggle("active", view.id === `${name}View`);
       });
+      const [title, description] = viewMeta[name];
+      $("viewTitle").textContent = title;
+      $("viewDescription").textContent = description;
+      setAssetDrawer(name === "attach");
+      renderActiveView();
     }
 
     function toast(message) {
@@ -2053,6 +2731,8 @@
       $("assetSearch").addEventListener("input", renderAssetGrid);
       $("entrySearch").addEventListener("input", renderEntryOptions);
       $("entryListSearch").addEventListener("input", renderEntryCards);
+      $("aircraftSettingsSearch").addEventListener("input", renderAircraftSettings);
+      $("masterSearch").addEventListener("input", () => { state.masterPage = 1; renderMasterView(); });
       $("newEntryScope").addEventListener("change", renderEntryCreationFields);
       $("missingSearch").addEventListener("input", renderMissingFields);
       $("missingFilter").addEventListener("change", renderMissingFields);
@@ -2063,10 +2743,124 @@
         renderBulkCaptions();
       });
       $("entrySelect").addEventListener("change", () => {
+        clearBulkSelection("tagged");
         clearEditor();
         renderEntryDetail();
       });
       $("reloadBtn").addEventListener("click", () => loadState(true).then(() => toast("Reloaded")));
+      $("createSourceInlineBtn").addEventListener("click", openInlineSourceCreator);
+      $("createLocationInlineBtn").addEventListener("click", openInlineLocationCreator);
+      $("createEventInlineBtn").addEventListener("click", openInlineEventCreator);
+      $("inspectSourceBtn").addEventListener("click", inspectSelectedSource);
+      $("inspectLocationBtn").addEventListener("click", inspectSelectedLocation);
+      $("inspectEventBtn").addEventListener("click", inspectSelectedEvent);
+      $("closeUtilityDrawerBtn").addEventListener("click", closeUtilityDrawer);
+      $("utilityScrim").addEventListener("click", closeUtilityDrawer);
+      $("utilityDrawerBody").addEventListener("change", (event) => {
+        if (event.target.name === "scope") {
+          const show = event.target.value === "aircraft";
+          $("utilityDrawerBody").querySelectorAll("[data-inline-aircraft]").forEach((field) => { field.hidden = !show; });
+        }
+        if (event.target.name === "deleteMode") {
+          const zone = event.target.closest("[data-entry-delete-zone]");
+          const destination = zone?.querySelector("[data-transfer-destination]");
+          if (destination) destination.hidden = event.target.value !== "transfer";
+        }
+      });
+      $("utilityDrawerBody").addEventListener("submit", async (event) => {
+        const editForm = event.target.closest("[data-entry-edit]");
+        if (editForm) {
+          event.preventDefault();
+          const submit = editForm.querySelector("button[type='submit']");
+          const values = Object.fromEntries(new FormData(editForm));
+          submit.disabled = true;
+          try {
+            const entry = entryByTargetKey(editForm.dataset.entryEdit);
+            const result = await api("/api/update-entry", {
+              entryPath: editForm.dataset.entryEdit,
+              scope: entry.sourceScope,
+              ...values
+            });
+            await loadState(true);
+            closeUtilityDrawer();
+            toast(result.message);
+          } catch (error) {
+            toast(error.message);
+          } finally {
+            submit.disabled = false;
+          }
+          return;
+        }
+        const form = event.target.closest("[data-inline-create]");
+        if (!form) return;
+        event.preventDefault();
+        const submit = form.querySelector("button[type='submit']");
+        const values = Object.fromEntries(new FormData(form));
+        submit.disabled = true;
+        try {
+          if (form.dataset.inlineCreate === "source") {
+            const result = await api("/api/create-entry", {
+              scope: values.scope,
+              aircraftType: values.aircraftType || "",
+              aircraftFamily: values.aircraftFamily || "",
+              squadronName: values.unitName,
+              country: values.country,
+              unitType: values.unitType
+            });
+            $("entrySearch").value = "";
+            await loadState(true);
+            $("entrySelect").value = result.entryPath;
+            renderEntryDetail();
+            toast(result.message);
+          } else if (form.dataset.inlineCreate === "location") {
+            const result = await api("/api/create-pin", values);
+            await loadState(true);
+            const pin = state.data.pins.find((item) => item.id === result.pinId);
+            if (pin) $("pinSelect").value = pin.key;
+            toast(result.message);
+          } else if (form.dataset.inlineCreate === "event") {
+            const result = await api("/api/create-event", values);
+            await loadState(true);
+            $("airshowInput").value = result.name;
+            toast(result.message);
+          }
+          closeUtilityDrawer();
+        } catch (error) {
+          toast(error.message);
+        } finally {
+          submit.disabled = false;
+        }
+      });
+      $("utilityDrawerBody").addEventListener("click", async (event) => {
+        const button = event.target.closest("[data-delete-entry-confirm]");
+        if (!button) return;
+        const zone = button.closest("[data-entry-delete-zone]");
+        const mode = zone.querySelector("input[name='deleteMode']:checked")?.value;
+        const destination = zone.querySelector("[data-delete-destination]")?.value || "";
+        if (mode === "transfer" && !destination) return toast("Choose a destination entry.");
+        const entry = entryByTargetKey(button.dataset.deleteEntryConfirm);
+        const destinationEntry = destination ? entryByTargetKey(destination) : null;
+        const action = mode === "transfer"
+          ? `transfer all affected photo subjects to ${entryOptionLabel(destinationEntry)}`
+          : "remove this source from every affected photo";
+        if (!window.confirm(`Delete ${entryOptionLabel(entry)}?\n\nThis will ${action}. Photo records and raw files will remain.`)) return;
+        button.disabled = true;
+        try {
+          const result = await api("/api/delete-entry", {
+            entryPath: entry.targetKey,
+            mode,
+            destinationEntryPath: destination
+          });
+          await loadState(true);
+          closeUtilityDrawer();
+          toast(result.message);
+        } catch (error) {
+          toast(error.message);
+          button.disabled = false;
+        }
+      });
+      $("toggleAssetsBtn").addEventListener("click", () => setAssetDrawer(!state.assetsOpen));
+      $("closeAssetsBtn").addEventListener("click", () => setAssetDrawer(false, true));
       $("clearBuildCacheBtn").addEventListener("click", () => clearBuildCache().catch((error) => toast(error.message)));
       $("clearSelectionBtn").addEventListener("click", () => {
         state.selectedAssets.clear();
@@ -2089,6 +2883,15 @@
       $("runBulkCaptionsBtn").addEventListener("click", () => runBulkCaptions().catch((error) => toast(error.message)));
       $("buildBtn").addEventListener("click", () => runBuild().catch((error) => toast(error.message)));
       $("buildBtn2").addEventListener("click", () => runBuild().catch((error) => toast(error.message)));
+      $("backupDatabaseBtn").addEventListener("click", async () => {
+        try {
+          const result = await api("/api/backup-database", {});
+          toast(result.message);
+          await loadState(true);
+        } catch (error) {
+          toast(error.message);
+        }
+      });
       $("findOrphansBtn").addEventListener("click", () => findOrphans().catch((error) => toast(error.message)));
       $("deleteOrphansBtn").addEventListener("click", () => deleteOrphans().catch((error) => toast(error.message)));
       $("orphanList").addEventListener("click", (event) => {
@@ -2179,10 +2982,29 @@
         if (asset) setLocationHero(asset.dataset.locationHeroAsset).catch((error) => toast(error.message));
       });
       $("squadronHeroList").addEventListener("click", (event) => {
+        const logo = event.target.closest("[data-unit-logo-save]");
         const photo = event.target.closest("[data-squadron-hero-photo]");
         const clear = event.target.closest("[data-squadron-hero-clear]");
+        if (logo) {
+          saveUnitLogo(logo.dataset.unitLogoSave, logo).catch((error) => toast(error.message));
+          return;
+        }
         if (photo) setSquadronHero(photo.dataset.squadronHeroGroup, photo.dataset.squadronHeroPhoto).catch((error) => toast(error.message));
         if (clear) setSquadronHero(clear.dataset.squadronHeroClear).catch((error) => toast(error.message));
+      });
+      $("aircraftSettingsList").addEventListener("click", (event) => {
+        const photo = event.target.closest("[data-aircraft-hero-photo]");
+        const clear = event.target.closest("[data-aircraft-hero-clear]");
+        const save = event.target.closest("[data-aircraft-settings-save]");
+        if (photo) {
+          setAircraftHero(photo.dataset.aircraftHeroAircraft, photo.dataset.aircraftHeroPhoto).catch((error) => toast(error.message));
+          return;
+        }
+        if (clear) {
+          setAircraftHero(clear.dataset.aircraftHeroClear).catch((error) => toast(error.message));
+          return;
+        }
+        if (save) saveAircraftSettings(save.dataset.aircraftSettingsSave, save).catch((error) => toast(error.message));
       });
       $("airshowMissingImageList").addEventListener("click", (event) => {
         const apply = event.target.closest("[data-airshow-missing-apply]");
@@ -2194,13 +3016,58 @@
         if (edit) fillEditor(Number(edit.dataset.editPhoto));
         if (del) deletePhoto(Number(del.dataset.deletePhoto)).catch((error) => toast(error.message));
       });
+      $("photoList").addEventListener("change", (event) => {
+        const input = event.target.closest("[data-bulk-select-mode='tagged']");
+        if (input) toggleBulkSelection("tagged", input.dataset.bulkSelectKey, input.checked);
+      });
       $("entryCards").addEventListener("click", (event) => {
+        const edit = event.target.closest("[data-edit-entry]");
         const button = event.target.closest("[data-open-entry]");
+        if (edit) {
+          openEntryEditor(edit.dataset.editEntry);
+          return;
+        }
         if (!button) return;
+        clearBulkSelection("tagged");
         $("entrySelect").value = button.dataset.openEntry;
         setTab("attach");
         renderEntryDetail();
       });
+      $("masterList").addEventListener("click", (event) => {
+        const save = event.target.closest("[data-master-save]");
+        const detach = event.target.closest("[data-master-detach]");
+        if (save) saveMasterPhoto(save.dataset.masterSave, save).catch((error) => toast(error.message));
+        if (detach) detachMasterPhoto(detach.dataset.masterDetach).catch((error) => toast(error.message));
+      });
+      $("masterList").addEventListener("change", (event) => {
+        const input = event.target.closest("[data-bulk-select-mode='master']");
+        if (input) toggleBulkSelection("master", input.dataset.bulkSelectKey, input.checked);
+      });
+      $("masterPagination").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-master-page]");
+        if (!button || button.disabled) return;
+        state.masterPage = Number(button.dataset.masterPage) || 1;
+        renderMasterView();
+        $("masterView").scrollTo({top: 0, behavior: "smooth"});
+      });
+      $("taggedBulkEditor").addEventListener("click", (event) => {
+        const selectAll = event.target.closest("[data-bulk-select-all]");
+        const clear = event.target.closest("[data-bulk-clear]");
+        const submit = event.target.closest("[data-bulk-submit]");
+        if (selectAll) selectAllBulkVisible("tagged");
+        if (clear) clearBulkSelection("tagged");
+        if (submit) applyBulkEdit("tagged").catch((error) => toast(error.message));
+      });
+      $("taggedBulkEditor").addEventListener("change", () => updateBulkEditorStatus("tagged"));
+      $("masterBulkEditor").addEventListener("click", (event) => {
+        const selectAll = event.target.closest("[data-bulk-select-all]");
+        const clear = event.target.closest("[data-bulk-clear]");
+        const submit = event.target.closest("[data-bulk-submit]");
+        if (selectAll) selectAllBulkVisible("master");
+        if (clear) clearBulkSelection("master");
+        if (submit) applyBulkEdit("master").catch((error) => toast(error.message));
+      });
+      $("masterBulkEditor").addEventListener("change", () => updateBulkEditorStatus("master"));
       $("missingList").addEventListener("click", (event) => {
         const button = event.target.closest("[data-issue]");
         if (!button) return;
@@ -2221,7 +3088,17 @@
       document.querySelectorAll(".tab").forEach((button) => {
         button.addEventListener("click", () => setTab(button.dataset.tab));
       });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && document.body.dataset.utilityOpen === "true") {
+          closeUtilityDrawer();
+          return;
+        }
+        if (event.key === "Escape" && state.assetsOpen && !$("assetPreviewModal").open) {
+          setAssetDrawer(false, true);
+        }
+      });
     }
 
     bindEvents();
+    setTab(state.activeTab);
     loadState(false).catch((error) => toast(error.message));
