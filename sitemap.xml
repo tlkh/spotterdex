@@ -2641,11 +2641,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tlkh.github.io/spotterdex/share/aircraft/b-52h-stratofortress/</loc>
-    <lastmod>2026-07-13</lastmod>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/beechcraft-at-6th-wolverine/</loc>
     <lastmod>2026-07-13</lastmod>
     <priority>0.7</priority>
@@ -2692,6 +2687,11 @@
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/boeing-ah-64djp-apache/</loc>
+    <lastmod>2026-07-13</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/aircraft/b-52h-stratofortress/</loc>
     <lastmod>2026-07-13</lastmod>
     <priority>0.7</priority>
   </url>

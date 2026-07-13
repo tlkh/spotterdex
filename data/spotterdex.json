@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-13T13:33:48+00:00",
+  "generatedAt": "2026-07-13T13:38:19+00:00",
   "entities": {
     "countries": {
       "au": {
@@ -101,14 +101,6 @@
         "doubleWidth": null,
         "writeUp": ""
       },
-      "b-52h-stratofortress": {
-        "id": "b-52h-stratofortress",
-        "name": "B-52H Stratofortress",
-        "family": "heavy",
-        "heroPhotoId": "2024-02-22-dsc06779-enhanced-nr",
-        "doubleWidth": null,
-        "writeUp": ""
-      },
       "beechcraft-at-6th-wolverine": {
         "id": "beechcraft-at-6th-wolverine",
         "name": "Beechcraft AT-6TH Wolverine",
@@ -186,6 +178,14 @@
         "name": "Boeing AH-64DJP Apache",
         "family": "helicopter",
         "heroPhotoId": "2023-11-26-dsc05377-enhanced-nr",
+        "doubleWidth": null,
+        "writeUp": ""
+      },
+      "b-52h-stratofortress": {
+        "id": "b-52h-stratofortress",
+        "name": "Boeing B-52H Stratofortress",
+        "family": "heavy",
+        "heroPhotoId": "2024-02-22-dsc06779-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -21205,12 +21205,6 @@
         "2024-07-04-dsc08248-enhanced-nr",
         "2024-07-04-dsc08218-enhanced-nr"
       ],
-      "b-52h-stratofortress": [
-        "2024-02-22-dsc06822-enhanced-nr",
-        "2024-02-22-dsc06817-enhanced-nr",
-        "2024-02-22-dsc06779-enhanced-nr",
-        "2024-02-22-dsc06744-enhanced-nr"
-      ],
       "beechcraft-at-6th-wolverine": [
         "2026-01-10-dsc06434",
         "2026-01-10-dsc06402",
@@ -21267,6 +21261,12 @@
         "2023-11-26-dsc05412-enhanced-nr",
         "2023-11-26-dsc05398-enhanced-nr",
         "2023-11-26-dsc05377-enhanced-nr"
+      ],
+      "b-52h-stratofortress": [
+        "2024-02-22-dsc06822-enhanced-nr",
+        "2024-02-22-dsc06817-enhanced-nr",
+        "2024-02-22-dsc06779-enhanced-nr",
+        "2024-02-22-dsc06744-enhanced-nr"
       ],
       "boeing-c-17-globemaster-iii": [
         "2023-06-27-raaf-c17"
@@ -23340,9 +23340,6 @@
       "airbus-a330-200": [
         "fr-ervts-2-31-esterel"
       ],
-      "b-52h-stratofortress": [
-        "us-23rd-bomb-squadron"
-      ],
       "beechcraft-at-6th-wolverine": [
         "th-411st-fighter-squadron"
       ],
@@ -23372,6 +23369,9 @@
       ],
       "boeing-ah-64djp-apache": [
         "jp-1st-attack-helicopter-squadron"
+      ],
+      "b-52h-stratofortress": [
+        "us-23rd-bomb-squadron"
       ],
       "boeing-c-17-globemaster-iii": [
         "au-36-squadron"

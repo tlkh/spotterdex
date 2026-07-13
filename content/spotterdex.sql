@@ -119,7 +119,7 @@ INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "do
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('airbus-a330-200', 'Airbus A330-200', 'heavy', '2024-07-04-dsc08218-enhanced-nr', '', NULL);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('airbus-a330-mrtt', 'Airbus A330 MRTT', 'heavy', '2023-08-29-dsc05206-enhanced-nr', '', 1);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('atr-72-500', 'ATR 72-500', 'medium', '2023-04-29-firefly-1', '', NULL);
-INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('b-52h-stratofortress', 'B-52H Stratofortress', 'heavy', '2024-02-22-dsc06779-enhanced-nr', '', NULL);
+INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('b-52h-stratofortress', 'Boeing B-52H Stratofortress', 'heavy', '2024-02-22-dsc06779-enhanced-nr', '', NULL);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('beechcraft-at-6th-wolverine', 'Beechcraft AT-6TH Wolverine', 'light', '2026-01-10-dsc06084', '', NULL);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('bell-uh-1-iroquois', 'Bell UH-1 Iroquois', 'helicopter', '2023-09-18-usaf-huey-3', '', NULL);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('bell-uh-1y-venom', 'Bell UH-1Y Venom', 'helicopter', NULL, '', NULL);
