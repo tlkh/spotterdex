@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-13T08:18:51+00:00",
+  "generatedAt": "2026-07-13T12:09:53+00:00",
   "entities": {
     "countries": {
       "au": {
@@ -98,6 +98,14 @@
         "name": "Airbus A330-200",
         "family": "heavy",
         "heroPhotoId": "2024-07-04-dsc08218-enhanced-nr",
+        "doubleWidth": null,
+        "writeUp": ""
+      },
+      "beechcraft-at-6th-wolverine": {
+        "id": "beechcraft-at-6th-wolverine",
+        "name": "Beechcraft AT-6TH Wolverine",
+        "family": "light",
+        "heroPhotoId": "2026-01-10-dsc06084",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -545,7 +553,7 @@
         "id": "sikorsky-ch-53e-super-stallion",
         "name": "Sikorsky CH-53E Super Stallion",
         "family": "helicopter",
-        "heroPhotoId": "",
+        "heroPhotoId": "2025-12-12-dsc00700",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -1054,9 +1062,18 @@
         "heroPhotoId": "2026-01-10-dsc04848",
         "writeUp": ""
       },
+      "th-411st-fighter-squadron": {
+        "id": "th-411st-fighter-squadron",
+        "name": "411st Fighter Squadron",
+        "countryId": "th",
+        "kind": "squadron",
+        "logo": "",
+        "heroPhotoId": "",
+        "writeUp": ""
+      },
       "th-701st-squadron": {
         "id": "th-701st-squadron",
-        "name": "701st Squadron",
+        "name": "701st Fighter Squadron",
         "countryId": "th",
         "kind": "squadron",
         "logo": "",
@@ -2306,6 +2323,348 @@
           "DateTimeOriginal": "2026:01:31 10:52:39",
           "DateTimeDigitized": "2026:01:31 10:52:39",
           "DateTime": "2026:07:13 13:42:07"
+        }
+      },
+      "2026-01-10-dsc06434": {
+        "id": "2026-01-10-dsc06434",
+        "locationId": "th-don-muang-royal-thai-air-force-base",
+        "eventId": "th-wan-dek-2026",
+        "subjects": [
+          {
+            "aircraftId": "beechcraft-at-6th-wolverine",
+            "unitId": "th-411st-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2026",
+        "date": "2026-01-10",
+        "sortDate": "2026-01-10",
+        "livery": "",
+        "title": "",
+        "caption": "RTAF Beechcraft AT-6TH Wolverine performing during Wan Dek",
+        "image": "assets/generated/photos/2026-01-10-dsc06434.jpg",
+        "thumbnail": "assets/generated/thumbs/2026-01-10-dsc06434.jpg",
+        "source": "raw_assets/DSC06434.jpg",
+        "originalSize": "5216 x 3912",
+        "processedSize": "2560 x 1920",
+        "thumbnailSize": "1024 x 768",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "600mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/11.0",
+          "ExposureTime": "1/80s",
+          "ExposureBiasValue": "2.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2026:01:10 11:43:36",
+          "DateTimeDigitized": "2026:01:10 11:43:36",
+          "DateTime": "2026:07:13 20:02:53"
+        }
+      },
+      "2026-01-10-dsc06402": {
+        "id": "2026-01-10-dsc06402",
+        "locationId": "th-don-muang-royal-thai-air-force-base",
+        "eventId": "th-wan-dek-2026",
+        "subjects": [
+          {
+            "aircraftId": "beechcraft-at-6th-wolverine",
+            "unitId": "th-411st-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2026",
+        "date": "2026-01-10",
+        "sortDate": "2026-01-10",
+        "livery": "",
+        "title": "",
+        "caption": "RTAF Beechcraft AT-6TH Wolverine performing during Wan Dek",
+        "image": "assets/generated/photos/2026-01-10-dsc06402.jpg",
+        "thumbnail": "assets/generated/thumbs/2026-01-10-dsc06402.jpg",
+        "source": "raw_assets/DSC06402.jpg",
+        "originalSize": "4070 x 3053",
+        "processedSize": "2560 x 1920",
+        "thumbnailSize": "1024 x 768",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "600mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/11.0",
+          "ExposureTime": "1/80s",
+          "ExposureBiasValue": "2.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2026:01:10 11:43:34",
+          "DateTimeDigitized": "2026:01:10 11:43:34",
+          "DateTime": "2026:07:13 20:02:52"
+        }
+      },
+      "2026-01-10-dsc06346": {
+        "id": "2026-01-10-dsc06346",
+        "locationId": "th-don-muang-royal-thai-air-force-base",
+        "eventId": "th-wan-dek-2026",
+        "subjects": [
+          {
+            "aircraftId": "beechcraft-at-6th-wolverine",
+            "unitId": "th-411st-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2026",
+        "date": "2026-01-10",
+        "sortDate": "2026-01-10",
+        "livery": "",
+        "title": "",
+        "caption": "RTAF Beechcraft AT-6TH Wolverine performing during Wan Dek",
+        "image": "assets/generated/photos/2026-01-10-dsc06346.jpg",
+        "thumbnail": "assets/generated/thumbs/2026-01-10-dsc06346.jpg",
+        "source": "raw_assets/DSC06346.jpg",
+        "originalSize": "5764 x 4323",
+        "processedSize": "2560 x 1920",
+        "thumbnailSize": "1024 x 768",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "379mm",
+          "FocalLengthIn35mmFilm": "379mm",
+          "FNumber": "f/8.0",
+          "ExposureTime": "1/320s",
+          "ExposureBiasValue": "1.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2026:01:10 11:39:13",
+          "DateTimeDigitized": "2026:01:10 11:39:13",
+          "DateTime": "2026:07:13 20:02:51"
+        }
+      },
+      "2026-01-10-dsc06226": {
+        "id": "2026-01-10-dsc06226",
+        "locationId": "th-don-muang-royal-thai-air-force-base",
+        "eventId": "th-wan-dek-2026",
+        "subjects": [
+          {
+            "aircraftId": "beechcraft-at-6th-wolverine",
+            "unitId": "th-411st-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2026",
+        "date": "2026-01-10",
+        "sortDate": "2026-01-10",
+        "livery": "",
+        "title": "",
+        "caption": "RTAF Beechcraft AT-6TH Wolverine performing during Wan Dek",
+        "image": "assets/generated/photos/2026-01-10-dsc06226.jpg",
+        "thumbnail": "assets/generated/thumbs/2026-01-10-dsc06226.jpg",
+        "source": "raw_assets/DSC06226.jpg",
+        "originalSize": "4113 x 3085",
+        "processedSize": "2560 x 1920",
+        "thumbnailSize": "1024 x 768",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "277mm",
+          "FocalLengthIn35mmFilm": "277mm",
+          "FNumber": "f/7.1",
+          "ExposureTime": "1/320s",
+          "ExposureBiasValue": "1.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2026:01:10 11:37:52",
+          "DateTimeDigitized": "2026:01:10 11:37:52",
+          "DateTime": "2026:07:13 20:02:50"
+        }
+      },
+      "2026-01-10-dsc06216": {
+        "id": "2026-01-10-dsc06216",
+        "locationId": "th-don-muang-royal-thai-air-force-base",
+        "eventId": "th-wan-dek-2026",
+        "subjects": [
+          {
+            "aircraftId": "beechcraft-at-6th-wolverine",
+            "unitId": "th-411st-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2026",
+        "date": "2026-01-10",
+        "sortDate": "2026-01-10",
+        "livery": "",
+        "title": "",
+        "caption": "RTAF Beechcraft AT-6TH Wolverine performing during Wan Dek",
+        "image": "assets/generated/photos/2026-01-10-dsc06216.jpg",
+        "thumbnail": "assets/generated/thumbs/2026-01-10-dsc06216.jpg",
+        "source": "raw_assets/DSC06216.jpg",
+        "originalSize": "4362 x 3272",
+        "processedSize": "2560 x 1920",
+        "thumbnailSize": "1024 x 768",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "277mm",
+          "FocalLengthIn35mmFilm": "277mm",
+          "FNumber": "f/8.0",
+          "ExposureTime": "1/320s",
+          "ExposureBiasValue": "1.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2026:01:10 11:37:51",
+          "DateTimeDigitized": "2026:01:10 11:37:51",
+          "DateTime": "2026:07:13 20:02:49"
+        }
+      },
+      "2026-01-10-dsc06084": {
+        "id": "2026-01-10-dsc06084",
+        "locationId": "th-don-muang-royal-thai-air-force-base",
+        "eventId": "th-wan-dek-2026",
+        "subjects": [
+          {
+            "aircraftId": "beechcraft-at-6th-wolverine",
+            "unitId": "th-411st-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2026",
+        "date": "2026-01-10",
+        "sortDate": "2026-01-10",
+        "livery": "",
+        "title": "",
+        "caption": "RTAF Beechcraft AT-6TH Wolverine performing during Wan Dek",
+        "image": "assets/generated/photos/2026-01-10-dsc06084.jpg",
+        "thumbnail": "assets/generated/thumbs/2026-01-10-dsc06084.jpg",
+        "source": "raw_assets/DSC06084.jpg",
+        "originalSize": "6338 x 4753",
+        "processedSize": "2560 x 1920",
+        "thumbnailSize": "1024 x 768",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "419mm",
+          "FocalLengthIn35mmFilm": "419mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/320s",
+          "ExposureBiasValue": "1.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2026:01:10 11:36:14",
+          "DateTimeDigitized": "2026:01:10 11:36:14",
+          "DateTime": "2026:07:13 20:02:49"
+        }
+      },
+      "2026-01-10-dsc06077": {
+        "id": "2026-01-10-dsc06077",
+        "locationId": "th-don-muang-royal-thai-air-force-base",
+        "eventId": "th-wan-dek-2026",
+        "subjects": [
+          {
+            "aircraftId": "beechcraft-at-6th-wolverine",
+            "unitId": "th-411st-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2026",
+        "date": "2026-01-10",
+        "sortDate": "2026-01-10",
+        "livery": "",
+        "title": "",
+        "caption": "RTAF Beechcraft AT-6TH Wolverine performing during Wan Dek",
+        "image": "assets/generated/photos/2026-01-10-dsc06077.jpg",
+        "thumbnail": "assets/generated/thumbs/2026-01-10-dsc06077.jpg",
+        "source": "raw_assets/DSC06077.jpg",
+        "originalSize": "5238 x 3929",
+        "processedSize": "2560 x 1920",
+        "thumbnailSize": "1024 x 768",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "419mm",
+          "FocalLengthIn35mmFilm": "419mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/320s",
+          "ExposureBiasValue": "1.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2026:01:10 11:36:14",
+          "DateTimeDigitized": "2026:01:10 11:36:14",
+          "DateTime": "2026:07:13 20:02:47"
+        }
+      },
+      "2026-01-10-dsc05983": {
+        "id": "2026-01-10-dsc05983",
+        "locationId": "th-don-muang-royal-thai-air-force-base",
+        "eventId": "th-wan-dek-2026",
+        "subjects": [
+          {
+            "aircraftId": "beechcraft-at-6th-wolverine",
+            "unitId": "th-411st-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2026",
+        "date": "2026-01-10",
+        "sortDate": "2026-01-10",
+        "livery": "",
+        "title": "",
+        "caption": "RTAF Beechcraft AT-6TH Wolverine performing during Wan Dek",
+        "image": "assets/generated/photos/2026-01-10-dsc05983.jpg",
+        "thumbnail": "assets/generated/thumbs/2026-01-10-dsc05983.jpg",
+        "source": "raw_assets/DSC05983.jpg",
+        "originalSize": "6629 x 4972",
+        "processedSize": "2560 x 1920",
+        "thumbnailSize": "1024 x 768",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "225mm",
+          "FocalLengthIn35mmFilm": "225mm",
+          "FNumber": "f/11.0",
+          "ExposureTime": "1/80s",
+          "ExposureBiasValue": "2.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2026:01:10 11:19:07",
+          "DateTimeDigitized": "2026:01:10 11:19:07",
+          "DateTime": "2026:07:13 20:02:47"
+        }
+      },
+      "2026-01-10-dsc05813": {
+        "id": "2026-01-10-dsc05813",
+        "locationId": "th-don-muang-royal-thai-air-force-base",
+        "eventId": "th-wan-dek-2026",
+        "subjects": [
+          {
+            "aircraftId": "beechcraft-at-6th-wolverine",
+            "unitId": "th-411st-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2026",
+        "date": "2026-01-10",
+        "sortDate": "2026-01-10",
+        "livery": "",
+        "title": "",
+        "caption": "RTAF Beechcraft AT-6TH Wolverine performing during Wan Dek",
+        "image": "assets/generated/photos/2026-01-10-dsc05813.jpg",
+        "thumbnail": "assets/generated/thumbs/2026-01-10-dsc05813.jpg",
+        "source": "raw_assets/DSC05813.jpg",
+        "originalSize": "7086 x 5315",
+        "processedSize": "2560 x 1920",
+        "thumbnailSize": "1024 x 768",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "600mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/13.0",
+          "ExposureTime": "1/80s",
+          "ExposureBiasValue": "2.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2026:01:10 11:17:57",
+          "DateTimeDigitized": "2026:01:10 11:17:57",
+          "DateTime": "2026:07:13 20:02:46"
         }
       },
       "2026-01-10-dsc05725": {
@@ -20584,6 +20943,17 @@
         "2024-07-04-dsc08248-enhanced-nr",
         "2024-07-04-dsc08218-enhanced-nr"
       ],
+      "beechcraft-at-6th-wolverine": [
+        "2026-01-10-dsc06434",
+        "2026-01-10-dsc06402",
+        "2026-01-10-dsc06346",
+        "2026-01-10-dsc06226",
+        "2026-01-10-dsc06216",
+        "2026-01-10-dsc06084",
+        "2026-01-10-dsc06077",
+        "2026-01-10-dsc05983",
+        "2026-01-10-dsc05813"
+      ],
       "bell-uh-1-iroquois": [
         "2023-09-18-usaf-huey-3",
         "2023-09-18-usaf-huey-2",
@@ -21653,6 +22023,17 @@
         "2026-01-10-dsc04119",
         "2026-01-10-dsc04086"
       ],
+      "th-411st-fighter-squadron": [
+        "2026-01-10-dsc06434",
+        "2026-01-10-dsc06402",
+        "2026-01-10-dsc06346",
+        "2026-01-10-dsc06226",
+        "2026-01-10-dsc06216",
+        "2026-01-10-dsc06084",
+        "2026-01-10-dsc06077",
+        "2026-01-10-dsc05983",
+        "2026-01-10-dsc05813"
+      ],
       "th-701st-squadron": [
         "2026-01-10-dsc05725",
         "2026-01-10-dsc05649",
@@ -22276,6 +22657,15 @@
         "2022-10-18-dsc04841-enhanced"
       ],
       "th-don-muang-royal-thai-air-force-base": [
+        "2026-01-10-dsc06434",
+        "2026-01-10-dsc06402",
+        "2026-01-10-dsc06346",
+        "2026-01-10-dsc06226",
+        "2026-01-10-dsc06216",
+        "2026-01-10-dsc06084",
+        "2026-01-10-dsc06077",
+        "2026-01-10-dsc05983",
+        "2026-01-10-dsc05813",
         "2026-01-10-dsc05725",
         "2026-01-10-dsc05649",
         "2026-01-10-dsc05537",
@@ -22604,6 +22994,15 @@
         "2025-11-29-dsc00991"
       ],
       "th-wan-dek-2026": [
+        "2026-01-10-dsc06434",
+        "2026-01-10-dsc06402",
+        "2026-01-10-dsc06346",
+        "2026-01-10-dsc06226",
+        "2026-01-10-dsc06216",
+        "2026-01-10-dsc06084",
+        "2026-01-10-dsc06077",
+        "2026-01-10-dsc05983",
+        "2026-01-10-dsc05813",
         "2026-01-10-dsc05725",
         "2026-01-10-dsc05649",
         "2026-01-10-dsc05537",
@@ -22648,6 +23047,9 @@
       ],
       "airbus-a330-200": [
         "fr-ervts-2-31-esterel"
+      ],
+      "beechcraft-at-6th-wolverine": [
+        "th-411st-fighter-squadron"
       ],
       "bell-uh-1-iroquois": [
         "us-459th-airlift-squadron"
