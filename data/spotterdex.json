@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-13T12:09:53+00:00",
+  "generatedAt": "2026-07-13T12:16:28+00:00",
   "entities": {
     "countries": {
       "au": {
@@ -90,7 +90,7 @@
         "name": "Airbus A330 MRTT",
         "family": "heavy",
         "heroPhotoId": "2023-08-29-dsc05206-enhanced-nr",
-        "doubleWidth": null,
+        "doubleWidth": true,
         "writeUp": ""
       },
       "airbus-a330-200": {
@@ -162,7 +162,7 @@
         "name": "Boeing 777-300ER",
         "family": "heavy",
         "heroPhotoId": "2024-08-22-dsc00442-enhanced-nr",
-        "doubleWidth": null,
+        "doubleWidth": true,
         "writeUp": ""
       },
       "boeing-ah-64d-apache-longbow": {
@@ -202,7 +202,7 @@
         "name": "Boeing E-3G Sentry",
         "family": "heavy",
         "heroPhotoId": "",
-        "doubleWidth": null,
+        "doubleWidth": true,
         "writeUp": ""
       },
       "boeing-e-4b-nightwatch": {
@@ -210,7 +210,7 @@
         "name": "Boeing E-4B Nightwatch",
         "family": "heavy",
         "heroPhotoId": "2024-06-05-dsc04786-enhanced-nr",
-        "doubleWidth": null,
+        "doubleWidth": true,
         "writeUp": ""
       },
       "boeing-e-767": {

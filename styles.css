@@ -1940,11 +1940,180 @@ img {
   font-weight: 650;
 }
 
+.detail-overview-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+}
+
+.detail-overview-toolbar {
+  display: grid;
+  grid-template-columns: minmax(190px, 0.55fr) minmax(430px, 1.4fr) auto;
+  gap: clamp(18px, 2.4vw, 34px);
+  align-items: center;
+  padding: clamp(16px, 2.2vw, 24px);
+}
+
+.detail-overview-title .eyebrow,
+.aircraft-archive-results-heading .eyebrow {
+  margin-bottom: 4px;
+}
+
+.detail-overview-title h2,
+.aircraft-archive-results-heading h3 {
+  margin: 0;
+}
+
+.detail-overview-title h2 {
+  font-size: clamp(1.15rem, 1.7vw, 1.45rem);
+}
+
+.detail-overview-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(76px, 1fr));
+  min-width: 0;
+  margin: 0;
+}
+
+.detail-overview-stats > div {
+  min-width: 0;
+  padding: 1px clamp(10px, 1.4vw, 18px);
+  border-left: 1px solid var(--line);
+}
+
+.detail-overview-stats dt,
+.detail-overview-stats dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.detail-overview-stats dt {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.detail-overview-stats dd {
+  margin-top: 3px;
+  color: var(--text);
+  font-size: clamp(0.88rem, 1.3vw, 1.02rem);
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+.location-profile-marks {
+  min-width: 0;
+  max-width: min(360px, 100%);
+  justify-self: end;
+}
+
+.location-profile-marks .location-identity-marks {
+  min-height: 40px;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  overflow-x: auto;
+  padding: 2px;
+  scrollbar-width: thin;
+}
+
+.location-profile-marks .location-identity-mark {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border-color: var(--line);
+  box-shadow: none;
+}
+
+.aircraft-archive-results {
+  display: grid;
+  grid-template-columns: minmax(130px, 180px) minmax(0, 1fr);
+  gap: clamp(18px, 2.4vw, 34px);
+  align-items: center;
+  padding: clamp(14px, 1.8vw, 20px) clamp(16px, 2.2vw, 24px);
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface-strong) 52%, var(--surface));
+}
+
+.aircraft-archive-results-heading {
+  display: flex;
+  min-width: 0;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.aircraft-archive-results-heading h3 {
+  font-size: clamp(1.05rem, 1.5vw, 1.25rem);
+}
+
+.aircraft-archive-results .squadron-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 360px));
+  margin: 0;
+}
+
+.aircraft-archive-results .squadron-row {
+  background: var(--surface);
+}
+
 .detail-unit-section,
 .detail-photo-section {
   display: grid;
   gap: 16px;
   padding: clamp(16px, 2.5vw, 28px);
+}
+
+.aircraft-photo-anchor {
+  display: block;
+  height: 0;
+  scroll-margin-top: 24px;
+}
+
+.photo-group-title {
+  display: flex;
+  min-width: 0;
+  gap: 8px;
+  align-items: center;
+}
+
+.photo-group-title h3 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.icon-button.photo-group-title-button {
+  width: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  flex: 0 0 30px;
+  padding: 6px;
+  border-radius: 999px;
+  background: var(--surface-strong);
+}
+
+.photo-group-title-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.icon-button.photo-group-title-button:hover {
+  border-color: var(--line-strong);
+  background: var(--surface);
+}
+
+.icon-button.photo-group-title-button:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
 }
 
 .detail-section-heading {
@@ -2970,14 +3139,9 @@ h3 {
   background: color-mix(in srgb, var(--surface) 82%, var(--surface-strong));
 }
 
-.location-type-group.is-expanded .location-type-toggle {
-  grid-template-rows: auto;
-}
-
 .location-type-toggle {
-  display: grid;
+  display: block;
   width: 100%;
-  grid-template-rows: auto minmax(0, 1fr);
   padding: 0;
   border: 0;
   background: transparent;
@@ -2987,7 +3151,24 @@ h3 {
   text-align: left;
 }
 
+.location-type-photo-link {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
 .location-type-toggle:hover {
+  background: color-mix(in srgb, var(--surface) 58%, var(--blue-soft));
+}
+
+.location-type-photo-link:hover {
   background: color-mix(in srgb, var(--surface) 58%, var(--blue-soft));
 }
 
@@ -3009,7 +3190,7 @@ h3 {
   transition: transform 260ms ease;
 }
 
-.location-type-toggle:hover .location-type-latest img {
+.location-type-photo-link:hover .location-type-latest img {
   transform: scale(1.04);
 }
 
@@ -3133,15 +3314,6 @@ h3 {
   margin-top: 10px;
 }
 
-.location-page-summary .location-identity-marks {
-  justify-content: flex-end;
-}
-
-.location-page-summary .location-identity-mark {
-  border-color: var(--line);
-  box-shadow: none;
-}
-
 .location-detail-block {
   min-width: 0;
   border: 1px solid var(--line);
@@ -3250,7 +3422,8 @@ button.location-unit-chip:focus-visible,
 .viewer-squadron-logo-link:focus-visible,
 .location-page-button:focus-visible,
 .location-group-toggle:focus-visible,
-.location-type-toggle:focus-visible {
+.location-type-toggle:focus-visible,
+.location-type-photo-link:focus-visible {
   outline: 2px solid var(--blue);
   outline-offset: 3px;
 }
@@ -5106,6 +5279,12 @@ button.location-unit-chip:focus-visible,
   outline-offset: 2px;
 }
 
+.aircraft-location-row.is-selected {
+  border-color: var(--blue);
+  background: color-mix(in srgb, var(--surface) 78%, var(--blue-soft));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--blue) 48%, transparent);
+}
+
 .squadron-row > span:last-child,
 .aircraft-location-copy {
   min-width: 0;
@@ -6593,6 +6772,7 @@ button.location-unit-chip:focus-visible,
 
   .detail-hero,
   .detail-summary,
+  .detail-overview-card,
   .detail-write-up,
   .detail-unit-section,
   .detail-photo-section,
@@ -6802,6 +6982,20 @@ button.location-unit-chip:focus-visible,
     display: block;
     justify-self: end;
     min-width: min(220px, 46vw);
+  }
+
+  .detail-overview-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .detail-overview-stats {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .detail-overview-toolbar > .segmented {
+    grid-column: 2;
+    grid-row: 1;
   }
 
   .control-panel {
@@ -7220,6 +7414,50 @@ button.location-unit-chip:focus-visible,
     font-size: 0.72rem;
   }
 
+  .detail-overview-toolbar {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .detail-overview-title,
+  .detail-overview-stats,
+  .detail-overview-toolbar > .segmented {
+    grid-column: 1;
+  }
+
+  .detail-overview-title {
+    grid-row: 1;
+  }
+
+  .detail-overview-toolbar > .segmented {
+    grid-row: 2;
+    width: 100%;
+  }
+
+  .detail-overview-toolbar .segment-button {
+    flex: 1;
+  }
+
+  .detail-overview-stats {
+    grid-row: 3;
+  }
+
+  .location-profile-marks {
+    width: 100%;
+    max-width: none;
+    justify-self: stretch;
+  }
+
+  .location-profile-marks .location-identity-marks {
+    justify-content: flex-start;
+  }
+
+  .aircraft-archive-results {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    align-items: start;
+  }
+
   .detail-summary,
   .detail-section-heading {
     align-items: flex-start;
@@ -7470,6 +7708,26 @@ button.location-unit-chip:focus-visible,
 }
 
 @media (max-width: 520px) {
+  .detail-overview-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+
+  .detail-overview-stats > div {
+    padding: 10px 12px;
+    border-top: 1px solid var(--line);
+  }
+
+  .detail-overview-stats > div:nth-child(odd) {
+    border-left: 0;
+  }
+
+  .detail-overview-stats > div:nth-child(-n + 2) {
+    border-top: 0;
+  }
+
   .brand-mark {
     width: 36px;
     height: 36px;
@@ -7635,14 +7893,6 @@ button.location-unit-chip:focus-visible,
 
   .location-group-photo-grid {
     grid-template-columns: 1fr;
-  }
-
-  .location-page-summary {
-    gap: 12px;
-  }
-
-  .location-page-summary .location-identity-marks {
-    justify-content: flex-start;
   }
 
   .location-recent-grid {

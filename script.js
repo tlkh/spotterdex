@@ -71,6 +71,7 @@
     enabledPins: [],
     selectedPinId: null,
     selectedAircraftId: null,
+    selectedAircraftLocationId: "",
     selectedSquadronId: null,
     selectedAirshowId: null,
     expandedLocationGroupKeys: new Set(),
@@ -995,8 +996,29 @@
 
     const dexGroupButton = event.target.closest("[data-dex-group]");
     if (dexGroupButton) {
-      state.dexGroupMode = dexGroupButton.dataset.dexGroup;
+      state.dexGroupMode = normalizeAircraftDetailGroup(dexGroupButton.dataset.dexGroup);
       renderAircraftDetail();
+      if (state.selectedAircraftId) {
+        updateAircraftDetailLink(state.selectedAircraftId, {
+          group: state.dexGroupMode,
+          locationId: state.selectedAircraftLocationId
+        });
+      }
+      const targetId = dexGroupButton.dataset.dexGroupTarget;
+      if (targetId) {
+        window.requestAnimationFrame(() => {
+          document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      }
+      return;
+    }
+
+    const aircraftPhotoTarget = event.target.closest("[data-aircraft-photo-target]");
+    if (aircraftPhotoTarget) {
+      document.getElementById(aircraftPhotoTarget.dataset.aircraftPhotoTarget || "")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
       return;
     }
 
@@ -1057,7 +1079,18 @@
       if (isViewerOpen()) {
         closeViewer({ updateHash: false, useHistory: false, restoreFocus: false });
       }
-      selectAircraft(aircraftButton.dataset.aircraftId);
+      const aircraftGroup = aircraftButton.dataset.aircraftGroup;
+      const aircraftLocationId = aircraftButton.dataset.aircraftLocationId;
+      const aircraftOptions = {};
+      if (aircraftGroup) aircraftOptions.group = aircraftGroup;
+      if (aircraftLocationId) {
+        aircraftOptions.locationId = aircraftLocationId;
+        aircraftOptions.focusLocation = true;
+      }
+      selectAircraft(
+        aircraftButton.dataset.aircraftId,
+        aircraftOptions
+      );
       return;
     }
 
@@ -1899,7 +1932,10 @@
     } else if (viewId === "locationDetailView" && state.selectedPinId) {
       updateLocationDetailLink(state.selectedPinId);
     } else if (viewId === "aircraftDetailView" && state.selectedAircraftId) {
-      updateDeepLink("aircraft", state.selectedAircraftId);
+      updateAircraftDetailLink(state.selectedAircraftId, {
+        group: state.dexGroupMode,
+        locationId: state.selectedAircraftLocationId
+      });
     } else if (viewId === "squadronDetailView" && state.selectedSquadronId) {
       updateDeepLink("squadron", state.selectedSquadronId);
     } else if (viewId === "airshowDetailView" && state.selectedAirshowId) {
@@ -3762,6 +3798,9 @@
       if (!group.logo && details.logo) {
         group.logo = details.logo;
       }
+      if (!group.aircraftId && details.aircraftId) {
+        group.aircraftId = details.aircraftId;
+      }
       group.photos.push(photo);
     });
 
@@ -3782,7 +3821,13 @@
           return null;
         }
         const title = photo.aircraftType || "Unknown aircraft";
-        return { key: `type-${normalizeKey(title)}`, title, eyebrow: "Aircraft type", logo: "" };
+        return {
+          key: `type-${photo.aircraftId || normalizeKey(title)}`,
+          title,
+          eyebrow: "Aircraft type",
+          logo: "",
+          aircraftId: photo.aircraftId || ""
+        };
       }
       if (!photo.squadronName || photo.tagScope === "location") {
         return null;
@@ -3845,31 +3890,43 @@
     const latest = group.photos[0];
     const image = latest?.thumbnail || latest?.image || "";
     const photoCount = `${group.photos.length} photo${group.photos.length === 1 ? "" : "s"}`;
-    const singlePhotoId = group.photos.length === 1 && latest?.id ? latest.id : "";
+    const aircraftId = group.aircraftId || latest?.aircraftId || "";
 
     return `
-      <article class="location-type-group${isExpanded && !singlePhotoId ? " is-expanded" : ""}">
+      <article class="location-type-group${isExpanded ? " is-expanded" : ""}">
+        ${aircraftId
+          ? `<button
+              class="location-type-photo-link"
+              type="button"
+              data-aircraft-id="${escapeAttr(aircraftId)}"
+              data-aircraft-group="location"
+              data-aircraft-location-id="${escapeAttr(pin.id)}"
+              aria-label="Open ${escapeAttr(`${group.title} aircraft page`)}"
+            >
+              <span class="location-type-latest">
+                ${image ? `<img data-deferred-src="${escapeAttr(image)}" alt="">` : '<span class="location-type-fallback">No photo</span>'}
+              </span>
+            </button>`
+          : `<span class="location-type-latest">
+              ${image ? `<img data-deferred-src="${escapeAttr(image)}" alt="">` : '<span class="location-type-fallback">No photo</span>'}
+            </span>`}
         <button
           class="location-type-toggle"
           type="button"
           data-location-group-key="${escapeAttr(groupKey)}"
-          ${singlePhotoId
-            ? `data-location-single-photo-id="${escapeAttr(singlePhotoId)}" aria-label="Open ${escapeAttr(`${group.title} photo`)}"`
-            : `aria-expanded="${isExpanded ? "true" : "false"}" aria-controls="location-group-${escapeAttr(slugify(groupKey))}"`}
+          aria-expanded="${isExpanded ? "true" : "false"}"
+          aria-controls="location-group-${escapeAttr(slugify(groupKey))}"
         >
-          ${isExpanded && !singlePhotoId ? "" : `<span class="location-type-latest">
-            ${image ? `<img data-deferred-src="${escapeAttr(image)}" alt="">` : '<span class="location-type-fallback">No photo</span>'}
-          </span>`}
           <span class="location-type-copy">
             <strong>${escapeHtml(group.title)}</strong>
             <span class="location-type-meta">
               <span>${escapeHtml(photoCount)}</span>
-              <span aria-hidden="true">${singlePhotoId ? "↗" : (isExpanded ? "−" : "+")}</span>
+              <span aria-hidden="true">${isExpanded ? "−" : "+"}</span>
             </span>
           </span>
         </button>
         ${
-          isExpanded && !singlePhotoId
+          isExpanded
             ? `<div class="location-type-archive" id="location-group-${escapeAttr(slugify(groupKey))}">
                 <div class="photo-grid location-group-photo-grid">${group.photos.map((photo) => renderPhotoCard(photo, "map")).join("")}</div>
               </div>`
@@ -4888,6 +4945,8 @@
         : "";
     const typeCount = locationPhotoGroups(pin, photos, "type").length;
     const unitCount = locationPhotoGroups(pin, photos, "squadron").length;
+    const identityMarks = renderLocationIdentityMarks(profile.families, profile.units);
+    const profileLabel = [pin.country, pin.icao].filter(Boolean).join(" · ") || "Location archive";
 
     els.locationDetail.innerHTML = `
       ${renderDetailHero({
@@ -4902,19 +4961,23 @@
         className: "location-field-guide-hero"
       })}
       ${renderPageWriteUp(pin.writeUp, "About this location")}
-      <section class="detail-summary location-page-summary">
-        <div>
-          <p class="eyebrow">Location profile</p>
-          <p class="detail-summary-copy">${escapeHtml([pin.country, pin.icao].filter(Boolean).join(" · ") || "Location archive")}</p>
+      <section class="detail-overview-card location-profile-overview" aria-labelledby="locationProfileHeading">
+        <div class="detail-overview-toolbar location-profile-toolbar">
+          <div class="detail-overview-title">
+            <p class="eyebrow">Location profile</p>
+            <h2 id="locationProfileHeading">${escapeHtml(profileLabel)}</h2>
+          </div>
+          <dl class="detail-overview-stats" aria-label="Location statistics">
+            ${archiveStat("Photos", photos.length)}
+            ${archiveStat("Location tags", locationPhotos.length)}
+            ${archiveStat("Aircraft types", typeCount)}
+            ${archiveStat("Units", unitCount)}
+          </dl>
+          <div class="location-profile-marks">
+            ${identityMarks}
+          </div>
         </div>
-        ${renderLocationIdentityMarks(profile.families, profile.units)}
       </section>
-      <div class="entry-stat-grid" aria-label="Location statistics">
-        ${statTile("Photos", photos.length)}
-        ${statTile("Location tags", locationPhotos.length)}
-        ${statTile("Aircraft types", typeCount)}
-        ${statTile("Units", unitCount)}
-      </div>
       ${
         locationPhotos.length
           ? `<section class="detail-photo-section location-specific-photo-section">
@@ -5885,17 +5948,21 @@
       rows.push(row);
     }
 
-    for (let rowIndex = 1; rowIndex < rows.length; rowIndex += 1) {
-      const previousRow = rows[rowIndex - 1];
-      const currentRow = rows[rowIndex];
-      if (!previousRow[0]?.isWide || !currentRow[0]?.isWide) {
-        continue;
-      }
+    let nextWideSide = "right";
+    rows.forEach((currentRow) => {
+      const wideIndex = currentRow.findIndex((item) => item.isWide);
       const normalIndex = currentRow.findIndex((item) => !item.isWide);
-      if (normalIndex > 0) {
-        [currentRow[0], currentRow[normalIndex]] = [currentRow[normalIndex], currentRow[0]];
+      if (wideIndex < 0 || normalIndex < 0) {
+        return;
       }
-    }
+
+      const wideShouldBeFirst = nextWideSide === "left";
+      const wideIsFirst = wideIndex < normalIndex;
+      if (wideShouldBeFirst !== wideIsFirst) {
+        [currentRow[wideIndex], currentRow[normalIndex]] = [currentRow[normalIndex], currentRow[wideIndex]];
+      }
+      nextWideSide = nextWideSide === "left" ? "right" : "left";
+    });
 
     return rows.flat();
   }
@@ -5980,8 +6047,16 @@
     const unitLabel = entryUnitNoun(entry, unitCount);
     const unitGroupLabel = photos.length ? photoUnitGroupLabel(photos) : entryUnitNoun(entry, 1, true);
     const locationGroups = aircraftLocationGroups(photos);
+    const selectedLocation = state.dexGroupMode === "location"
+      ? locationGroups.find(
+          (location) => location.pinId && location.pinId === state.selectedAircraftLocationId
+        ) || null
+      : null;
+    const archivePhotos = selectedLocation
+      ? photos.filter((photo) => aircraftPhotoLocationId(photo) === selectedLocation.pinId)
+      : photos;
     const archiveGroupPanel = state.dexGroupMode === "location"
-      ? renderAircraftLocationSection(locationGroups)
+      ? renderAircraftLocationSection(locationGroups, selectedLocation?.pinId || "")
       : renderAircraftSquadronSection(entry);
     const cover = state.photoById.get(entry.coverPhoto) || photos[0] || null;
     const heroImage = cover ? cover.image || cover.thumbnail || "" : "";
@@ -5998,35 +6073,36 @@
         className: "aircraft-field-guide-hero"
       })}
       ${renderPageWriteUp(entry.writeUp, "About this aircraft")}
-      <section class="detail-summary detail-aircraft-summary">
-        <div>
-          <p class="eyebrow">Archive view</p>
-          <p class="detail-summary-copy">Browse this type by ${escapeHtml(unitGroupLabel.toLowerCase())} or location.</p>
+      <section class="detail-overview-card aircraft-archive-browser" aria-labelledby="aircraftArchiveHeading">
+        <div class="detail-overview-toolbar">
+          <div class="detail-overview-title">
+            <p class="eyebrow">Archive browser</p>
+            <h2 id="aircraftArchiveHeading">Browse the collection</h2>
+          </div>
+          <dl class="detail-overview-stats" aria-label="Aircraft statistics">
+            ${archiveStat("Photos", stats.photoCount)}
+            ${archiveStat(entryUnitNoun(entry, 2, true), unitCount)}
+            ${archiveStat("Locations", stats.locationCount)}
+            ${archiveStat("Latest", stats.latestDate ? formatDisplayDate(stats.latestDate) : "No photos")}
+          </dl>
+          <div class="segmented" role="radiogroup" aria-label="Organize aircraft photos">
+            ${segmentButton(unitGroupLabel, "squadron", state.dexGroupMode, "data-dex-group", "aircraftUnitPhotos")}
+            ${segmentButton("Location", "location", state.dexGroupMode, "data-dex-group", "aircraftLocationPhotos")}
+          </div>
         </div>
-        <div class="segmented" role="radiogroup" aria-label="Organize aircraft photos">
-          ${segmentButton(unitGroupLabel, "squadron", state.dexGroupMode, "data-dex-group")}
-          ${segmentButton("Location", "location", state.dexGroupMode, "data-dex-group")}
-        </div>
+        ${archiveGroupPanel}
       </section>
 
-      <div class="entry-stat-grid" aria-label="Aircraft statistics">
-        ${statTile("Photos", stats.photoCount)}
-        ${statTile(entryUnitNoun(entry, 2, true), unitCount)}
-        ${statTile("Locations", stats.locationCount)}
-        ${statTile("Latest", stats.latestDate ? formatDisplayDate(stats.latestDate) : "No photos")}
-      </div>
-
-      ${archiveGroupPanel}
-
-      <section class="detail-photo-section">
+      <section class="detail-photo-section" id="aircraftPhotoArchive">
+        <span id="${state.dexGroupMode === "location" ? "aircraftLocationPhotos" : "aircraftUnitPhotos"}" class="aircraft-photo-anchor" aria-hidden="true"></span>
         <div class="detail-section-heading">
           <div>
             <p class="eyebrow">Photo archive</p>
-            <h2>All frames</h2>
+            <h2>${escapeHtml(selectedLocation ? `${selectedLocation.name} photos` : "All frames")}</h2>
           </div>
-          <span class="count-pill">${photos.length}</span>
+          <span class="count-pill">${archivePhotos.length}</span>
         </div>
-        ${renderPhotoGroups(photos, state.dexGroupMode, "dex")}
+        ${renderPhotoGroups(archivePhotos, state.dexGroupMode, "dex")}
       </section>
     `;
   }
@@ -6037,18 +6113,20 @@
     }
 
     return `
-      <section class="detail-unit-section">
-        <div class="detail-section-heading">
+      <div class="aircraft-archive-results">
+        <div class="aircraft-archive-results-heading">
           <div>
-            <p class="eyebrow">Units</p>
-            <h2>${escapeHtml(entryUnitNoun(entry, 2, true))}</h2>
+            <p class="eyebrow">By unit</p>
+            <h3>${escapeHtml(entryUnitNoun(entry, 2, true))}</h3>
           </div>
           <span class="count-pill">${entry.squadrons.length}</span>
         </div>
         <div class="squadron-grid">
-          ${entry.squadrons.map(renderSquadronRow).join("")}
+          ${entry.squadrons
+            .map((squadron) => renderSquadronRow(squadron, aircraftPhotoGroupTargetId("squadron", squadron.id)))
+            .join("")}
         </div>
-      </section>
+      </div>
     `;
   }
 
@@ -6056,10 +6134,7 @@
     const groups = new Map();
     photos.forEach((photo) => {
       const name = photo.locationName || "Unknown location";
-      const candidatePinId = photo.pinId ? String(photo.pinId) : "";
-      const pinId = candidatePinId && state.pinById.has(candidatePinId)
-        ? candidatePinId
-        : pinIdFromLocation(name);
+      const pinId = aircraftPhotoLocationId(photo);
       const key = pinId || normalizeKey(name);
       if (!groups.has(key)) {
         groups.set(key, {
@@ -6074,35 +6149,61 @@
     return Array.from(groups.values()).sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  function renderAircraftLocationSection(locations) {
+  function aircraftPhotoLocationId(photo) {
+    const candidatePinId = photo?.pinId ? String(photo.pinId) : "";
+    return candidatePinId && state.pinById.has(candidatePinId)
+      ? candidatePinId
+      : pinIdFromLocation(photo?.locationName);
+  }
+
+  function aircraftPhotoGroupTargetId(mode, groupOrId) {
+    if (mode === "location") {
+      const locationId = typeof groupOrId === "string"
+        ? groupOrId
+        : groupOrId?.pinId || aircraftPhotoLocationId(groupOrId?.photos?.[0]);
+      const fallbackName = typeof groupOrId === "string" ? groupOrId : groupOrId?.name;
+      const key = locationId || fallbackName;
+      return key ? `aircraft-photo-location-${slugify(key)}` : "";
+    }
+
+    const firstPhoto = typeof groupOrId === "string" ? null : groupOrId?.photos?.[0];
+    const unitId = typeof groupOrId === "string"
+      ? groupOrId
+      : firstPhoto?.squadronId || (firstPhoto ? squadronPageIdForPhoto(firstPhoto) : "");
+    return unitId ? `aircraft-photo-unit-${slugify(unitId)}` : "";
+  }
+
+  function renderAircraftLocationSection(locations, selectedLocationId = "") {
     if (!locations.length) {
       return "";
     }
 
     return `
-      <section class="detail-unit-section">
-        <div class="detail-section-heading">
+      <div class="aircraft-archive-results">
+        <div class="aircraft-archive-results-heading">
           <div>
-            <p class="eyebrow">Archive locations</p>
-            <h2>Locations</h2>
+            <p class="eyebrow">By place</p>
+            <h3>Locations</h3>
           </div>
           <span class="count-pill">${locations.length}</span>
         </div>
         <div class="squadron-grid">
-          ${locations.map(renderAircraftLocationRow).join("")}
+          ${locations.map((location) => renderAircraftLocationRow(location, selectedLocationId)).join("")}
         </div>
-      </section>
+      </div>
     `;
   }
 
-  function renderAircraftLocationRow(location) {
+  function renderAircraftLocationRow(location, selectedLocationId = "") {
     const pin = location.pinId ? state.pinById.get(location.pinId) : null;
     const locationMeta = [pin?.icao, pin?.country].filter(Boolean).join(" - ") || "Location archive";
     const photoLabel = `${location.count} photo${location.count === 1 ? "" : "s"}`;
-    const rowTag = location.pinId ? "button" : "div";
-    const rowClass = `squadron-row aircraft-location-row${location.pinId ? " is-clickable" : ""}`;
-    const rowAttributes = location.pinId
-      ? ` type="button" data-location-page-id="${escapeAttr(location.pinId)}" aria-label="Open ${escapeAttr(location.name)} location page"`
+    const isSelected = Boolean(location.pinId && location.pinId === selectedLocationId);
+    const targetId = aircraftPhotoGroupTargetId("location", location);
+    const rowTag = targetId ? "button" : "div";
+    const rowClass = `squadron-row aircraft-location-row${targetId ? " is-clickable" : ""}${isSelected ? " is-selected" : ""}`;
+    const rowAttributes = targetId
+      ? ` type="button" data-aircraft-photo-target="${escapeAttr(targetId)}" aria-label="Show ${escapeAttr(location.name)} photos"${isSelected ? ' aria-current="location"' : ""}`
       : "";
 
     return `
@@ -6116,17 +6217,16 @@
     `;
   }
 
-  function renderSquadronRow(squadron) {
+  function renderSquadronRow(squadron, targetId = "") {
     const logoContent = squadron.logo
       ? `<img class="squadron-logo" src="${escapeAttr(squadron.logo)}" alt="${escapeAttr(squadron.name)} logo">`
       : `<span class="logo-fallback" aria-hidden="true">${escapeHtml(initials(squadron.name))}</span>`;
     const photoCount = Number(squadron.photoCount || 0);
     const unitLabel = squadron.unitLabel || unitDisplayLabel(squadron.unitType);
-    const squadronId = squadronPageIdForUnit(squadron);
-    const rowTag = squadronId ? "button" : "div";
-    const rowClass = `squadron-row${squadronId ? " is-clickable" : ""}`;
-    const rowAttributes = squadronId
-      ? ` type="button" data-squadron-id="${escapeAttr(squadronId)}" aria-label="Open ${escapeAttr(squadron.name)} on the Squadrons page"`
+    const rowTag = targetId ? "button" : "div";
+    const rowClass = `squadron-row${targetId ? " is-clickable" : ""}`;
+    const rowAttributes = targetId
+      ? ` type="button" data-aircraft-photo-target="${escapeAttr(targetId)}" aria-label="Show ${escapeAttr(squadron.name)} photos"`
       : "";
 
     return `
@@ -6149,6 +6249,15 @@
     `;
   }
 
+  function archiveStat(label, value) {
+    return `
+      <div>
+        <dt>${escapeHtml(label)}</dt>
+        <dd>${escapeHtml(value)}</dd>
+      </div>
+    `;
+  }
+
   function renderPhotoGroups(photos, mode, context) {
     if (!photos.length) {
       return '<div class="empty-state">No photos found for this selection yet.</div>';
@@ -6158,18 +6267,56 @@
       <div class="photo-groups photo-groups-${escapeAttr(context)}">
         ${groupPhotos(photos, mode)
           .map(
-            (group, index) => `
-              <section>
+            (group, index) => {
+              const targetId = aircraftPhotoGroupTargetId(mode, group);
+              const locationId = mode === "location" ? aircraftPhotoLocationId(group.photos[0]) : "";
+              const location = locationId ? state.pinById.get(locationId) : null;
+              const squadronId = mode === "squadron" ? squadronPageIdForPhoto(group.photos[0]) : "";
+              const groupPageAction = locationId
+                ? renderPhotoGroupPageButton({
+                    className: "photo-group-location-button",
+                    dataName: "data-location-page-id",
+                    id: locationId,
+                    label: `Open ${location?.name || group.name} location page`
+                  })
+                : squadronId
+                  ? renderPhotoGroupPageButton({
+                      className: "photo-group-squadron-button",
+                      dataName: "data-squadron-id",
+                      id: squadronId,
+                      label: `Open ${group.name} squadron page`
+                    })
+                  : "";
+              return `
+              <section${targetId ? ` id="${escapeAttr(targetId)}"` : ""}>
                 <div class="group-header">
-                  <h3>${escapeHtml(group.name)}</h3>
+                  <div class="photo-group-title">
+                    <h3>${escapeHtml(group.name)}</h3>
+                    ${groupPageAction}
+                  </div>
                   <span class="count-pill">${group.photos.length}</span>
                 </div>
                 ${renderProgressivePhotoGrid(group.photos, context, `${context}-${mode}-${index}-${group.name}`)}
               </section>
-            `
+              `;
+            }
           )
           .join("")}
       </div>
+    `;
+  }
+
+  function renderPhotoGroupPageButton({ className, dataName, id, label }) {
+    return `
+      <button
+        class="icon-button photo-group-title-button ${escapeAttr(className)}"
+        type="button"
+        ${dataName}="${escapeAttr(id)}"
+        title="${escapeAttr(label)}"
+        aria-label="${escapeAttr(label)}"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"></path></svg>
+      </button>
     `;
   }
 
@@ -6290,10 +6437,13 @@
     `;
   }
 
-  function segmentButton(label, value, activeValue, dataName) {
+  function segmentButton(label, value, activeValue, dataName, targetId = "") {
     const isActive = value === activeValue;
     const activeClass = isActive ? " is-active" : "";
-    return `<button class="segment-button${activeClass}" type="button" role="radio" aria-checked="${isActive ? "true" : "false"}" ${dataName}="${escapeAttr(value)}">${escapeHtml(label)}</button>`;
+    const targetAttributes = targetId
+      ? ` data-dex-group-target="${escapeAttr(targetId)}" aria-controls="${escapeAttr(targetId)}"`
+      : "";
+    return `<button class="segment-button${activeClass}" type="button" role="radio" aria-checked="${isActive ? "true" : "false"}" ${dataName}="${escapeAttr(value)}"${targetAttributes}>${escapeHtml(label)}</button>`;
   }
 
   function selectPin(pinId, options = {}) {
@@ -6384,18 +6534,39 @@
   }
 
   function selectAircraft(aircraftId, options = {}) {
+    const group = normalizeAircraftDetailGroup(options.group ?? state.dexGroupMode);
+    const aircraftChanged = state.selectedAircraftId !== aircraftId;
+    if (options.locationId !== undefined) {
+      state.selectedAircraftLocationId = String(options.locationId || "");
+    } else if (aircraftChanged) {
+      state.selectedAircraftLocationId = "";
+    }
     if (!document.getElementById("aircraftDetailView")) {
-      navigateToViewPage("aircraftDetailView", `aircraft=${encodeURIComponent(aircraftId)}`);
+      navigateToViewPage(
+        "aircraftDetailView",
+        aircraftDetailHash(aircraftId, group, state.selectedAircraftLocationId)
+      );
       return;
     }
+    state.dexGroupMode = group;
     state.selectedAircraftId = aircraftId;
     setActiveTab("aircraftDetailView", { updateHash: false });
     renderAircraftDetail();
     if (options.updateHash !== false) {
-      updateDeepLink("aircraft", aircraftId);
+      updateAircraftDetailLink(aircraftId, { group });
     }
     if (options.scroll !== false) {
       window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    if (options.focusLocation && state.selectedAircraftLocationId) {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          document.getElementById("aircraftPhotoArchive")?.scrollIntoView({
+            block: "start",
+            behavior: options.initial ? "auto" : "smooth"
+          });
+        });
+      });
     }
   }
 
@@ -7407,7 +7578,11 @@
     const pageViewId = currentPageViewId();
 
     if (state.activePhotoContext === "dex" && state.selectedAircraftId) {
-      updateDeepLink("aircraft", state.selectedAircraftId, replace);
+      updateAircraftDetailLink(state.selectedAircraftId, {
+        ...replace,
+        group: state.dexGroupMode,
+        locationId: state.selectedAircraftLocationId
+      });
     } else if (state.activePhotoContext === "squadron" && state.selectedSquadronId) {
       updateDeepLink("squadron", state.selectedSquadronId, replace);
     } else if (state.activePhotoContext === "location" && state.selectedPinId) {
@@ -7756,6 +7931,8 @@
     const locationId = params.get("location");
     const locationDetail = params.get("detail") === "1";
     const aircraftId = params.get("aircraft");
+    const aircraftGroup = normalizeAircraftDetailGroup(params.get("group"));
+    const aircraftLocationId = params.get("location") || "";
     const statsSection = params.get("stats");
     const aircraftFamily = normalizeAircraftFamily(params.get("family"));
 
@@ -7809,7 +7986,14 @@
       if (pageViewId === "dexView" && aircraftId) {
         const entry = findAircraft(aircraftId);
         if (entry) {
-          selectAircraft(entry.id, { updateHash: false, scroll: !options.initial });
+          selectAircraft(entry.id, {
+            group: aircraftGroup,
+            locationId: aircraftLocationId,
+            focusLocation: Boolean(aircraftLocationId),
+            initial: options.initial,
+            updateHash: false,
+            scroll: !options.initial
+          });
           return true;
         }
       }
@@ -7866,6 +8050,43 @@
     const changed = navigateToHash(nextHash, {
       replace: options.replace,
       state: { spotterdex: true, spotterdexKind: kind, spotterdexId: String(id) }
+    });
+    updateShareMetadata();
+    return changed;
+  }
+
+  function normalizeAircraftDetailGroup(group) {
+    return String(group || "").toLowerCase() === "location" ? "location" : "squadron";
+  }
+
+  function aircraftDetailHash(aircraftId, group = state.dexGroupMode, locationId = state.selectedAircraftLocationId) {
+    const params = new URLSearchParams();
+    params.set("aircraft", String(aircraftId));
+    if (normalizeAircraftDetailGroup(group) === "location") {
+      params.set("group", "location");
+      if (locationId) {
+        params.set("location", String(locationId));
+      }
+    }
+    return params.toString();
+  }
+
+  function updateAircraftDetailLink(aircraftId, options = {}) {
+    if (state.isApplyingHash || !aircraftId) {
+      return false;
+    }
+    const group = normalizeAircraftDetailGroup(options.group ?? state.dexGroupMode);
+    const locationId = options.locationId ?? state.selectedAircraftLocationId;
+    const nextHash = `#${aircraftDetailHash(aircraftId, group, locationId)}`;
+    const changed = navigateToHash(nextHash, {
+      replace: options.replace,
+      state: {
+        spotterdex: true,
+        spotterdexKind: "aircraft",
+        spotterdexId: String(aircraftId),
+        group,
+        locationId: locationId ? String(locationId) : ""
+      }
     });
     updateShareMetadata();
     return changed;
