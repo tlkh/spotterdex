@@ -33,7 +33,7 @@ python3 tools/spotterdex_manager.py
 
 Open `http://127.0.0.1:8765/` and stop the process with `Ctrl+C` after use.
 
-The manager writes the database transactionally and automatically refreshes `content/spotterdex.sql`. It supports aircraft/unit/location creation, photo tagging and movement, events, aircraft-type/unit/location/event heroes, optional aircraft card widths, captions, bulk caption review, quality checks, builds, database backups, and orphan cleanup.
+The manager writes the database transactionally and automatically refreshes `content/spotterdex.sql`. It supports aircraft/unit/location creation, photo tagging and movement, events, aircraft-type/unit/location/event heroes, optional aircraft card widths, captions, bulk caption review, configurable quality checks, builds, database backups, and orphan cleanup. Quality thresholds are manager-local in the ignored `.spotterdex-manager-quality-settings.json`; the Quality view can save or reset them. Empty-space detection is an advisory composition check for large low-detail sky or background regions.
 
 Photo rules:
 
@@ -144,7 +144,7 @@ For catalog work, stage:
 - `sitemap.xml` and `robots.txt`
 - changed `assets/generated/` and `assets/logos/`
 
-Never stage `raw_assets/`, manager caches, quality acknowledgements, Playwright artifacts, or database backups.
+Never stage `raw_assets/`, manager caches, quality acknowledgements/settings, Playwright artifacts, or database backups.
 
 ## Editing principles
 

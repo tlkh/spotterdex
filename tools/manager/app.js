@@ -456,6 +456,9 @@
       if (asset.collectionColourDistance) {
         push("Collection deviation", `${asset.collectionColourDistance} robust${asset.collectionColourDeviation ? ` (${asset.collectionColourDeviation})` : ""}`);
       }
+      if (asset.emptySpacePercent !== null && asset.emptySpacePercent !== undefined) {
+        push("Empty space", `${asset.emptySpacePercent}%`);
+      }
       push("Acutance", asset.acutance);
       push("Noise residual", asset.noiseResidual);
       if (asset.iso) push("ISO", asset.iso);
@@ -463,6 +466,7 @@
     }
 
     function renderQualityControl() {
+      renderQualitySettings();
       const flagged = (state.data?.assets || []).filter((asset) => (
         asset.isPhotoSource && (asset.isUnderResolution || (asset.qualityFlags || []).length)
       ));
@@ -484,6 +488,7 @@
       const belowMinimum = project.underResolutionAssetCount || 0;
       const exposure = project.exposureIssueAssetCount || 0;
       const colour = project.colourBalanceIssueAssetCount || 0;
+      const emptySpace = project.emptySpaceIssueAssetCount || 0;
       const acknowledged = project.acknowledgedQualityCount || 0;
       const hardPrefixNeeded = project.qualityPrefixNeededCount || 0;
       const warningPrefixNeeded = warnings.filter((asset) => asset.needsQcWarningPrefix).length;
@@ -512,7 +517,7 @@
         : state.qualityFilter === "passed"
           ? "QC_ edits in this tab already pass"
           : `All ${state.qualityFilter === "warnings" ? "warnings" : "hard failures"} have QC_ prefixes or are reviewed`;
-      $("qualitySummary").textContent = `${flagged.length} of ${allPhotoSources.length} source photograph(s) flagged: ${belowMinimum} below ${minimum}px, ${exposure} exposure, ${colour} colour. ${acknowledged} marked reviewed; ${hardPrefixNeeded} hard failure(s) need a QC_ filename; ${passedQcEdits.length} QC_ edit(s) now pass all checks.`;
+      $("qualitySummary").textContent = `${flagged.length} of ${allPhotoSources.length} source photograph(s) flagged: ${belowMinimum} below ${minimum}px, ${exposure} exposure, ${colour} colour, ${emptySpace} empty-space advisory. ${acknowledged} marked reviewed; ${hardPrefixNeeded} hard failure(s) need a QC_ filename; ${passedQcEdits.length} QC_ edit(s) now pass all checks.`;
       if (!assets.length) {
         const reviewedInQueue = activeQueue.filter((asset) => asset.qualityAcknowledged).length;
         const queueLabel = state.qualityFilter === "warnings"
@@ -2112,6 +2117,33 @@
       });
     }
 
+    function renderQualitySettings() {
+      const settings = state.data?.qualitySettings || {};
+      document.querySelectorAll("[data-quality-setting]").forEach((input) => {
+        const key = input.dataset.qualitySetting;
+        if (!(key in settings) || document.activeElement === input) return;
+        if (input.type === "checkbox") input.checked = Boolean(settings[key]);
+        else input.value = settings[key];
+      });
+      $("qualitySettingsStatus").textContent = state.data ? "Settings apply to the next quality scan." : "";
+    }
+
+    function collectQualitySettings() {
+      const settings = {};
+      document.querySelectorAll("[data-quality-setting]").forEach((input) => {
+        settings[input.dataset.qualitySetting] = input.type === "checkbox"
+          ? input.checked
+          : Number(input.value);
+      });
+      return settings;
+    }
+
+    async function saveQualitySettings(reset = false) {
+      const result = await api("/api/save-quality-settings", reset ? {reset: true} : {settings: collectQualitySettings()});
+      toast(result.message);
+      await loadState(true);
+    }
+
     function getSelectedIssue() {
       return allMissingIssues().find((issue) => issue.key === state.selectedIssueKey) || null;
     }
@@ -3190,6 +3222,12 @@
       $("qualityShowAcknowledged").addEventListener("change", (event) => {
         state.qualityShowAcknowledged = event.target.checked;
         renderQualityControl();
+      });
+      $("saveQualitySettingsBtn").addEventListener("click", () => {
+        saveQualitySettings().catch((error) => toast(error.message));
+      });
+      $("resetQualitySettingsBtn").addEventListener("click", () => {
+        saveQualitySettings(true).catch((error) => toast(error.message));
       });
       $("qualityFilters").addEventListener("click", (event) => {
         const button = event.target.closest("[data-quality-filter]");

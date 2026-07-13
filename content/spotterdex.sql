@@ -101,6 +101,7 @@ INSERT INTO "metadata" ("key", "value") VALUES ('schema_version', '3');
 
 INSERT INTO "countries" ("id", "name") VALUES ('au', 'Australia');
 INSERT INTO "countries" ("id", "name") VALUES ('bm', 'Bermuda');
+INSERT INTO "countries" ("id", "name") VALUES ('china', 'China');
 INSERT INTO "countries" ("id", "name") VALUES ('fr', 'France');
 INSERT INTO "countries" ("id", "name") VALUES ('hk', 'Hong Kong');
 INSERT INTO "countries" ("id", "name") VALUES ('in', 'India');
@@ -142,6 +143,7 @@ INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "do
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('boeing-kc-767', 'Boeing KC-767', 'heavy', '2023-08-04-italy-kc767-1', '', NULL);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('boeing-kc-767j', 'Boeing KC-767J', 'heavy', '2023-11-12-dsc09722-enhanced-nr', '', NULL);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('cessna-uc-35-citation', 'Cessna UC-35 Citation', 'medium', '2023-09-23-dsc02445-enhanced-nr', '', NULL);
+INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('comac-c919', 'Comac C919', 'medium', NULL, '', NULL);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('dassault-rafale-b', 'Dassault Rafale B', 'fighter', '2023-06-26-rafale-b-1', '', NULL);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('dassault-rafale-c', 'Dassault Rafale C', 'fighter', NULL, '', NULL);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('dornier-228', 'Dornier 228', 'medium', '2022-11-23-dsc09504', '', NULL);
@@ -184,6 +186,7 @@ INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_ph
 INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('au-75-squadron', 'No. 75 Squadron', 'au', 'squadron', 'logos/raaf_75_sqn.png', '2026-02-03-raaf-f35a-1', '');
 INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('au-no-2-squadron', 'No. 2 Squadron', 'au', 'squadron', '', '2024-09-29-dsc09753-enhanced-nr', '');
 INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('bm-malibu-consulting-corp', 'Malibu Consulting Corp', 'bm', 'organisation', '', NULL, '');
+INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('china-comac', 'COMAC', 'china', 'organisation', '', NULL, '');
 INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('fr-airbus', 'Airbus', 'fr', 'organisation', 'logos/airbus_logo.png', NULL, '');
 INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('fr-ervts-2-31-esterel', 'ERVTS 2/31 Estérel', 'fr', 'squadron', 'logos/031_EARTS_logo.png', NULL, '');
 INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('fr-escadron-de-chasse-1-4', 'Escadron de Chasse 1/4 Gascogne', 'fr', 'squadron', '', NULL, '');
@@ -330,6 +333,7 @@ INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('boeing-kc-46-pe
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('boeing-kc-767', 'it-8-gruppo');
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('boeing-kc-767j', 'jp-404th-tactical-airlift-tanker-squadron');
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('cessna-uc-35-citation', 'us-usmc-operational-support-airlift');
+INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('comac-c919', 'china-comac');
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('dassault-rafale-b', 'fr-escadron-de-chasse-1-4');
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('dassault-rafale-c', 'fr-escadron-de-chasse-3-30-lorraine');
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('dornier-228', 'in-indian-naval-air-squadrons-inas');
@@ -744,6 +748,7 @@ INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_over
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2024-02-13-dsc03195-enhanced-nr', 'DSC03195-Enhanced-NR.jpg', 'sg-singapore', 'sg-singapore-airshow-2024', NULL, '', 'ROKAF Black Eagles in Singapore during Singapore Airshow 2024', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2024-02-18-dsc05211-enhanced-nr', 'QC_DSC05211-Enhanced-NR.jpg', 'sg-singapore', 'sg-singapore-airshow-2024', NULL, '', 'ROKAF Black Eagles in Singapore during Singapore Airshow 2024', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2024-02-18-dsc05282-enhanced-nr', 'QC_DSC05282-Enhanced-NR.jpg', 'sg-singapore', 'sg-singapore-airshow-2024', NULL, '', 'ROKAF Black Eagles in Singapore during Singapore Airshow 2024', '', 0);
+INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2024-02-18-qc-dsc04655-enhanced-nr', 'QC_DSC04655-Enhanced-NR.jpg', 'sg-singapore', NULL, NULL, '', 'Comac C919 during Singapore Airshow', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2024-02-22-dsc06179-enhanced-nr', 'DSC06179-Enhanced-NR.jpg', 'sg-singapore', 'sg-singapore-airshow-2024', NULL, '', 'ROKAF Black Eagles in Singapore during Singapore Airshow 2024', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2024-02-22-dsc06214-enhanced-nr', 'DSC06214-Enhanced-NR.jpg', 'sg-singapore', 'sg-singapore-airshow-2024', NULL, '', 'ROKAF Black Eagles in Singapore during Singapore Airshow 2024', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2024-02-22-dsc06548-enhanced-nr', 'DSC06548-Enhanced-NR.jpg', 'sg-singapore', 'sg-singapore-airshow-2024', NULL, '', 'ROKAF Black Eagles in Singapore during Singapore Airshow 2024', '', 0);
@@ -900,7 +905,7 @@ INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_over
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2026-01-10-dsc06077', 'DSC06077.jpg', 'th-don-muang-royal-thai-air-force-base', 'th-wan-dek-2026', NULL, '', 'RTAF Beechcraft AT-6TH Wolverine performing during Wan Dek', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2026-01-10-dsc06084', 'DSC06084.jpg', 'th-don-muang-royal-thai-air-force-base', 'th-wan-dek-2026', NULL, '', 'RTAF Beechcraft AT-6TH Wolverine performing during Wan Dek', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2026-01-10-dsc06216', 'DSC06216.jpg', 'th-don-muang-royal-thai-air-force-base', 'th-wan-dek-2026', NULL, '', 'RTAF Beechcraft AT-6TH Wolverine performing during Wan Dek', '', 0);
-INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2026-01-10-dsc06226', 'DSC06226.jpg', 'th-don-muang-royal-thai-air-force-base', 'th-wan-dek-2026', NULL, '', 'RTAF Beechcraft AT-6TH Wolverine performing during Wan Dek', '', 0);
+INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2026-01-10-dsc06226', 'QC_DSC06226.jpg', 'th-don-muang-royal-thai-air-force-base', 'th-wan-dek-2026', NULL, '', 'RTAF Beechcraft AT-6TH Wolverine performing during Wan Dek', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2026-01-10-dsc06346', 'DSC06346.jpg', 'th-don-muang-royal-thai-air-force-base', 'th-wan-dek-2026', NULL, '', 'RTAF Beechcraft AT-6TH Wolverine performing during Wan Dek', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2026-01-10-dsc06402', 'DSC06402.jpg', 'th-don-muang-royal-thai-air-force-base', 'th-wan-dek-2026', NULL, '', 'RTAF Beechcraft AT-6TH Wolverine performing during Wan Dek', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2026-01-10-dsc06434', 'DSC06434.jpg', 'th-don-muang-royal-thai-air-force-base', 'th-wan-dek-2026', NULL, '', 'RTAF Beechcraft AT-6TH Wolverine performing during Wan Dek', '', 0);
@@ -1246,6 +1251,7 @@ INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", 
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2024-02-13-dsc03195-enhanced-nr', 0, 'kai-t-50b-golden-eagle', 'kr-black-eagles', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2024-02-18-dsc05211-enhanced-nr', 0, 'kai-t-50b-golden-eagle', 'kr-black-eagles', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2024-02-18-dsc05282-enhanced-nr', 0, 'kai-t-50b-golden-eagle', 'kr-black-eagles', 1);
+INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2024-02-18-qc-dsc04655-enhanced-nr', 0, 'comac-c919', 'china-comac', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2024-02-22-dsc06179-enhanced-nr', 0, 'kai-t-50b-golden-eagle', 'kr-black-eagles', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2024-02-22-dsc06214-enhanced-nr', 0, 'kai-t-50b-golden-eagle', 'kr-black-eagles', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2024-02-22-dsc06548-enhanced-nr', 0, 'kai-t-50b-golden-eagle', 'kr-black-eagles', 1);

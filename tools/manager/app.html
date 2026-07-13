@@ -334,7 +334,98 @@
               <label class="inline-toggle"><input id="qualityShowAcknowledged" type="checkbox"> Show reviewed</label>
             </div>
           </div>
-          <div class="subtle">Photos below 2560px wide are flagged before publishing. Conservative checks also surface possible exposure, contrast, white-balance and green/pink tint, collection colour outlier, focus and noise issues. Amber marks are hard QC failures; grey marks are advisory. QC_ images that now pass all checks appear in the third tab after external editing. The QC_ action always marks the currently selected issue tab, so warnings can be prefixed optionally as well. Catalog paths stay synchronized, and accepted exceptions can instead be marked reviewed.</div>
+          <div class="subtle">Source photos are checked for resolution, exposure, contrast, colour, focus, noise and composition before publishing. Empty-space detection is advisory: it surfaces frames with a large low-detail sky or background area for human review.</div>
+          <section class="quality-settings panel-section" aria-labelledby="qualitySettingsHeading">
+            <div class="bar quality-settings-heading">
+              <div>
+                <h3 class="panel-title" id="qualitySettingsHeading">Image Quality Settings</h3>
+                <div class="subtle">These manager-local thresholds control the review queue. Save to re-analyse the raw assets.</div>
+              </div>
+              <div class="card-actions">
+                <button class="btn ghost" id="resetQualitySettingsBtn" type="button">Reset defaults</button>
+                <button class="btn secondary" id="saveQualitySettingsBtn" type="button">Save settings</button>
+              </div>
+            </div>
+            <div class="form-grid quality-settings-grid">
+              <div class="field">
+                <label for="qualityMinimumSourceWidth">Minimum source width (px)</label>
+                <input id="qualityMinimumSourceWidth" data-quality-setting="minimum_source_photo_width" type="number" min="640" max="20000" step="1">
+              </div>
+              <div class="field">
+                <label for="qualityUnderexposedLuminance">Underexposure luminance</label>
+                <input id="qualityUnderexposedLuminance" data-quality-setting="underexposed_mean_luminance" type="number" min="1" max="150" step="1">
+              </div>
+              <div class="field">
+                <label for="qualityOverexposedLuminance">Overexposure luminance</label>
+                <input id="qualityOverexposedLuminance" data-quality-setting="overexposed_mean_luminance" type="number" min="100" max="255" step="1">
+              </div>
+              <div class="field">
+                <label for="qualityLowContrastRange">Low-contrast tonal range</label>
+                <input id="qualityLowContrastRange" data-quality-setting="low_contrast_tonal_range" type="number" min="1" max="255" step="1">
+              </div>
+              <div class="field">
+                <label for="qualityTrueClipShadow">Hard clipped shadows (%)</label>
+                <input id="qualityTrueClipShadow" data-quality-setting="true_clip_shadow_percent" type="number" min="1" max="50" step="1">
+              </div>
+              <div class="field">
+                <label for="qualityTrueClipHighlight">Hard clipped highlights (%)</label>
+                <input id="qualityTrueClipHighlight" data-quality-setting="true_clip_highlight_percent" type="number" min="1" max="50" step="1">
+              </div>
+              <div class="field">
+                <label for="qualityShadowClip">Deep-shadow exposure threshold (%)</label>
+                <input id="qualityShadowClip" data-quality-setting="clipped_shadow_percent" type="number" min="1" max="100" step="1">
+              </div>
+              <div class="field">
+                <label for="qualityHighlightClip">Bright-highlight exposure threshold (%)</label>
+                <input id="qualityHighlightClip" data-quality-setting="clipped_highlight_percent" type="number" min="1" max="100" step="1">
+              </div>
+              <div class="field">
+                <label for="qualitySoftFocusAcutance">Soft-focus acutance</label>
+                <input id="qualitySoftFocusAcutance" data-quality-setting="soft_focus_acutance" type="number" min="0" max="100" step="0.1">
+              </div>
+              <div class="field">
+                <label for="qualityHighIso">High ISO threshold</label>
+                <input id="qualityHighIso" data-quality-setting="high_iso_threshold" type="number" min="100" max="51200" step="100">
+              </div>
+              <div class="field">
+                <label for="qualityNoiseResidual">Noise residual threshold</label>
+                <input id="qualityNoiseResidual" data-quality-setting="noise_residual_threshold" type="number" min="0" max="100" step="0.1">
+              </div>
+              <div class="field">
+                <label for="qualityCollectionImages">Collection outlier minimum images</label>
+                <input id="qualityCollectionImages" data-quality-setting="collection_colour_minimum_images" type="number" min="3" max="1000" step="1">
+              </div>
+              <div class="field">
+                <label for="qualityCollectionDelta">Collection outlier minimum delta</label>
+                <input id="qualityCollectionDelta" data-quality-setting="collection_colour_minimum_delta" type="number" min="0" max="100" step="1">
+              </div>
+              <div class="field">
+                <label for="qualityCollectionZ">Collection outlier robust deviation</label>
+                <input id="qualityCollectionZ" data-quality-setting="collection_colour_z_threshold" type="number" min="0" max="20" step="0.1">
+              </div>
+              <div class="field wide quality-setting-toggle">
+                <label><input data-quality-setting="empty_space_enabled" type="checkbox"> Enable empty-space detection</label>
+                <div class="subtle">Flags large low-detail regions as advisory composition issues; it does not reject the image.</div>
+              </div>
+              <div class="field">
+                <label for="qualityEmptySpacePercent">Empty-space threshold (%)</label>
+                <input id="qualityEmptySpacePercent" data-quality-setting="empty_space_percent" type="number" min="1" max="99" step="1">
+              </div>
+              <div class="field">
+                <label for="qualityEmptySpaceContrast">Empty tile contrast</label>
+                <input id="qualityEmptySpaceContrast" data-quality-setting="empty_space_local_contrast" type="number" min="0" max="100" step="1">
+              </div>
+              <div class="field">
+                <label for="qualityEmptySpaceEdges">Empty tile edge density</label>
+                <input id="qualityEmptySpaceEdges" data-quality-setting="empty_space_edge_density" type="number" min="0" max="100" step="1">
+              </div>
+              <div class="field">
+                <label for="qualityEmptySpaceTonalRange">Minimum frame tonal range</label>
+                <input id="qualityEmptySpaceTonalRange" data-quality-setting="empty_space_min_tonal_range" type="number" min="1" max="255" step="1">
+              </div>
+            </div>
+            <div class="subtle" id="qualitySettingsStatus" aria-live="polite"></div>
+          </section>
           <div class="segmented quality-filters" id="qualityFilters" role="tablist" aria-label="Quality issue severity">
             <button class="active" type="button" role="tab" aria-selected="true" data-quality-filter="hard">Hard failures <span id="qualityHardCount">0</span></button>
             <button type="button" role="tab" aria-selected="false" data-quality-filter="warnings">Warnings <span id="qualityWarningCount">0</span></button>

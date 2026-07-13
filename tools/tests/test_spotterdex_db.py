@@ -229,5 +229,50 @@ class DatabaseTests(unittest.TestCase):
             state = manager.get_state()
             self.assertFalse(any(entry["targetKey"] == destination["entryPath"] for entry in state["aircraft"]))
             self.assertEqual(state["masterPhotos"][0]["subjects"], [])
+
+    def test_manager_creates_country_for_new_database_entry(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "content").mkdir()
+            (root / "raw_assets").mkdir()
+            database = root / "content" / "spotterdex.sqlite3"
+            seed_minimal_catalog(database)
+            connection = connect_database(database, read_only=True)
+            try:
+                export_snapshot(connection, root / "content" / "spotterdex.sql")
+            finally:
+                connection.close()
+
+            manager = SpotterDexManager(root)
+            result = manager.create_entry(
+                {
+                    "scope": "aircraft",
+                    "aircraftType": "Chengdu J-20",
+                    "aircraftFamily": "fighter",
+                    "squadronName": "PLAAF Demo Unit",
+                    "country": "China",
+                    "unitType": "squadron",
+                }
+            )
+            self.assertEqual(result["entryPath"], "db:aircraft:chengdu-j-20:china-plaaf-demo-unit")
+
+            connection = connect_database(database, read_only=True)
+            try:
+                self.assertEqual(
+                    tuple(connection.execute("SELECT id,name FROM countries WHERE name=?", ("China",)).fetchone()),
+                    ("china", "China"),
+                )
+                self.assertEqual(
+                    connection.execute(
+                        "SELECT country_id FROM units WHERE name=?",
+                        ("PLAAF Demo Unit",),
+                    ).fetchone()[0],
+                    "china",
+                )
+                self.assertTrue(snapshot_is_current(connection, root / "content" / "spotterdex.sql"))
+            finally:
+                connection.close()
+
+
 if __name__ == "__main__":
     unittest.main()

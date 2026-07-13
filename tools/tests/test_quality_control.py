@@ -83,6 +83,25 @@ class ColourQualityTests(unittest.TestCase):
         noisy_metrics = compute_quality_metrics(noisy.convert("RGB"), 128 * 128)
         self.assertGreater(noisy_metrics["noise_residual"], 7.0)
 
+    def test_large_low_detail_region_is_reported_as_empty_space(self) -> None:
+        image = Image.new("RGB", (160, 100), (100, 150, 210))
+        draw = ImageDraw.Draw(image)
+        draw.rectangle((0, 60, 159, 99), fill=(40, 40, 40))
+        for x in range(0, 160, 8):
+            draw.rectangle(
+                (x, 60, x + 7, 99),
+                fill=(220, 220, 220) if (x // 8) % 2 else (20, 20, 20),
+            )
+
+        metrics = compute_quality_metrics(image, image.width * image.height)
+        flags = build_quality_flags(metrics, None)
+
+        self.assertGreaterEqual(metrics["empty_space_ratio"], 0.55)
+        self.assertTrue(any(flag["id"] == "empty-space" for flag in flags))
+
+        stricter_flags = build_quality_flags(metrics, None, {"empty_space_percent": 60})
+        self.assertFalse(any(flag["id"] == "empty-space" for flag in stricter_flags))
+
     def test_collection_colour_outlier_is_compared_with_average(self) -> None:
         qualities = {
             f"normal-{index}.jpg": {
@@ -152,6 +171,24 @@ class ColourQualityTests(unittest.TestCase):
 
 
 class QualityPrefixTests(unittest.TestCase):
+    def test_quality_settings_are_saved_and_reloaded(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manager = SpotterDexManager(root)
+
+            result = manager.save_quality_settings(
+                {"settings": {"minimum_source_photo_width": 3000, "empty_space_percent": 70}}
+            )
+
+            self.assertEqual(result["qualitySettings"]["minimum_source_photo_width"], 3000)
+            self.assertEqual(result["qualitySettings"]["empty_space_percent"], 70)
+            reloaded = SpotterDexManager(root)
+            self.assertEqual(reloaded.quality_settings["minimum_source_photo_width"], 3000)
+            self.assertEqual(reloaded.quality_settings["empty_space_percent"], 70)
+
+            with self.assertRaises(ValueError):
+                manager.save_quality_settings({"settings": {"empty_space_percent": 100}})
+
     def test_prefixed_image_that_now_passes_is_exposed_separately(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

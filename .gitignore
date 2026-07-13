@@ -5,5 +5,6 @@ __pycache__/
 raw_assets/
 .spotterdex-manager-cache/
 .spotterdex-manager-quality.json
+.spotterdex-manager-quality-settings.json
 .playwright*
 content/backups/

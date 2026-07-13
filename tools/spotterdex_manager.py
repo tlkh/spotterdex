@@ -131,6 +131,53 @@ QC_FILE_PREFIX = "QC_"
 # or replacing the image re-surfaces it. Kept out of the build cache so "Clear
 # build cache" does not wipe manual review decisions.
 QUALITY_ACK_PATH = ROOT / ".spotterdex-manager-quality.json"
+QUALITY_SETTINGS_PATH = ROOT / ".spotterdex-manager-quality-settings.json"
+
+# These settings are manager-local review preferences. They are deliberately
+# kept out of the catalog and generated site so a reviewer can tune the queue
+# without changing published data.
+QUALITY_SETTING_DEFAULTS: Dict[str, Any] = {
+    "minimum_source_photo_width": MIN_SOURCE_PHOTO_WIDTH,
+    "underexposed_mean_luminance": UNDEREXPOSED_MEAN_LUMINANCE,
+    "overexposed_mean_luminance": OVEREXPOSED_MEAN_LUMINANCE,
+    "clipped_shadow_percent": round(CLIPPED_SHADOW_RATIO * 100),
+    "clipped_highlight_percent": round(CLIPPED_HIGHLIGHT_RATIO * 100),
+    "true_clip_shadow_percent": round(TRUE_CLIP_SHADOW_RATIO * 100),
+    "true_clip_highlight_percent": round(TRUE_CLIP_HIGHLIGHT_RATIO * 100),
+    "low_contrast_tonal_range": LOW_CONTRAST_TONAL_RANGE,
+    "soft_focus_acutance": SOFT_FOCUS_ACUTANCE,
+    "high_iso_threshold": HIGH_ISO_NOISE_THRESHOLD,
+    "noise_residual_threshold": NOISE_RESIDUAL_THRESHOLD,
+    "collection_colour_minimum_images": COLLECTION_COLOUR_MINIMUM_IMAGES,
+    "collection_colour_minimum_delta": COLLECTION_COLOUR_MINIMUM_DELTA,
+    "collection_colour_z_threshold": COLLECTION_COLOUR_Z_THRESHOLD,
+    "empty_space_enabled": True,
+    "empty_space_percent": 55,
+    "empty_space_local_contrast": 10,
+    "empty_space_edge_density": 12,
+    "empty_space_min_tonal_range": LOW_CONTRAST_TONAL_RANGE,
+}
+
+QUALITY_SETTING_BOUNDS: Dict[str, Tuple[float, float]] = {
+    "minimum_source_photo_width": (640, 20000),
+    "underexposed_mean_luminance": (1, 150),
+    "overexposed_mean_luminance": (100, 255),
+    "clipped_shadow_percent": (1, 100),
+    "clipped_highlight_percent": (1, 100),
+    "true_clip_shadow_percent": (1, 50),
+    "true_clip_highlight_percent": (1, 50),
+    "low_contrast_tonal_range": (1, 255),
+    "soft_focus_acutance": (0, 100),
+    "high_iso_threshold": (100, 51200),
+    "noise_residual_threshold": (0, 100),
+    "collection_colour_minimum_images": (3, 1000),
+    "collection_colour_minimum_delta": (0, 100),
+    "collection_colour_z_threshold": (0, 20),
+    "empty_space_percent": (1, 99),
+    "empty_space_local_contrast": (0, 100),
+    "empty_space_edge_density": (0, 100),
+    "empty_space_min_tonal_range": (1, 255),
+}
 
 
 class FlowList(list):
@@ -183,9 +230,11 @@ class SpotterDexManager:
         self.airshow_events_path = self.airshow_dir / "events.yaml"
         self.raw_assets_dir = self.root / "raw_assets"
         self.quality_ack_path = self.root / QUALITY_ACK_PATH.name
+        self.quality_settings_path = self.root / QUALITY_SETTINGS_PATH.name
+        self.quality_settings = self._load_quality_settings()
         self._exif_date_cache: Dict[str, str] = {}
         self._image_dimension_cache: Dict[str, Tuple[int, int]] = {}
-        self._image_quality_cache: Dict[str, Tuple[int, int, Dict[str, Any]]] = {}
+        self._image_quality_cache: Dict[str, Tuple[int, int, Tuple[Tuple[str, Any], ...], Dict[str, Any]]] = {}
 
     def clear_build_cache(self, _payload: Dict[str, Any]) -> Dict[str, Any]:
         """Discard manager thumbnails and in-memory image metadata caches."""
@@ -256,6 +305,39 @@ class SpotterDexManager:
             return {}
         entries = data.get("acknowledged") if isinstance(data, dict) else None
         return entries if isinstance(entries, dict) else {}
+
+    def _load_quality_settings(self) -> Dict[str, Any]:
+        """Load manager-local quality settings, falling back safely to defaults."""
+        if not self.quality_settings_path.exists():
+            return dict(QUALITY_SETTING_DEFAULTS)
+        try:
+            data = json.loads(self.quality_settings_path.read_text("utf-8"))
+        except (OSError, ValueError):
+            return dict(QUALITY_SETTING_DEFAULTS)
+        raw = data.get("settings") if isinstance(data, dict) else None
+        return normalize_quality_settings(raw if isinstance(raw, dict) else data)
+
+    def save_quality_settings(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate and persist manager-local image quality review settings."""
+        if payload.get("reset") is True:
+            settings = dict(QUALITY_SETTING_DEFAULTS)
+        else:
+            raw = payload.get("settings") if isinstance(payload.get("settings"), dict) else payload
+            settings = normalize_quality_settings(raw, strict=True)
+        try:
+            self.quality_settings_path.write_text(
+                json.dumps({"settings": settings}, ensure_ascii=True, indent=2) + "\n",
+                "utf-8",
+            )
+        except OSError as exc:
+            raise ValueError(f"Could not save image quality settings: {exc}") from exc
+        self.quality_settings = settings
+        self._image_quality_cache.clear()
+        return {
+            "ok": True,
+            "qualitySettings": dict(settings),
+            "message": "Image quality settings saved; the quality queue was refreshed.",
+        }
 
     @staticmethod
     def _quality_ack_signature(size: Any, modified: Any) -> str:
@@ -599,6 +681,7 @@ class SpotterDexManager:
         )
         quality_prefix_needed_count = sum(1 for asset in assets if asset.get("needsQcPrefix"))
         qc_passed_asset_count = sum(1 for asset in assets if asset.get("qcPrefixPasses"))
+        empty_space_issue_asset_count = sum(1 for asset in assets if asset.get("hasEmptySpaceIssue"))
 
         return {
             "project": {
@@ -620,7 +703,8 @@ class SpotterDexManager:
                 "acknowledgedQualityCount": acknowledged_quality_count,
                 "qualityPrefixNeededCount": quality_prefix_needed_count,
                 "qcPassedAssetCount": qc_passed_asset_count,
-                "minimumSourcePhotoWidth": MIN_SOURCE_PHOTO_WIDTH,
+                "minimumSourcePhotoWidth": self.quality_settings["minimum_source_photo_width"],
+                "emptySpaceIssueAssetCount": empty_space_issue_asset_count,
             },
             "aircraft": aircraft,
             "squadrons": squadrons,
@@ -629,6 +713,7 @@ class SpotterDexManager:
             "pins": pins,
             "assets": assets,
             "airshowEvents": airshow_events,
+            "qualitySettings": dict(self.quality_settings),
         }
 
     def _database_connection(self, *, read_only: bool = False) -> sqlite3.Connection:
@@ -738,7 +823,9 @@ class SpotterDexManager:
                 "exists": exists,
                 "sourceWidth": width,
                 "sourceHeight": height,
-                "sourceUnderMinimumWidth": bool(width and width < MIN_SOURCE_PHOTO_WIDTH),
+                "sourceUnderMinimumWidth": bool(
+                    width and width < self.quality_settings["minimum_source_photo_width"]
+                ),
                 "location": location["name"],
                 "pinId": location["id"],
                 "date": photo.get("date_override") or "",
@@ -1043,7 +1130,8 @@ class SpotterDexManager:
                 "acknowledgedQualityCount": sum(1 for asset in assets if asset.get("qualityAcknowledged")),
                 "qualityPrefixNeededCount": sum(1 for asset in assets if asset.get("needsQcPrefix")),
                 "qcPassedAssetCount": sum(1 for asset in assets if asset.get("qcPrefixPasses")),
-                "minimumSourcePhotoWidth": MIN_SOURCE_PHOTO_WIDTH,
+                "minimumSourcePhotoWidth": self.quality_settings["minimum_source_photo_width"],
+                "emptySpaceIssueAssetCount": sum(1 for asset in assets if asset.get("hasEmptySpaceIssue")),
             },
             "aircraft": sorted(aircraft_entries, key=lambda item: (item["aircraftType"], item["country"], item["squadronName"])),
             "aircraftCatalog": sorted(aircraft_catalog, key=lambda item: (item["name"], item["id"])),
@@ -1054,6 +1142,7 @@ class SpotterDexManager:
             "pins": sorted(pins, key=lambda item: (item["country"], item["name"])),
             "assets": assets,
             "airshowEvents": sorted(airshow_events, key=lambda item: item["name"]),
+            "qualitySettings": dict(self.quality_settings),
         }
 
     @staticmethod
@@ -1066,11 +1155,24 @@ class SpotterDexManager:
         return candidate
 
     @staticmethod
-    def _database_country_id(connection: sqlite3.Connection, country_name: str) -> str:
+    def _database_country_id(
+        connection: sqlite3.Connection,
+        country_name: str,
+        *,
+        create: bool = False,
+    ) -> str:
+        country_name = clean_text(country_name)
         row = connection.execute("SELECT id FROM countries WHERE lower(name)=lower(?)", (country_name,)).fetchone()
-        if not row:
-            raise ValueError(f"Unknown country '{country_name}'. Add it through a catalog migration first.")
-        return str(row[0])
+        if row:
+            return str(row[0])
+        if create:
+            country_id = SpotterDexManager._unique_database_id(connection, "countries", country_name)
+            connection.execute(
+                "INSERT INTO countries(id,name) VALUES(?,?)",
+                (country_id, country_name),
+            )
+            return country_id
+        raise ValueError(f"Unknown country '{country_name}'. Add it through the catalog manager first.")
 
     def _ensure_database_event(
         self,
@@ -1752,7 +1854,7 @@ class SpotterDexManager:
             raise ValueError("Complete the required aircraft/unit fields.")
 
         def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
-            country_id = self._database_country_id(connection, country_name)
+            country_id = self._database_country_id(connection, country_name, create=True)
             unit = connection.execute(
                 "SELECT id FROM units WHERE country_id=? AND lower(name)=lower(?) AND kind=?",
                 (country_id, unit_name, kind),
@@ -1797,7 +1899,7 @@ class SpotterDexManager:
             raise ValueError("Valid country, location name, latitude, and longitude are required.")
 
         def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
-            country_id = self._database_country_id(connection, country)
+            country_id = self._database_country_id(connection, country, create=True)
             requested = clean_text(payload.get("id")) or name
             location_id = self._unique_database_id(connection, "locations", f"{country_id}-{requested}")
             connection.execute(
@@ -3034,7 +3136,9 @@ class SpotterDexManager:
                                 "exists": source_exists,
                                 "sourceWidth": source_width,
                                 "sourceHeight": source_height,
-                                "sourceUnderMinimumWidth": bool(source_width and source_width < MIN_SOURCE_PHOTO_WIDTH),
+                                "sourceUnderMinimumWidth": bool(
+                                    source_width and source_width < self.quality_settings["minimum_source_photo_width"]
+                                ),
                                 "location": name,
                                 "pinId": pin_id,
                                 "date": clean_text(photo_item.get("date")),
@@ -3221,7 +3325,9 @@ class SpotterDexManager:
                         "exists": source_exists,
                         "sourceWidth": source_width,
                         "sourceHeight": source_height,
-                        "sourceUnderMinimumWidth": bool(source_width and source_width < MIN_SOURCE_PHOTO_WIDTH),
+                        "sourceUnderMinimumWidth": bool(
+                            source_width and source_width < self.quality_settings["minimum_source_photo_width"]
+                        ),
                         "location": location,
                         "pinId": pin_id,
                         "date": clean_text(item.get("date")),
@@ -3355,7 +3461,9 @@ class SpotterDexManager:
                         "exists": source_exists,
                         "sourceWidth": source_width,
                         "sourceHeight": source_height,
-                        "sourceUnderMinimumWidth": bool(source_width and source_width < MIN_SOURCE_PHOTO_WIDTH),
+                        "sourceUnderMinimumWidth": bool(
+                            source_width and source_width < self.quality_settings["minimum_source_photo_width"]
+                        ),
                         "location": location,
                         "pinId": pin_id,
                         "date": clean_text(item.get("date")),
@@ -3414,6 +3522,7 @@ class SpotterDexManager:
 
     def _scan_assets(self, tag_map: Dict[str, List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
         assets: List[Dict[str, Any]] = []
+        quality_settings = dict(self.quality_settings)
         if not self.raw_assets_dir.exists():
             return assets
         candidates: List[Dict[str, Any]] = []
@@ -3449,7 +3558,12 @@ class SpotterDexManager:
             worker_count = min(8, len(photo_candidates), max(1, os.cpu_count() or 1))
             with ThreadPoolExecutor(max_workers=worker_count) as executor:
                 futures = {
-                    executor.submit(analyse_image_quality, item["pathObject"], self._image_quality_cache): item["path"]
+                    executor.submit(
+                        analyse_image_quality,
+                        item["pathObject"],
+                        self._image_quality_cache,
+                        quality_settings,
+                    ): item["path"]
                     for item in photo_candidates
                 }
                 for future, rel in futures.items():
@@ -3461,7 +3575,7 @@ class SpotterDexManager:
                         }
                     except Exception:
                         quality_by_path[rel] = {"flags": []}
-            add_collection_colour_analysis(quality_by_path)
+            add_collection_colour_analysis(quality_by_path, quality_settings)
 
         # Read the EXIF capture date for every raw asset so the selector grid can
         # be ordered by when the frame was shot rather than by filesystem mtime.
@@ -3486,7 +3600,7 @@ class SpotterDexManager:
             is_under_resolution = bool(
                 item["isPhotoSource"]
                 and item["width"]
-                and item["width"] < MIN_SOURCE_PHOTO_WIDTH
+                and item["width"] < quality_settings["minimum_source_photo_width"]
             )
             hard_quality_failure = bool(
                 item["isPhotoSource"]
@@ -3542,6 +3656,7 @@ class SpotterDexManager:
                     "qualityFlags": quality_flags,
                     "hasExposureIssue": any(flag.get("category") == "exposure" for flag in quality_flags if isinstance(flag, dict)),
                     "hasColourBalanceIssue": any(flag.get("category") == "colour" for flag in quality_flags if isinstance(flag, dict)),
+                    "hasEmptySpaceIssue": any(flag.get("id") == "empty-space" for flag in quality_flags if isinstance(flag, dict)),
                     "qualityAcknowledged": acknowledged,
                     "meanLuminance": quality.get("meanLuminance"),
                     "shadowClipPercent": quality.get("shadowClipPercent"),
@@ -3562,6 +3677,7 @@ class SpotterDexManager:
                     "collectionColourDistance": quality.get("collectionColourDistance"),
                     "collectionColourDeviation": quality.get("collectionColourDeviation"),
                     "collectionColourAverage": quality.get("collectionColourAverage"),
+                    "emptySpacePercent": quality.get("emptySpacePercent"),
                     "acutance": quality.get("acutance"),
                     "noiseResidual": quality.get("noiseResidual"),
                     "iso": quality.get("iso"),
@@ -3685,6 +3801,7 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
                 "/api/create-event": self.context.manager.create_event,
                 "/api/set-pin-hero": self.context.manager.set_pin_hero,
                 "/api/clear-build-cache": self.context.manager.clear_build_cache,
+                "/api/save-quality-settings": self.context.manager.save_quality_settings,
                 "/api/backup-database": self.context.manager.backup_database,
                 "/api/acknowledge-quality": self.context.manager.set_quality_acknowledgement,
                 "/api/mark-quality-failures": self.context.manager.mark_quality_failures,
@@ -4104,18 +4221,57 @@ def _normalised_colour_bias(channel_means: List[float]) -> Tuple[float, float]:
     return ((red - blue) * scale, (green - (red + blue) / 2) * scale)
 
 
-def add_collection_colour_analysis(quality_by_path: Dict[str, Dict[str, Any]]) -> None:
+def _empty_space_ratio(
+    luminance: Image.Image,
+    edge_source: Image.Image,
+    settings: Dict[str, Any],
+) -> float:
+    """Estimate the share of the frame occupied by large low-detail regions.
+
+    The image is sampled as a small grid rather than pixel-by-pixel. A tile is
+    considered empty when it has both low local luminance variation and little
+    edge energy. This catches sustained blank sky/background while avoiding a
+    single smooth patch or a frame that is flat everywhere.
+    """
+    grid_size = 16
+    if luminance.width <= 0 or luminance.height <= 0:
+        return 0.0
+    # Use Pillow's C-level filters and downsampling rather than calculating a
+    # Python-side ImageStat for every tile of every asset. The grid still gives
+    # us a composition-area estimate, while keeping a large catalog scan fast.
+    local_variation = ImageChops.difference(
+        luminance,
+        luminance.filter(ImageFilter.GaussianBlur(2.0)),
+    )
+    contrast_grid = local_variation.resize((grid_size, grid_size), Image.Resampling.BOX)
+    edge_grid = edge_source.resize((grid_size, grid_size), Image.Resampling.BOX)
+    low_contrast = contrast_grid.point(
+        lambda value: 255 if value <= settings["empty_space_local_contrast"] else 0
+    )
+    low_edges = edge_grid.point(
+        lambda value: 255 if value <= settings["empty_space_edge_density"] else 0
+    )
+    empty_grid = ImageChops.multiply(low_contrast, low_edges)
+    return empty_grid.histogram()[255] / (grid_size * grid_size)
+
+
+def add_collection_colour_analysis(
+    quality_by_path: Dict[str, Dict[str, Any]],
+    settings: Optional[Dict[str, Any]] = None,
+) -> None:
     """Add conservative colour outlier flags relative to this image collection.
 
     The arithmetic average is retained for reporting, while a robust median/MAD
     baseline drives outlier detection. Cached per-image results are copied before
     this function is called.
     """
+    active_settings = normalize_quality_settings(settings)
+    minimum_images = active_settings["collection_colour_minimum_images"]
     use_lab = sum(
         isinstance(quality.get("sceneLabABias"), (int, float))
         and isinstance(quality.get("sceneLabBBias"), (int, float))
         for quality in quality_by_path.values()
-    ) >= COLLECTION_COLOUR_MINIMUM_IMAGES
+    ) >= minimum_images
     first_axis = "sceneLabABias" if use_lab else "sceneRedBlueBias"
     second_axis = "sceneLabBBias" if use_lab else "sceneGreenMagentaBias"
     usable = [
@@ -4124,7 +4280,7 @@ def add_collection_colour_analysis(quality_by_path: Dict[str, Dict[str, Any]]) -
         if isinstance(quality.get(first_axis), (int, float))
         and isinstance(quality.get(second_axis), (int, float))
     ]
-    if len(usable) < COLLECTION_COLOUR_MINIMUM_IMAGES:
+    if len(usable) < minimum_images:
         return
 
     groups: Dict[str, List[Dict[str, Any]]] = {}
@@ -4152,7 +4308,7 @@ def add_collection_colour_analysis(quality_by_path: Dict[str, Dict[str, Any]]) -
     global_summary = summary(usable)
     qualified_groups = {
         name: values for name, values in groups.items()
-        if len(values) >= COLLECTION_COLOUR_MINIMUM_IMAGES
+        if len(values) >= minimum_images
     }
 
     for quality in usable:
@@ -4177,7 +4333,10 @@ def add_collection_colour_analysis(quality_by_path: Dict[str, Dict[str, Any]]) -
             "colourSpace": "LAB" if use_lab else "RGB",
             "cohort": camera_model if cohort else "collection",
         }
-        if distance < COLLECTION_COLOUR_Z_THRESHOLD or absolute_delta < COLLECTION_COLOUR_MINIMUM_DELTA:
+        if (
+            distance < active_settings["collection_colour_z_threshold"]
+            or absolute_delta < active_settings["collection_colour_minimum_delta"]
+        ):
             continue
         direction = quality["collectionColourDeviation"] or "different in colour balance"
         quality.setdefault("flags", []).append(
@@ -4251,6 +4410,7 @@ def compute_quality_metrics(
     image: Image.Image,
     pixel_count: int,
     clipping_image: Optional[Image.Image] = None,
+    settings: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Derive exposure, contrast, colour-cast and sharpness metrics with C-level ops.
 
@@ -4258,6 +4418,7 @@ def compute_quality_metrics(
     Python per-pixel loop, so it is both far faster and releases the GIL, letting
     the manager analyse a large ``raw_assets/`` set in parallel.
     """
+    active_settings = normalize_quality_settings(settings)
     # Rec.709 luminance keeps parity with the previous per-pixel weighting.
     luminance = image.convert("L", (0.2126, 0.7152, 0.0722, 0))
     lum_hist = luminance.histogram()
@@ -4362,6 +4523,19 @@ def compute_quality_metrics(
         if flat_count
         else ImageStat.Stat(residual).mean[0]
     )
+    composition_edges = luminance.filter(ImageFilter.FIND_EDGES)
+    if composition_edges.width > 2 and composition_edges.height > 2:
+        # FIND_EDGES marks the outer image boundary as an edge. Remove that
+        # artificial border so blank sky touching the frame edge is measurable.
+        cleaned_edges = Image.new("L", composition_edges.size, 0)
+        cleaned_edges.paste(
+            composition_edges.crop(
+                (1, 1, composition_edges.width - 1, composition_edges.height - 1)
+            ),
+            (1, 1),
+        )
+        composition_edges = cleaned_edges
+    empty_space_ratio = _empty_space_ratio(luminance, composition_edges, active_settings)
 
     clipping_source = clipping_image or image
     clipping_luminance = clipping_source.convert("L")
@@ -4394,11 +4568,17 @@ def compute_quality_metrics(
         "scene_lab_b": scene_lab_b,
         "acutance": acutance,
         "noise_residual": noise_residual,
+        "empty_space_ratio": empty_space_ratio,
     }
 
 
-def build_quality_flags(metrics: Dict[str, Any], iso_value: Optional[int]) -> List[Dict[str, str]]:
+def build_quality_flags(
+    metrics: Dict[str, Any],
+    iso_value: Optional[int],
+    settings: Optional[Dict[str, Any]] = None,
+) -> List[Dict[str, str]]:
     """Turn raw metrics into reviewer-facing warnings (severity ``warn`` or ``info``)."""
+    active_settings = normalize_quality_settings(settings)
     flags: List[Dict[str, str]] = []
     mean_luminance = metrics["mean_luminance"]
     shadow_ratio = metrics["shadow_ratio"]
@@ -4407,7 +4587,7 @@ def build_quality_flags(metrics: Dict[str, Any], iso_value: Optional[int]) -> Li
     true_highlight_ratio = metrics["true_highlight_ratio"]
     tonal_range = metrics["tonal_range"]
 
-    if true_shadow_ratio >= TRUE_CLIP_SHADOW_RATIO:
+    if true_shadow_ratio >= active_settings["true_clip_shadow_percent"] / 100:
         flags.append(
             {
                 "id": "clipped-shadows",
@@ -4418,7 +4598,7 @@ def build_quality_flags(metrics: Dict[str, Any], iso_value: Optional[int]) -> Li
                 "detail": f"{round(true_shadow_ratio * 100)}% of pixels are near-black (0–{NEAR_CLIP_SHADOW_LEVEL}); review shadow detail.",
             }
         )
-    if true_highlight_ratio >= TRUE_CLIP_HIGHLIGHT_RATIO:
+    if true_highlight_ratio >= active_settings["true_clip_highlight_percent"] / 100:
         flags.append(
             {
                 "id": "blown-highlights",
@@ -4430,7 +4610,10 @@ def build_quality_flags(metrics: Dict[str, Any], iso_value: Optional[int]) -> Li
             }
         )
 
-    if mean_luminance <= UNDEREXPOSED_MEAN_LUMINANCE and shadow_ratio >= CLIPPED_SHADOW_RATIO:
+    if (
+        mean_luminance <= active_settings["underexposed_mean_luminance"]
+        and shadow_ratio >= active_settings["clipped_shadow_percent"] / 100
+    ):
         flags.append(
             {
                 "id": "underexposed",
@@ -4441,7 +4624,10 @@ def build_quality_flags(metrics: Dict[str, Any], iso_value: Optional[int]) -> Li
                 "detail": f"Average luminance {round(mean_luminance)} with {round(shadow_ratio * 100)}% deep shadows.",
             }
         )
-    elif mean_luminance >= OVEREXPOSED_MEAN_LUMINANCE and highlight_ratio >= CLIPPED_HIGHLIGHT_RATIO:
+    elif (
+        mean_luminance >= active_settings["overexposed_mean_luminance"]
+        and highlight_ratio >= active_settings["clipped_highlight_percent"] / 100
+    ):
         flags.append(
             {
                 "id": "overexposed",
@@ -4454,9 +4640,9 @@ def build_quality_flags(metrics: Dict[str, Any], iso_value: Optional[int]) -> Li
         )
 
     if (
-        tonal_range <= LOW_CONTRAST_TONAL_RANGE
-        and true_shadow_ratio < TRUE_CLIP_SHADOW_RATIO
-        and true_highlight_ratio < TRUE_CLIP_HIGHLIGHT_RATIO
+        tonal_range <= active_settings["low_contrast_tonal_range"]
+        and true_shadow_ratio < active_settings["true_clip_shadow_percent"] / 100
+        and true_highlight_ratio < active_settings["true_clip_highlight_percent"] / 100
     ):
         flags.append(
             {
@@ -4518,7 +4704,11 @@ def build_quality_flags(metrics: Dict[str, Any], iso_value: Optional[int]) -> Li
             }
         )
 
-    if metrics["acutance"] and metrics["acutance"] <= SOFT_FOCUS_ACUTANCE and tonal_range > LOW_CONTRAST_TONAL_RANGE:
+    if (
+        metrics["acutance"]
+        and metrics["acutance"] <= active_settings["soft_focus_acutance"]
+        and tonal_range > active_settings["low_contrast_tonal_range"]
+    ):
         flags.append(
             {
                 "id": "soft-focus",
@@ -4534,8 +4724,8 @@ def build_quality_flags(metrics: Dict[str, Any], iso_value: Optional[int]) -> Li
         )
 
     if iso_value and (
-        iso_value >= HIGH_ISO_NOISE_THRESHOLD
-        or (iso_value >= 1600 and metrics["noise_residual"] >= NOISE_RESIDUAL_THRESHOLD)
+        iso_value >= active_settings["high_iso_threshold"]
+        or (iso_value >= 1600 and metrics["noise_residual"] >= active_settings["noise_residual_threshold"])
     ):
         flags.append(
             {
@@ -4551,19 +4741,50 @@ def build_quality_flags(metrics: Dict[str, Any], iso_value: Optional[int]) -> Li
             }
         )
 
+    if (
+        active_settings["empty_space_enabled"]
+        and metrics.get("empty_space_ratio", 0.0) >= active_settings["empty_space_percent"] / 100
+        and tonal_range >= active_settings["empty_space_min_tonal_range"]
+    ):
+        empty_space_percent = round(metrics["empty_space_ratio"] * 100)
+        flags.append(
+            {
+                "id": "empty-space",
+                "category": "composition",
+                "severity": "info",
+                "label": "Excess empty space",
+                "short": "Empty space",
+                "detail": (
+                    f"Approximately {empty_space_percent}% of the frame is low-detail; "
+                    "review the composition for excessive sky or background."
+                ),
+            }
+        )
+
     return flags
 
 
-def analyse_image_quality(path: Path, cache: Dict[str, Tuple[int, int, Dict[str, Any]]]) -> Dict[str, Any]:
-    """Return conservative exposure, contrast, colour, focus and noise warnings."""
+def analyse_image_quality(
+    path: Path,
+    cache: Dict[str, Tuple[int, int, Tuple[Tuple[str, Any], ...], Dict[str, Any]]],
+    settings: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Return conservative exposure, composition, colour, focus and noise warnings."""
+    active_settings = normalize_quality_settings(settings)
+    settings_signature = tuple(sorted(active_settings.items()))
     try:
         stat = path.stat()
     except OSError:
         return {"flags": []}
     cache_key = str(path.resolve())
     cached = cache.get(cache_key)
-    if cached and cached[0] == stat.st_mtime_ns and cached[1] == stat.st_size:
-        return cached[2]
+    if (
+        cached
+        and cached[0] == stat.st_mtime_ns
+        and cached[1] == stat.st_size
+        and cached[2] == settings_signature
+    ):
+        return cached[3]
 
     result: Dict[str, Any] = {"flags": []}
     iso_value: Optional[int] = None
@@ -4587,16 +4808,16 @@ def analyse_image_quality(path: Path, cache: Dict[str, Tuple[int, int, Dict[str,
             )
             image.thumbnail((QUALITY_ANALYSIS_MAX_DIMENSION, QUALITY_ANALYSIS_MAX_DIMENSION), Image.Resampling.LANCZOS)
     except Exception:
-        cache[cache_key] = (stat.st_mtime_ns, stat.st_size, result)
+        cache[cache_key] = (stat.st_mtime_ns, stat.st_size, settings_signature, result)
         return result
 
     pixel_count = image.width * image.height
     if pixel_count <= 0:
-        cache[cache_key] = (stat.st_mtime_ns, stat.st_size, result)
+        cache[cache_key] = (stat.st_mtime_ns, stat.st_size, settings_signature, result)
         return result
 
-    metrics = compute_quality_metrics(image, pixel_count, clipping_image)
-    flags = build_quality_flags(metrics, iso_value)
+    metrics = compute_quality_metrics(image, pixel_count, clipping_image, active_settings)
+    flags = build_quality_flags(metrics, iso_value, active_settings)
 
     result = {
         "flags": flags,
@@ -4622,10 +4843,11 @@ def analyse_image_quality(path: Path, cache: Dict[str, Tuple[int, int, Dict[str,
         "sceneLabBBias": round(metrics["scene_lab_b"], 1),
         "acutance": round(metrics["acutance"], 1),
         "noiseResidual": round(metrics["noise_residual"], 1),
+        "emptySpacePercent": round(metrics["empty_space_ratio"] * 100),
         "iso": iso_value,
         "cameraModel": camera_model,
     }
-    cache[cache_key] = (stat.st_mtime_ns, stat.st_size, result)
+    cache[cache_key] = (stat.st_mtime_ns, stat.st_size, settings_signature, result)
     return result
 
 
@@ -4821,6 +5043,52 @@ def parse_float(value: Any, label: str) -> float:
 
 def clean_text(value: Any) -> str:
     return str(value or "").strip()
+
+
+def normalize_quality_settings(value: Any, *, strict: bool = False) -> Dict[str, Any]:
+    """Return validated quality settings, ignoring unknown keys."""
+    raw = value if isinstance(value, dict) else {}
+    settings = dict(QUALITY_SETTING_DEFAULTS)
+    for key, default in QUALITY_SETTING_DEFAULTS.items():
+        if key not in raw:
+            continue
+        candidate = raw[key]
+        try:
+            if isinstance(default, bool):
+                if isinstance(candidate, bool):
+                    parsed: Any = candidate
+                else:
+                    text = clean_text(candidate).lower()
+                    if text in {"1", "true", "yes", "on"}:
+                        parsed = True
+                    elif text in {"0", "false", "no", "off"}:
+                        parsed = False
+                    else:
+                        raise ValueError("must be true or false")
+            elif isinstance(default, int):
+                if isinstance(candidate, bool):
+                    raise ValueError("must be a number")
+                parsed = int(str(candidate).strip())
+            else:
+                if isinstance(candidate, bool):
+                    raise ValueError("must be a number")
+                parsed = float(str(candidate).strip())
+            if key in QUALITY_SETTING_BOUNDS:
+                minimum, maximum = QUALITY_SETTING_BOUNDS[key]
+                if not minimum <= parsed <= maximum:
+                    raise ValueError(f"must be between {minimum:g} and {maximum:g}")
+            if isinstance(parsed, float) and not math.isfinite(parsed):
+                raise ValueError("must be finite")
+            settings[key] = parsed
+        except (TypeError, ValueError) as exc:
+            if strict:
+                raise ValueError(f"Quality setting '{key}' {exc}.") from exc
+
+    if settings["underexposed_mean_luminance"] >= settings["overexposed_mean_luminance"]:
+        if strict:
+            raise ValueError("Underexposure luminance must be lower than overexposure luminance.")
+        settings = dict(QUALITY_SETTING_DEFAULTS)
+    return settings
 
 
 def normalize_optional_boolean(value: Any) -> Optional[bool]:

@@ -244,6 +244,27 @@
       max-width: 620px;
       margin-top: 14px;
     }
+    .quality-settings {
+      margin-top: 14px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.72);
+    }
+    .quality-settings-heading {
+      margin: 0 0 14px;
+    }
+    .quality-settings-grid {
+      gap: 10px 12px;
+    }
+    .quality-setting-toggle label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .quality-settings .subtle {
+      line-height: 1.4;
+    }
     .asset-grid {
       height: calc(100vh - 210px);
       min-height: 420px;
