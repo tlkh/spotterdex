@@ -1970,6 +1970,20 @@ img {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 285px), 1fr));
 }
 
+.aircraft-type-photo-groups {
+  display: grid;
+  gap: 24px;
+}
+
+.aircraft-type-photo-group {
+  display: grid;
+  gap: 10px;
+}
+
+.aircraft-type-photo-group .group-header {
+  border-bottom: 1px solid var(--line);
+}
+
 .stats-hero {
   display: grid;
   gap: 16px;
@@ -2161,6 +2175,10 @@ h3 {
   gap: 12px;
   align-items: center;
   justify-content: space-between;
+}
+
+.group-header {
+  padding-bottom: 10px;
 }
 
 .panel-heading {
@@ -3369,10 +3387,67 @@ button.location-unit-chip:focus-visible,
   gap: clamp(10px, 1.4vw, 18px);
 }
 
+/* A lone gallery image keeps the compact height of a four-image row. */
+.photo-grid-single .photo-card {
+  grid-column: 1 / -1;
+  aspect-ratio: 6 / 1;
+}
+
 .photo-groups-map .photo-grid,
 .photo-groups-dex .photo-grid,
 .photo-grid-squadron {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 285px), 1fr));
+}
+
+@media (min-width: 1041px) {
+  /* Detail galleries keep the height of a normal four-item row. */
+  .detail-view .photo-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .detail-view .photo-grid-count-1 {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-view .photo-grid-count-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .detail-view .photo-grid-count-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .detail-view .photo-grid-count-1 .photo-card {
+    aspect-ratio: 6 / 1;
+  }
+
+  .detail-view .photo-grid-count-2 .photo-card {
+    aspect-ratio: 3 / 1;
+  }
+
+  .detail-view .photo-grid-count-3 .photo-card {
+    aspect-ratio: 2 / 1;
+  }
+
+  .detail-view .photo-grid-count-4 .photo-card {
+    aspect-ratio: 3 / 2;
+  }
+
+  #airshowDetailView .airshow-photo-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  #airshowDetailView .airshow-photo-grid.photo-grid-count-1 {
+    grid-template-columns: 1fr;
+  }
+
+  #airshowDetailView .airshow-photo-grid.photo-grid-count-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #airshowDetailView .airshow-photo-grid.photo-grid-count-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .photo-card {
@@ -7212,6 +7287,10 @@ button.location-unit-chip:focus-visible,
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .photo-grid-single .photo-card {
+    aspect-ratio: 3 / 1;
+  }
+
   .squadron-logo-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
@@ -7422,6 +7501,10 @@ button.location-unit-chip:focus-visible,
 
   .photo-grid {
     grid-template-columns: 1fr;
+  }
+
+  .photo-grid-single .photo-card {
+    aspect-ratio: 3 / 2;
   }
 
   .squadron-logo-grid {

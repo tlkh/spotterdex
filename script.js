@@ -4841,27 +4841,18 @@
         className: "squadron-field-guide-hero"
       })}
       ${renderPageWriteUp(squadron.writeUp, "About this squadron")}
-      <section class="detail-summary">
-        <div>
-          <p class="eyebrow">Aircraft types</p>
-          <p class="detail-summary-copy">${escapeHtml(typePreview || "No aircraft types tagged yet.")}</p>
+      <section class="detail-photo-section squadron-unit-archive">
+        <div class="detail-section-heading">
+          <div>
+            <p class="eyebrow">Aircraft types</p>
+            <p class="detail-summary-copy">${escapeHtml(typePreview || "No aircraft types tagged yet.")}</p>
+          </div>
+          ${squadronLevelPhotos.length ? `<span class="count-pill">${squadronLevelPhotos.length}</span>` : ""}
         </div>
+        ${squadronLevelPhotos.length
+          ? renderDetailPhotoGrid(squadronLevelPhotos, "squadron", "squadron-level")
+          : '<p class="muted">No unit-level photos tagged directly to this squadron.</p>'}
       </section>
-      ${
-        squadronLevelPhotos.length
-          ? `<section class="detail-photo-section">
-              <div class="detail-section-heading">
-                <div>
-                  <p class="eyebrow">Unit archive</p>
-                  <h2>Squadron-level frames</h2>
-                  <p class="muted">Photos tagged directly to ${escapeHtml(squadron.name)}.</p>
-                </div>
-                <span class="count-pill">${squadronLevelPhotos.length}</span>
-              </div>
-              ${renderDetailPhotoGrid(squadronLevelPhotos, "squadron", "squadron-level")}
-            </section>`
-          : ""
-      }
       <section class="detail-photo-section">
         <div class="detail-section-heading">
           <div>
@@ -4870,7 +4861,7 @@
           </div>
           <span class="count-pill">${otherPhotos.length}</span>
         </div>
-        ${renderDetailPhotoGrid(otherPhotos, "squadron", "squadron-aircraft")}
+        ${renderAircraftTypePhotoGroups(otherPhotos, "squadron", "squadron-aircraft-types")}
       </section>
     `;
   }
@@ -4926,16 +4917,8 @@
       </div>
       ${
         locationPhotos.length
-          ? `<section class="detail-photo-section">
-              <div class="detail-section-heading">
-                <div>
-                  <p class="eyebrow">Location archive</p>
-                  <h2>Location-specific images</h2>
-                  <p class="muted">Photos tagged directly to ${escapeHtml(pin.name)}.</p>
-                </div>
-                <span class="count-pill">${locationPhotos.length}</span>
-              </div>
-              ${renderDetailPhotoGrid(locationPhotos, "location", "location-tagged")}
+          ? `<section class="detail-photo-section location-specific-photo-section">
+              ${renderDetailPhotoGrid(locationPhotos, "location", "location-tagged", { hidePhotoSubject: true })}
             </section>`
           : ""
       }
@@ -4943,12 +4926,11 @@
         <div class="detail-section-heading">
           <div>
             <p class="eyebrow">Aircraft and unit archive</p>
-            <h2>All other images</h2>
             <p class="muted">Aircraft- and squadron-tagged photos, newest first.</p>
           </div>
           <span class="count-pill">${otherPhotos.length}</span>
         </div>
-        ${renderDetailPhotoGrid(otherPhotos, "location", "location-aircraft")}
+        ${renderAircraftTypePhotoGroups(otherPhotos, "location", "location-aircraft-types")}
       </section>
     `;
   }
@@ -5054,28 +5036,32 @@
     `;
   }
 
-  function renderDetailPhotoGrid(photos, context, galleryKey) {
+  function renderDetailPhotoGrid(photos, context, galleryKey, options = {}) {
     if (!photos.length) {
       return '<div class="empty-state">No photos found for this section yet.</div>';
     }
 
-    return renderProgressivePhotoGrid(photos, context, galleryKey, "detail-photo-grid");
+    return renderProgressivePhotoGrid(photos, context, galleryKey, "detail-photo-grid", options);
   }
 
-  function renderProgressivePhotoGrid(photos, context, galleryKey, className = "") {
+  function renderProgressivePhotoGrid(photos, context, galleryKey, className = "", options = {}) {
     const key = normalizeKey(galleryKey) || `gallery-${normalizeKey(photos[0]?.id || "photos")}`;
     const galleryId = `detail-gallery-${key}`;
     const gridId = `${galleryId}-grid`;
     const mobile = isFocusedMobileLayout();
     const visiblePhotos = mobile ? photos.slice(0, MOBILE_DETAIL_PAGE_SIZE) : photos;
-    state.detailGalleries.set(key, { photos, context });
+    state.detailGalleries.set(key, { photos, context, options });
     const hasMore = visiblePhotos.length < photos.length;
     const remaining = photos.length - visiblePhotos.length;
+    const photoGridCount = Math.min(photos.length, 4);
 
     return `
       <div class="detail-gallery" id="${escapeAttr(galleryId)}" data-detail-gallery-visible="${visiblePhotos.length}" data-detail-gallery-total="${photos.length}">
-        <div class="photo-grid ${escapeAttr(className)}" id="${escapeAttr(gridId)}">
-          ${visiblePhotos.map((photo) => renderPhotoCard(photo, context)).join("")}
+        <div class="photo-grid photo-grid-count-${photoGridCount}${photos.length === 1 ? " photo-grid-single" : ""} ${escapeAttr(className)}" id="${escapeAttr(gridId)}">
+          ${visiblePhotos.map((photo) => renderPhotoCard(photo, context, {
+            ...options,
+            fullResolution: options.fullResolution ?? photos.length === 1
+          })).join("")}
         </div>
         ${hasMore
           ? `<button class="detail-gallery-load-more" type="button" data-detail-load-more="${escapeAttr(key)}" aria-controls="${escapeAttr(galleryId)}-grid">Show ${remaining} more photo${remaining === 1 ? "" : "s"}</button>`
@@ -5102,7 +5088,10 @@
       "beforeend",
       galleryRecord.photos
         .slice(visibleCount, nextCount)
-        .map((photo) => renderPhotoCard(photo, galleryRecord.context))
+        .map((photo) => renderPhotoCard(photo, galleryRecord.context, {
+          ...galleryRecord.options,
+          fullResolution: galleryRecord.options?.fullResolution ?? galleryRecord.photos.length === 1
+        }))
         .join("")
     );
     gallery.dataset.detailGalleryVisible = String(nextCount);
@@ -6184,6 +6173,55 @@
     `;
   }
 
+  function aircraftTypePhotoGroups(photos) {
+    return groupPhotoRecords(
+      photos,
+      (photo) => {
+        const title = photo.tagScope === "aircraft" && photo.aircraftType
+          ? photo.aircraftType
+          : "Unit-only images";
+        return {
+          key: `aircraft-type-${normalizeKey(title)}`,
+          title,
+          eyebrow: photo.tagScope === "aircraft" ? "Aircraft type" : ""
+        };
+      },
+      sortPhotos,
+      (a, b) => {
+        const latestDiff = (b.photos[0]?.sortTime || 0) - (a.photos[0]?.sortTime || 0);
+        return latestDiff || a.title.localeCompare(b.title);
+      }
+    );
+  }
+
+  function renderAircraftTypePhotoGroups(photos, context, galleryKey) {
+    if (!photos.length) {
+      return '<div class="empty-state">No photos found for this section yet.</div>';
+    }
+
+    return `
+      <div class="aircraft-type-photo-groups">
+        ${aircraftTypePhotoGroups(photos).map((group, index) => `
+          <section class="aircraft-type-photo-group">
+            <div class="group-header">
+              <div>
+                ${group.eyebrow ? `<p class="eyebrow">${escapeHtml(group.eyebrow)}</p>` : ""}
+                <h3>${escapeHtml(group.title)}</h3>
+              </div>
+              <span class="count-pill">${group.photos.length}</span>
+            </div>
+            ${renderProgressivePhotoGrid(
+              group.photos,
+              context,
+              `${galleryKey}-${index}-${group.key}`,
+              "detail-photo-grid aircraft-type-photo-grid"
+            )}
+          </section>
+        `).join("")}
+      </div>
+    `;
+  }
+
   function renderResponsivePhotoImage(photo, alt, options = {}) {
     if (!photo) {
       return "";
@@ -6230,14 +6268,17 @@
     return match ? { width: Number(match[1]), height: Number(match[2]) } : { width: 0, height: 0 };
   }
 
-  function renderPhotoCard(photo, context) {
+  function renderPhotoCard(photo, context, options = {}) {
     return `
       <button class="photo-card" type="button" data-photo-id="${escapeAttr(photo.id)}" data-photo-context="${escapeAttr(context)}">
         ${renderResponsivePhotoImage(photo, `${photoSubjectLabel(photo)} at ${photo.locationName}`, {
-          sizes: "(max-width: 520px) 100vw, (max-width: 1040px) 50vw, 360px"
+          sizes: options.fullResolution
+            ? "100vw"
+            : "(max-width: 520px) 100vw, (max-width: 1040px) 50vw, 360px",
+          fullResolution: options.fullResolution === true
         })}
         <span class="photo-body">
-          <strong>${escapeHtml(photoSubjectLabel(photo))}</strong>
+          ${options.hidePhotoSubject ? "" : `<strong>${escapeHtml(photoSubjectLabel(photo))}</strong>`}
           ${photo.livery ? `<span class="photo-livery">${escapeHtml(photo.livery)}</span>` : ""}
           <span class="photo-meta">
             <span class="photo-context">${escapeHtml(photoContextLabel(photo))}</span>
