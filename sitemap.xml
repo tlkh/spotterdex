@@ -3046,17 +3046,17 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tlkh.github.io/spotterdex/share/squadron/au-75-squadron/</loc>
-    <lastmod>2026-07-13</lastmod>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/au-no-2-squadron/</loc>
     <lastmod>2026-07-13</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/au-36-squadron/</loc>
+    <lastmod>2026-07-13</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/squadron/au-75-squadron/</loc>
     <lastmod>2026-07-13</lastmod>
     <priority>0.7</priority>
   </url>
