@@ -646,6 +646,16 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://tlkh.github.io/spotterdex/share/photo/2025-05-29-dsc02838-enhanced-nr/</loc>
+    <lastmod>2025-05-29</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/photo/2025-05-29-dsc02836-enhanced-nr/</loc>
+    <lastmod>2025-05-29</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://tlkh.github.io/spotterdex/share/photo/2025-04-17-n742ck/</loc>
     <lastmod>2025-04-17</lastmod>
     <priority>0.6</priority>
@@ -858,6 +868,26 @@
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/photo/2024-03-04-usaf-ak-f35a-1/</loc>
     <lastmod>2024-03-04</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/photo/2024-02-22-dsc06822-enhanced-nr/</loc>
+    <lastmod>2024-02-22</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/photo/2024-02-22-dsc06817-enhanced-nr/</loc>
+    <lastmod>2024-02-22</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/photo/2024-02-22-dsc06779-enhanced-nr/</loc>
+    <lastmod>2024-02-22</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/photo/2024-02-22-dsc06744-enhanced-nr/</loc>
+    <lastmod>2024-02-22</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
@@ -2611,6 +2641,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://tlkh.github.io/spotterdex/share/aircraft/b-52h-stratofortress/</loc>
+    <lastmod>2026-07-13</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/beechcraft-at-6th-wolverine/</loc>
     <lastmod>2026-07-13</lastmod>
     <priority>0.7</priority>
@@ -2762,6 +2797,11 @@
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/aircraft/grumman-e-2d-hawkeye/</loc>
+    <lastmod>2026-07-13</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/aircraft/gulfstream-c-37b/</loc>
     <lastmod>2026-07-13</lastmod>
     <priority>0.7</priority>
   </url>
@@ -3356,6 +3396,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://tlkh.github.io/spotterdex/share/squadron/us-23rd-bomb-squadron/</loc>
+    <lastmod>2026-07-13</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/us-355th-fighter-squadron/</loc>
     <lastmod>2026-07-13</lastmod>
     <priority>0.7</priority>
@@ -3372,6 +3417,11 @@
   </url>
   <url>
     <loc>https://tlkh.github.io/spotterdex/share/squadron/us-459th-airlift-squadron/</loc>
+    <lastmod>2026-07-13</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://tlkh.github.io/spotterdex/share/squadron/us-89th-airlift-wing/</loc>
     <lastmod>2026-07-13</lastmod>
     <priority>0.7</priority>
   </url>

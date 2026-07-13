@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-13T12:16:28+00:00",
+  "generatedAt": "2026-07-13T13:33:48+00:00",
   "entities": {
     "countries": {
       "au": {
@@ -98,6 +98,14 @@
         "name": "Airbus A330-200",
         "family": "heavy",
         "heroPhotoId": "2024-07-04-dsc08218-enhanced-nr",
+        "doubleWidth": null,
+        "writeUp": ""
+      },
+      "b-52h-stratofortress": {
+        "id": "b-52h-stratofortress",
+        "name": "B-52H Stratofortress",
+        "family": "heavy",
+        "heroPhotoId": "2024-02-22-dsc06779-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -346,6 +354,14 @@
         "name": "Grumman E-2D Hawkeye",
         "family": "medium",
         "heroPhotoId": "2025-12-11-dsc04372",
+        "doubleWidth": null,
+        "writeUp": ""
+      },
+      "gulfstream-c-37b": {
+        "id": "gulfstream-c-37b",
+        "name": "Gulfstream C-37B",
+        "family": "medium",
+        "heroPhotoId": "",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -1089,6 +1105,15 @@
         "heroPhotoId": "2024-06-05-dsc04786-enhanced-nr",
         "writeUp": ""
       },
+      "us-23rd-bomb-squadron": {
+        "id": "us-23rd-bomb-squadron",
+        "name": "23rd Bomb Squadron",
+        "countryId": "us",
+        "kind": "squadron",
+        "logo": "",
+        "heroPhotoId": "",
+        "writeUp": ""
+      },
       "us-355th-fighter-squadron": {
         "id": "us-355th-fighter-squadron",
         "name": "355th Fighter Squadron",
@@ -1123,6 +1148,15 @@
         "kind": "squadron",
         "logo": "assets/logos/us-459th-airlift-squadron.png",
         "heroPhotoId": "2023-09-18-usaf-huey-3",
+        "writeUp": ""
+      },
+      "us-89th-airlift-wing": {
+        "id": "us-89th-airlift-wing",
+        "name": "89th Airlift Wing",
+        "countryId": "us",
+        "kind": "squadron",
+        "logo": "",
+        "heroPhotoId": "",
         "writeUp": ""
       },
       "us-961st-airborne-air-control-squadron": {
@@ -6355,6 +6389,82 @@
           "DateTime": "2026:07:05 09:37:18"
         }
       },
+      "2025-05-29-dsc02838-enhanced-nr": {
+        "id": "2025-05-29-dsc02838-enhanced-nr",
+        "locationId": "sg-singapore",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "gulfstream-c-37b",
+            "unitId": "us-89th-airlift-wing",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-05-29",
+        "sortDate": "2025-05-29",
+        "livery": "",
+        "title": "",
+        "caption": "USAF C-37B landing in Singapore",
+        "image": "assets/generated/photos/2025-05-29-dsc02838-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-05-29-dsc02838-enhanced-nr.jpg",
+        "source": "raw_assets/DSC02838-Enhanced-NR.jpg",
+        "originalSize": "5620 x 3747",
+        "processedSize": "2560 x 1707",
+        "thumbnailSize": "1024 x 683",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-6700",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "600mm",
+          "FocalLengthIn35mmFilm": "900mm",
+          "FNumber": "f/6.3",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "500",
+          "DateTimeOriginal": "2025:05:29 13:45:20",
+          "DateTimeDigitized": "2025:05:29 13:45:20",
+          "DateTime": "2026:07:05 19:56:19"
+        }
+      },
+      "2025-05-29-dsc02836-enhanced-nr": {
+        "id": "2025-05-29-dsc02836-enhanced-nr",
+        "locationId": "sg-singapore",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "gulfstream-c-37b",
+            "unitId": "us-89th-airlift-wing",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-05-29",
+        "sortDate": "2025-05-29",
+        "livery": "",
+        "title": "",
+        "caption": "USAF C-37B landing in Singapore",
+        "image": "assets/generated/photos/2025-05-29-dsc02836-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-05-29-dsc02836-enhanced-nr.jpg",
+        "source": "raw_assets/DSC02836-Enhanced-NR.jpg",
+        "originalSize": "4061 x 2707",
+        "processedSize": "2560 x 1706",
+        "thumbnailSize": "1024 x 683",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-6700",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "600mm",
+          "FocalLengthIn35mmFilm": "900mm",
+          "FNumber": "f/6.3",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "400",
+          "DateTimeOriginal": "2025:05:29 13:45:11",
+          "DateTimeDigitized": "2025:05:29 13:45:11",
+          "DateTime": "2026:07:05 19:56:18"
+        }
+      },
       "2025-04-17-n742ck": {
         "id": "2025-04-17-n742ck",
         "locationId": "hk-hong-kong-international-airport",
@@ -7909,6 +8019,158 @@
           "DateTimeOriginal": "2024:03:04 10:57:34",
           "DateTimeDigitized": "2024:03:04 10:57:34",
           "DateTime": "2026:07:04 19:51:57"
+        }
+      },
+      "2024-02-22-dsc06822-enhanced-nr": {
+        "id": "2024-02-22-dsc06822-enhanced-nr",
+        "locationId": "sg-singapore",
+        "eventId": "sg-singapore-airshow-2024",
+        "subjects": [
+          {
+            "aircraftId": "b-52h-stratofortress",
+            "unitId": "us-23rd-bomb-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2024",
+        "date": "2024-02-22",
+        "sortDate": "2024-02-22",
+        "livery": "",
+        "title": "",
+        "caption": "USAF B-52H fly-by during Singapore Airshow 2024",
+        "image": "assets/generated/photos/2024-02-22-dsc06822-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2024-02-22-dsc06822-enhanced-nr.jpg",
+        "source": "raw_assets/DSC06822-Enhanced-NR.jpg",
+        "originalSize": "4274 x 2849",
+        "processedSize": "2560 x 1706",
+        "thumbnailSize": "1024 x 683",
+        "exif": {
+          "Make": "SONY",
+          "Model": "DSC-RX10M4",
+          "LensModel": "24-600mm F2.4-4.0",
+          "FocalLength": "220mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/5.6",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2024:02:22 12:29:52",
+          "DateTimeDigitized": "2024:02:22 12:29:52",
+          "DateTime": "2026:07:04 19:50:28"
+        }
+      },
+      "2024-02-22-dsc06817-enhanced-nr": {
+        "id": "2024-02-22-dsc06817-enhanced-nr",
+        "locationId": "sg-singapore",
+        "eventId": "sg-singapore-airshow-2024",
+        "subjects": [
+          {
+            "aircraftId": "b-52h-stratofortress",
+            "unitId": "us-23rd-bomb-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2024",
+        "date": "2024-02-22",
+        "sortDate": "2024-02-22",
+        "livery": "",
+        "title": "",
+        "caption": "USAF B-52H fly-by during Singapore Airshow 2024",
+        "image": "assets/generated/photos/2024-02-22-dsc06817-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2024-02-22-dsc06817-enhanced-nr.jpg",
+        "source": "raw_assets/DSC06817-Enhanced-NR.jpg",
+        "originalSize": "3968 x 2645",
+        "processedSize": "2560 x 1706",
+        "thumbnailSize": "1024 x 683",
+        "exif": {
+          "Make": "SONY",
+          "Model": "DSC-RX10M4",
+          "LensModel": "24-600mm F2.4-4.0",
+          "FocalLength": "220mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/5.6",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2024:02:22 12:29:48",
+          "DateTimeDigitized": "2024:02:22 12:29:48",
+          "DateTime": "2026:07:04 19:50:27"
+        }
+      },
+      "2024-02-22-dsc06779-enhanced-nr": {
+        "id": "2024-02-22-dsc06779-enhanced-nr",
+        "locationId": "sg-singapore",
+        "eventId": "sg-singapore-airshow-2024",
+        "subjects": [
+          {
+            "aircraftId": "b-52h-stratofortress",
+            "unitId": "us-23rd-bomb-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2024",
+        "date": "2024-02-22",
+        "sortDate": "2024-02-22",
+        "livery": "",
+        "title": "",
+        "caption": "USAF B-52H fly-by during Singapore Airshow 2024",
+        "image": "assets/generated/photos/2024-02-22-dsc06779-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2024-02-22-dsc06779-enhanced-nr.jpg",
+        "source": "raw_assets/DSC06779-Enhanced-NR.jpg",
+        "originalSize": "3649 x 2433",
+        "processedSize": "2560 x 1707",
+        "thumbnailSize": "1024 x 683",
+        "exif": {
+          "Make": "SONY",
+          "Model": "DSC-RX10M4",
+          "LensModel": "24-600mm F2.4-4.0",
+          "FocalLength": "220mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/5.6",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2024:02:22 12:29:28",
+          "DateTimeDigitized": "2024:02:22 12:29:28",
+          "DateTime": "2026:07:04 19:50:26"
+        }
+      },
+      "2024-02-22-dsc06744-enhanced-nr": {
+        "id": "2024-02-22-dsc06744-enhanced-nr",
+        "locationId": "sg-singapore",
+        "eventId": "sg-singapore-airshow-2024",
+        "subjects": [
+          {
+            "aircraftId": "b-52h-stratofortress",
+            "unitId": "us-23rd-bomb-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2024",
+        "date": "2024-02-22",
+        "sortDate": "2024-02-22",
+        "livery": "",
+        "title": "",
+        "caption": "USAF B-52H fly-by during Singapore Airshow 2024",
+        "image": "assets/generated/photos/2024-02-22-dsc06744-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2024-02-22-dsc06744-enhanced-nr.jpg",
+        "source": "raw_assets/DSC06744-Enhanced-NR.jpg",
+        "originalSize": "5151 x 3434",
+        "processedSize": "2560 x 1707",
+        "thumbnailSize": "1024 x 683",
+        "exif": {
+          "Make": "SONY",
+          "Model": "DSC-RX10M4",
+          "LensModel": "24-600mm F2.4-4.0",
+          "FocalLength": "128.6mm",
+          "FocalLengthIn35mmFilm": "351mm",
+          "FNumber": "f/5.6",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2024:02:22 12:29:12",
+          "DateTimeDigitized": "2024:02:22 12:29:12",
+          "DateTime": "2026:07:04 19:50:25"
         }
       },
       "2024-02-22-dsc06694-enhanced-nr": {
@@ -20943,6 +21205,12 @@
         "2024-07-04-dsc08248-enhanced-nr",
         "2024-07-04-dsc08218-enhanced-nr"
       ],
+      "b-52h-stratofortress": [
+        "2024-02-22-dsc06822-enhanced-nr",
+        "2024-02-22-dsc06817-enhanced-nr",
+        "2024-02-22-dsc06779-enhanced-nr",
+        "2024-02-22-dsc06744-enhanced-nr"
+      ],
       "beechcraft-at-6th-wolverine": [
         "2026-01-10-dsc06434",
         "2026-01-10-dsc06402",
@@ -21140,6 +21408,10 @@
         "2025-12-12-dsc00567",
         "2025-12-11-dsc04372",
         "2025-12-11-dsc04209"
+      ],
+      "gulfstream-c-37b": [
+        "2025-05-29-dsc02838-enhanced-nr",
+        "2025-05-29-dsc02836-enhanced-nr"
       ],
       "gulfstream-g550-caew": [
         "2023-08-04-italy-g550",
@@ -22058,6 +22330,12 @@
         "2024-05-30-dsc03647-enhanced-nr",
         "2023-06-04-e4b-1"
       ],
+      "us-23rd-bomb-squadron": [
+        "2024-02-22-dsc06822-enhanced-nr",
+        "2024-02-22-dsc06817-enhanced-nr",
+        "2024-02-22-dsc06779-enhanced-nr",
+        "2024-02-22-dsc06744-enhanced-nr"
+      ],
       "us-355th-fighter-squadron": [
         "2024-03-04-usaf-ak-f35a-1"
       ],
@@ -22075,6 +22353,10 @@
         "2023-09-18-usaf-huey-3",
         "2023-09-18-usaf-huey-2",
         "2023-09-18-usaf-huey-1"
+      ],
+      "us-89th-airlift-wing": [
+        "2025-05-29-dsc02838-enhanced-nr",
+        "2025-05-29-dsc02836-enhanced-nr"
       ],
       "us-961st-airborne-air-control-squadron": [
         "2025-12-10-zz-0007"
@@ -22526,6 +22808,8 @@
         "2025-05-29-dsc02902-enhanced-nr",
         "2025-05-29-dsc02895-enhanced-nr",
         "2025-05-29-dsc02884-enhanced-nr",
+        "2025-05-29-dsc02838-enhanced-nr",
+        "2025-05-29-dsc02836-enhanced-nr",
         "2024-09-29-dsc09773-enhanced-nr",
         "2024-09-29-dsc09765-enhanced-nr",
         "2024-09-29-dsc09753-enhanced-nr",
@@ -22541,6 +22825,10 @@
         "2024-05-03-dsc08053-enhanced-nr",
         "2024-03-04-usaf-ak-f35a-2",
         "2024-03-04-usaf-ak-f35a-1",
+        "2024-02-22-dsc06822-enhanced-nr",
+        "2024-02-22-dsc06817-enhanced-nr",
+        "2024-02-22-dsc06779-enhanced-nr",
+        "2024-02-22-dsc06744-enhanced-nr",
         "2024-02-22-dsc06694-enhanced-nr",
         "2024-02-22-dsc06548-enhanced-nr",
         "2024-02-22-dsc06214-enhanced-nr",
@@ -22906,6 +23194,10 @@
         "2023-11-26-dsc04019-enhanced-nr-1"
       ],
       "sg-singapore-airshow-2024": [
+        "2024-02-22-dsc06822-enhanced-nr",
+        "2024-02-22-dsc06817-enhanced-nr",
+        "2024-02-22-dsc06779-enhanced-nr",
+        "2024-02-22-dsc06744-enhanced-nr",
         "2024-02-22-dsc06694-enhanced-nr",
         "2024-02-22-dsc06548-enhanced-nr",
         "2024-02-22-dsc06214-enhanced-nr",
@@ -23048,6 +23340,9 @@
       "airbus-a330-200": [
         "fr-ervts-2-31-esterel"
       ],
+      "b-52h-stratofortress": [
+        "us-23rd-bomb-squadron"
+      ],
       "beechcraft-at-6th-wolverine": [
         "th-411st-fighter-squadron"
       ],
@@ -23144,6 +23439,9 @@
       ],
       "grumman-e-2d-hawkeye": [
         "jp-603rd-squadron"
+      ],
+      "gulfstream-c-37b": [
+        "us-89th-airlift-wing"
       ],
       "gulfstream-g550-caew": [
         "it-14-stormo",

@@ -119,6 +119,7 @@ INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "do
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('airbus-a330-200', 'Airbus A330-200', 'heavy', '2024-07-04-dsc08218-enhanced-nr', '', NULL);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('airbus-a330-mrtt', 'Airbus A330 MRTT', 'heavy', '2023-08-29-dsc05206-enhanced-nr', '', 1);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('atr-72-500', 'ATR 72-500', 'medium', '2023-04-29-firefly-1', '', NULL);
+INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('b-52h-stratofortress', 'B-52H Stratofortress', 'heavy', '2024-02-22-dsc06779-enhanced-nr', '', NULL);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('beechcraft-at-6th-wolverine', 'Beechcraft AT-6TH Wolverine', 'light', '2026-01-10-dsc06084', '', NULL);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('bell-uh-1-iroquois', 'Bell UH-1 Iroquois', 'helicopter', '2023-09-18-usaf-huey-3', '', NULL);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('bell-uh-1y-venom', 'Bell UH-1Y Venom', 'helicopter', NULL, '', NULL);
@@ -150,6 +151,7 @@ INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "do
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('general-dynamics-f-16a', 'General Dynamics F-16A', 'fighter', '2026-01-10-dsc04426', '', NULL);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('grumman-c-2a-greyhound', 'Grumman C-2A Greyhound', 'medium', '2023-02-07-c2-vrc30', '', NULL);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('grumman-e-2d-hawkeye', 'Grumman E-2D Hawkeye', 'medium', '2025-12-11-dsc04372', '', NULL);
+INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('gulfstream-c-37b', 'Gulfstream C-37B', 'medium', NULL, '', NULL);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('gulfstream-g550-caew', 'Gulfstream G550 CAEW', 'medium', '2023-08-04-italy-g550', '', NULL);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('hawker-u-125a', 'Hawker U-125A', 'medium', '2023-10-07-dsc02988-enhanced-nr', '', NULL);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('kai-t-50b-golden-eagle', 'KAI T-50B Golden Eagle', 'fighter', '2024-02-13-dsc02965-enhanced-nr', '', NULL);
@@ -236,10 +238,12 @@ INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_ph
 INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('th-411st-fighter-squadron', '411st Fighter Squadron', 'th', 'squadron', '', NULL, '');
 INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('th-701st-squadron', '701st Fighter Squadron', 'th', 'squadron', '', '2026-01-10-dsc05401', '');
 INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('us-1st-airborne-command-control-squadron', '1st Airborne Command Control Squadron', 'us', 'squadron', 'logos/1st_Command_&_Control_Squadron.png', '2024-06-05-dsc04786-enhanced-nr', '');
+INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('us-23rd-bomb-squadron', '23rd Bomb Squadron', 'us', 'squadron', '', NULL, '');
 INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('us-355th-fighter-squadron', '355th Fighter Squadron', 'us', 'squadron', '', NULL, '');
 INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('us-356th-fighter-squadron', '356th Fighter Squadron', 'us', 'squadron', '', NULL, '');
 INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('us-36th-airlift-squadron', '36th Airlift Squadron', 'us', 'squadron', '', '2023-11-29-dsc09870-enhanced-nr', '');
 INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('us-459th-airlift-squadron', '459th Airlift Squadron', 'us', 'squadron', 'logos/459th_Airlift_Squadron_logo.png', '2023-09-18-usaf-huey-3', '');
+INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('us-89th-airlift-wing', '89th Airlift Wing', 'us', 'squadron', '', NULL, '');
 INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('us-961st-airborne-air-control-squadron', '961st Airborne Air Control Squadron', 'us', 'squadron', 'logos/usaf_961_ronin.png', NULL, '');
 INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('us-hmh-464-heavy-helicopter-squadron', 'Heavy Helicopter Squadron 464 (HMH-464)', 'us', 'squadron', '', NULL, '');
 INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('us-honeywell', 'Honeywell', 'us', 'organisation', 'logos/honeywell-aerospace-logo.png', NULL, '');
@@ -301,6 +305,7 @@ INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('airbus-a330-200
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('airbus-a330-mrtt', 'fr-ervts-2-31-esterel');
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('airbus-a330-mrtt', 'sg-112-squadron');
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('atr-72-500', 'my-firefly');
+INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('b-52h-stratofortress', 'us-23rd-bomb-squadron');
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('beechcraft-at-6th-wolverine', 'th-411st-fighter-squadron');
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('bell-uh-1-iroquois', 'us-459th-airlift-squadron');
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('bell-uh-1y-venom', 'us-marine-light-attack-helicopter-squadron-169-hmla-169');
@@ -336,6 +341,7 @@ INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('general-dynamic
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('grumman-c-2a-greyhound', 'us-vrc-30');
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('grumman-c-2a-greyhound', 'us-vrc-40');
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('grumman-e-2d-hawkeye', 'jp-603rd-squadron');
+INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('gulfstream-c-37b', 'us-89th-airlift-wing');
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('gulfstream-g550-caew', 'it-14-stormo');
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('gulfstream-g550-caew', 'sg-111-squadron');
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('hawker-u-125a', 'jp-air-rescue-wing');
@@ -742,6 +748,10 @@ INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_over
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2024-02-22-dsc06214-enhanced-nr', 'DSC06214-Enhanced-NR.jpg', 'sg-singapore', 'sg-singapore-airshow-2024', NULL, '', 'ROKAF Black Eagles in Singapore during Singapore Airshow 2024', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2024-02-22-dsc06548-enhanced-nr', 'DSC06548-Enhanced-NR.jpg', 'sg-singapore', 'sg-singapore-airshow-2024', NULL, '', 'ROKAF Black Eagles in Singapore during Singapore Airshow 2024', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2024-02-22-dsc06694-enhanced-nr', 'DSC06694-Enhanced-NR.jpg', 'sg-singapore', 'sg-singapore-airshow-2024', NULL, '', 'ROKAF Black Eagles in Singapore during Singapore Airshow 2024', '', 0);
+INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2024-02-22-dsc06744-enhanced-nr', 'DSC06744-Enhanced-NR.jpg', 'sg-singapore', 'sg-singapore-airshow-2024', NULL, '', 'USAF B-52H fly-by during Singapore Airshow 2024', '', 0);
+INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2024-02-22-dsc06779-enhanced-nr', 'DSC06779-Enhanced-NR.jpg', 'sg-singapore', 'sg-singapore-airshow-2024', NULL, '', 'USAF B-52H fly-by during Singapore Airshow 2024', '', 0);
+INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2024-02-22-dsc06817-enhanced-nr', 'DSC06817-Enhanced-NR.jpg', 'sg-singapore', 'sg-singapore-airshow-2024', NULL, '', 'USAF B-52H fly-by during Singapore Airshow 2024', '', 0);
+INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2024-02-22-dsc06822-enhanced-nr', 'DSC06822-Enhanced-NR.jpg', 'sg-singapore', 'sg-singapore-airshow-2024', NULL, '', 'USAF B-52H fly-by during Singapore Airshow 2024', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2024-03-04-usaf-ak-f35a-1', 'usaf_ak_f35a_1.JPG', 'sg-singapore', NULL, NULL, '', 'An F-35A from the 355th Fighter Squadron lands in Singapore', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2024-03-04-usaf-ak-f35a-2', 'usaf_ak_f35a_2.JPG', 'sg-singapore', NULL, NULL, '', 'USAF F-35A from 356th Fighter Squadron ("Green Devils") landing in Singapore', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2024-05-03-dsc08053-enhanced-nr', 'QC_DSC08053-Enhanced-NR.jpg', 'sg-singapore', NULL, NULL, '', 'F-15SG from 149 Squadron "Shikra" in Singapore', '', 0);
@@ -785,6 +795,8 @@ INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_over
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2025-04-17-dsc02499-enhanced-nr', 'QC_DSC02499-Enhanced-NR.jpg', 'hk-hong-kong-international-airport', NULL, NULL, '', 'Commercial traffic at HKIA', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2025-04-17-dsc02522-enhanced-nr', 'QC_DSC02522-Enhanced-NR.jpg', 'hk-hong-kong-international-airport', NULL, NULL, '', 'Commercial traffic at HKIA', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2025-04-17-n742ck', 'N742CK.jpg', 'hk-hong-kong-international-airport', NULL, NULL, '', 'Kalitta Air Boeing 747-400F N742CK taking off from Hong Kong International Airport', '', 0);
+INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2025-05-29-dsc02836-enhanced-nr', 'DSC02836-Enhanced-NR.jpg', 'sg-singapore', NULL, NULL, '', 'USAF C-37B landing in Singapore', '', 0);
+INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2025-05-29-dsc02838-enhanced-nr', 'DSC02838-Enhanced-NR.jpg', 'sg-singapore', NULL, NULL, '', 'USAF C-37B landing in Singapore', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2025-05-29-dsc02884-enhanced-nr', 'DSC02884-Enhanced-NR.jpg', 'sg-singapore', NULL, NULL, '', 'E-4B landing in Singapore', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2025-05-29-dsc02895-enhanced-nr', 'DSC02895-Enhanced-NR.jpg', 'sg-singapore', NULL, NULL, '', 'E-4B landing in Singapore', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2025-05-29-dsc02902-enhanced-nr', 'DSC02902-Enhanced-NR.jpg', 'sg-singapore', NULL, NULL, '', 'E-4B landing in Singapore', '', 0);
@@ -1238,6 +1250,10 @@ INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", 
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2024-02-22-dsc06214-enhanced-nr', 0, 'kai-t-50b-golden-eagle', 'kr-black-eagles', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2024-02-22-dsc06548-enhanced-nr', 0, 'kai-t-50b-golden-eagle', 'kr-black-eagles', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2024-02-22-dsc06694-enhanced-nr', 0, 'kai-t-50b-golden-eagle', 'kr-black-eagles', 1);
+INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2024-02-22-dsc06744-enhanced-nr', 0, 'b-52h-stratofortress', 'us-23rd-bomb-squadron', 1);
+INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2024-02-22-dsc06779-enhanced-nr', 0, 'b-52h-stratofortress', 'us-23rd-bomb-squadron', 1);
+INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2024-02-22-dsc06817-enhanced-nr', 0, 'b-52h-stratofortress', 'us-23rd-bomb-squadron', 1);
+INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2024-02-22-dsc06822-enhanced-nr', 0, 'b-52h-stratofortress', 'us-23rd-bomb-squadron', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2024-03-04-usaf-ak-f35a-1', 0, 'lockheed-martin-f-35a-lightning-ii', 'us-355th-fighter-squadron', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2024-03-04-usaf-ak-f35a-2', 0, 'lockheed-martin-f-35a-lightning-ii', 'us-356th-fighter-squadron', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2024-05-03-dsc08053-enhanced-nr', 0, 'boeing-f-15sg-strike-eagle', 'sg-149-squadron', 1);
@@ -1268,6 +1284,8 @@ INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", 
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2025-02-03-dsc01755-enhanced-nr', 0, 'boeing-737-800', 'my-malaysian-airlines', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2025-02-03-dsc01763-enhanced-nr', 0, 'boeing-737-800', 'my-malaysian-airlines', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2025-04-17-n742ck', 0, 'boeing-747-400-f', 'us-kalitta-air', 1);
+INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2025-05-29-dsc02836-enhanced-nr', 0, 'gulfstream-c-37b', 'us-89th-airlift-wing', 1);
+INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2025-05-29-dsc02838-enhanced-nr', 0, 'gulfstream-c-37b', 'us-89th-airlift-wing', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2025-05-29-dsc02884-enhanced-nr', 0, 'boeing-e-4b-nightwatch', 'us-1st-airborne-command-control-squadron', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2025-05-29-dsc02895-enhanced-nr', 0, 'boeing-e-4b-nightwatch', 'us-1st-airborne-command-control-squadron', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2025-05-29-dsc02902-enhanced-nr', 0, 'boeing-e-4b-nightwatch', 'us-1st-airborne-command-control-squadron', 1);

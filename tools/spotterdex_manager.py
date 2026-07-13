@@ -3622,11 +3622,12 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802 - http.server API
         try:
             parsed = urlparse(self.path)
-            if parsed.path in {"/", "/index.html", "/app.html"}:
+            manager_path = parsed.path.removeprefix("/manager") or "/"
+            if manager_path in {"/", "/index.html", "/app.html"}:
                 self._send_manager_asset("app.html")
                 return
-            if parsed.path in {"/app.css", "/app.js"}:
-                self._send_manager_asset(parsed.path.lstrip("/"))
+            if manager_path in {"/app.css", "/app.js"}:
+                self._send_manager_asset(manager_path.lstrip("/"))
                 return
             if parsed.path == "/api/state":
                 self._send_json(self.context.manager.get_state())
@@ -5519,7 +5520,7 @@ def main() -> int:
     args = parse_args()
     manager = SpotterDexManager(ROOT)
     server = ThreadingHTTPServer((args.host, args.port), make_handler(manager))
-    url = f"http://{args.host}:{args.port}/"
+    url = f"http://{args.host}:{args.port}/manager/"
     print(f"SpotterDex Manager running at {url}")
     print("Press Ctrl+C to stop.")
     if args.open:

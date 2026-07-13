@@ -50,6 +50,12 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== scope.origin || !url.pathname.startsWith(scope.pathname)) {
     return;
   }
+  // Keep the local catalog manager outside the site's offline shell. The
+  // manager uses the same origin during local development, and cached
+  // navigations here would otherwise turn /manager/ into the main app.
+  if (url.pathname.startsWith(`${scope.pathname}manager/`)) {
+    return;
+  }
 
   if (request.mode === "navigate") {
     const update = updateCachedNavigation(request);
