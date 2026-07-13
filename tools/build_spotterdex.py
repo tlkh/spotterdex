@@ -34,6 +34,11 @@ try:
 except ImportError:  # Support importing as tools.build_spotterdex.
     from tools.spotterdex_db import connect_database, rows_as_dicts, snapshot_is_current, validate_database
 
+try:
+    from build_pages import build_pages
+except ImportError:  # Support importing as tools.build_spotterdex.
+    from tools.build_pages import build_pages
+
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp"}
 AIRCRAFT_FAMILIES = {"fighter", "heavy", "helicopter", "light", "medium"}
@@ -698,6 +703,7 @@ def build_database_catalog(args: argparse.Namespace, root: Path, warnings: Build
         sitemap_output=sitemap_output,
         robots_output=robots_output,
     )
+    build_pages(root)
     warnings.print()
     print(
         f"Built SQLite catalog: {len(aircraft_rows)} aircraft, {len(unit_rows)} units, "

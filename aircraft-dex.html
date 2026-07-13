@@ -34,15 +34,9 @@
 
     <header class="site-header">
       <a class="brand" href="index.html" aria-label="SpotterDex home">
-        <span class="brand-mark" aria-hidden="true">
-          <img src="assets/icons/spotterdex-app-icon.png" alt="">
-        </span>
-        <span>
-          <span class="brand-title">SpotterDex</span>
-          <span class="brand-subtitle">Timothy's Logbook</span>
-        </span>
+        <span class="brand-mark" aria-hidden="true"><img src="assets/icons/spotterdex-app-icon.png" alt=""></span>
+        <span><span class="brand-title">SpotterDex</span><span class="brand-subtitle">Timothy's Logbook</span></span>
       </a>
-
       <nav class="tab-nav" aria-label="Main views">
         <a class="tab-button" href="index.html">World Map</a>
         <a class="tab-button is-active" href="aircraft-dex.html" aria-current="page">Aircraft Dex</a>
@@ -50,13 +44,12 @@
         <a class="tab-button" href="airshows.html">Airshows</a>
         <a class="tab-button" href="stats.html">Stats</a>
       </nav>
-
       <select class="nav-select" id="viewSelect" aria-label="Main view">
-        <option value="index.html">World Map</option>
-        <option value="aircraft-dex.html" selected>Aircraft Dex</option>
-        <option value="squadrons.html">Squadrons</option>
-        <option value="airshows.html">Airshows</option>
-        <option value="stats.html">Stats</option>
+          <option value="index.html">World Map</option>
+          <option value="aircraft-dex.html" selected>Aircraft Dex</option>
+          <option value="squadrons.html">Squadrons</option>
+          <option value="airshows.html">Airshows</option>
+          <option value="stats.html">Stats</option>
       </select>
     </header>
 
@@ -80,37 +73,25 @@
             </dl>
             <span class="dex-scroll-cue" aria-hidden="true">Scroll to explore <i></i></span>
           </section>
-
           <section class="dex-command-bar" aria-label="Aircraft Dex filters">
             <label class="dex-search" for="aircraftSearch">
               <span class="field-label">Search the archive</span>
-              <span class="dex-search-control">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m16 16 4 4"></path></svg>
-                <input class="search-input" id="aircraftSearch" type="search" autocomplete="off" placeholder="Aircraft, unit, or country">
-              </span>
+              <span class="dex-search-control"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m16 16 4 4"></path></svg><input class="search-input" id="aircraftSearch" type="search" autocomplete="off" placeholder="Aircraft, unit, or country"></span>
             </label>
             <div class="dex-family-filter" id="dexFamilyFilter" aria-live="polite"></div>
             <p class="dex-count" id="dexCount">0 entries</p>
           </section>
-
           <section class="dex-recent" aria-label="Recent photos">
-            <div class="dex-strip-heading">
-              <p class="eyebrow">Latest sightings</p>
-              <p id="recentPhotosCount">0 photos</p>
-            </div>
+            <div class="dex-strip-heading"><p class="eyebrow">Latest sightings</p><p id="recentPhotosCount">0 photos</p></div>
             <div class="recent-photo-strip" id="recentPhotosStrip"></div>
           </section>
-
           <section class="dex-browser" aria-label="Aircraft entries">
-            <div class="dex-browser-heading">
-              <p class="eyebrow">The collection</p>
-            </div>
+            <div class="dex-browser-heading"><p class="eyebrow">The collection</p></div>
             <div class="aircraft-grid" id="aircraftGrid"></div>
             <div class="archive-pagination" id="dexPagination" aria-live="polite"></div>
           </section>
         </div>
       </section>
-
       <section class="view detail-view" id="aircraftDetailView" data-view hidden>
         <article class="detail-page" id="aircraftDetail" aria-live="polite"></article>
       </section>

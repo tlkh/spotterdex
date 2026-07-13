@@ -45,11 +45,11 @@
         <a class="tab-button is-active" href="stats.html" aria-current="page">Stats</a>
       </nav>
       <select class="nav-select" id="viewSelect" aria-label="Main view">
-        <option value="index.html">World Map</option>
-        <option value="aircraft-dex.html">Aircraft Dex</option>
-        <option value="squadrons.html">Squadrons</option>
-        <option value="airshows.html">Airshows</option>
-        <option value="stats.html" selected>Stats</option>
+          <option value="index.html">World Map</option>
+          <option value="aircraft-dex.html">Aircraft Dex</option>
+          <option value="squadrons.html">Squadrons</option>
+          <option value="airshows.html">Airshows</option>
+          <option value="stats.html" selected>Stats</option>
       </select>
     </header>
 
@@ -59,29 +59,13 @@
           <section class="stats-archive-hero" aria-labelledby="statsArchiveTitle">
             <div class="stats-archive-media" id="statsHeroMedia" aria-hidden="true"></div>
             <div class="stats-archive-scrim" aria-hidden="true"></div>
-            <div class="stats-archive-copy">
-              <p class="eyebrow">Collection telemetry</p>
-              <h1 id="statsArchiveTitle">Stats</h1>
-              <p>A live reading of the airframes, places, and camera settings behind the archive.</p>
-            </div>
-            <dl class="stats-archive-metrics" aria-label="Collection totals">
-              <div><dt>Frames</dt><dd id="statsHeroPhotoCount">0</dd></div>
-              <div><dt>Types</dt><dd id="statsHeroAircraftCount">0</dd></div>
-              <div><dt>Locations</dt><dd id="statsHeroLocationCount">0</dd></div>
-            </dl>
+            <div class="stats-archive-copy"><p class="eyebrow">Collection telemetry</p><h1 id="statsArchiveTitle">Stats</h1><p>A live reading of the airframes, places, and camera settings behind the archive.</p></div>
+            <dl class="stats-archive-metrics" aria-label="Collection totals"><div><dt>Frames</dt><dd id="statsHeroPhotoCount">0</dd></div><div><dt>Types</dt><dd id="statsHeroAircraftCount">0</dd></div><div><dt>Locations</dt><dd id="statsHeroLocationCount">0</dd></div></dl>
           </section>
-          <nav class="stats-section-nav" id="statsSectionNav" aria-label="Stats sections">
-            <button class="is-active" type="button" data-stats-section="summary" aria-pressed="true">Overview</button>
-            <button type="button" data-stats-section="exif" aria-pressed="false">Camera data</button>
-          </nav>
+          <nav class="stats-section-nav" id="statsSectionNav" aria-label="Stats sections"><button class="is-active" type="button" data-stats-section="summary" aria-pressed="true">Overview</button><button type="button" data-stats-section="exif" aria-pressed="false">Camera data</button></nav>
           <div class="stats-directory">
-            <header class="stats-directory-heading">
-              <p class="eyebrow">Archive overview</p>
-              <p>Live from the generated collection manifest</p>
-            </header>
-            <section class="stats-hero" aria-label="Collection statistics">
-              <div class="stats-dashboard-grid" id="statsDashboard"></div>
-            </section>
+            <header class="stats-directory-heading"><p class="eyebrow">Archive overview</p><p>Live from the generated collection manifest</p></header>
+            <section class="stats-hero" aria-label="Collection statistics"><div class="stats-dashboard-grid" id="statsDashboard"></div></section>
             <section class="exif-dashboard" id="exifDashboard" aria-live="polite"></section>
           </div>
         </div>

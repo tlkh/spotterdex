@@ -1,5 +1,5 @@
 (function () {
-  const EMPTY_DATA = { generatedAt: null, pins: [], aircraft: [], squadrons: [], airshows: [], photos: [] };
+  const EMPTY_DATA = { payload: "core", generatedAt: null, pins: [], aircraft: [], squadrons: [], airshows: [], photos: [] };
   const EMPTY_PHOTOS = Object.freeze([]);
   const RECENT_PHOTO_LIMIT = 8;
   const MOBILE_ARCHIVE_PAGE_SIZE = 12;
@@ -47,6 +47,8 @@
   let leafletLoadPromise = null;
   let openFreeMapLoadPromise = null;
   let statsExifLoadPromise = null;
+  let mobileShellEventsBound = false;
+  let viewerEventsBound = false;
   const PAGE_ROUTES = {
     mapView: "index.html",
     locationDetailView: "index.html",
@@ -122,7 +124,6 @@
     viewerZoom: 1,
     viewerPanX: 0,
     viewerPanY: 0,
-    viewerCleanMode: false,
     viewerRenderToken: 0,
     viewerRevealToken: 0,
     viewerPointers: new Map(),
@@ -153,7 +154,6 @@
   document.addEventListener("DOMContentLoaded", init);
 
   async function init() {
-    ensurePhotoViewer();
     ensureMobileAppShell();
     cacheElements();
     state.sessionRestore = readPageSessionState();
@@ -218,6 +218,8 @@
 
   function ensurePhotoViewer() {
     if (document.getElementById("photoViewer")) {
+      cacheViewerElements();
+      bindPhotoViewerEvents();
       return;
     }
 
@@ -236,7 +238,6 @@
             <button class="viewer-button viewer-tool" type="button" id="viewerZoomOutButton" aria-label="Zoom out">−</button>
             <button class="viewer-button viewer-tool viewer-zoom-readout" type="button" id="viewerZoomResetButton" aria-label="Reset photo zoom">1×</button>
             <button class="viewer-button viewer-tool" type="button" id="viewerZoomInButton" aria-label="Zoom in">+</button>
-            <button class="viewer-button viewer-tool viewer-clean-toggle" type="button" id="viewerCleanButton" aria-pressed="false">Clean</button>
             <button class="viewer-button viewer-tool viewer-action" type="button" id="viewerShareButton" aria-label="Share photo" title="Share photo">
               <svg class="viewer-control-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path d="M12 16V3"></path><path d="m7 8 5-5 5 5"></path><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"></path>
@@ -267,10 +268,17 @@
         </aside>
       </div>
     `);
+    cacheViewerElements();
+    bindPhotoViewerEvents();
   }
 
   function ensureMobileAppShell() {
     if (document.getElementById("mobileTabBar")) {
+      cacheMobileElements();
+      bindMobileShellEvents();
+      return;
+    }
+    if (!window.matchMedia(MOBILE_MAP_MEDIA_QUERY).matches) {
       return;
     }
     const header = document.querySelector(".site-header");
@@ -303,6 +311,8 @@
         <span id="pageLoadingLabel">Loading…</span>
       </div>
     `);
+    cacheMobileElements();
+    bindMobileShellEvents();
   }
 
   function mobileTabLink(viewId, href, label, icon) {
@@ -331,6 +341,69 @@
     els.twitterImageAlt = document.querySelector('meta[name="twitter:image:alt"]');
     els.canonical = document.querySelector('link[rel="canonical"]');
     els.viewSelect = document.getElementById("viewSelect");
+    const viewId = currentPageViewId();
+    if (viewId === "mapView") {
+      els.aircraftCount = document.getElementById("aircraftCount");
+      els.photoCount = document.getElementById("photoCount");
+      els.locationCount = document.getElementById("locationCount");
+      els.locationSearch = document.getElementById("locationSearch");
+      els.locationList = document.getElementById("locationList");
+      els.mapWorkspace = document.querySelector("#mapView .map-workspace");
+      els.mapControlPanel = document.getElementById("mapControlPanel");
+      els.mapPanelToggles = document.querySelectorAll("[data-map-panel-toggle]");
+      els.mapPanelBackdrop = document.querySelector(".map-panel-backdrop");
+      els.mapPanelCoach = document.getElementById("mapPanelCoach");
+      els.mapPanelCoachDismiss = document.getElementById("mapPanelCoachDismiss");
+      els.worldMap = document.getElementById("worldMap");
+      els.mapFallback = document.getElementById("mapFallback");
+      els.mapResults = document.getElementById("mapResults");
+      els.locationDetail = document.getElementById("locationDetail");
+    } else if (viewId === "dexView") {
+      els.aircraftSearch = document.getElementById("aircraftSearch");
+      els.dexFamilyFilter = document.getElementById("dexFamilyFilter");
+      els.recentPhotosStrip = document.getElementById("recentPhotosStrip");
+      els.recentPhotosCount = document.getElementById("recentPhotosCount");
+      els.dexHeroMedia = document.getElementById("dexHeroMedia");
+      els.dexHeroFeature = document.getElementById("dexHeroFeature");
+      els.dexHeroAction = document.getElementById("dexHeroAction");
+      els.dexHeroAircraftCount = document.getElementById("dexHeroAircraftCount");
+      els.dexHeroPhotoCount = document.getElementById("dexHeroPhotoCount");
+      els.dexHeroCountryCount = document.getElementById("dexHeroCountryCount");
+      els.aircraftGrid = document.getElementById("aircraftGrid");
+      els.dexPagination = document.getElementById("dexPagination");
+      els.aircraftDetail = document.getElementById("aircraftDetail");
+      els.dexCount = document.getElementById("dexCount");
+    } else if (viewId === "squadronsView") {
+      els.squadronLogoGrid = document.getElementById("squadronLogoGrid");
+      els.squadronSearch = document.getElementById("squadronSearch");
+      els.squadronPagination = document.getElementById("squadronPagination");
+      els.squadronCountryRail = document.getElementById("squadronCountryRail");
+      els.squadronHeroMedia = document.getElementById("squadronHeroMedia");
+      els.squadronHeroCountryCount = document.getElementById("squadronHeroCountryCount");
+      els.squadronHeroPhotoCount = document.getElementById("squadronHeroPhotoCount");
+      els.squadronDetail = document.getElementById("squadronDetail");
+      els.squadronPageCount = document.getElementById("squadronPageCount");
+    } else if (viewId === "airshowsView") {
+      els.airshowTimeline = document.getElementById("airshowTimeline");
+      els.airshowPagination = document.getElementById("airshowPagination");
+      els.airshowPageCount = document.getElementById("airshowPageCount");
+      els.airshowHeroMedia = document.getElementById("airshowHeroMedia");
+      els.airshowHeroPhotoCount = document.getElementById("airshowHeroPhotoCount");
+      els.airshowHeroLocationCount = document.getElementById("airshowHeroLocationCount");
+      els.airshowYearRange = document.getElementById("airshowYearRange");
+      els.airshowDetail = document.getElementById("airshowDetail");
+    } else if (viewId === "statsView") {
+      els.statsHeroMedia = document.getElementById("statsHeroMedia");
+      els.statsHeroPhotoCount = document.getElementById("statsHeroPhotoCount");
+      els.statsHeroAircraftCount = document.getElementById("statsHeroAircraftCount");
+      els.statsHeroLocationCount = document.getElementById("statsHeroLocationCount");
+      els.statsDashboard = document.getElementById("statsDashboard");
+      els.exifDashboard = document.getElementById("exifDashboard");
+      els.statsSectionNav = document.getElementById("statsSectionNav");
+    }
+  }
+
+  function cacheMobileElements() {
     els.mobileContextBar = document.getElementById("mobileContextBar");
     els.mobileContextBack = document.getElementById("mobileContextBack");
     els.mobileContextTitle = document.getElementById("mobileContextTitle");
@@ -350,59 +423,9 @@
     els.appToast = document.getElementById("appToast");
     els.pageLoadingIndicator = document.getElementById("pageLoadingIndicator");
     els.pageLoadingLabel = document.getElementById("pageLoadingLabel");
-    els.aircraftCount = document.getElementById("aircraftCount");
-    els.photoCount = document.getElementById("photoCount");
-    els.locationCount = document.getElementById("locationCount");
-    els.locationSearch = document.getElementById("locationSearch");
-    els.aircraftSearch = document.getElementById("aircraftSearch");
-    els.dexFamilyFilter = document.getElementById("dexFamilyFilter");
-    els.locationList = document.getElementById("locationList");
-    els.mapWorkspace = document.querySelector("#mapView .map-workspace");
-    els.mapControlPanel = document.getElementById("mapControlPanel");
-    els.mapPanelToggles = document.querySelectorAll("[data-map-panel-toggle]");
-    els.mapPanelBackdrop = document.querySelector(".map-panel-backdrop");
-    els.mapPanelCoach = document.getElementById("mapPanelCoach");
-    els.mapPanelCoachDismiss = document.getElementById("mapPanelCoachDismiss");
-    els.worldMap = document.getElementById("worldMap");
-    els.mapFallback = document.getElementById("mapFallback");
-    els.mapResults = document.getElementById("mapResults");
-    els.recentPhotosStrip = document.getElementById("recentPhotosStrip");
-    els.recentPhotosCount = document.getElementById("recentPhotosCount");
-    els.dexHeroMedia = document.getElementById("dexHeroMedia");
-    els.dexHeroFeature = document.getElementById("dexHeroFeature");
-    els.dexHeroAction = document.getElementById("dexHeroAction");
-    els.dexHeroAircraftCount = document.getElementById("dexHeroAircraftCount");
-    els.dexHeroPhotoCount = document.getElementById("dexHeroPhotoCount");
-    els.dexHeroCountryCount = document.getElementById("dexHeroCountryCount");
-    els.aircraftGrid = document.getElementById("aircraftGrid");
-    els.dexPagination = document.getElementById("dexPagination");
-    els.aircraftDetail = document.getElementById("aircraftDetail");
-    els.dexCount = document.getElementById("dexCount");
-    els.statsHeroMedia = document.getElementById("statsHeroMedia");
-    els.statsHeroPhotoCount = document.getElementById("statsHeroPhotoCount");
-    els.statsHeroAircraftCount = document.getElementById("statsHeroAircraftCount");
-    els.statsHeroLocationCount = document.getElementById("statsHeroLocationCount");
-    els.statsDashboard = document.getElementById("statsDashboard");
-    els.exifDashboard = document.getElementById("exifDashboard");
-    els.statsSectionNav = document.getElementById("statsSectionNav");
-    els.squadronLogoGrid = document.getElementById("squadronLogoGrid");
-    els.squadronSearch = document.getElementById("squadronSearch");
-    els.squadronPagination = document.getElementById("squadronPagination");
-    els.squadronCountryRail = document.getElementById("squadronCountryRail");
-    els.squadronHeroMedia = document.getElementById("squadronHeroMedia");
-    els.squadronHeroCountryCount = document.getElementById("squadronHeroCountryCount");
-    els.squadronHeroPhotoCount = document.getElementById("squadronHeroPhotoCount");
-    els.squadronDetail = document.getElementById("squadronDetail");
-    els.locationDetail = document.getElementById("locationDetail");
-    els.squadronPageCount = document.getElementById("squadronPageCount");
-    els.airshowTimeline = document.getElementById("airshowTimeline");
-    els.airshowPagination = document.getElementById("airshowPagination");
-    els.airshowPageCount = document.getElementById("airshowPageCount");
-    els.airshowHeroMedia = document.getElementById("airshowHeroMedia");
-    els.airshowHeroPhotoCount = document.getElementById("airshowHeroPhotoCount");
-    els.airshowHeroLocationCount = document.getElementById("airshowHeroLocationCount");
-    els.airshowYearRange = document.getElementById("airshowYearRange");
-    els.airshowDetail = document.getElementById("airshowDetail");
+  }
+
+  function cacheViewerElements() {
     els.photoViewer = document.getElementById("photoViewer");
     els.viewerImageFrame = document.querySelector(".viewer-image-frame");
     els.viewerImage = document.getElementById("viewerImage");
@@ -418,9 +441,61 @@
     els.viewerZoomOutButton = document.getElementById("viewerZoomOutButton");
     els.viewerZoomResetButton = document.getElementById("viewerZoomResetButton");
     els.viewerZoomInButton = document.getElementById("viewerZoomInButton");
-    els.viewerCleanButton = document.getElementById("viewerCleanButton");
     els.viewerShareButton = document.getElementById("viewerShareButton");
     els.viewerFullscreenButton = document.getElementById("viewerFullscreenButton");
+  }
+
+  function isViewerOpen() {
+    return Boolean(els.photoViewer && !els.photoViewer.hidden);
+  }
+
+  function bindMobileShellEvents() {
+    if (mobileShellEventsBound) {
+      return;
+    }
+    mobileShellEventsBound = true;
+    els.mobileMapBrand?.addEventListener("click", () => fitMapToPins());
+    els.mobileContextBack?.addEventListener("click", handleMobileContextBack);
+    els.mobileTabLinks?.forEach((link) => link.addEventListener("click", handleMobileTabNavigation));
+    els.mobileInstallButton?.addEventListener("click", installSpotterDex);
+    els.mobileInstallDismiss?.addEventListener("click", dismissInstallPrompt);
+    els.mobileMapLocationNav?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-location-nav]");
+      if (button) {
+        stepRecentLocation(button.dataset.locationNav);
+      }
+    });
+  }
+
+  function bindPhotoViewerEvents() {
+    if (viewerEventsBound || !els.photoViewer || !els.viewerImage) {
+      return;
+    }
+    viewerEventsBound = true;
+    document.getElementById("closeViewerButton")?.addEventListener("click", closeViewer);
+    document.getElementById("previousPhotoButton")?.addEventListener("click", () => stepPhoto(-1));
+    document.getElementById("nextPhotoButton")?.addEventListener("click", () => stepPhoto(1));
+    els.viewerInfoButton?.addEventListener("click", () => setViewerInfoOpen(!state.viewerInfoOpen));
+    els.viewerInfoCloseButton?.addEventListener("click", () => setViewerInfoOpen(false));
+    els.viewerZoomOutButton?.addEventListener("click", () => setViewerZoom(state.viewerZoom - 0.25));
+    els.viewerZoomResetButton?.addEventListener("click", resetViewerTransform);
+    els.viewerZoomInButton?.addEventListener("click", () => setViewerZoom(state.viewerZoom + 0.25));
+    els.viewerShareButton?.addEventListener("click", () => shareViewerPhoto());
+    els.viewerFullscreenButton?.addEventListener("click", toggleViewerFullscreen);
+    els.viewerImage.addEventListener("contextmenu", (event) => event.preventDefault());
+    els.viewerImage.setAttribute("draggable", "false");
+    els.viewerImage.addEventListener("wheel", handleViewerWheel, { passive: false });
+    els.viewerImage.addEventListener("pointerdown", handleViewerPointerDown);
+    els.viewerImage.addEventListener("pointermove", handleViewerPointerMove);
+    els.viewerImage.addEventListener("pointerup", handleViewerPointerUp);
+    els.viewerImage.addEventListener("pointercancel", handleViewerPointerUp);
+    els.viewerImage.addEventListener("dblclick", () => {
+      if (state.viewerZoom > 1) {
+        resetViewerTransform();
+      } else {
+        setViewerZoom(2);
+      }
+    });
   }
 
   async function loadData() {
@@ -438,18 +513,15 @@
       }
     }
 
-    data = legacyViewOfNormalizedCatalog(data);
-
     if (currentPageViewId() === "statsView") {
       await loadStatsExifBundle();
-      data = applyStatsExif(data);
     }
     return data;
   }
 
-  function legacyViewOfNormalizedCatalog(rawData) {
+  function normalizedPhotoViewModels(rawData, exifByPhotoId = {}) {
     if (Number(rawData?.schemaVersion) !== 2 || !rawData?.entities || !rawData?.indexes) {
-      return rawData;
+      return [];
     }
     const entities = rawData.entities;
     const indexes = rawData.indexes;
@@ -460,7 +532,7 @@
     const eventEntities = entities.events || {};
     const photoEntities = entities.photos || {};
 
-    const photos = Object.values(photoEntities).map((photo) => {
+    return Object.values(photoEntities).map((photo, index) => {
       const subjects = Array.isArray(photo.subjects) ? photo.subjects : [];
       const primary = subjects.find((subject) => subject?.primary) || subjects[0] || {};
       const aircraft = aircraftEntities[primary.aircraftId] || {};
@@ -469,35 +541,61 @@
       const event = eventEntities[photo.eventId] || {};
       const country = countries[unit.countryId || location.countryId] || {};
       const tagScope = aircraft.id ? "aircraft" : unit.id ? "squadron" : "location";
+      const unitType = unit.kind ? normalizeUnitType(unit.kind) : "";
+      const sortDate = String(photo.sortDate || photo.date || (photo.year ? `${photo.year}-01-01` : ""));
+      const sortTime = Date.parse(sortDate);
       return {
         ...photo,
+        id: String(photo.id || `photo-${index + 1}`),
         tagScope,
         aircraftId: aircraft.id || "",
-        aircraftType: aircraft.name || "",
+        aircraftType: aircraft.name || defaultPhotoSubject(tagScope),
         aircraftFamily: aircraft.family || "",
         squadronId: unit.id || "",
         squadronName: unit.name || "",
-        unitType: unit.kind || "",
-        unitLabel: unit.kind === "organisation" ? "Organisation" : unit.id ? "Squadron" : "",
+        unitType,
+        unitLabel: unit.id ? unitDisplayLabel(unitType) : "",
         country: country.name || "",
         locationName: location.name || "Unknown location",
         pinId: location.id || photo.locationId || "",
-        airshow: event.name || ""
+        airshow: event.name || "",
+        livery: photo.livery || "",
+        year: photo.year ? String(photo.year) : "",
+        date: photo.date ? String(photo.date) : "",
+        sortDate,
+        sortTime: Number.isFinite(sortTime) ? sortTime : 0,
+        thumbnail: photo.thumbnail || photo.image || "",
+        exif: exifByPhotoId?.[photo.id] || photo.exif || {}
       };
     });
+  }
+
+  function normalizedCatalogViewModel(rawData, exifByPhotoId = {}) {
+    if (Number(rawData?.schemaVersion) !== 2 || !rawData?.entities || !rawData?.indexes) {
+      return { ...EMPTY_DATA };
+    }
+    const entities = rawData.entities;
+    const indexes = rawData.indexes;
+    const countries = entities.countries || {};
+    const aircraftEntities = entities.aircraft || {};
+    const unitEntities = entities.units || {};
+    const locationEntities = entities.locations || {};
+    const eventEntities = entities.events || {};
+    const photos = normalizedPhotoViewModels(rawData, exifByPhotoId);
     const photoById = new Map(photos.map((photo) => [photo.id, photo]));
     const unitRecord = (unit) => {
       const country = countries[unit.countryId] || {};
       const hero = photoById.get(unit.heroPhotoId);
-      const photoIds = indexes.photoIdsByUnit?.[unit.id] || [];
+      const photoIds = (indexes.photoIdsByUnit?.[unit.id] || []).map(String);
+      const unitType = normalizeUnitType(unit.kind);
       return {
-        id: unit.id,
-        name: unit.name,
+        id: String(unit.id),
+        name: unit.name || unknownUnitName(unitType),
         country: country.name || "",
         logo: unit.logo || "",
-        unitType: unit.kind || "squadron",
-        unitLabel: unit.kind === "organisation" ? "Organisation" : "Squadron",
-        showOnSquadronsPage: unit.kind !== "organisation",
+        unitType,
+        unitLabel: unitDisplayLabel(unitType),
+        showOnSquadronsPage: unitType === "squadron",
         photoIds,
         photoCount: photoIds.length,
         heroPhoto: hero ? {
@@ -508,7 +606,7 @@
           processedSize: hero.processedSize || "",
           thumbnailSize: hero.thumbnailSize || ""
         } : null,
-        writeUp: unit.writeUp || ""
+        writeUp: normalizeWriteUp(unit.writeUp)
       };
     };
     const units = Object.values(unitEntities).map(unitRecord);
@@ -518,45 +616,45 @@
       name: location.name,
       country: countries[location.countryId]?.name || "",
       icao: location.icao || "",
-      lat: location.lat,
-      lon: location.lon,
+      lat: Number(location.lat),
+      lon: Number(location.lon),
       enabled: location.enabled !== false,
       heroPhotoId: location.heroPhotoId || "",
-      writeUp: location.writeUp || ""
-    }));
+      writeUp: normalizeWriteUp(location.writeUp)
+    })).filter((pin) => Number.isFinite(pin.lat) && Number.isFinite(pin.lon));
     const aircraft = Object.values(aircraftEntities).map((entry) => {
-      const unitIds = indexes.unitIdsByAircraft?.[entry.id] || [];
+      const unitIds = (indexes.unitIdsByAircraft?.[entry.id] || []).map(String);
       const entryUnits = unitIds.map((unitId) => unitById.get(unitId)).filter(Boolean);
-      const photoIds = indexes.photoIdsByAircraft?.[entry.id] || [];
+      const photoIds = (indexes.photoIdsByAircraft?.[entry.id] || []).map(String);
       const aircraftPhotoIds = new Set(photoIds);
       return {
-        id: entry.id,
-        typeName: entry.name,
-        aircraftFamily: entry.family,
+        id: String(entry.id),
+        typeName: entry.name || "Unknown aircraft",
+        aircraftFamily: entry.family || "",
         countries: unique(entryUnits.map((unit) => unit.country).filter(Boolean)),
         squadrons: entryUnits.map((unit) => {
           const unitPhotoIds = unit.photoIds.filter((photoId) => aircraftPhotoIds.has(photoId));
-          return {...unit, photoIds: unitPhotoIds, photoCount: unitPhotoIds.length};
+          return { ...unit, photoIds: unitPhotoIds, photoCount: unitPhotoIds.length };
         }),
         photoIds,
         coverPhoto: entry.heroPhotoId || photoIds[0] || null,
-        doubleWidth: entry.doubleWidth === true || entry.doubleWidth === 1
-          ? true
-          : entry.doubleWidth === false || entry.doubleWidth === 0
-            ? false
-            : null,
-        writeUp: entry.writeUp || ""
+        doubleWidth: entry.doubleWidth === true ? true : entry.doubleWidth === false ? false : null,
+        writeUp: normalizeWriteUp(entry.writeUp),
+        stats: {}
       };
     });
     const airshows = Object.values(eventEntities).map((event) => ({
-      id: event.id,
-      name: event.name,
-      photoIds: indexes.photoIdsByEvent?.[event.id] || [],
+      id: String(event.id),
+      name: event.name || "Unnamed event",
+      photoIds: (indexes.photoIdsByEvent?.[event.id] || []).map(String),
       heroPhotoId: event.heroPhotoId || "",
       firstDate: event.startsOn || "",
       latestDate: event.endsOn || "",
-      writeUp: event.writeUp || ""
-    }));
+      writeUp: normalizeWriteUp(event.writeUp)
+    }))
+      .map((airshow) => ({ ...airshow, photoCount: airshow.photoIds.length }))
+      .filter((airshow) => airshow.photoIds.length)
+      .sort((a, b) => Date.parse(b.latestDate || "") - Date.parse(a.latestDate || "") || a.name.localeCompare(b.name));
     return {
       payload: rawData.payload || "full",
       generatedAt: rawData.generatedAt || null,
@@ -590,109 +688,19 @@
     return statsExifLoadPromise;
   }
 
-  function applyStatsExif(data) {
-    const exifByPhotoId = window.SPOTTERDEX_EXIF?.photos;
-    if (!exifByPhotoId || !Array.isArray(data?.photos)) {
-      return data;
-    }
-    return {
-      ...data,
-      photos: data.photos.map((photo) => ({
-        ...photo,
-        exif: exifByPhotoId[photo.id] || {}
-      }))
-    };
-  }
-
   function prepareData(rawData) {
-    const data = {
-      payload: rawData.payload || "full",
-      generatedAt: rawData.generatedAt || null,
-      pins: Array.isArray(rawData.pins) ? rawData.pins : [],
-      aircraft: Array.isArray(rawData.aircraft) ? rawData.aircraft : [],
-      squadrons: Array.isArray(rawData.squadrons) ? rawData.squadrons : [],
-      airshows: Array.isArray(rawData.airshows) ? rawData.airshows : [],
-      photos: Array.isArray(rawData.photos) ? rawData.photos : []
-    };
-
-    data.pins = data.pins
-      .map((pin) => ({
-        ...pin,
-        id: String(pin.id || slugify(pin.name || "pin")),
-        name: pin.name || "Unnamed location",
-        country: pin.country || "",
-        icao: normalizeIcao(pin.icao || pin.icaoCode || pin.icao_code),
-        writeUp: normalizeWriteUp(pin.writeUp || pin.write_up),
-        lat: Number(pin.lat),
-        lon: Number(pin.lon),
-        enabled: pin.enabled !== false
-      }))
-      .filter((pin) => Number.isFinite(pin.lat) && Number.isFinite(pin.lon));
-
-    data.photos = data.photos.map((photo, index) => {
-      const tagScope = normalizePhotoScope(photo.tagScope || photo.tag_scope);
-      const unitType = tagScope === "location" ? "" : normalizeUnitType(photo.unitType || photo.unit_type || photo.squadronType);
-      return {
-        ...photo,
-        id: String(photo.id || `photo-${index + 1}`),
-        tagScope,
-        year: photo.year ? String(photo.year) : "",
-        date: photo.date ? String(photo.date) : "",
-        sortDate: photo.sortDate ? String(photo.sortDate) : deriveSortDate(photo),
-        locationName: photo.locationName || photo.location || "Unknown location",
-        airshow: photo.airshow || photo.airshowName || photo.airshow_name || "",
-        livery: photo.livery || photo.paintScheme || photo.paint_scheme || "",
-        aircraftType: photo.aircraftType || defaultPhotoSubject(tagScope),
-        squadronName: photo.squadronName || photo.unitName || (tagScope === "location" ? "" : unknownUnitName(unitType)),
-        unitType,
-        unitLabel: tagScope === "location" ? "" : photo.unitLabel || unitDisplayLabel(unitType),
-        thumbnail: photo.thumbnail || photo.image || "",
-        exif: photo.exif && typeof photo.exif === "object" ? photo.exif : {}
-      };
-    });
-
-    data.photos.forEach((photo) => {
-      photo.sortTime = Date.parse(photo.sortDate || photo.date || `${photo.year || "0000"}-01-01`);
-      if (!Number.isFinite(photo.sortTime)) {
-        photo.sortTime = 0;
-      }
-    });
-
-    data.aircraft = data.aircraft
-      .map((entry) => ({
-        ...entry,
-        id: String(entry.id || slugify(entry.typeName || "aircraft")),
-        typeName: entry.typeName || entry.aircraftType || "Unknown aircraft",
-        doubleWidth: entry.doubleWidth === true || entry.doubleWidth === 1
-          ? true
-          : entry.doubleWidth === false || entry.doubleWidth === 0
-            ? false
-            : null,
-        writeUp: normalizeWriteUp(entry.writeUp || entry.write_up),
-        countries: Array.isArray(entry.countries) ? entry.countries : [],
-        squadrons: Array.isArray(entry.squadrons) ? entry.squadrons.map(normalizeUnitRecord) : [],
-        photoIds: Array.isArray(entry.photoIds) ? entry.photoIds : [],
-        stats: entry.stats && typeof entry.stats === "object" ? entry.stats : {}
-      }))
-      .sort((a, b) => a.typeName.localeCompare(b.typeName));
-    data.squadrons = data.squadrons
-      .map(normalizeUnitRecord)
-      .sort((a, b) => `${a.country} ${a.name}`.localeCompare(`${b.country} ${b.name}`));
-
+    const data = normalizedCatalogViewModel(rawData, window.SPOTTERDEX_EXIF?.photos || {});
+    data.aircraft.sort((a, b) => a.typeName.localeCompare(b.typeName));
+    data.squadrons.sort((a, b) => `${a.country} ${a.name}`.localeCompare(`${b.country} ${b.name}`));
     state.pinById = new Map(data.pins.map((pin) => [pin.id, pin]));
     state.photoById = new Map(data.photos.map((photo) => [photo.id, photo]));
     state.aircraftById = new Map(data.aircraft.map((entry) => [entry.id, entry]));
-    data.airshows = normalizeAirshows(data.airshows, data.photos);
     state.airshowById = new Map(data.airshows.map((airshow) => [airshow.id, airshow]));
     state.photosByPinId = indexPhotosByPin(data.pins, data.photos);
     state.enabledPins = data.pins.filter((pin) => pin.enabled);
     state.mapPreviewCache.clear();
 
     data.aircraft.forEach((entry) => {
-      const matchingPhotoIds = data.photos
-        .filter((photo) => photo.aircraftId === entry.id)
-        .map((photo) => photo.id);
-      entry.photoIds = unique([...entry.photoIds, ...matchingPhotoIds]);
       entry.coverPhoto = entry.coverPhoto || entry.photoIds[0] || null;
       entry.stats = normalizeAircraftStats(entry);
     });
@@ -722,85 +730,6 @@
     return photosByPinId;
   }
 
-  function normalizeUnitRecord(squadron) {
-    const unitType = normalizeUnitType(squadron.unitType || squadron.unit_type || squadron.squadronType);
-    return {
-      ...squadron,
-      id: String(squadron.id || slugify(squadron.name || "unit")),
-      name: squadron.name || unknownUnitName(unitType),
-      country: squadron.country || "",
-      logo: squadron.logo || "",
-      writeUp: normalizeWriteUp(squadron.writeUp || squadron.write_up),
-      heroPhoto: squadron.heroPhoto && typeof squadron.heroPhoto === "object" ? squadron.heroPhoto : null,
-      photoIds: Array.isArray(squadron.photoIds) ? squadron.photoIds : [],
-      unitType,
-      unitLabel: squadron.unitLabel || unitDisplayLabel(unitType),
-      showOnSquadronsPage: squadron.showOnSquadronsPage !== false && unitType === "squadron"
-    };
-  }
-
-  function normalizeAirshows(rawAirshows, photos) {
-    const byKey = new Map();
-    const addAirshow = (rawAirshow, fallbackName = "") => {
-      const name = String(rawAirshow?.name || rawAirshow?.event || fallbackName || "").trim();
-      if (!name) {
-        return null;
-      }
-      const key = normalizeKey(name);
-      if (!byKey.has(key)) {
-        byKey.set(key, {
-          id: String(rawAirshow?.id || slugify(name)),
-          name,
-          photoIds: [],
-          heroPhotoId: String(rawAirshow?.heroPhotoId || rawAirshow?.hero_photo_id || ""),
-          writeUp: normalizeWriteUp(rawAirshow?.writeUp || rawAirshow?.write_up),
-          firstDate: String(rawAirshow?.firstDate || ""),
-          latestDate: String(rawAirshow?.latestDate || "")
-        });
-      }
-      const airshow = byKey.get(key);
-      airshow.photoIds.push(...(Array.isArray(rawAirshow?.photoIds) ? rawAirshow.photoIds.map(String) : []));
-      if (!airshow.heroPhotoId && rawAirshow?.heroPhotoId) {
-        airshow.heroPhotoId = String(rawAirshow.heroPhotoId);
-      }
-      if (!airshow.writeUp) {
-        airshow.writeUp = normalizeWriteUp(rawAirshow?.writeUp || rawAirshow?.write_up);
-      }
-      return airshow;
-    };
-
-    rawAirshows.forEach((airshow) => addAirshow(airshow));
-    photos.forEach((photo) => {
-      if (!photo.airshow) {
-        return;
-      }
-      const airshow = addAirshow({}, photo.airshow);
-      airshow.photoIds.push(photo.id);
-    });
-
-    return Array.from(byKey.values())
-      .map((airshow) => {
-        const photoIds = unique(airshow.photoIds).filter((photoId) => state.photoById.has(photoId));
-        const eventPhotos = photoIds.map((photoId) => state.photoById.get(photoId)).filter(Boolean).sort(sortPhotos);
-        const dates = eventPhotos.map((photo) => photo.sortDate).filter(Boolean).sort();
-        return {
-          ...airshow,
-          photoIds,
-          photoCount: eventPhotos.length,
-          firstDate: airshow.firstDate || dates[0] || "",
-          latestDate: airshow.latestDate || dates[dates.length - 1] || ""
-        };
-      })
-      .filter((airshow) => airshow.photoIds.length)
-      .sort((a, b) => {
-        const dateDiff = Date.parse(b.latestDate || "") - Date.parse(a.latestDate || "");
-        if (Number.isFinite(dateDiff) && dateDiff) {
-          return dateDiff;
-        }
-        return b.latestDate.localeCompare(a.latestDate) || a.name.localeCompare(b.name);
-      });
-  }
-
   function chooseInitialSelections() {
     const mostRecentLocation = recentLocations()[0];
     const firstEnabledPin = state.data.pins.find((pin) => pin.enabled);
@@ -826,8 +755,6 @@
         fitMapFromBrand(event);
       }
     });
-    els.mobileMapBrand?.addEventListener("click", () => fitMapToPins());
-
     if (els.brand) {
       els.brand.addEventListener("click", (event) => {
         if (currentPageViewId() !== "mapView" || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
@@ -843,45 +770,9 @@
         window.location.assign(els.viewSelect.value);
       });
     }
-    els.mobileContextBack?.addEventListener("click", handleMobileContextBack);
-    els.mobileTabLinks?.forEach((link) => link.addEventListener("click", handleMobileTabNavigation));
-    els.mobileInstallButton?.addEventListener("click", installSpotterDex);
-    els.mobileInstallDismiss?.addEventListener("click", dismissInstallPrompt);
-
-    document.getElementById("fitPinsButton")?.addEventListener("click", fitMapToPins);
+    document.getElementById("fitPinsButton")?.addEventListener("click", handleHeaderMapButton);
     document.getElementById("fitPinsPanelButton")?.addEventListener("click", fitMapToPins);
-    els.mobileMapLocationNav?.addEventListener("click", (event) => {
-      const button = event.target.closest("[data-location-nav]");
-      if (button) {
-        stepRecentLocation(button.dataset.locationNav);
-      }
-    });
     els.mapPanelCoachDismiss?.addEventListener("click", dismissMapPanelCoach);
-    document.getElementById("closeViewerButton").addEventListener("click", closeViewer);
-    document.getElementById("previousPhotoButton").addEventListener("click", () => stepPhoto(-1));
-    document.getElementById("nextPhotoButton").addEventListener("click", () => stepPhoto(1));
-    els.viewerInfoButton.addEventListener("click", () => setViewerInfoOpen(!state.viewerInfoOpen));
-    els.viewerInfoCloseButton?.addEventListener("click", () => setViewerInfoOpen(false));
-    els.viewerZoomOutButton.addEventListener("click", () => setViewerZoom(state.viewerZoom - 0.25));
-    els.viewerZoomResetButton.addEventListener("click", resetViewerTransform);
-    els.viewerZoomInButton.addEventListener("click", () => setViewerZoom(state.viewerZoom + 0.25));
-    els.viewerCleanButton.addEventListener("click", () => setViewerCleanMode(!state.viewerCleanMode));
-    els.viewerShareButton.addEventListener("click", () => shareViewerPhoto());
-    els.viewerFullscreenButton.addEventListener("click", toggleViewerFullscreen);
-    els.viewerImage.addEventListener("contextmenu", (event) => event.preventDefault());
-    els.viewerImage.setAttribute("draggable", "false");
-    els.viewerImage.addEventListener("wheel", handleViewerWheel, { passive: false });
-    els.viewerImage.addEventListener("pointerdown", handleViewerPointerDown);
-    els.viewerImage.addEventListener("pointermove", handleViewerPointerMove);
-    els.viewerImage.addEventListener("pointerup", handleViewerPointerUp);
-    els.viewerImage.addEventListener("pointercancel", handleViewerPointerUp);
-    els.viewerImage.addEventListener("dblclick", () => {
-      if (state.viewerZoom > 1) {
-        resetViewerTransform();
-      } else {
-        setViewerZoom(2);
-      }
-    });
 
     els.locationSearch?.addEventListener("input", renderLocations);
     els.aircraftSearch?.addEventListener("input", () => {
@@ -914,6 +805,7 @@
     });
     document.addEventListener("fullscreenchange", updateViewerFullscreenButton);
     window.addEventListener("resize", debounce(() => {
+      ensureMobileAppShell();
       updateMapPanelState();
       updateMapPanelCoach();
       updateViewerInfoState();
@@ -970,7 +862,7 @@
     state.lastHandledHistoryUrl = currentUrl;
     const routed = applyDeepLinkFromHash();
     if (!routed) {
-      if (!els.photoViewer.hidden) {
+      if (isViewerOpen()) {
         closeViewer({ updateHash: false, useHistory: false });
       }
       setActiveTab(currentPageViewId(), { updateHash: false });
@@ -1022,7 +914,7 @@
       return;
     }
 
-    if (!els.photoViewer.hidden && state.viewerInfoOpen && isMobileViewerLayout() && !event.target.closest("#viewerInfo")) {
+    if (isViewerOpen() && state.viewerInfoOpen && isMobileViewerLayout() && !event.target.closest("#viewerInfo")) {
       setViewerInfoOpen(false);
     }
 
@@ -1110,7 +1002,7 @@
 
     const locationPageButton = event.target.closest("[data-location-page-id]");
     if (locationPageButton) {
-      if (!els.photoViewer.hidden) {
+      if (isViewerOpen()) {
         closeViewer({ updateHash: false, useHistory: false, restoreFocus: false });
       }
       selectLocationPage(locationPageButton.dataset.locationPageId);
@@ -1121,7 +1013,7 @@
     if (locationGroupButton) {
       const squadronId = locationGroupButton.dataset.locationSquadronId;
       if (squadronId) {
-        if (!els.photoViewer.hidden) {
+        if (isViewerOpen()) {
           closeViewer({ updateHash: false, useHistory: false, restoreFocus: false });
         }
         selectSquadron(squadronId);
@@ -1162,7 +1054,7 @@
 
     const aircraftButton = event.target.closest("[data-aircraft-id]");
     if (aircraftButton) {
-      if (!els.photoViewer.hidden) {
+      if (isViewerOpen()) {
         closeViewer({ updateHash: false, useHistory: false, restoreFocus: false });
       }
       selectAircraft(aircraftButton.dataset.aircraftId);
@@ -1171,7 +1063,7 @@
 
     const squadronButton = event.target.closest("[data-squadron-id]");
     if (squadronButton) {
-      if (!els.photoViewer.hidden) {
+      if (isViewerOpen()) {
         closeViewer({ updateHash: false, useHistory: false, restoreFocus: false });
       }
       selectSquadron(squadronButton.dataset.squadronId);
@@ -1180,7 +1072,7 @@
 
     const airshowButton = event.target.closest("[data-airshow-id]");
     if (airshowButton) {
-      if (!els.photoViewer.hidden) {
+      if (isViewerOpen()) {
         closeViewer({ updateHash: false, useHistory: false, restoreFocus: false });
       }
       selectAirshow(airshowButton.dataset.airshowId);
@@ -1200,13 +1092,11 @@
   }
 
   function handleKeydown(event) {
-    if (!els.photoViewer.hidden) {
+    if (isViewerOpen()) {
       if (event.key === "Tab") {
         trapViewerFocus(event);
       } else if (event.key === "Escape") {
-        if (state.viewerCleanMode) {
-          setViewerCleanMode(false);
-        } else if (state.viewerInfoOpen && isMobileViewerLayout()) {
+        if (state.viewerInfoOpen && isMobileViewerLayout()) {
           setViewerInfoOpen(false);
         } else {
           closeViewer();
@@ -1224,9 +1114,6 @@
       } else if (event.key === "0") {
         event.preventDefault();
         resetViewerTransform();
-      } else if (event.key.toLowerCase() === "h") {
-        event.preventDefault();
-        setViewerCleanMode(!state.viewerCleanMode);
       } else if (event.key.toLowerCase() === "f") {
         event.preventDefault();
         toggleViewerFullscreen();
@@ -1365,7 +1252,7 @@
     }
 
     const mapPageActive = Boolean(document.getElementById("mapView")?.classList.contains("is-active"));
-    const viewerOpen = els.photoViewer && !els.photoViewer.hidden;
+    const viewerOpen = isViewerOpen();
     const showCoach = mapPageActive
       && isMobileMapLayout()
       && !mapPanelCoachDismissed()
@@ -1582,6 +1469,12 @@
     };
     const isDetail = activeView !== navigationView && Boolean(detailTitles[activeView]);
     els.siteHeader?.classList.toggle("is-contextual", isDetail);
+    const headerMapButton = document.getElementById("fitPinsButton");
+    if (headerMapButton) {
+      const label = activeView === "locationDetailView" ? "Back to World Map" : "Fit all map locations";
+      headerMapButton.setAttribute("aria-label", label);
+      headerMapButton.title = label;
+    }
     if (els.mobileContextBar) els.mobileContextBar.hidden = !isDetail;
     if (els.mobileContextTitle) els.mobileContextTitle.textContent = detailTitles[activeView] || "SpotterDex";
     if (els.mobileContextBack) {
@@ -1594,6 +1487,14 @@
       if (active) link.setAttribute("aria-current", "page");
       else link.removeAttribute("aria-current");
     });
+  }
+
+  function handleHeaderMapButton() {
+    if (document.querySelector("[data-view].is-active")?.id === "locationDetailView") {
+      goToMapHome();
+      return;
+    }
+    fitMapToPins();
   }
 
   function handleInstallPrompt(event) {
@@ -2115,11 +2016,6 @@
       renderStatsDashboard();
       renderExifDashboard();
       updateStatsSectionNav();
-      hydrateFullPhotoData().then((wasUpdated) => {
-        if (wasUpdated) {
-          renderExifDashboard();
-        }
-      });
     }
 
     state.renderedViews.add(directoryView);
@@ -3780,16 +3676,55 @@
   }
 
   function renderLocationIdentityMarks(families, units, options = {}) {
-    const unitMarks = (units || []).filter((unit) => unit.logo).map((unit) => `
-      <span class="location-identity-mark is-unit" title="${escapeAttr(`${unit.name} logo`)}">
-        <img src="${escapeAttr(unit.logo)}" loading="lazy" decoding="async" fetchpriority="low" alt="${escapeAttr(`${unit.name} logo`)}">
-      </span>
-    `);
-    const includeFamilies = options.includeFamilies !== false;
-    const familyMarks = !unitMarks.length && includeFamilies
-      ? (families || []).slice(0, 3).map((family) => `
-          <span class="location-identity-mark is-family" title="${escapeAttr(family.label)}">
-            <img src="${escapeAttr(family.lightModeIcon || family.darkIcon || family.icon)}" alt="${escapeAttr(family.label)}">
+    return renderPhotoIdentityMarks(families, units, {
+      wrapperClass: "location-identity-marks",
+      familyClass: "location-identity-mark is-family",
+      unitClass: "location-identity-mark is-unit",
+      familyIcon: (family) => family.lightModeIcon || family.darkIcon || family.icon,
+      includeFamilies: options.includeFamilies !== false,
+      unitLimit: Infinity,
+      unitImageAttributes: 'loading="lazy" decoding="async" fetchpriority="low"',
+      mixedLabel: "Aircraft families and squadron logos"
+    });
+  }
+
+  function collectPhotoIdentities(photos) {
+    const families = new Map();
+    const units = new Map();
+    photos.forEach((photo) => {
+      const family = aircraftFamilyForPhoto(photo);
+      if (family && !families.has(family.id)) {
+        families.set(family.id, family);
+      }
+      const squadron = squadronForPhoto(photo);
+      if (!squadron) {
+        return;
+      }
+      const unitId = squadronPageIdForUnit(squadron)
+        || normalizeKey(`${squadron.country || photo.country || ""}-${squadron.name}`);
+      if (!units.has(unitId)) {
+        units.set(unitId, squadron);
+      }
+    });
+    return { families: Array.from(families.values()), units: Array.from(units.values()) };
+  }
+
+  function renderPhotoIdentityMarks(families, units, options = {}) {
+    const unitMarks = (units || [])
+      .filter((unit) => unit.logo)
+      .slice(0, options.unitLimit ?? 6)
+      .map((unit) => {
+        const imageAttributes = options.unitImageAttributes ? ` ${options.unitImageAttributes}` : "";
+        return `
+          <span class="${options.unitClass}" title="${escapeAttr(`${unit.name} logo`)}">
+            <img src="${escapeAttr(unit.logo)}"${imageAttributes} alt="${escapeAttr(`${unit.name} logo`)}">
+          </span>
+        `;
+      });
+    const familyMarks = !unitMarks.length && options.includeFamilies !== false
+      ? (families || []).slice(0, options.familyLimit ?? 3).map((family) => `
+          <span class="${options.familyClass}" title="${escapeAttr(family.label)}">
+            <img src="${escapeAttr(options.familyIcon(family))}" alt="${escapeAttr(family.label)}">
           </span>
         `)
       : [];
@@ -3805,57 +3740,68 @@
         ? "Organisation logos"
         : "Squadron logos";
     const label = familyMarks.length && unitMarks.length
-      ? "Aircraft families and squadron logos"
+      ? options.mixedLabel || "Aircraft families and squadron logos"
       : familyMarks.length
         ? "Aircraft family icons"
         : unitLabel;
-    return `<span class="location-identity-marks" aria-label="${escapeAttr(label)}">${familyMarks.join("")}${unitMarks.join("")}</span>`;
+    return `<span class="${options.wrapperClass}" aria-label="${escapeAttr(label)}">${familyMarks.join("")}${unitMarks.join("")}</span>`;
   }
 
-  function locationPhotoGroups(pin, photos, kind) {
+  function groupPhotoRecords(photos, descriptorForPhoto, photoSorter, groupSorter) {
     const groups = new Map();
-    const addPhoto = (key, details, photo) => {
+    photos.forEach((photo) => {
+      const descriptor = descriptorForPhoto(photo);
+      if (!descriptor) {
+        return;
+      }
+      const { key, ...details } = descriptor;
       if (!groups.has(key)) {
         groups.set(key, { ...details, key, photos: [] });
       }
-      groups.get(key).photos.push(photo);
-    };
-
-    photos.forEach((photo) => {
-      if (kind === "location") {
-        if (photo.tagScope !== "location") return;
-        addPhoto("location", { title: "Location-specific images", eyebrow: "Location tag", logo: "" }, photo);
-        return;
+      const group = groups.get(key);
+      if (!group.logo && details.logo) {
+        group.logo = details.logo;
       }
-      if (kind === "type") {
-        if (photo.tagScope !== "aircraft") return;
-        const title = photo.aircraftType || "Unknown aircraft";
-        addPhoto(`type-${normalizeKey(title)}`, { title, eyebrow: "Aircraft type", logo: "" }, photo);
-        return;
-      }
-      if (!photo.squadronName || photo.tagScope === "location") return;
-      const squadron = squadronForPhoto(photo);
-      const title = squadron?.name || photo.squadronName;
-      const unitType = squadron?.unitType || photo.unitType;
-      addPhoto(
-        `unit-${normalizeKey(`${photo.country || pin.country || ""}-${title}-${unitType || ""}`)}`,
-        {
-          title,
-          eyebrow: squadron?.unitLabel || photo.unitLabel || unitDisplayLabel(unitType),
-          logo: squadron?.logo || "",
-          unitType: normalizeUnitType(unitType),
-          squadronId: squadron ? squadronPageIdForUnit(squadron) : squadronPageIdForPhoto(photo)
-        },
-        photo
-      );
+      group.photos.push(photo);
     });
 
     return Array.from(groups.values())
-      .map((group) => ({ ...group, photos: group.photos.sort(sortPhotos) }))
-      .sort((a, b) => {
+      .map((group) => ({ ...group, photos: group.photos.sort(photoSorter) }))
+      .sort(groupSorter);
+  }
+
+  function locationPhotoGroups(pin, photos, kind) {
+    return groupPhotoRecords(photos, (photo) => {
+      if (kind === "location") {
+        return photo.tagScope === "location"
+          ? { key: "location", title: "Location-specific images", eyebrow: "Location tag", logo: "" }
+          : null;
+      }
+      if (kind === "type") {
+        if (photo.tagScope !== "aircraft") {
+          return null;
+        }
+        const title = photo.aircraftType || "Unknown aircraft";
+        return { key: `type-${normalizeKey(title)}`, title, eyebrow: "Aircraft type", logo: "" };
+      }
+      if (!photo.squadronName || photo.tagScope === "location") {
+        return null;
+      }
+      const squadron = squadronForPhoto(photo);
+      const title = squadron?.name || photo.squadronName;
+      const unitType = squadron?.unitType || photo.unitType;
+      return {
+        key: `unit-${normalizeKey(`${photo.country || pin.country || ""}-${title}-${unitType || ""}`)}`,
+        title,
+        eyebrow: squadron?.unitLabel || photo.unitLabel || unitDisplayLabel(unitType),
+        logo: squadron?.logo || "",
+        unitType: normalizeUnitType(unitType),
+        squadronId: squadron ? squadronPageIdForUnit(squadron) : squadronPageIdForPhoto(photo)
+      };
+    }, sortPhotos, (a, b) => {
         const latestDiff = (b.photos[0]?.sortTime || 0) - (a.photos[0]?.sortTime || 0);
         return latestDiff || a.title.localeCompare(b.title);
-      });
+    });
   }
 
   function renderLocationExpandableSection(pin, photos, kind) {
@@ -4598,49 +4544,30 @@
   }
 
   function airshowPhotoGroups(photos) {
-    const groups = new Map();
-    const addPhoto = (key, details, photo) => {
-      if (!groups.has(key)) {
-        groups.set(key, { ...details, key, photos: [] });
-      }
-      const group = groups.get(key);
-      if (!group.logo && details.logo) {
-        group.logo = details.logo;
-      }
-      group.photos.push(photo);
-    };
-
-    photos.forEach((photo) => {
+    return groupPhotoRecords(photos, (photo) => {
       if (photo.tagScope === "location" || !photo.squadronName) {
-        addPhoto(
-          `location-${photo.pinId || normalizeKey(photo.locationName || "untagged")}`,
-          { title: "Location-tagged frames", eyebrow: "Location tag", logo: "" },
-          photo
-        );
-        return;
+        return {
+          key: `location-${photo.pinId || normalizeKey(photo.locationName || "untagged")}`,
+          title: "Location-tagged frames",
+          eyebrow: "Location tag",
+          logo: ""
+        };
       }
 
       const squadron = squadronForPhoto(photo);
       const name = squadron?.name || photo.squadronName;
       const unitType = squadron?.unitType || photo.unitType;
       const country = squadron?.country || photo.country || "";
-      addPhoto(
-        `unit-${normalizeKey(`${country}-${name}-${unitType || ""}`)}`,
-        {
-          title: name,
-          eyebrow: squadron?.unitLabel || photo.unitLabel || unitDisplayLabel(unitType),
-          logo: squadron?.logo || ""
-        },
-        photo
-      );
-    });
-
-    return Array.from(groups.values())
-      .map((group) => ({ ...group, photos: group.photos.sort(sortPhotosOldest) }))
-      .sort((a, b) => {
+      return {
+        key: `unit-${normalizeKey(`${country}-${name}-${unitType || ""}`)}`,
+        title: name,
+        eyebrow: squadron?.unitLabel || photo.unitLabel || unitDisplayLabel(unitType),
+        logo: squadron?.logo || ""
+      };
+    }, sortPhotosOldest, (a, b) => {
         const dateDiff = (a.photos[0]?.sortTime || 0) - (b.photos[0]?.sortTime || 0);
         return dateDiff || a.title.localeCompare(b.title);
-      });
+    });
   }
 
   function renderAirshowPhotoGroups(groups) {
@@ -4669,46 +4596,15 @@
   }
 
   function renderAirshowIdentityMarks(photos) {
-    const families = new Map();
-    const squadrons = new Map();
-
-    photos.forEach((photo) => {
-      const family = aircraftFamilyForPhoto(photo);
-      if (family && !families.has(family.id)) {
-        families.set(family.id, family);
-      }
-
-      const squadron = squadronForPhoto(photo);
-      if (!squadron || !squadron.logo) {
-        return;
-      }
-      const squadronId = squadronPageIdForUnit(squadron) || normalizeKey(`${squadron.country || photo.country || ""}-${squadron.name}`);
-      if (!squadrons.has(squadronId)) {
-        squadrons.set(squadronId, squadron);
-      }
+    const { families, units } = collectPhotoIdentities(photos);
+    return renderPhotoIdentityMarks(families, units, {
+      wrapperClass: "airshow-identity-marks",
+      familyClass: "airshow-identity-mark is-family",
+      unitClass: "airshow-identity-mark is-squadron",
+      familyIcon: (family) => family.darkIcon || family.mapIcon || family.icon,
+      familyLimit: 3,
+      unitLimit: 6
     });
-
-    const familyMarks = squadrons.size ? [] : Array.from(families.values()).slice(0, 3).map((family) => `
-      <span class="airshow-identity-mark is-family" title="${escapeAttr(family.label)}">
-        <img src="${escapeAttr(family.darkIcon || family.mapIcon || family.icon)}" alt="${escapeAttr(family.label)}">
-      </span>
-    `);
-    const squadronMarks = Array.from(squadrons.values()).slice(0, 6).map((squadron) => `
-      <span class="airshow-identity-mark is-squadron" title="${escapeAttr(`${squadron.name} logo`)}">
-        <img src="${escapeAttr(squadron.logo)}" alt="${escapeAttr(`${squadron.name} logo`)}">
-      </span>
-    `);
-
-    if (!familyMarks.length && !squadronMarks.length) {
-      return "";
-    }
-
-    return `
-      <span class="airshow-identity-marks" aria-label="${squadronMarks.length ? "Squadron logos" : "Aircraft family icons"}">
-        ${familyMarks.join("")}
-        ${squadronMarks.join("")}
-      </span>
-    `;
   }
 
   function sortPhotosOldest(a, b) {
@@ -6871,6 +6767,7 @@
     if (!photo) {
       return;
     }
+    ensurePhotoViewer();
 
     const viewerContext = context || "map";
     const collection = viewerContext === "dex"
@@ -6895,10 +6792,9 @@
       state.statsPhotoLabel = "";
     }
     state.viewerInfoOpen = false;
-    setViewerCleanMode(false);
     resetViewerTransform();
 
-    const wasClosed = els.photoViewer.hidden;
+    const wasClosed = !isViewerOpen();
     if (wasClosed && document.activeElement instanceof HTMLElement) {
       state.viewerReturnFocus = document.activeElement;
     }
@@ -6913,7 +6809,7 @@
       window.requestAnimationFrame(() => document.getElementById("closeViewerButton")?.focus());
     }
     hydrateFullPhotoData().then((wasUpdated) => {
-      if (wasUpdated && !els.photoViewer.hidden) {
+      if (wasUpdated && isViewerOpen()) {
         renderViewerPhoto();
       }
     });
@@ -6928,7 +6824,7 @@
   }
 
   function hydrateFullPhotoData() {
-    if (state.data.payload !== "map" && state.data.payload !== "directory") {
+    if (state.data.payload === "full") {
       return Promise.resolve(false);
     }
     if (state.fullDataPromise) {
@@ -6943,8 +6839,7 @@
         return response.json();
       })
       .then((fullData) => {
-        const hydrated = legacyViewOfNormalizedCatalog(fullData);
-        const fullPhotos = new Map((hydrated.photos || []).map((photo) => [String(photo.id || ""), photo]));
+        const fullPhotos = new Map(normalizedPhotoViewModels(fullData).map((photo) => [photo.id, photo]));
         state.data.photos.forEach((photo) => Object.assign(photo, fullPhotos.get(photo.id) || {}));
         state.data.payload = "full";
         return true;
@@ -7024,6 +6919,9 @@
   }
 
   function closeViewer(options = {}) {
+    if (!els.photoViewer) {
+      return;
+    }
     const shouldUseHistory = options.useHistory !== false
       && state.viewerHistoryPushed
       && new URLSearchParams(window.location.hash.replace(/^#/, "")).has("photo");
@@ -7032,7 +6930,6 @@
     document.body.style.overflow = "";
     setViewerBackgroundInert(false);
     setViewerInfoOpen(false);
-    setViewerCleanMode(false);
     resetViewerTransform();
     state.viewerHistoryPushed = false;
     updateMapPanelCoach();
@@ -7288,16 +7185,6 @@
     updateViewerTransform();
   }
 
-  function setViewerCleanMode(isClean) {
-    state.viewerCleanMode = Boolean(isClean);
-    if (!els.photoViewer || !els.viewerCleanButton) {
-      return;
-    }
-    els.photoViewer.classList.toggle("is-clean", state.viewerCleanMode);
-    els.viewerCleanButton.setAttribute("aria-pressed", String(state.viewerCleanMode));
-    els.viewerCleanButton.textContent = state.viewerCleanMode ? "Exit clean" : "Clean";
-  }
-
   function updateViewerTransform() {
     if (!els.viewerImage) {
       return;
@@ -7325,7 +7212,7 @@
   }
 
   function handleViewerWheel(event) {
-    if (els.photoViewer.hidden) {
+    if (!isViewerOpen()) {
       return;
     }
     event.preventDefault();
@@ -7334,7 +7221,7 @@
   }
 
   function handleViewerPointerDown(event) {
-    if (els.photoViewer.hidden) {
+    if (!isViewerOpen()) {
       return;
     }
     els.viewerImage.setPointerCapture?.(event.pointerId);
@@ -7830,11 +7717,10 @@
     const aircraftId = params.get("aircraft");
     const statsSection = params.get("stats");
     const aircraftFamily = normalizeAircraftFamily(params.get("family"));
-    const legacyDirectoryView = params.get("view");
 
     state.isApplyingHash = true;
     try {
-      if (!photoId && !els.photoViewer.hidden) {
+      if (!photoId && isViewerOpen()) {
         closeViewer({ updateHash: false, useHistory: false });
       }
 
@@ -7903,23 +7789,6 @@
         return true;
       }
 
-      const hasLegacyRoute = Boolean(
-        legacyDirectoryView
-        || (aircraftId && pageViewId !== "dexView")
-        || (aircraftFamily && pageViewId !== "dexView")
-        || (squadronId && pageViewId !== "squadronsView")
-        || (airshowId && pageViewId !== "airshowsView")
-        || (locationId && pageViewId !== "mapView")
-        || (statsSection && pageViewId !== "statsView")
-      );
-      if (hasLegacyRoute) {
-        window.history.replaceState(
-          { spotterdex: true, spotterdexKind: "directory" },
-          "",
-          `${window.location.pathname}${window.location.search}`
-        );
-        state.lastHandledHistoryUrl = window.location.href;
-      }
     } finally {
       state.isApplyingHash = false;
     }

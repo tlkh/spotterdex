@@ -13,11 +13,13 @@ import hashlib
 import io
 import json
 import mimetypes
+import math
 import os
 import queue
 import re
 import shutil
 import sqlite3
+import statistics
 import subprocess
 import sys
 import threading
@@ -41,7 +43,7 @@ except ImportError as exc:  # pragma: no cover - user environment guard
     raise SystemExit("Missing PyYAML. Install with: python3 -m pip install -r requirements.txt") from exc
 
 try:
-    from PIL import Image, ImageChops, ImageFilter, ImageOps
+    from PIL import Image, ImageChops, ImageFilter, ImageOps, ImageStat
 except ImportError as exc:  # pragma: no cover - user environment guard
     raise SystemExit("Missing Pillow. Install with: python3 -m pip install -r requirements.txt") from exc
 
@@ -79,16 +81,37 @@ NVIDIA_CAPTION_REASONING_BUDGET = 8192
 DOTENV_PATH = ROOT / ".env"
 MIN_SOURCE_PHOTO_WIDTH = 2560
 QUALITY_ANALYSIS_MAX_DIMENSION = 256
+QUALITY_CLIP_MAX_DIMENSION = 1024
 UNDEREXPOSED_MEAN_LUMINANCE = 58
 OVEREXPOSED_MEAN_LUMINANCE = 202
 CLIPPED_SHADOW_RATIO = 0.24
 CLIPPED_HIGHLIGHT_RATIO = 0.24
 NEUTRAL_PIXEL_CHROMA_MAX = 32
+WHITE_BALANCE_PIXEL_CHROMA_MAX = 72
 COLOUR_CAST_CHANNEL_SPREAD = 28
-# High-confidence "hard" clipping: a meaningful share of pixels pinned to pure
-# black or pure white loses all recoverable detail regardless of overall mean.
+# Green/magenta casts can be objectionable even when the overall RGB spread is
+# modest, so this opponent-colour axis has its own tighter threshold.
+GREEN_MAGENTA_CAST_DELTA = 11
+# A wider, low-chroma sample provides a fallback when a frame contains too few
+# strictly neutral pixels for the primary cast check.
+WHITE_BALANCE_CHANNEL_SPREAD = 60
+# Pillow's 8-bit LAB representation uses 128 as the neutral a*/b* midpoint.
+# These thresholds are intentionally expressed in LAB units, not RGB levels.
+LAB_TINT_AXIS_THRESHOLD = 10
+LAB_WARM_COOL_AXIS_THRESHOLD = 18
+LAB_WHITE_BALANCE_DISTANCE = 35
+LAB_WHITE_BALANCE_SAMPLE_CHROMA = 42
+# Collection-relative checks are deliberately conservative because subject and
+# sky colours legitimately vary between aircraft photographs.
+COLLECTION_COLOUR_MINIMUM_IMAGES = 12
+COLLECTION_COLOUR_MINIMUM_DELTA = 14
+COLLECTION_COLOUR_Z_THRESHOLD = 3.0
+# High-confidence "hard" clipping: a meaningful share of pixels near the black
+# or white endpoint loses most recoverable detail regardless of overall mean.
 TRUE_CLIP_SHADOW_RATIO = 0.06
 TRUE_CLIP_HIGHLIGHT_RATIO = 0.05
+NEAR_CLIP_SHADOW_LEVEL = 3
+NEAR_CLIP_HIGHLIGHT_LEVEL = 252
 # A very small p2..p98 luminance spread signals a flat or hazy frame. Kept tight
 # so tightly-cropped subjects against plain skies are not routinely flagged.
 LOW_CONTRAST_TONAL_RANGE = 55
@@ -96,10 +119,13 @@ LOW_CONTRAST_TONAL_RANGE = 55
 # usable contrast) the source is likely soft/out of focus. Conservative on
 # purpose so sharp subjects against plain skies are not falsely flagged.
 SOFT_FOCUS_ACUTANCE = 5.0
+FOCUS_BORDER_CROP = 4
 # EXIF ISO at or above this is surfaced as a noise-risk note, not a hard fault.
 HIGH_ISO_NOISE_THRESHOLD = 6400
+NOISE_RESIDUAL_THRESHOLD = 7.0
 # Cast-direction descriptors only appear once a channel imbalance is meaningful.
 COLOUR_CAST_DIRECTION_DELTA = 12
+QC_FILE_PREFIX = "QC_"
 # Local-only record of source images the user has reviewed and accepted despite a
 # quality warning. Keyed by raw-asset path with the file's size/mtime so editing
 # or replacing the image re-surfaces it. Kept out of the build cache so "Clear
@@ -156,6 +182,7 @@ class SpotterDexManager:
         self.airshow_dir = self.root / "airshows"
         self.airshow_events_path = self.airshow_dir / "events.yaml"
         self.raw_assets_dir = self.root / "raw_assets"
+        self.quality_ack_path = self.root / QUALITY_ACK_PATH.name
         self._exif_date_cache: Dict[str, str] = {}
         self._image_dimension_cache: Dict[str, Tuple[int, int]] = {}
         self._image_quality_cache: Dict[str, Tuple[int, int, Dict[str, Any]]] = {}
@@ -221,10 +248,10 @@ class SpotterDexManager:
 
     def _load_quality_ack(self) -> Dict[str, Dict[str, Any]]:
         """Load the persisted map of source images the user accepted despite warnings."""
-        if not QUALITY_ACK_PATH.exists():
+        if not self.quality_ack_path.exists():
             return {}
         try:
-            data = json.loads(QUALITY_ACK_PATH.read_text("utf-8"))
+            data = json.loads(self.quality_ack_path.read_text("utf-8"))
         except (OSError, ValueError):
             return {}
         entries = data.get("acknowledged") if isinstance(data, dict) else None
@@ -255,13 +282,222 @@ class SpotterDexManager:
             store.pop(rel, None)
             message = "Cleared the reviewed marker; it will reappear in the quality queue if still flagged."
         try:
-            QUALITY_ACK_PATH.write_text(
+            self.quality_ack_path.write_text(
                 json.dumps({"acknowledged": store}, ensure_ascii=True, indent=2),
                 "utf-8",
             )
         except OSError as exc:
             raise ValueError(f"Could not save the review decision: {exc}") from exc
         return {"ok": True, "acknowledged": acknowledged, "path": rel, "message": message}
+
+    def mark_quality_failures(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Prefix verified QC failures or explicitly requested advisory warnings."""
+        requested = payload.get("paths")
+        include_warnings = bool(payload.get("includeWarnings"))
+        if requested is not None and not isinstance(requested, list):
+            raise ValueError("Quality paths must be a list.")
+
+        state_assets = {asset["path"]: asset for asset in self.get_state().get("assets", [])}
+        raw_candidates = list(state_assets) if requested is None else requested
+        candidate_paths = [clean_text(value) for value in raw_candidates]
+        candidate_paths = list(dict.fromkeys(path for path in candidate_paths if path))
+        renames: List[Tuple[str, str, Path, Path]] = []
+        skipped: List[Dict[str, str]] = []
+        for rel in candidate_paths:
+            asset = state_assets.get(rel)
+            if not asset:
+                skipped.append({"path": rel, "reason": "not found"})
+                continue
+            eligible = asset.get("needsQcPrefix") or (
+                include_warnings and asset.get("needsQcWarningPrefix")
+            )
+            if not eligible:
+                allowed_kind = "quality issue" if include_warnings else "hard QC failure"
+                skipped.append({"path": rel, "reason": f"does not have an unreviewed {allowed_kind}"})
+                continue
+            source = self._raw_asset_path(rel)
+            if source.name.startswith(QC_FILE_PREFIX):
+                skipped.append({"path": rel, "reason": "already prefixed"})
+                continue
+            destination = source.with_name(f"{QC_FILE_PREFIX}{source.name}")
+            destination_rel = relative_posix(destination, self.raw_assets_dir)
+            if destination.exists():
+                skipped.append({"path": rel, "reason": f"destination already exists: {destination_rel}"})
+                continue
+            renames.append((rel, destination_rel, source, destination))
+
+        if not renames:
+            return {
+                "ok": True,
+                "renamed": [],
+                "renamedCount": 0,
+                "skipped": skipped,
+                "message": "No QC filenames needed to be changed.",
+            }
+        if not self.database_path.exists():
+            raise ValueError("QC filename marking requires the canonical SQLite catalog.")
+
+        completed: List[Tuple[Path, Path]] = []
+        snapshot_backup = self.sql_snapshot_path.read_bytes() if self.sql_snapshot_path.exists() else None
+        snapshot_replaced = False
+        try:
+            # Keep the filesystem move, catalog transaction, and SQL snapshot in
+            # one failure-safe unit. The generic writer commits before exporting,
+            # which is safe for DB-only edits but can leave a rename half-applied
+            # if snapshot export fails.
+            with self._database_write_lock:
+                connection = self._database_connection()
+                try:
+                    connection.execute("BEGIN")
+                    for _old_rel, _new_rel, source, destination in renames:
+                        source.rename(destination)
+                        completed.append((source, destination))
+                    for old_rel, new_rel, _source, _destination in renames:
+                        connection.execute(
+                            "UPDATE photos SET source_path=? WHERE source_path=?",
+                            (new_rel, old_rel),
+                        )
+                    errors = validate_database(connection, raw_assets_dir=self.raw_assets_dir)
+                    if errors:
+                        raise ValueError("Database update failed validation: " + "; ".join(errors))
+                    export_snapshot(connection, self.sql_snapshot_path)
+                    snapshot_replaced = True
+                    connection.commit()
+                except Exception:
+                    connection.rollback()
+                    raise
+                finally:
+                    connection.close()
+        except Exception:
+            if snapshot_replaced:
+                if snapshot_backup is None:
+                    self.sql_snapshot_path.unlink(missing_ok=True)
+                else:
+                    self.sql_snapshot_path.write_bytes(snapshot_backup)
+            for source, destination in reversed(completed):
+                if destination.exists() and not source.exists():
+                    destination.rename(source)
+            raise
+
+        acknowledgements = self._load_quality_ack()
+        acknowledgement_changed = False
+        for old_rel, new_rel, _source, _destination in renames:
+            if old_rel in acknowledgements:
+                acknowledgements[new_rel] = acknowledgements.pop(old_rel)
+                acknowledgement_changed = True
+        if acknowledgement_changed:
+            try:
+                self.quality_ack_path.write_text(
+                    json.dumps({"acknowledged": acknowledgements}, ensure_ascii=True, indent=2),
+                    "utf-8",
+                )
+            except OSError:
+                # The catalog and filenames are authoritative; stale local-only
+                # acknowledgement metadata can safely re-surface for review.
+                pass
+
+        renamed = [{"from": old_rel, "to": new_rel} for old_rel, new_rel, _source, _destination in renames]
+        issue_label = "quality warning" if include_warnings else "hard QC failure"
+        return {
+            "ok": True,
+            "renamed": renamed,
+            "renamedCount": len(renamed),
+            "skipped": skipped,
+            "message": f"Prefixed {len(renamed)} {issue_label}{'' if len(renamed) == 1 else 's'} with {QC_FILE_PREFIX}.",
+        }
+
+    def approve_passing_qc(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Remove QC_ from prefixed source images that now pass every check."""
+        requested = payload.get("paths")
+        if requested is not None and not isinstance(requested, list):
+            raise ValueError("Quality paths must be a list.")
+
+        state_assets = {asset["path"]: asset for asset in self.get_state().get("assets", [])}
+        raw_candidates = list(state_assets) if requested is None else requested
+        candidate_paths = [clean_text(value) for value in raw_candidates]
+        candidate_paths = list(dict.fromkeys(path for path in candidate_paths if path))
+        renames: List[Tuple[str, str, Path, Path]] = []
+        skipped: List[Dict[str, str]] = []
+        for rel in candidate_paths:
+            asset = state_assets.get(rel)
+            if not asset:
+                skipped.append({"path": rel, "reason": "not found"})
+                continue
+            if not asset.get("qcPrefixPasses"):
+                skipped.append({"path": rel, "reason": "does not currently pass all quality checks"})
+                continue
+            source = self._raw_asset_path(rel)
+            if not source.name.startswith(QC_FILE_PREFIX):
+                skipped.append({"path": rel, "reason": "does not have a QC_ prefix"})
+                continue
+            destination_name = source.name[len(QC_FILE_PREFIX):]
+            if not destination_name:
+                skipped.append({"path": rel, "reason": "QC_ filename has no source name after the prefix"})
+                continue
+            destination = source.with_name(destination_name)
+            destination_rel = relative_posix(destination, self.raw_assets_dir)
+            if destination.exists():
+                skipped.append({"path": rel, "reason": f"destination already exists: {destination_rel}"})
+                continue
+            renames.append((rel, destination_rel, source, destination))
+
+        if not renames:
+            return {
+                "ok": True,
+                "approved": [],
+                "approvedCount": 0,
+                "skipped": skipped,
+                "message": "No passing QC_ filenames were approved.",
+            }
+        if not self.database_path.exists():
+            raise ValueError("Approving passing QC_ images requires the canonical SQLite catalog.")
+
+        completed: List[Tuple[Path, Path]] = []
+        snapshot_backup = self.sql_snapshot_path.read_bytes() if self.sql_snapshot_path.exists() else None
+        snapshot_replaced = False
+        try:
+            with self._database_write_lock:
+                connection = self._database_connection()
+                try:
+                    connection.execute("BEGIN")
+                    for _old_rel, _new_rel, source, destination in renames:
+                        source.rename(destination)
+                        completed.append((source, destination))
+                    for old_rel, new_rel, _source, _destination in renames:
+                        connection.execute(
+                            "UPDATE photos SET source_path=? WHERE source_path=?",
+                            (new_rel, old_rel),
+                        )
+                    errors = validate_database(connection, raw_assets_dir=self.raw_assets_dir)
+                    if errors:
+                        raise ValueError("Database update failed validation: " + "; ".join(errors))
+                    export_snapshot(connection, self.sql_snapshot_path)
+                    snapshot_replaced = True
+                    connection.commit()
+                except Exception:
+                    connection.rollback()
+                    raise
+                finally:
+                    connection.close()
+        except Exception:
+            if snapshot_replaced:
+                if snapshot_backup is None:
+                    self.sql_snapshot_path.unlink(missing_ok=True)
+                else:
+                    self.sql_snapshot_path.write_bytes(snapshot_backup)
+            for source, destination in reversed(completed):
+                if destination.exists() and not source.exists():
+                    destination.rename(source)
+            raise
+
+        approved = [{"from": old_rel, "to": new_rel} for old_rel, new_rel, _source, _destination in renames]
+        return {
+            "ok": True,
+            "approved": approved,
+            "approvedCount": len(approved),
+            "skipped": skipped,
+            "message": f"Approved {len(approved)} passing QC_ image{'' if len(approved) == 1 else 's'} and removed the QC_ tag.",
+        }
 
     def find_orphans(self, _payload: Dict[str, Any]) -> Dict[str, Any]:
         """Report generated JPEGs on disk that the manifest no longer references."""
@@ -361,6 +597,8 @@ class SpotterDexManager:
         acknowledged_quality_count = sum(
             1 for asset in assets if asset_is_flagged(asset) and asset.get("qualityAcknowledged")
         )
+        quality_prefix_needed_count = sum(1 for asset in assets if asset.get("needsQcPrefix"))
+        qc_passed_asset_count = sum(1 for asset in assets if asset.get("qcPrefixPasses"))
 
         return {
             "project": {
@@ -380,6 +618,8 @@ class SpotterDexManager:
                 "colourBalanceIssueAssetCount": colour_balance_issue_asset_count,
                 "qualityIssueAssetCount": quality_issue_asset_count,
                 "acknowledgedQualityCount": acknowledged_quality_count,
+                "qualityPrefixNeededCount": quality_prefix_needed_count,
+                "qcPassedAssetCount": qc_passed_asset_count,
                 "minimumSourcePhotoWidth": MIN_SOURCE_PHOTO_WIDTH,
             },
             "aircraft": aircraft,
@@ -801,6 +1041,8 @@ class SpotterDexManager:
                 "colourBalanceIssueAssetCount": sum(1 for asset in assets if asset.get("hasColourBalanceIssue")),
                 "qualityIssueAssetCount": sum(1 for asset in assets if asset.get("isPhotoSource") and (asset.get("isUnderResolution") or asset.get("qualityFlags"))),
                 "acknowledgedQualityCount": sum(1 for asset in assets if asset.get("qualityAcknowledged")),
+                "qualityPrefixNeededCount": sum(1 for asset in assets if asset.get("needsQcPrefix")),
+                "qcPassedAssetCount": sum(1 for asset in assets if asset.get("qcPrefixPasses")),
                 "minimumSourcePhotoWidth": MIN_SOURCE_PHOTO_WIDTH,
             },
             "aircraft": sorted(aircraft_entries, key=lambda item: (item["aircraftType"], item["country"], item["squadronName"])),
@@ -3212,9 +3454,14 @@ class SpotterDexManager:
                 }
                 for future, rel in futures.items():
                     try:
-                        quality_by_path[rel] = future.result()
+                        cached_quality = future.result()
+                        quality_by_path[rel] = {
+                            **cached_quality,
+                            "flags": [dict(flag) for flag in cached_quality.get("flags", [])],
+                        }
                     except Exception:
                         quality_by_path[rel] = {"flags": []}
+            add_collection_colour_analysis(quality_by_path)
 
         # Read the EXIF capture date for every raw asset so the selector grid can
         # be ordered by when the frame was shot rather than by filesystem mtime.
@@ -3236,6 +3483,28 @@ class SpotterDexManager:
         for item in candidates:
             quality = quality_by_path.get(item["path"], {"flags": []})
             quality_flags = quality.get("flags") if isinstance(quality.get("flags"), list) else []
+            is_under_resolution = bool(
+                item["isPhotoSource"]
+                and item["width"]
+                and item["width"] < MIN_SOURCE_PHOTO_WIDTH
+            )
+            hard_quality_failure = bool(
+                item["isPhotoSource"]
+                and (
+                    is_under_resolution
+                    or any(
+                        isinstance(flag, dict) and flag.get("severity") == "warn"
+                        for flag in quality_flags
+                    )
+                )
+            )
+            qc_prefix_applied = item["name"].startswith(QC_FILE_PREFIX)
+            qc_prefix_passes = bool(
+                item["isPhotoSource"]
+                and qc_prefix_applied
+                and not is_under_resolution
+                and not quality_flags
+            )
             capture_date = capture_by_path.get(item["path"], "")
             ack_entry = acknowledged_map.get(item["path"])
             acknowledged = bool(
@@ -3255,7 +3524,21 @@ class SpotterDexManager:
                     "height": item["height"],
                     "dimensionsLabel": f"{item['width']} x {item['height']}" if item["width"] and item["height"] else "Unavailable",
                     "isPhotoSource": item["isPhotoSource"],
-                    "isUnderResolution": bool(item["isPhotoSource"] and item["width"] and item["width"] < MIN_SOURCE_PHOTO_WIDTH),
+                    "isUnderResolution": is_under_resolution,
+                    "hardQualityFailure": hard_quality_failure,
+                    "qcPrefixApplied": qc_prefix_applied,
+                    # A QC_ prefix marks an image that previously needed review.
+                    # If it now passes every current check, surface it separately
+                    # so an external edit can be confirmed before publishing.
+                    "qcPrefixPasses": qc_prefix_passes,
+                    "needsQcPrefix": bool(hard_quality_failure and not qc_prefix_applied and not acknowledged),
+                    "needsQcWarningPrefix": bool(
+                        item["isPhotoSource"]
+                        and quality_flags
+                        and not hard_quality_failure
+                        and not qc_prefix_applied
+                        and not acknowledged
+                    ),
                     "qualityFlags": quality_flags,
                     "hasExposureIssue": any(flag.get("category") == "exposure" for flag in quality_flags if isinstance(flag, dict)),
                     "hasColourBalanceIssue": any(flag.get("category") == "colour" for flag in quality_flags if isinstance(flag, dict)),
@@ -3268,8 +3551,21 @@ class SpotterDexManager:
                     "tonalRange": quality.get("tonalRange"),
                     "neutralChannelSpread": quality.get("neutralChannelSpread"),
                     "colourCastDirection": quality.get("colourCastDirection"),
+                    "neutralGreenMagentaBias": quality.get("neutralGreenMagentaBias"),
+                    "neutralLabABias": quality.get("neutralLabABias"),
+                    "neutralLabBBias": quality.get("neutralLabBBias"),
+                    "neutralPixelPercent": quality.get("neutralPixelPercent"),
+                    "whiteBalanceChannelSpread": quality.get("whiteBalanceChannelSpread"),
+                    "whiteBalanceDirection": quality.get("whiteBalanceDirection"),
+                    "whiteBalanceLabDistance": quality.get("whiteBalanceLabDistance"),
+                    "whiteBalanceSamplePercent": quality.get("whiteBalanceSamplePercent"),
+                    "collectionColourDistance": quality.get("collectionColourDistance"),
+                    "collectionColourDeviation": quality.get("collectionColourDeviation"),
+                    "collectionColourAverage": quality.get("collectionColourAverage"),
                     "acutance": quality.get("acutance"),
+                    "noiseResidual": quality.get("noiseResidual"),
                     "iso": quality.get("iso"),
+                    "cameraModel": quality.get("cameraModel"),
                     "tags": item["tags"],
                 }
             )
@@ -3390,6 +3686,8 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
                 "/api/clear-build-cache": self.context.manager.clear_build_cache,
                 "/api/backup-database": self.context.manager.backup_database,
                 "/api/acknowledge-quality": self.context.manager.set_quality_acknowledgement,
+                "/api/mark-quality-failures": self.context.manager.mark_quality_failures,
+                "/api/approve-passing-qc": self.context.manager.approve_passing_qc,
                 "/api/find-orphans": self.context.manager.find_orphans,
                 "/api/delete-orphans": self.context.manager.delete_orphans,
                 "/api/build": self.context.manager.run_build,
@@ -3752,6 +4050,154 @@ def describe_colour_cast(channel_means: List[float]) -> str:
     return ", ".join(parts)
 
 
+def describe_colour_bias(warm_cool: float, green_magenta: float) -> str:
+    """Describe opponent-colour bias values without reconstructing RGB means."""
+    parts: List[str] = []
+    if warm_cool >= COLOUR_CAST_DIRECTION_DELTA:
+        parts.append("warmer/orange")
+    elif warm_cool <= -COLOUR_CAST_DIRECTION_DELTA:
+        parts.append("cooler/blue")
+    if green_magenta >= GREEN_MAGENTA_CAST_DELTA:
+        parts.append("greener")
+    elif green_magenta <= -GREEN_MAGENTA_CAST_DELTA:
+        parts.append("more pink/magenta")
+    return ", ".join(parts)
+
+
+def describe_lab_bias(a_bias: float, b_bias: float) -> str:
+    """Describe CIE LAB opponent axes (negative a*=green, positive b*=yellow)."""
+    parts: List[str] = []
+    if a_bias <= -LAB_TINT_AXIS_THRESHOLD:
+        parts.append("green")
+    elif a_bias >= LAB_TINT_AXIS_THRESHOLD:
+        parts.append("pink/magenta")
+    if b_bias >= LAB_WARM_COOL_AXIS_THRESHOLD:
+        parts.append("warm/yellow")
+    elif b_bias <= -LAB_WARM_COOL_AXIS_THRESHOLD:
+        parts.append("cool/blue")
+    return ", ".join(parts)
+
+
+def _masked_channel_means(
+    bands: Tuple[Image.Image, Image.Image, Image.Image],
+    mask: Image.Image,
+    count: int,
+) -> List[float]:
+    if count <= 0:
+        return []
+    means: List[float] = []
+    for band in bands:
+        masked = ImageChops.multiply(band, mask)
+        band_sum = sum(index * amount for index, amount in enumerate(masked.histogram()))
+        means.append(band_sum / count)
+    return means
+
+
+def _normalised_colour_bias(channel_means: List[float]) -> Tuple[float, float]:
+    """Return exposure-normalised red/blue and green/magenta opponent axes."""
+    if len(channel_means) != 3:
+        return (0.0, 0.0)
+    red, green, blue = channel_means
+    mean = (red + green + blue) / 3
+    scale = 128 / mean if mean > 0 else 1
+    return ((red - blue) * scale, (green - (red + blue) / 2) * scale)
+
+
+def add_collection_colour_analysis(quality_by_path: Dict[str, Dict[str, Any]]) -> None:
+    """Add conservative colour outlier flags relative to this image collection.
+
+    The arithmetic average is retained for reporting, while a robust median/MAD
+    baseline drives outlier detection. Cached per-image results are copied before
+    this function is called.
+    """
+    use_lab = sum(
+        isinstance(quality.get("sceneLabABias"), (int, float))
+        and isinstance(quality.get("sceneLabBBias"), (int, float))
+        for quality in quality_by_path.values()
+    ) >= COLLECTION_COLOUR_MINIMUM_IMAGES
+    first_axis = "sceneLabABias" if use_lab else "sceneRedBlueBias"
+    second_axis = "sceneLabBBias" if use_lab else "sceneGreenMagentaBias"
+    usable = [
+        quality
+        for quality in quality_by_path.values()
+        if isinstance(quality.get(first_axis), (int, float))
+        and isinstance(quality.get(second_axis), (int, float))
+    ]
+    if len(usable) < COLLECTION_COLOUR_MINIMUM_IMAGES:
+        return
+
+    groups: Dict[str, List[Dict[str, Any]]] = {}
+    for quality in usable:
+        camera_model = str(quality.get("cameraModel") or "").strip()
+        if camera_model:
+            groups.setdefault(camera_model, []).append(quality)
+
+    def summary(items: List[Dict[str, Any]]) -> Dict[str, float]:
+        first_values = [float(item[first_axis]) for item in items]
+        second_values = [float(item[second_axis]) for item in items]
+        first_median = statistics.median(first_values)
+        second_median = statistics.median(second_values)
+        first_mad = statistics.median([abs(value - first_median) for value in first_values])
+        second_mad = statistics.median([abs(value - second_median) for value in second_values])
+        return {
+            "average_first": statistics.fmean(first_values),
+            "average_second": statistics.fmean(second_values),
+            "median_first": first_median,
+            "median_second": second_median,
+            "scale_first": max(4.0, 1.4826 * first_mad),
+            "scale_second": max(4.0, 1.4826 * second_mad),
+        }
+
+    global_summary = summary(usable)
+    qualified_groups = {
+        name: values for name, values in groups.items()
+        if len(values) >= COLLECTION_COLOUR_MINIMUM_IMAGES
+    }
+
+    for quality in usable:
+        camera_model = str(quality.get("cameraModel") or "").strip()
+        cohort = qualified_groups.get(camera_model)
+        cohort_summary = summary(cohort) if cohort else global_summary
+        red_blue_delta = float(quality[first_axis]) - cohort_summary["median_first"]
+        green_magenta_delta = float(quality[second_axis]) - cohort_summary["median_second"]
+        red_blue_z = red_blue_delta / cohort_summary["scale_first"]
+        green_magenta_z = green_magenta_delta / cohort_summary["scale_second"]
+        distance = math.hypot(red_blue_z, green_magenta_z)
+        absolute_delta = math.hypot(red_blue_delta, green_magenta_delta)
+        quality["collectionColourDistance"] = round(distance, 1)
+        quality["collectionColourDeviation"] = (
+            describe_lab_bias(red_blue_delta, green_magenta_delta)
+            if use_lab
+            else describe_colour_bias(red_blue_delta, green_magenta_delta)
+        )
+        quality["collectionColourAverage"] = {
+            "axisA": round(cohort_summary["average_first"], 2),
+            "axisB": round(cohort_summary["average_second"], 2),
+            "colourSpace": "LAB" if use_lab else "RGB",
+            "cohort": camera_model if cohort else "collection",
+        }
+        if distance < COLLECTION_COLOUR_Z_THRESHOLD or absolute_delta < COLLECTION_COLOUR_MINIMUM_DELTA:
+            continue
+        direction = quality["collectionColourDeviation"] or "different in colour balance"
+        quality.setdefault("flags", []).append(
+            {
+                "id": "collection-colour-outlier",
+                "category": "colour",
+                # A scene-relative outlier is useful review evidence, but is not
+                # proof of a defect because the frame may intentionally contain
+                # unusual lighting or subject colours.
+                "severity": "info",
+                "label": "Colour balance differs from collection",
+                "short": "Collection colour outlier",
+                "detail": (
+                    f"Whole-frame colour balance is {distance:.1f} robust deviations from the "
+                    f"{len(cohort) if cohort else len(usable)}-image "
+                    f"{'camera cohort' if cohort else 'collection'} average ({direction})."
+                ),
+            }
+        )
+
+
 def coerce_iso_value(value: Any) -> Optional[int]:
     if value is None:
         return None
@@ -3785,7 +4231,26 @@ def read_exif_iso(opened: Image.Image) -> Optional[int]:
     return None
 
 
-def compute_quality_metrics(image: Image.Image, pixel_count: int) -> Dict[str, Any]:
+def read_exif_camera_model(opened: Image.Image) -> str:
+    """Return a compact camera model label for cohort-relative colour checks."""
+    try:
+        exif = opened.getexif()
+        if not exif:
+            return ""
+        make_id = exif_tag_id("Make")
+        model_id = exif_tag_id("Model")
+        make = str(exif.get(make_id) or "").strip() if make_id else ""
+        model = str(exif.get(model_id) or "").strip() if model_id else ""
+        return " ".join(part for part in (make, model) if part)
+    except Exception:
+        return ""
+
+
+def compute_quality_metrics(
+    image: Image.Image,
+    pixel_count: int,
+    clipping_image: Optional[Image.Image] = None,
+) -> Dict[str, Any]:
     """Derive exposure, contrast, colour-cast and sharpness metrics with C-level ops.
 
     Everything here runs on Pillow's histogram / channel primitives rather than a
@@ -3805,40 +4270,129 @@ def compute_quality_metrics(image: Image.Image, pixel_count: int) -> Dict[str, A
     tonal_range = _histogram_percentile(lum_hist, total, 0.98) - _histogram_percentile(lum_hist, total, 0.02)
 
     red_band, green_band, blue_band = image.split()
-    channel_max = ImageChops.lighter(ImageChops.lighter(red_band, green_band), blue_band)
-    channel_min = ImageChops.darker(ImageChops.darker(red_band, green_band), blue_band)
-    chroma = ImageChops.difference(channel_max, channel_min)
-    neutral_by_chroma = chroma.point(lambda value: 255 if value <= NEUTRAL_PIXEL_CHROMA_MAX else 0)
+    bands = (red_band, green_band, blue_band)
+    lab_image = image.convert("LAB")
+    lab_l, lab_a, lab_b = lab_image.split()
+    lab_neutral = Image.new("L", image.size, 128)
+    lab_a_delta = ImageChops.difference(lab_a, lab_neutral)
+    lab_b_delta = ImageChops.difference(lab_b, lab_neutral)
+    lab_chroma = ImageChops.lighter(lab_a_delta, lab_b_delta)
+    neutral_by_chroma = lab_chroma.point(lambda value: 255 if value <= LAB_TINT_AXIS_THRESHOLD * 2 else 0)
     luminance_in_range = luminance.point(lambda value: 255 if 36 <= value <= 228 else 0)
     neutral_mask = ImageChops.multiply(neutral_by_chroma, luminance_in_range)
     neutral_count = neutral_mask.histogram()[255]
 
+    white_balance_by_chroma = lab_chroma.point(
+        lambda value: 255 if value <= LAB_WHITE_BALANCE_SAMPLE_CHROMA else 0
+    )
+    white_balance_luminance = luminance.point(lambda value: 255 if 28 <= value <= 235 else 0)
+    white_balance_mask = ImageChops.multiply(white_balance_by_chroma, white_balance_luminance)
+    white_balance_count = white_balance_mask.histogram()[255]
+
     channel_spread = 0.0
     cast_direction = ""
+    neutral_red_blue = 0.0
+    neutral_green_magenta = 0.0
+    neutral_lab_a = 0.0
+    neutral_lab_b = 0.0
     neutral_minimum = max(120, round(pixel_count * 0.025))
     if neutral_count >= neutral_minimum:
-        channel_means: List[float] = []
-        for band in (red_band, green_band, blue_band):
-            masked = ImageChops.multiply(band, neutral_mask)
-            band_sum = sum(index * count for index, count in enumerate(masked.histogram()))
-            channel_means.append(band_sum / neutral_count)
+        channel_means = _masked_channel_means(bands, neutral_mask, neutral_count)
         channel_spread = max(channel_means) - min(channel_means)
         cast_direction = describe_colour_cast(channel_means)
+        neutral_red_blue, neutral_green_magenta = _normalised_colour_bias(channel_means)
+        lab_means = _masked_channel_means((lab_l, lab_a, lab_b), neutral_mask, neutral_count)
+        neutral_lab_a = lab_means[1] - 128
+        neutral_lab_b = lab_means[2] - 128
 
-    edge_hist = luminance.filter(ImageFilter.FIND_EDGES).histogram()
-    edge_total = sum(edge_hist) or 1
-    acutance = sum(index * count for index, count in enumerate(edge_hist)) / edge_total
+    white_balance_spread = 0.0
+    white_balance_direction = ""
+    white_balance_lab_distance = 0.0
+    white_balance_minimum = max(240, round(pixel_count * 0.08))
+    if white_balance_count >= white_balance_minimum:
+        white_balance_means = _masked_channel_means(bands, white_balance_mask, white_balance_count)
+        white_balance_spread = max(white_balance_means) - min(white_balance_means)
+        white_balance_direction = describe_colour_cast(white_balance_means)
+        white_balance_lab_means = _masked_channel_means(
+            (lab_l, lab_a, lab_b), white_balance_mask, white_balance_count
+        )
+        white_balance_lab_distance = math.hypot(
+            white_balance_lab_means[1] - 128,
+            white_balance_lab_means[2] - 128,
+        )
+
+    scene_means = [float(ImageStat.Stat(band).mean[0]) for band in bands]
+    scene_red_blue, scene_green_magenta = _normalised_colour_bias(scene_means)
+    scene_lab_means = ImageStat.Stat(lab_image).mean
+    scene_lab_a = float(scene_lab_means[1]) - 128
+    scene_lab_b = float(scene_lab_means[2]) - 128
+
+    edge_source = luminance
+    if edge_source.width > FOCUS_BORDER_CROP * 2 and edge_source.height > FOCUS_BORDER_CROP * 2:
+        edge_source = edge_source.crop(
+            (
+                FOCUS_BORDER_CROP,
+                FOCUS_BORDER_CROP,
+                edge_source.width - FOCUS_BORDER_CROP,
+                edge_source.height - FOCUS_BORDER_CROP,
+            )
+        )
+    edge_means = [ImageStat.Stat(edge_source.filter(ImageFilter.FIND_EDGES)).mean[0]]
+    if edge_source.width >= 64 and edge_source.height >= 64:
+        half = edge_source.resize(
+            (max(32, edge_source.width // 2), max(32, edge_source.height // 2)),
+            Image.Resampling.BOX,
+        )
+        edge_means.append(ImageStat.Stat(half.filter(ImageFilter.FIND_EDGES)).mean[0])
+    acutance = statistics.fmean(edge_means)
+
+    flat_source = edge_source
+    flat_edges = flat_source.filter(ImageFilter.FIND_EDGES)
+    flat_mask = flat_edges.point(lambda value: 255 if value <= 12 else 0)
+    residual = ImageChops.difference(
+        flat_source,
+        flat_source.filter(ImageFilter.GaussianBlur(1.0)),
+    )
+    masked_residual = ImageChops.multiply(residual, flat_mask)
+    residual_hist = masked_residual.histogram()
+    flat_count = flat_mask.histogram()[255]
+    noise_residual = (
+        sum(index * count for index, count in enumerate(residual_hist)) / flat_count
+        if flat_count
+        else ImageStat.Stat(residual).mean[0]
+    )
+
+    clipping_source = clipping_image or image
+    clipping_luminance = clipping_source.convert("L")
+    clipping_hist = clipping_luminance.histogram()
+    clipping_total = sum(clipping_hist) or 1
+    near_shadow_ratio = sum(clipping_hist[: NEAR_CLIP_SHADOW_LEVEL + 1]) / clipping_total
+    near_highlight_ratio = sum(clipping_hist[NEAR_CLIP_HIGHLIGHT_LEVEL:]) / clipping_total
 
     return {
         "mean_luminance": mean_luminance,
         "shadow_ratio": shadow_ratio,
         "highlight_ratio": highlight_ratio,
-        "true_shadow_ratio": true_shadow_ratio,
-        "true_highlight_ratio": true_highlight_ratio,
+        "true_shadow_ratio": near_shadow_ratio,
+        "true_highlight_ratio": near_highlight_ratio,
         "tonal_range": tonal_range,
         "channel_spread": channel_spread,
         "cast_direction": cast_direction,
+        "neutral_red_blue": neutral_red_blue,
+        "neutral_green_magenta": neutral_green_magenta,
+        "neutral_lab_a": neutral_lab_a,
+        "neutral_lab_b": neutral_lab_b,
+        "neutral_ratio": neutral_count / total,
+        "white_balance_spread": white_balance_spread,
+        "white_balance_direction": white_balance_direction,
+        "white_balance_lab_distance": white_balance_lab_distance,
+        "white_balance_ratio": white_balance_count / total,
+        "scene_red_blue": scene_red_blue,
+        "scene_green_magenta": scene_green_magenta,
+        "scene_lab_a": scene_lab_a,
+        "scene_lab_b": scene_lab_b,
         "acutance": acutance,
+        "noise_residual": noise_residual,
     }
 
 
@@ -3860,7 +4414,7 @@ def build_quality_flags(metrics: Dict[str, Any], iso_value: Optional[int]) -> Li
                 "severity": "warn",
                 "label": "Clipped shadows",
                 "short": "Crushed blacks",
-                "detail": f"{round(true_shadow_ratio * 100)}% of pixels are pure black with no recoverable detail.",
+                "detail": f"{round(true_shadow_ratio * 100)}% of pixels are near-black (0–{NEAR_CLIP_SHADOW_LEVEL}); review shadow detail.",
             }
         )
     if true_highlight_ratio >= TRUE_CLIP_HIGHLIGHT_RATIO:
@@ -3871,7 +4425,7 @@ def build_quality_flags(metrics: Dict[str, Any], iso_value: Optional[int]) -> Li
                 "severity": "warn",
                 "label": "Blown highlights",
                 "short": "Blown highlights",
-                "detail": f"{round(true_highlight_ratio * 100)}% of pixels are pure white with no recoverable detail.",
+                "detail": f"{round(true_highlight_ratio * 100)}% of pixels are near-white ({NEAR_CLIP_HIGHLIGHT_LEVEL}–255); review highlight detail.",
             }
         )
 
@@ -3914,18 +4468,50 @@ def build_quality_flags(metrics: Dict[str, Any], iso_value: Optional[int]) -> Li
             }
         )
 
-    if metrics["channel_spread"] >= COLOUR_CAST_CHANNEL_SPREAD:
-        direction = metrics["cast_direction"]
+    neutral_lab_a = metrics["neutral_lab_a"]
+    neutral_lab_b = metrics["neutral_lab_b"]
+    neutral_cast = (
+        abs(neutral_lab_a) >= LAB_TINT_AXIS_THRESHOLD
+        or abs(neutral_lab_b) >= LAB_WARM_COOL_AXIS_THRESHOLD
+    )
+    broad_white_balance_cast = metrics["white_balance_lab_distance"] >= LAB_WHITE_BALANCE_DISTANCE
+    scene_white_balance_cast = (
+        metrics["white_balance_ratio"] <= 0.001
+        and (
+            abs(metrics["scene_lab_a"]) >= LAB_TINT_AXIS_THRESHOLD * 2
+            or abs(metrics["scene_lab_b"]) >= LAB_WARM_COOL_AXIS_THRESHOLD + 12
+        )
+    )
+    if neutral_cast or broad_white_balance_cast or scene_white_balance_cast:
+        direction = describe_lab_bias(neutral_lab_a, neutral_lab_b)
+        if not direction and (broad_white_balance_cast or scene_white_balance_cast):
+            direction = describe_lab_bias(
+                neutral_lab_a or metrics["scene_lab_a"],
+                neutral_lab_b or metrics["scene_lab_b"],
+            )
         direction_text = f" ({direction} cast)" if direction else ""
+        if neutral_lab_a <= -LAB_TINT_AXIS_THRESHOLD:
+            label = "Possible green tint"
+            short = "Green tint"
+        elif neutral_lab_a >= LAB_TINT_AXIS_THRESHOLD:
+            label = "Possible pink/magenta tint"
+            short = "Pink/magenta tint"
+        else:
+            label = "Possible wrong white balance"
+            short = "White balance"
+        measured_spread = max(
+            math.hypot(neutral_lab_a, neutral_lab_b),
+            metrics["white_balance_lab_distance"],
+        )
         flags.append(
             {
                 "id": "colour-cast",
                 "category": "colour",
                 "severity": "warn",
-                "label": "Possible colour cast",
-                "short": "Colour cast",
+                "label": label,
+                "short": short,
                 "detail": (
-                    f"Neutral-toned pixels differ by {round(metrics['channel_spread'])} RGB levels on average"
+                    f"Low-chroma pixels differ by {round(measured_spread)} LAB units on average"
                     f"{direction_text}."
                 ),
             }
@@ -3946,7 +4532,10 @@ def build_quality_flags(metrics: Dict[str, Any], iso_value: Optional[int]) -> Li
             }
         )
 
-    if iso_value and iso_value >= HIGH_ISO_NOISE_THRESHOLD:
+    if iso_value and (
+        iso_value >= HIGH_ISO_NOISE_THRESHOLD
+        or (iso_value >= 1600 and metrics["noise_residual"] >= NOISE_RESIDUAL_THRESHOLD)
+    ):
         flags.append(
             {
                 "id": "high-iso",
@@ -3954,7 +4543,10 @@ def build_quality_flags(metrics: Dict[str, Any], iso_value: Optional[int]) -> Li
                 "severity": "info",
                 "label": "High ISO (noise risk)",
                 "short": f"ISO {iso_value}",
-                "detail": f"Captured at ISO {iso_value}; inspect shadows for noise before publishing.",
+                "detail": (
+                    f"Captured at ISO {iso_value}; high-frequency residual is "
+                    f"{metrics['noise_residual']:.1f}; inspect shadows for noise before publishing."
+                ),
             }
         )
 
@@ -3974,14 +4566,24 @@ def analyse_image_quality(path: Path, cache: Dict[str, Tuple[int, int, Dict[str,
 
     result: Dict[str, Any] = {"flags": []}
     iso_value: Optional[int] = None
+    camera_model = ""
     try:
         with Image.open(path) as opened:
+            iso_value = read_exif_iso(opened)
+            camera_model = read_exif_camera_model(opened)
             try:
-                opened.draft("RGB", (QUALITY_ANALYSIS_MAX_DIMENSION, QUALITY_ANALYSIS_MAX_DIMENSION))
+                # Decode a materially larger proxy than the analysis thumbnail
+                # so near-clipping survives reduction without loading originals
+                # at full resolution for every worker.
+                opened.draft("RGB", (QUALITY_CLIP_MAX_DIMENSION, QUALITY_CLIP_MAX_DIMENSION))
             except Exception:
                 pass
-            iso_value = read_exif_iso(opened)
             image = ImageOps.exif_transpose(opened).convert("RGB")
+            clipping_image = image.copy()
+            clipping_image.thumbnail(
+                (QUALITY_ANALYSIS_MAX_DIMENSION, QUALITY_ANALYSIS_MAX_DIMENSION),
+                Image.Resampling.BOX,
+            )
             image.thumbnail((QUALITY_ANALYSIS_MAX_DIMENSION, QUALITY_ANALYSIS_MAX_DIMENSION), Image.Resampling.LANCZOS)
     except Exception:
         cache[cache_key] = (stat.st_mtime_ns, stat.st_size, result)
@@ -3992,7 +4594,7 @@ def analyse_image_quality(path: Path, cache: Dict[str, Tuple[int, int, Dict[str,
         cache[cache_key] = (stat.st_mtime_ns, stat.st_size, result)
         return result
 
-    metrics = compute_quality_metrics(image, pixel_count)
+    metrics = compute_quality_metrics(image, pixel_count, clipping_image)
     flags = build_quality_flags(metrics, iso_value)
 
     result = {
@@ -4005,8 +4607,22 @@ def analyse_image_quality(path: Path, cache: Dict[str, Tuple[int, int, Dict[str,
         "tonalRange": round(metrics["tonal_range"]),
         "neutralChannelSpread": round(metrics["channel_spread"]),
         "colourCastDirection": metrics["cast_direction"],
+        "neutralGreenMagentaBias": round(metrics["neutral_green_magenta"], 1),
+        "neutralLabABias": round(metrics["neutral_lab_a"], 1),
+        "neutralLabBBias": round(metrics["neutral_lab_b"], 1),
+        "neutralPixelPercent": round(metrics["neutral_ratio"] * 100),
+        "whiteBalanceChannelSpread": round(metrics["white_balance_spread"]),
+        "whiteBalanceDirection": metrics["white_balance_direction"],
+        "whiteBalanceLabDistance": round(metrics["white_balance_lab_distance"], 1),
+        "whiteBalanceSamplePercent": round(metrics["white_balance_ratio"] * 100),
+        "sceneRedBlueBias": round(metrics["scene_red_blue"], 2),
+        "sceneGreenMagentaBias": round(metrics["scene_green_magenta"], 2),
+        "sceneLabABias": round(metrics["scene_lab_a"], 1),
+        "sceneLabBBias": round(metrics["scene_lab_b"], 1),
         "acutance": round(metrics["acutance"], 1),
+        "noiseResidual": round(metrics["noise_residual"], 1),
         "iso": iso_value,
+        "cameraModel": camera_model,
     }
     cache[cache_key] = (stat.st_mtime_ns, stat.st_size, result)
     return result

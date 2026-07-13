@@ -1,0 +1,43 @@
+    <main class="app-shell" id="main">
+      <section class="view is-active" id="dexView" data-view>
+        <div class="dex-experience">
+          <section class="dex-hero" aria-labelledby="dexTitle">
+            <div class="dex-hero-media" id="dexHeroMedia" aria-hidden="true"></div>
+            <div class="dex-hero-scrim" aria-hidden="true"></div>
+            <div class="dex-hero-content">
+              <p class="eyebrow">Visual aircraft field guide</p>
+              <h1 id="dexTitle">Aircraft<br>Dex</h1>
+              <p class="dex-hero-lead">An evolving archive of airframes, operators, and the places they were photographed.</p>
+              <button class="dex-hero-action" id="dexHeroAction" type="button" hidden></button>
+            </div>
+            <div class="dex-hero-feature" id="dexHeroFeature" aria-live="polite"></div>
+            <dl class="dex-hero-stats" aria-label="Aircraft collection overview">
+              <div><dt>Types</dt><dd id="dexHeroAircraftCount">0</dd></div>
+              <div><dt>Frames</dt><dd id="dexHeroPhotoCount">0</dd></div>
+              <div><dt>Countries</dt><dd id="dexHeroCountryCount">0</dd></div>
+            </dl>
+            <span class="dex-scroll-cue" aria-hidden="true">Scroll to explore <i></i></span>
+          </section>
+          <section class="dex-command-bar" aria-label="Aircraft Dex filters">
+            <label class="dex-search" for="aircraftSearch">
+              <span class="field-label">Search the archive</span>
+              <span class="dex-search-control"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m16 16 4 4"></path></svg><input class="search-input" id="aircraftSearch" type="search" autocomplete="off" placeholder="Aircraft, unit, or country"></span>
+            </label>
+            <div class="dex-family-filter" id="dexFamilyFilter" aria-live="polite"></div>
+            <p class="dex-count" id="dexCount">0 entries</p>
+          </section>
+          <section class="dex-recent" aria-label="Recent photos">
+            <div class="dex-strip-heading"><p class="eyebrow">Latest sightings</p><p id="recentPhotosCount">0 photos</p></div>
+            <div class="recent-photo-strip" id="recentPhotosStrip"></div>
+          </section>
+          <section class="dex-browser" aria-label="Aircraft entries">
+            <div class="dex-browser-heading"><p class="eyebrow">The collection</p></div>
+            <div class="aircraft-grid" id="aircraftGrid"></div>
+            <div class="archive-pagination" id="dexPagination" aria-live="polite"></div>
+          </section>
+        </div>
+      </section>
+      <section class="view detail-view" id="aircraftDetailView" data-view hidden>
+        <article class="detail-page" id="aircraftDetail" aria-live="polite"></article>
+      </section>
+    </main>

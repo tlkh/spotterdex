@@ -21,6 +21,7 @@
         tagged: new Set()
       },
       qualityShowAcknowledged: false,
+      qualityFilter: "hard",
       captionAssist: {
         attachAssetPath: "",
         editPhotoKey: "",
@@ -447,7 +448,16 @@
       if (asset.neutralChannelSpread) {
         push("Colour spread", `${asset.neutralChannelSpread}${asset.colourCastDirection ? ` (${asset.colourCastDirection})` : ""}`);
       }
+      if (asset.neutralGreenMagentaBias) push("Green/pink bias", asset.neutralGreenMagentaBias);
+      if (asset.whiteBalanceChannelSpread) {
+        push("WB spread", `${asset.whiteBalanceChannelSpread}${asset.whiteBalanceDirection ? ` (${asset.whiteBalanceDirection})` : ""}`);
+      }
+      if (asset.whiteBalanceLabDistance) push("WB Δ", `${asset.whiteBalanceLabDistance} LAB`);
+      if (asset.collectionColourDistance) {
+        push("Collection deviation", `${asset.collectionColourDistance} robust${asset.collectionColourDeviation ? ` (${asset.collectionColourDeviation})` : ""}`);
+      }
       push("Acutance", asset.acutance);
+      push("Noise residual", asset.noiseResidual);
       if (asset.iso) push("ISO", asset.iso);
       return chips.join("");
     }
@@ -456,8 +466,18 @@
       const flagged = (state.data?.assets || []).filter((asset) => (
         asset.isPhotoSource && (asset.isUnderResolution || (asset.qualityFlags || []).length)
       ));
+      const hardFailures = flagged.filter((asset) => asset.hardQualityFailure);
+      const warnings = flagged.filter((asset) => !asset.hardQualityFailure);
+      const passedQcEdits = (state.data?.assets || []).filter((asset) => asset.qcPrefixPasses);
+      const activeQueue = state.qualityFilter === "warnings"
+        ? warnings
+        : state.qualityFilter === "passed"
+          ? passedQcEdits
+          : hardFailures;
       const showAcknowledged = state.qualityShowAcknowledged;
-      const assets = flagged.filter((asset) => showAcknowledged || !asset.qualityAcknowledged);
+      const assets = state.qualityFilter === "passed"
+        ? activeQueue
+        : activeQueue.filter((asset) => showAcknowledged || !asset.qualityAcknowledged);
       const allPhotoSources = (state.data?.assets || []).filter((asset) => asset.isPhotoSource);
       const project = state.data?.project || {};
       const minimum = project.minimumSourcePhotoWidth || 2560;
@@ -465,12 +485,46 @@
       const exposure = project.exposureIssueAssetCount || 0;
       const colour = project.colourBalanceIssueAssetCount || 0;
       const acknowledged = project.acknowledgedQualityCount || 0;
+      const hardPrefixNeeded = project.qualityPrefixNeededCount || 0;
+      const warningPrefixNeeded = warnings.filter((asset) => asset.needsQcWarningPrefix).length;
+      const prefixNeeded = state.qualityFilter === "warnings"
+        ? warningPrefixNeeded
+        : state.qualityFilter === "passed"
+          ? 0
+          : hardPrefixNeeded;
       $("qualityShowAcknowledged").checked = showAcknowledged;
-      $("qualitySummary").textContent = `${flagged.length} of ${allPhotoSources.length} source photograph(s) flagged: ${belowMinimum} below ${minimum}px, ${exposure} exposure, ${colour} colour. ${acknowledged} marked reviewed.`;
+      document.querySelectorAll("[data-quality-filter]").forEach((button) => {
+        const active = button.dataset.qualityFilter === state.qualityFilter;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-selected", String(active));
+      });
+      $("qualityHardCount").textContent = hardFailures.length;
+      $("qualityWarningCount").textContent = warnings.length;
+      $("qualityPassedCount").textContent = passedQcEdits.length;
+      $("qualityApprovePassed").hidden = state.qualityFilter !== "passed";
+      $("qualityApprovePassed").disabled = passedQcEdits.length === 0;
+      $("qualityApprovePassed").textContent = passedQcEdits.length
+        ? `Approve ${passedQcEdits.length} passing QC_ image${passedQcEdits.length === 1 ? "" : "s"}`
+        : "No passing QC_ images to approve";
+      $("qualityPrefixFailures").disabled = prefixNeeded === 0;
+      $("qualityPrefixFailures").textContent = prefixNeeded
+        ? `Prefix ${prefixNeeded} ${state.qualityFilter === "warnings" ? "warning" : "failure"}${prefixNeeded === 1 ? "" : "s"} with QC_`
+        : state.qualityFilter === "passed"
+          ? "QC_ edits in this tab already pass"
+          : `All ${state.qualityFilter === "warnings" ? "warnings" : "hard failures"} have QC_ prefixes or are reviewed`;
+      $("qualitySummary").textContent = `${flagged.length} of ${allPhotoSources.length} source photograph(s) flagged: ${belowMinimum} below ${minimum}px, ${exposure} exposure, ${colour} colour. ${acknowledged} marked reviewed; ${hardPrefixNeeded} hard failure(s) need a QC_ filename; ${passedQcEdits.length} QC_ edit(s) now pass all checks.`;
       if (!assets.length) {
-        const done = acknowledged && !showAcknowledged
-          ? `All ${acknowledged} flagged source photograph(s) have been reviewed. Enable "Show reviewed" to see them.`
-          : `All source photographs meet the ${minimum}px requirement with no quality warnings.`;
+        const reviewedInQueue = activeQueue.filter((asset) => asset.qualityAcknowledged).length;
+        const queueLabel = state.qualityFilter === "warnings"
+          ? "advisory warnings"
+          : state.qualityFilter === "passed"
+            ? "QC_ edits that pass all checks"
+            : "hard failures";
+        const done = reviewedInQueue && !showAcknowledged
+          ? `All ${reviewedInQueue} ${queueLabel} have been reviewed. Enable "Show reviewed" to see them.`
+          : state.qualityFilter === "passed"
+            ? `There are no ${queueLabel}.`
+            : `There are no ${queueLabel} to review.`;
         $("qualityList").innerHTML = `<div class="empty">${escapeHtml(done)}</div>`;
         return;
       }
@@ -487,6 +541,7 @@
           || a.path.localeCompare(b.path)
         ))
         .map((asset) => {
+          const isPassedQueue = state.qualityFilter === "passed";
           const associations = asset.tags.length
             ? asset.tags.map((tag) => `${tag.kind}: ${tag.label || tag.path || "Source"}`).join(" · ")
             : "New raw asset";
@@ -494,12 +549,16 @@
           if (asset.isUnderResolution) {
             chips.push(`<span class="tag warn">${escapeHtml(asset.dimensionsLabel)} - below ${minimum}px</span>`);
           }
+          if (asset.qcPrefixApplied) chips.push(`<span class="tag info">QC_ filename applied</span>`);
+          if (isPassedQueue) chips.push(`<span class="tag">Passes current checks</span>`);
           for (const flag of asset.qualityFlags || []) {
             const cls = flag.severity === "info" ? "tag info" : "tag warn";
             chips.push(`<span class="${cls}">${escapeHtml(flag.detail || flag.label || "Quality warning")}</span>`);
           }
           const ackClass = asset.qualityAcknowledged ? " acknowledged" : "";
-          const ackButton = asset.qualityAcknowledged
+          const ackButton = isPassedQueue
+            ? ""
+            : asset.qualityAcknowledged
             ? `<button class="btn ghost" type="button" data-quality-unack="${escapeHtml(asset.path)}">Restore to queue</button>`
             : `<button class="btn secondary" type="button" data-quality-ack="${escapeHtml(asset.path)}">Mark reviewed</button>`;
           return `
@@ -524,6 +583,32 @@
       const result = await api("/api/acknowledge-quality", {path, acknowledged});
       toast(result.message);
       await loadState(true);
+    }
+
+    async function markQualityFailures() {
+      const includeWarnings = state.qualityFilter === "warnings";
+      const paths = (state.data?.assets || [])
+        .filter((asset) => includeWarnings ? asset.needsQcWarningPrefix : asset.needsQcPrefix)
+        .map((asset) => asset.path);
+      if (!paths.length) return;
+      const issueLabel = includeWarnings ? "advisory warning" : "hard QC failure";
+      if (!window.confirm(`Rename ${paths.length} ${issueLabel}(s) with a QC_ prefix and update their catalog paths?`)) return;
+      const result = await api("/api/mark-quality-failures", {paths, includeWarnings});
+      toast(result.message);
+      state.selectedAssets.clear();
+      await loadState(true);
+    }
+
+    async function approvePassingQc() {
+      const paths = (state.data?.assets || [])
+        .filter((asset) => asset.qcPrefixPasses)
+        .map((asset) => asset.path);
+      if (!paths.length) return;
+      if (!window.confirm(`Approve ${paths.length} passing QC_ image${paths.length === 1 ? "" : "s"} and remove the QC_ tag from their filenames?`)) return;
+      const result = await api("/api/approve-passing-qc", {paths});
+      state.selectedAssets.clear();
+      await loadState(true);
+      toast(result.message);
     }
 
     function renderSelectedStrip() {
@@ -3105,6 +3190,18 @@
       $("qualityShowAcknowledged").addEventListener("change", (event) => {
         state.qualityShowAcknowledged = event.target.checked;
         renderQualityControl();
+      });
+      $("qualityFilters").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-quality-filter]");
+        if (!button) return;
+        state.qualityFilter = button.dataset.qualityFilter;
+        renderQualityControl();
+      });
+      $("qualityPrefixFailures").addEventListener("click", () => {
+        markQualityFailures().catch((error) => toast(error.message));
+      });
+      $("qualityApprovePassed").addEventListener("click", () => {
+        approvePassingQc().catch((error) => toast(error.message));
       });
       $("qualityList").addEventListener("click", (event) => {
         const ack = event.target.closest("[data-quality-ack]");

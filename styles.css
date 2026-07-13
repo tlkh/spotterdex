@@ -19,6 +19,17 @@
   --glass-strong: color-mix(in srgb, var(--surface) 84%, transparent);
   --image-overlay: linear-gradient(180deg, rgba(0, 0, 0, 0) 18%, rgba(0, 0, 0, 0.84) 100%);
   --radius: 8px;
+  --radius-archive-card: 2px;
+  --radius-photo: 0;
+  --archive-ink: #f5f1e9;
+  --archive-muted: rgba(245, 241, 233, 0.64);
+  --archive-muted-strong: rgba(245, 241, 233, 0.66);
+  --archive-line: rgba(255, 255, 255, 0.14);
+  --archive-gold: #d2b77c;
+  --archive-bg: #0d0f10;
+  --archive-panel: rgba(7, 7, 7, 0.8);
+  --archive-panel-strong: rgba(13, 15, 16, 0.94);
+  --archive-panel-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
   --font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -298,15 +309,8 @@ img {
   align-items: start;
 }
 
-.map-workspace,
-.dex-workspace {
+.map-workspace {
   grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
-}
-
-.dex-column {
-  display: grid;
-  gap: 20px;
-  min-width: 0;
 }
 
 #dexView {
@@ -314,13 +318,13 @@ img {
 }
 
 .dex-experience {
-  --dex-ink: #f5f1e9;
-  --dex-muted: rgba(245, 241, 233, 0.66);
-  --dex-line: rgba(255, 255, 255, 0.14);
+  --dex-ink: var(--archive-ink);
+  --dex-muted: var(--archive-muted-strong);
+  --dex-line: var(--archive-line);
   position: relative;
   min-height: calc(100svh - 72px);
   overflow: hidden;
-  background: #0d0f10;
+  background: var(--archive-bg);
   color: var(--dex-ink);
 }
 
@@ -742,28 +746,18 @@ img {
   }
 }
 
-.stats-page {
-  display: grid;
-  gap: 20px;
-}
-
-.squadrons-page {
-  display: grid;
-  gap: 20px;
-}
-
 #squadronsView {
   margin: -22px calc(50% - 50vw) -34px;
 }
 
 .squadrons-experience {
-  --squadron-ink: #f5f1e9;
-  --squadron-muted: rgba(245, 241, 233, 0.64);
-  --squadron-line: rgba(255, 255, 255, 0.14);
+  --squadron-ink: var(--archive-ink);
+  --squadron-muted: var(--archive-muted);
+  --squadron-line: var(--archive-line);
   position: relative;
   min-height: calc(100svh - 72px);
   overflow: hidden;
-  background: #0d0f10;
+  background: var(--archive-bg);
   color: var(--squadron-ink);
 }
 
@@ -875,23 +869,18 @@ img {
   padding-bottom: clamp(54px, 7vw, 104px);
 }
 
-.airshows-page {
-  display: grid;
-  gap: 20px;
-}
-
 #airshowsView {
   margin: -22px calc(50% - 50vw) -34px;
 }
 
 .airshows-experience {
-  --airshow-ink: #f5f1e9;
-  --airshow-muted: rgba(245, 241, 233, 0.64);
-  --airshow-line: rgba(255, 255, 255, 0.14);
+  --airshow-ink: var(--archive-ink);
+  --airshow-muted: var(--archive-muted);
+  --airshow-line: var(--archive-line);
   position: relative;
   min-height: calc(100svh - 72px);
   overflow: hidden;
-  background: #0d0f10;
+  background: var(--archive-bg);
   color: var(--airshow-ink);
 }
 
@@ -1030,23 +1019,6 @@ img {
   color: var(--airshow-muted);
   font-size: 0.76rem;
   font-weight: 800;
-}
-
-.airshows-intro {
-  display: grid;
-  min-height: 0;
-  gap: 0;
-  padding-block: 14px;
-}
-
-.airshows-intro .lead {
-  max-width: 740px;
-  margin: 0;
-}
-
-.airshows-intro .browser-heading,
-.airshows-intro h1 {
-  margin-bottom: 0;
 }
 
 .airshow-timeline {
@@ -1397,7 +1369,7 @@ img {
   min-height: clamp(260px, 28vw, 390px);
   padding: clamp(18px, 2vw, 28px);
   border: 0;
-  border-radius: 2px;
+  border-radius: var(--radius-archive-card);
   background: #171a1c;
   box-shadow: none;
   transition: box-shadow 180ms ease, transform 180ms ease;
@@ -1413,7 +1385,7 @@ img {
 
 #airshowsView .airshow-timeline-card:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px #d2b77c, 0 24px 62px rgba(0, 0, 0, 0.44);
+  box-shadow: 0 0 0 2px var(--archive-gold), 0 24px 62px rgba(0, 0, 0, 0.44);
 }
 
 #airshowsView .airshow-timeline-card > img {
@@ -1528,7 +1500,7 @@ img {
   gap: 22px;
   padding: clamp(18px, 2.5vw, 30px);
   border: 1px solid var(--airshow-line);
-  border-radius: 2px;
+  border-radius: var(--radius-archive-card);
   background: rgba(255, 255, 255, 0.035);
   box-shadow: none;
   color: #fff;
@@ -1579,7 +1551,7 @@ img {
 }
 
 #airshowsView .airshow-photo-grid .photo-card {
-  border-radius: 2px;
+  border-radius: var(--radius-photo);
 }
 
 @media (max-width: 1040px) {
@@ -2048,7 +2020,6 @@ img {
 
 .control-panel,
 .map-stage,
-.recent-photos-panel,
 .results-panel,
 .dex-browser {
   border: 1px solid var(--line);
@@ -2287,20 +2258,6 @@ h3 {
 
 .location-details-title {
   margin-bottom: 12px;
-}
-
-.map-toolbar {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  z-index: 2;
-  display: inline-flex;
-  gap: 6px;
-  padding: 6px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  box-shadow: var(--shadow);
 }
 
 .icon-button {
@@ -2619,36 +2576,9 @@ h3 {
   }
 }
 
-.recent-photos-panel,
 .results-panel,
 .dex-browser {
   padding: 18px;
-}
-
-.recent-photos-panel {
-  min-width: 0;
-  overflow: hidden;
-  padding-bottom: 12px;
-}
-
-.recent-photos-panel .browser-heading {
-  margin-bottom: 10px;
-}
-
-.sidebar-recent-photos {
-  margin-top: 18px;
-  padding: 18px 0 0;
-  border: 0;
-  border-top: 1px solid var(--line);
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.sidebar-recent-photos .browser-heading {
-  align-items: flex-start;
-  flex-direction: column;
-  gap: 4px;
 }
 
 .recent-photo-strip {
@@ -3125,63 +3055,58 @@ h3 {
   margin-top: 8px;
 }
 
+#mapView .location-type-archive .photo-card .photo-body {
+  display: grid;
+  min-width: 0;
+  gap: 0;
+  padding: 10px 8px 5px;
+  background: linear-gradient(180deg, transparent 0%, rgba(5, 7, 8, 0.08) 52%, rgba(5, 7, 8, 0.72) 100%);
+}
+
+#mapView .location-type-archive .photo-card .photo-body strong,
+#mapView .location-type-archive .photo-card .photo-body .photo-livery {
+  display: none;
+}
+
+#mapView .location-type-archive .photo-card .photo-meta {
+  display: grid;
+  min-width: 0;
+  gap: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.62rem;
+  line-height: 1.2;
+  opacity: 1;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.72);
+}
+
+#mapView .location-type-archive .photo-card .photo-context,
+#mapView .location-type-archive .photo-card .photo-date {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#mapView .location-type-archive .photo-card .photo-context {
+  font-weight: 700;
+}
+
+#mapView .location-type-archive .photo-card .photo-date {
+  font-weight: 400;
+  opacity: 0.78;
+}
+
+#mapView .location-type-archive .photo-card .photo-meta-separator {
+  display: none;
+}
+
 @media (min-width: 641px) {
   #mapView .location-type-archive .photo-card {
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 0;
   }
 
   #mapView .location-type-archive .photo-card .photo-body {
     display: flex;
-    min-width: 0;
-    gap: 6px;
     align-items: center;
-    padding: 30px 10px 9px;
-    background: linear-gradient(180deg, transparent 0%, rgba(5, 7, 8, 0.12) 28%, rgba(5, 7, 8, 0.82) 100%);
-  }
-
-  #mapView .location-type-archive .photo-card .photo-body strong {
-    display: none;
-  }
-
-  #mapView .location-type-archive .photo-card .photo-meta {
-    display: grid;
-    min-width: 0;
-    gap: 1px;
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 0.72rem;
-    line-height: 1.3;
-    opacity: 1;
-    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.72);
-  }
-
-  #mapView .location-type-archive .photo-card .photo-context,
-  #mapView .location-type-archive .photo-card .photo-date {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  #mapView .location-type-archive .photo-card .photo-context {
-    font-weight: 700;
-    opacity: 1;
-  }
-
-  #mapView .location-type-archive .photo-card .photo-date {
-    font-weight: 400;
-    opacity: 0.78;
-  }
-
-  #mapView .location-type-archive .photo-card .photo-meta-separator {
-    display: none;
-  }
-
-  #mapView .location-type-archive .photo-card .photo-body .photo-livery {
-    flex: 0 1 auto;
-    padding: 2px 6px;
-    border-color: rgba(255, 255, 255, 0.2);
-    background: rgba(5, 7, 8, 0.62);
-    font-size: 0.62rem;
   }
 }
 
@@ -3388,10 +3313,6 @@ button.location-unit-chip:focus-visible,
   opacity: 0.78;
 }
 
-.location-photo-browser {
-  margin-bottom: 12px;
-}
-
 .segmented.location-archive-toggle {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3460,7 +3381,7 @@ button.location-unit-chip:focus-visible,
   aspect-ratio: 3 / 2;
   overflow: hidden;
   border: 0;
-  border-radius: var(--radius);
+  border-radius: var(--radius-photo);
   background: transparent;
   box-shadow: none;
 }
@@ -4188,23 +4109,6 @@ button.location-unit-chip:focus-visible,
   white-space: nowrap;
 }
 
-.squadrons-hero {
-  display: grid;
-  gap: 18px;
-}
-
-.squadrons-hero .lead {
-  max-width: 760px;
-  margin-bottom: 0;
-}
-
-.squadron-explorer {
-  display: grid;
-  grid-template-columns: minmax(132px, 160px) minmax(0, 1fr);
-  gap: 22px;
-  align-items: start;
-}
-
 .squadron-country-rail {
   position: sticky;
   top: 96px;
@@ -4565,7 +4469,7 @@ button.location-unit-chip:focus-visible,
   grid-column: span 4;
   overflow: hidden;
   border: 0;
-  border-radius: 2px;
+  border-radius: var(--radius-archive-card);
   background: #171a1c;
   box-shadow: none;
   color: #fff;
@@ -4584,7 +4488,7 @@ button.location-unit-chip:focus-visible,
 }
 
 #squadronsView .squadron-logo-card:focus-visible {
-  box-shadow: 0 0 0 2px #d2b77c, 0 24px 62px rgba(0, 0, 0, 0.44);
+  box-shadow: 0 0 0 2px var(--archive-gold), 0 24px 62px rgba(0, 0, 0, 0.44);
 }
 
 #squadronsView .squadron-logo-media {
@@ -4776,46 +4680,6 @@ button.location-unit-chip:focus-visible,
   animation: dex-card-enter 640ms cubic-bezier(0.22, 1, 0.36, 1) var(--squadron-delay, 0ms) both;
 }
 
-.squadron-detail {
-  display: grid;
-  gap: 14px;
-}
-
-.squadron-detail-hero {
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--radius);
-  background: var(--surface-strong);
-}
-
-.squadron-detail-hero img {
-  width: 100%;
-  aspect-ratio: 16 / 7;
-  object-fit: cover;
-}
-
-.squadron-detail-logo {
-  position: absolute;
-  left: 18px;
-  bottom: 18px;
-  display: grid;
-  width: 90px;
-  height: 90px;
-  place-items: center;
-  padding: 10px;
-  border: 1px solid color-mix(in srgb, var(--line-strong) 72%, transparent);
-  border-radius: var(--radius);
-  background: color-mix(in srgb, var(--surface) 86%, transparent);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.24);
-  backdrop-filter: blur(14px);
-}
-
-.squadron-detail-logo img,
-.squadron-detail-logo .squadron-logo-fallback {
-  width: 100%;
-  height: 100%;
-}
-
 .squadron-type-list {
   margin: 0;
 }
@@ -4880,25 +4744,6 @@ button.location-unit-chip:focus-visible,
   line-height: 1.25;
 }
 
-.aircraft-stat-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
-}
-
-.aircraft-stat-row span {
-  min-width: 0;
-  padding: 8px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface-strong);
-}
-
-.aircraft-stat-row strong {
-  color: var(--text);
-  font-size: 0.8rem;
-}
-
 .badge-row {
   display: flex;
   flex-wrap: wrap;
@@ -4934,7 +4779,7 @@ button.location-unit-chip:focus-visible,
 #dexView .recent-photo-card {
   min-width: 0;
   aspect-ratio: 2.25 / 1;
-  border-radius: 2px;
+  border-radius: var(--radius-archive-card);
   background: #171a1c;
 }
 
@@ -4971,7 +4816,7 @@ button.location-unit-chip:focus-visible,
   grid-column: span 4;
   overflow: hidden;
   border: 0;
-  border-radius: 2px;
+  border-radius: var(--radius-archive-card);
   background: #171a1c;
   box-shadow: none;
   color: #fff;
@@ -5003,7 +4848,7 @@ button.location-unit-chip:focus-visible,
 }
 
 #dexView .aircraft-card:focus-visible {
-  box-shadow: 0 0 0 2px #d2b77c, 0 24px 62px rgba(0, 0, 0, 0.44);
+  box-shadow: 0 0 0 2px var(--archive-gold), 0 24px 62px rgba(0, 0, 0, 0.44);
 }
 
 #dexView .aircraft-cover,
@@ -5518,16 +5363,6 @@ button.location-unit-chip:focus-visible,
   font-size: 0.7rem;
 }
 
-.viewer-button.viewer-clean-toggle {
-  width: auto;
-  padding: 0 10px;
-  border-left: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 999px;
-  font-size: 0.7rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
 .viewer-button.viewer-action {
   width: 34px;
   padding: 0;
@@ -5663,30 +5498,6 @@ button.location-unit-chip:focus-visible,
   background: rgba(7, 7, 7, 0.72);
   backdrop-filter: blur(24px);
   transition: opacity 220ms ease, transform 220ms ease;
-}
-
-.photo-viewer.is-clean .viewer-info,
-.photo-viewer.is-clean .viewer-telemetry,
-.photo-viewer.is-clean .viewer-filmstrip,
-.photo-viewer.is-clean .viewer-button.close,
-.photo-viewer.is-clean .viewer-button.info-toggle,
-.photo-viewer.is-clean .viewer-button.previous,
-.photo-viewer.is-clean .viewer-button.next {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.photo-viewer.is-clean .viewer-zoom-controls {
-  border-color: transparent;
-  background: transparent;
-  opacity: 0.28;
-  transition: opacity 180ms ease, background 180ms ease;
-}
-
-.photo-viewer.is-clean .viewer-zoom-controls:hover,
-.photo-viewer.is-clean .viewer-zoom-controls:focus-within {
-  background: rgba(10, 10, 10, 0.54);
-  opacity: 1;
 }
 
 .viewer-info .eyebrow {
@@ -5920,11 +5731,9 @@ button.location-unit-chip:focus-visible,
 
 .view.is-active .control-panel,
 .view.is-active .map-stage,
-.view.is-active .recent-photos-panel,
 .view.is-active .results-panel,
 .view.is-active .dex-browser,
-.view.is-active .stats-hero,
-.view.is-active .squadrons-hero {
+.view.is-active .stats-hero {
   animation: drawer-in 360ms ease-out both;
 }
 
@@ -6379,13 +6188,13 @@ button.location-unit-chip:focus-visible,
 
 /* World Map archive treatment */
 #mapView {
-  --map-archive-ink: #f5f1e9;
-  --map-archive-muted: rgba(245, 241, 233, 0.64);
-  --map-archive-line: rgba(255, 255, 255, 0.14);
-  --map-archive-gold: #d2b77c;
-  --map-archive-panel: rgba(7, 7, 7, 0.8);
-  --map-archive-panel-strong: rgba(13, 15, 16, 0.94);
-  --map-archive-panel-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+  --map-archive-ink: var(--archive-ink);
+  --map-archive-muted: var(--archive-muted);
+  --map-archive-line: var(--archive-line);
+  --map-archive-gold: var(--archive-gold);
+  --map-archive-panel: var(--archive-panel);
+  --map-archive-panel-strong: var(--archive-panel-strong);
+  --map-archive-panel-shadow: var(--archive-panel-shadow);
   color: var(--map-archive-ink);
 }
 
@@ -6404,7 +6213,7 @@ button.location-unit-chip:focus-visible,
 #mapView .control-panel,
 #mapView #mapResults {
   border: 1px solid var(--map-archive-line);
-  border-radius: 2px;
+  border-radius: var(--radius-archive-card);
   background: var(--map-archive-panel);
   box-shadow: var(--map-archive-panel-shadow);
   color: var(--map-archive-ink);
@@ -6436,7 +6245,7 @@ button.location-unit-chip:focus-visible,
 
 #mapView .stat-grid div {
   border-color: var(--map-archive-line);
-  border-radius: 2px;
+  border-radius: var(--radius-archive-card);
   background: rgba(255, 255, 255, 0.035);
 }
 
@@ -6454,7 +6263,7 @@ button.location-unit-chip:focus-visible,
 
 #mapView .search-input {
   border-color: var(--map-archive-line);
-  border-radius: 2px;
+  border-radius: var(--radius-archive-card);
   background: rgba(255, 255, 255, 0.045);
   color: var(--map-archive-ink);
 }
@@ -6470,7 +6279,7 @@ button.location-unit-chip:focus-visible,
 
 #mapView .map-panel-toggle {
   border: 1px solid var(--map-archive-line);
-  border-radius: 2px;
+  border-radius: var(--radius-archive-card);
   background: var(--map-archive-panel-strong);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.38);
   color: var(--map-archive-ink);
@@ -6492,7 +6301,7 @@ button.location-unit-chip:focus-visible,
 #mapView .plain-button,
 #mapView .location-page-button {
   border-color: var(--map-archive-line);
-  border-radius: 2px;
+  border-radius: var(--radius-archive-card);
   background: rgba(255, 255, 255, 0.045);
   color: var(--map-archive-ink);
 }
@@ -6550,7 +6359,7 @@ button.location-unit-chip:focus-visible,
 #mapView .location-map-panel .location-group-latest,
 #mapView .location-map-panel .location-group-latest img,
 #mapView .location-map-panel .location-group-fallback {
-  border-radius: 2px;
+  border-radius: var(--radius-archive-card);
 }
 
 #mapView .location-map-panel .location-hero-overlay {
@@ -6570,7 +6379,7 @@ button.location-unit-chip:focus-visible,
 #mapView .location-expandable-group,
 #mapView .location-type-group {
   border-color: var(--map-archive-line);
-  border-radius: 2px;
+  border-radius: var(--radius-archive-card);
   background: rgba(255, 255, 255, 0.025);
 }
 
@@ -6755,8 +6564,7 @@ button.location-unit-chip:focus-visible,
 }
 
 @media (min-width: 1041px) {
-  .map-workspace > .control-panel,
-  .dex-workspace > .control-panel {
+  .map-workspace > .control-panel {
     display: flex;
     height: calc(100vh - 116px);
     flex-direction: column;
@@ -6767,41 +6575,6 @@ button.location-unit-chip:focus-visible,
     flex: 1 1 auto;
     max-height: none;
     min-height: 0;
-  }
-
-  .dex-workspace .sidebar-recent-photos {
-    display: flex;
-    flex: 1 1 auto;
-    min-height: 0;
-    flex-direction: column;
-  }
-
-  .sidebar-recent-photos .recent-photo-strip {
-    flex: 1 1 auto;
-    grid-auto-columns: initial;
-    grid-auto-flow: row;
-    grid-auto-rows: clamp(112px, 16vh, 168px);
-    grid-template-columns: 1fr;
-    max-height: none;
-    min-height: 0;
-    overflow-x: hidden;
-    overflow-y: auto;
-    padding-right: 2px;
-  }
-
-  .sidebar-recent-photos .recent-photo-card {
-    height: 100%;
-    aspect-ratio: auto;
-    grid-template-columns: initial;
-    grid-template-rows: auto;
-    min-height: 0;
-    max-height: none;
-  }
-
-  .sidebar-recent-photos .recent-photo-card img {
-    width: 100%;
-    height: 100%;
-    aspect-ratio: auto;
   }
 
   #mapView {
@@ -6956,27 +6729,8 @@ button.location-unit-chip:focus-visible,
     min-width: min(220px, 46vw);
   }
 
-  .dex-workspace {
-    max-width: 100%;
-    min-width: 0;
-    grid-template-columns: minmax(0, 1fr);
-    overflow: hidden;
-  }
-
-  .dex-workspace > .control-panel,
-  .dex-column {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-  }
-
   .control-panel {
     position: static;
-  }
-
-  .squadron-explorer {
-    grid-template-columns: 1fr;
-    gap: 14px;
   }
 
   .squadron-country-rail {
@@ -7208,14 +6962,9 @@ button.location-unit-chip:focus-visible,
   }
 
   .control-panel,
-  .recent-photos-panel,
   .results-panel,
   .dex-browser {
     padding: 14px;
-  }
-
-  .sidebar-recent-photos {
-    padding: 18px 0 0;
   }
 
   .map-stage,
@@ -7570,10 +7319,6 @@ button.location-unit-chip:focus-visible,
     transform: translateX(-50%);
   }
 
-  .viewer-button.viewer-clean-toggle {
-    width: 54px;
-  }
-
   .viewer-image-frame {
     inset: 0;
     width: auto;
@@ -7759,15 +7504,6 @@ button.location-unit-chip:focus-visible,
     font-size: 0.7rem;
   }
 
-  .aircraft-stat-row {
-    grid-template-columns: 1fr;
-    gap: 4px;
-  }
-
-  .aircraft-stat-row span {
-    padding: 5px 6px;
-  }
-
   .badge-row {
     gap: 4px;
   }
@@ -7861,14 +7597,14 @@ button.location-unit-chip:focus-visible,
 }
 
 .stats-experience {
-  --stats-ink: #f5f1e9;
-  --stats-muted: rgba(245, 241, 233, 0.64);
-  --stats-line: rgba(255, 255, 255, 0.14);
-  --stats-gold: #d2b77c;
+  --stats-ink: var(--archive-ink);
+  --stats-muted: var(--archive-muted);
+  --stats-line: var(--archive-line);
+  --stats-gold: var(--archive-gold);
   position: relative;
   min-height: calc(100svh - 72px);
   overflow: hidden;
-  background: #0d0f10;
+  background: var(--archive-bg);
   color: var(--stats-ink);
 }
 
@@ -8041,7 +7777,7 @@ button.location-unit-chip:focus-visible,
 #statsView .exif-summary-grid > div,
 #statsView .exif-stat-card {
   border-color: var(--stats-line);
-  border-radius: 2px;
+  border-radius: var(--radius-archive-card);
   background: rgba(255, 255, 255, 0.025);
   box-shadow: none;
   color: var(--stats-ink);
@@ -8106,7 +7842,7 @@ button.location-unit-chip:focus-visible,
 
 #statsView .focal-mode-control {
   border-color: var(--stats-line);
-  border-radius: 2px;
+  border-radius: var(--radius-archive-card);
   background: rgba(255, 255, 255, 0.025);
 }
 
@@ -8130,7 +7866,7 @@ button.location-unit-chip:focus-visible,
 
 #statsView .stats-limit-card {
   border-color: var(--stats-line);
-  border-radius: 2px;
+  border-radius: var(--radius-archive-card);
 }
 
 #statsView .stats-limit-card:hover,
@@ -8146,7 +7882,7 @@ button.location-unit-chip:focus-visible,
   --family-accent: var(--stats-gold);
   min-height: 136px;
   border-color: var(--stats-line);
-  border-radius: 2px;
+  border-radius: var(--radius-archive-card);
   background: rgba(255, 255, 255, 0.025);
   color: var(--stats-ink);
 }
@@ -8205,7 +7941,7 @@ button.location-unit-chip:focus-visible,
 #mapView .control-panel,
 #mapView #mapResults {
   border-color: var(--map-archive-line);
-  border-radius: 2px;
+  border-radius: var(--radius-archive-card);
   background: var(--map-archive-panel);
   box-shadow: var(--map-archive-panel-shadow);
   color: var(--map-archive-ink);
@@ -8213,7 +7949,7 @@ button.location-unit-chip:focus-visible,
 
 #mapView .map-panel-toggle,
 #mapView .map-panel-toggle.is-active {
-  border-radius: 2px;
+  border-radius: var(--radius-archive-card);
   background: var(--map-archive-panel-strong);
   color: var(--map-archive-ink);
 }
@@ -8562,7 +8298,6 @@ button.location-unit-chip:focus-visible,
     max-height: min(68dvh, 620px);
     padding: 0 14px 14px;
     overscroll-behavior: contain;
-    border-radius: 14px 14px 2px 2px;
     opacity: 0;
     transform: translateY(calc(100% + 92px));
     transition: opacity 180ms ease, transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -8611,7 +8346,7 @@ button.location-unit-chip:focus-visible,
     justify-self: end;
     padding: 5px 8px;
     border: 1px solid var(--map-archive-line);
-    border-radius: 2px;
+    border-radius: var(--radius-archive-card);
     background: rgba(255, 255, 255, 0.04);
     color: var(--map-archive-muted);
     cursor: pointer;
@@ -8627,13 +8362,11 @@ button.location-unit-chip:focus-visible,
 
   #mapView .map-panel-toggle-locations {
     left: calc(50% - 124px);
-    border-radius: 2px 0 0 2px;
   }
 
   #mapView .map-panel-toggle-results {
     right: calc(50% - 124px);
     border-left: 0;
-    border-radius: 0 2px 2px 0;
   }
 
   #mapView .map-panel-coach {
@@ -8726,14 +8459,26 @@ button.location-unit-chip:focus-visible,
   }
 
   /* Stats section jump control */
+  :root {
+    --stats-section-nav-height: 64px;
+  }
+
+  body[data-page-view="statsView"] {
+    padding-bottom: calc(var(--mobile-tab-height) + var(--stats-section-nav-height) + 16px);
+  }
+
   .stats-section-nav {
-    position: sticky;
-    top: var(--mobile-header-height);
-    z-index: 7;
+    position: fixed;
+    right: 0;
+    bottom: var(--mobile-tab-height);
+    left: 0;
+    z-index: 2147479999;
     display: grid;
+    width: 100%;
+    height: var(--stats-section-nav-height);
     grid-template-columns: repeat(2, minmax(0, 1fr));
     padding: 8px 14px;
-    border-bottom: 1px solid var(--stats-line);
+    border-top: 1px solid var(--stats-line);
     background: color-mix(in srgb, #0d0f10 94%, transparent);
     backdrop-filter: blur(18px);
   }
@@ -8764,6 +8509,7 @@ button.location-unit-chip:focus-visible,
   #statsView .stats-hero,
   #statsView .exif-dashboard {
     scroll-margin-top: calc(var(--mobile-header-height) + 68px);
+    scroll-margin-bottom: calc(var(--mobile-tab-height) + var(--stats-section-nav-height) + 16px);
   }
 
   /* Portrait viewer information bottom sheet */

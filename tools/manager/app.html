@@ -328,9 +328,18 @@
               <h2 class="panel-title">Source Image Quality</h2>
               <div class="subtle" id="qualitySummary">Checking source image dimensions.</div>
             </div>
-            <label class="inline-toggle"><input id="qualityShowAcknowledged" type="checkbox"> Show reviewed</label>
+            <div class="actions">
+              <button class="btn secondary" id="qualityPrefixFailures" type="button">Prefix failures with QC_</button>
+              <button class="btn primary" id="qualityApprovePassed" type="button" hidden>Approve passing QC_ images</button>
+              <label class="inline-toggle"><input id="qualityShowAcknowledged" type="checkbox"> Show reviewed</label>
+            </div>
           </div>
-          <div class="subtle">Photos below 2560px wide are flagged before publishing. Conservative checks also surface possible exposure, contrast, colour, focus and noise issues, each with the measured value and any capture EXIF. Amber marks are likely faults; grey marks are advisory. Review the image, then mark it reviewed to clear it from the queue.</div>
+          <div class="subtle">Photos below 2560px wide are flagged before publishing. Conservative checks also surface possible exposure, contrast, white-balance and green/pink tint, collection colour outlier, focus and noise issues. Amber marks are hard QC failures; grey marks are advisory. QC_ images that now pass all checks appear in the third tab after external editing. The QC_ action always marks the currently selected issue tab, so warnings can be prefixed optionally as well. Catalog paths stay synchronized, and accepted exceptions can instead be marked reviewed.</div>
+          <div class="segmented quality-filters" id="qualityFilters" role="tablist" aria-label="Quality issue severity">
+            <button class="active" type="button" role="tab" aria-selected="true" data-quality-filter="hard">Hard failures <span id="qualityHardCount">0</span></button>
+            <button type="button" role="tab" aria-selected="false" data-quality-filter="warnings">Warnings <span id="qualityWarningCount">0</span></button>
+            <button type="button" role="tab" aria-selected="false" data-quality-filter="passed">QC_ edits passed <span id="qualityPassedCount">0</span></button>
+          </div>
           <div class="quality-list" id="qualityList"></div>
         </section>
 

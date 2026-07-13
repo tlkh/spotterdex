@@ -1,0 +1,20 @@
+    <main class="app-shell" id="main">
+      <section class="view is-active" id="airshowsView" data-view>
+        <div class="airshows-experience">
+          <section class="airshow-archive-hero" aria-labelledby="airshowsTitle">
+            <div class="airshow-archive-media" id="airshowHeroMedia" aria-hidden="true"></div>
+            <div class="airshow-archive-scrim" aria-hidden="true"></div>
+            <div class="airshow-archive-copy"><p class="eyebrow">Event photography archive</p><h1 id="airshowsTitle">Airshows</h1><p>Chronological field reports from displays, rehearsals, and aviation gatherings.</p></div>
+            <dl class="airshow-archive-stats" aria-label="Airshow collection overview"><div><dt>Events</dt><dd id="airshowPageCount">0</dd></div><div><dt>Frames</dt><dd id="airshowHeroPhotoCount">0</dd></div><div><dt>Locations</dt><dd id="airshowHeroLocationCount">0</dd></div></dl>
+          </section>
+          <section class="airshow-directory" aria-label="Airshow archive">
+            <div class="airshow-command-bar"><p class="eyebrow">Event chronology</p><p id="airshowYearRange">Archive dates unavailable</p></div>
+            <section class="airshow-timeline" id="airshowTimeline" aria-live="polite"></section>
+            <div class="archive-pagination" id="airshowPagination" aria-live="polite"></div>
+          </section>
+        </div>
+      </section>
+      <section class="view detail-view" id="airshowDetailView" data-view hidden>
+        <article class="detail-page" id="airshowDetail" aria-live="polite"></article>
+      </section>
+    </main>

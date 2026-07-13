@@ -239,6 +239,11 @@
       background: var(--ink);
       color: #fff;
     }
+    .quality-filters {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      max-width: 620px;
+      margin-top: 14px;
+    }
     .asset-grid {
       height: calc(100vh - 210px);
       min-height: 420px;

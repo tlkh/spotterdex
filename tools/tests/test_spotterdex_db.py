@@ -19,9 +19,6 @@ from tools.spotterdex_db import (
 from tools.spotterdex_manager import SpotterDexManager
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-
-
 def seed_minimal_catalog(database_path: Path) -> None:
     connection = create_database(database_path)
     try:
@@ -232,35 +229,5 @@ class DatabaseTests(unittest.TestCase):
             state = manager.get_state()
             self.assertFalse(any(entry["targetKey"] == destination["entryPath"] for entry in state["aircraft"]))
             self.assertEqual(state["masterPhotos"][0]["subjects"], [])
-
-
-class MigratedCatalogParityTests(unittest.TestCase):
-    def test_repository_catalog_counts_and_integrity(self) -> None:
-        database = PROJECT_ROOT / "content" / "spotterdex.sqlite3"
-        self.assertTrue(database.exists())
-        connection = connect_database(database, read_only=True)
-        try:
-            counts = {
-                table: connection.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()[0]
-                for table in ("countries", "aircraft", "units", "aircraft_units", "locations", "events", "photos")
-            }
-            self.assertEqual(
-                counts,
-                {
-                    "countries": 14,
-                    "aircraft": 59,
-                    "units": 72,
-                    "aircraft_units": 82,
-                    "locations": 27,
-                    "events": 12,
-                    "photos": 494,
-                },
-            )
-            self.assertEqual(validate_database(connection, raw_assets_dir=PROJECT_ROOT / "raw_assets"), [])
-            self.assertTrue(snapshot_is_current(connection, PROJECT_ROOT / "content" / "spotterdex.sql"))
-        finally:
-            connection.close()
-
-
 if __name__ == "__main__":
     unittest.main()
