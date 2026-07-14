@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-13T22:51:51+00:00",
+  "generatedAt": "2026-07-14T13:52:53+00:00",
   "entities": {
     "countries": {
       "au": {
@@ -125,7 +125,7 @@
         "id": "bell-uh-1y-venom",
         "name": "Bell UH-1Y Venom",
         "family": "helicopter",
-        "heroPhotoId": "",
+        "heroPhotoId": "2025-12-12-dsc00879",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -165,7 +165,7 @@
         "id": "boeing-777-300er",
         "name": "Boeing 777-300ER",
         "family": "heavy",
-        "heroPhotoId": "2024-08-22-dsc00442-enhanced-nr",
+        "heroPhotoId": "2023-09-11-cygnus-2",
         "doubleWidth": true,
         "writeUp": ""
       },
@@ -205,7 +205,7 @@
         "id": "boeing-c-40a-clipper",
         "name": "Boeing C-40A Clipper",
         "family": "medium",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-06-30-wsss-clipper-1",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -253,7 +253,7 @@
         "id": "boeing-kc-135-stratotanker",
         "name": "Boeing KC-135 Stratotanker",
         "family": "heavy",
-        "heroPhotoId": "2024-01-11-metrea-kc135-2",
+        "heroPhotoId": "2024-01-11-metrea-kc135-3",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -261,7 +261,7 @@
         "id": "boeing-kc-46-pegasus",
         "name": "Boeing KC-46 Pegasus",
         "family": "heavy",
-        "heroPhotoId": "2025-11-30-dsc04987",
+        "heroPhotoId": "2025-11-30-dsc05021",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -285,7 +285,7 @@
         "id": "cessna-uc-35-citation",
         "name": "Cessna UC-35 Citation",
         "family": "medium",
-        "heroPhotoId": "2023-09-23-dsc02445-enhanced-nr",
+        "heroPhotoId": "2025-12-12-dsc00765",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -353,6 +353,14 @@
         "doubleWidth": null,
         "writeUp": ""
       },
+      "general-dynamics-f-16b": {
+        "id": "general-dynamics-f-16b",
+        "name": "General Dynamics F-16B",
+        "family": "fighter",
+        "heroPhotoId": "2026-01-10-dsc04059",
+        "doubleWidth": null,
+        "writeUp": ""
+      },
       "grumman-c-2a-greyhound": {
         "id": "grumman-c-2a-greyhound",
         "name": "Grumman C-2A Greyhound",
@@ -397,7 +405,7 @@
         "id": "kai-t-50b-golden-eagle",
         "name": "KAI T-50B Golden Eagle",
         "family": "fighter",
-        "heroPhotoId": "2024-02-13-dsc02965-enhanced-nr",
+        "heroPhotoId": "2024-02-22-dsc06214-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -429,7 +437,7 @@
         "id": "kawasaki-p-1",
         "name": "Kawasaki P-1",
         "family": "heavy",
-        "heroPhotoId": "2023-09-09-p1-1",
+        "heroPhotoId": "2023-09-09-p1-2",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -485,7 +493,7 @@
         "id": "lockheed-c-130j-super-hercules",
         "name": "Lockheed C-130J Super Hercules",
         "family": "heavy",
-        "heroPhotoId": "2023-11-29-dsc08863-enhanced-nr",
+        "heroPhotoId": "2023-09-18-usaf-c130-1",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -533,7 +541,7 @@
         "id": "mitsubishi-f-15j-eagle",
         "name": "Mitsubishi F-15J Eagle",
         "family": "fighter",
-        "heroPhotoId": "2026-04-08-128928",
+        "heroPhotoId": "2024-08-21-dsc07818-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -541,23 +549,23 @@
         "id": "mitsubishi-f-2a",
         "name": "Mitsubishi F-2A",
         "family": "fighter",
-        "heroPhotoId": "2023-10-06-dsc01453-enhanced-nr",
-        "doubleWidth": null,
+        "heroPhotoId": "2023-10-06-dsc01454-enhanced-nr",
+        "doubleWidth": true,
         "writeUp": ""
       },
       "mitsubishi-f-2b": {
         "id": "mitsubishi-f-2b",
         "name": "Mitsubishi F-2B",
         "family": "fighter",
-        "heroPhotoId": "2026-04-07-dsc05940",
-        "doubleWidth": null,
+        "heroPhotoId": "2026-04-07-dsc05913",
+        "doubleWidth": true,
         "writeUp": ""
       },
       "mitsubishi-uh-60j": {
         "id": "mitsubishi-uh-60j",
         "name": "Mitsubishi UH-60J",
         "family": "helicopter",
-        "heroPhotoId": "2025-11-30-584621",
+        "heroPhotoId": "2025-11-30-dsc04333",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -581,7 +589,7 @@
         "id": "sikorsky-ch-53e-super-stallion",
         "name": "Sikorsky CH-53E Super Stallion",
         "family": "helicopter",
-        "heroPhotoId": "2025-12-12-dsc00700",
+        "heroPhotoId": "2025-12-12-dsc00757",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -1097,6 +1105,15 @@
         "kind": "squadron",
         "logo": "",
         "heroPhotoId": "2026-01-10-dsc04848",
+        "writeUp": ""
+      },
+      "th-403rd-fighter-squadron": {
+        "id": "th-403rd-fighter-squadron",
+        "name": "403rd Fighter Squadron",
+        "countryId": "th",
+        "kind": "squadron",
+        "logo": "",
+        "heroPhotoId": "",
         "writeUp": ""
       },
       "th-411st-fighter-squadron": {
@@ -1672,6 +1689,7 @@
         "startsOn": "2024-02-13",
         "endsOn": "2024-02-22",
         "locationIds": [
+          "sg-changi-exhibition-centre",
           "sg-singapore"
         ],
         "heroPhotoId": "2024-02-22-dsc06214-enhanced-nr",
@@ -3442,6 +3460,158 @@
           "DateTimeOriginal": "2026:01:10 09:27:56",
           "DateTimeDigitized": "2026:01:10 09:27:56",
           "DateTime": "2026:07:04 19:55:31"
+        }
+      },
+      "2026-01-10-dsc04071": {
+        "id": "2026-01-10-dsc04071",
+        "locationId": "th-don-muang-royal-thai-air-force-base",
+        "eventId": "th-wan-dek-2026",
+        "subjects": [
+          {
+            "aircraftId": "general-dynamics-f-16b",
+            "unitId": "th-403rd-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2026",
+        "date": "2026-01-10",
+        "sortDate": "2026-01-10",
+        "livery": "",
+        "title": "",
+        "caption": "RTAF F-16B making a fly-over",
+        "image": "assets/generated/photos/2026-01-10-dsc04071.jpg",
+        "thumbnail": "assets/generated/thumbs/2026-01-10-dsc04071.jpg",
+        "source": "raw_assets/DSC04071.jpg",
+        "originalSize": "2716 x 2037",
+        "processedSize": "2560 x 1920",
+        "thumbnailSize": "1024 x 768",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "216mm",
+          "FocalLengthIn35mmFilm": "216mm",
+          "FNumber": "f/8.0",
+          "ExposureTime": "1/2500s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "500",
+          "DateTimeOriginal": "2026:01:10 09:10:59",
+          "DateTimeDigitized": "2026:01:10 09:10:59",
+          "DateTime": "2026:07:14 20:38:21"
+        }
+      },
+      "2026-01-10-dsc04065": {
+        "id": "2026-01-10-dsc04065",
+        "locationId": "th-don-muang-royal-thai-air-force-base",
+        "eventId": "th-wan-dek-2026",
+        "subjects": [
+          {
+            "aircraftId": "general-dynamics-f-16b",
+            "unitId": "th-403rd-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2026",
+        "date": "2026-01-10",
+        "sortDate": "2026-01-10",
+        "livery": "",
+        "title": "",
+        "caption": "RTAF F-16B making a fly-over",
+        "image": "assets/generated/photos/2026-01-10-dsc04065.jpg",
+        "thumbnail": "assets/generated/thumbs/2026-01-10-dsc04065.jpg",
+        "source": "raw_assets/DSC04065.jpg",
+        "originalSize": "4273 x 2849",
+        "processedSize": "2560 x 1707",
+        "thumbnailSize": "1024 x 683",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "216mm",
+          "FocalLengthIn35mmFilm": "216mm",
+          "FNumber": "f/8.0",
+          "ExposureTime": "1/2500s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "640",
+          "DateTimeOriginal": "2026:01:10 09:10:58",
+          "DateTimeDigitized": "2026:01:10 09:10:58",
+          "DateTime": "2026:07:14 20:38:20"
+        }
+      },
+      "2026-01-10-dsc04059": {
+        "id": "2026-01-10-dsc04059",
+        "locationId": "th-don-muang-royal-thai-air-force-base",
+        "eventId": "th-wan-dek-2026",
+        "subjects": [
+          {
+            "aircraftId": "general-dynamics-f-16b",
+            "unitId": "th-403rd-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2026",
+        "date": "2026-01-10",
+        "sortDate": "2026-01-10",
+        "livery": "",
+        "title": "",
+        "caption": "RTAF F-16B making a fly-over",
+        "image": "assets/generated/photos/2026-01-10-dsc04059.jpg",
+        "thumbnail": "assets/generated/thumbs/2026-01-10-dsc04059.jpg",
+        "source": "raw_assets/DSC04059.jpg",
+        "originalSize": "5002 x 3751",
+        "processedSize": "2560 x 1920",
+        "thumbnailSize": "1024 x 768",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "341mm",
+          "FocalLengthIn35mmFilm": "341mm",
+          "FNumber": "f/8.0",
+          "ExposureTime": "1/2500s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "500",
+          "DateTimeOriginal": "2026:01:10 09:10:57",
+          "DateTimeDigitized": "2026:01:10 09:10:57",
+          "DateTime": "2026:07:14 20:38:19"
+        }
+      },
+      "2026-01-10-dsc04052": {
+        "id": "2026-01-10-dsc04052",
+        "locationId": "th-don-muang-royal-thai-air-force-base",
+        "eventId": "th-wan-dek-2026",
+        "subjects": [
+          {
+            "aircraftId": "general-dynamics-f-16b",
+            "unitId": "th-403rd-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2026",
+        "date": "2026-01-10",
+        "sortDate": "2026-01-10",
+        "livery": "",
+        "title": "",
+        "caption": "RTAF F-16B making a fly-over",
+        "image": "assets/generated/photos/2026-01-10-dsc04052.jpg",
+        "thumbnail": "assets/generated/thumbs/2026-01-10-dsc04052.jpg",
+        "source": "raw_assets/DSC04052.jpg",
+        "originalSize": "3752 x 2814",
+        "processedSize": "2560 x 1920",
+        "thumbnailSize": "1024 x 768",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "600mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/8.0",
+          "ExposureTime": "1/2500s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "400",
+          "DateTimeOriginal": "2026:01:10 09:10:55",
+          "DateTimeDigitized": "2026:01:10 09:10:55",
+          "DateTime": "2026:07:14 20:38:18"
         }
       },
       "2025-12-12-dsc00879": {
@@ -8044,7 +8214,7 @@
       },
       "2024-02-22-dsc06822-enhanced-nr": {
         "id": "2024-02-22-dsc06822-enhanced-nr",
-        "locationId": "sg-singapore",
+        "locationId": "sg-changi-exhibition-centre",
         "eventId": "sg-singapore-airshow-2024",
         "subjects": [
           {
@@ -8082,7 +8252,7 @@
       },
       "2024-02-22-dsc06817-enhanced-nr": {
         "id": "2024-02-22-dsc06817-enhanced-nr",
-        "locationId": "sg-singapore",
+        "locationId": "sg-changi-exhibition-centre",
         "eventId": "sg-singapore-airshow-2024",
         "subjects": [
           {
@@ -8120,7 +8290,7 @@
       },
       "2024-02-22-dsc06779-enhanced-nr": {
         "id": "2024-02-22-dsc06779-enhanced-nr",
-        "locationId": "sg-singapore",
+        "locationId": "sg-changi-exhibition-centre",
         "eventId": "sg-singapore-airshow-2024",
         "subjects": [
           {
@@ -8158,7 +8328,7 @@
       },
       "2024-02-22-dsc06744-enhanced-nr": {
         "id": "2024-02-22-dsc06744-enhanced-nr",
-        "locationId": "sg-singapore",
+        "locationId": "sg-changi-exhibition-centre",
         "eventId": "sg-singapore-airshow-2024",
         "subjects": [
           {
@@ -8196,7 +8366,7 @@
       },
       "2024-02-22-dsc06694-enhanced-nr": {
         "id": "2024-02-22-dsc06694-enhanced-nr",
-        "locationId": "sg-singapore",
+        "locationId": "sg-changi-exhibition-centre",
         "eventId": "sg-singapore-airshow-2024",
         "subjects": [
           {
@@ -8234,7 +8404,7 @@
       },
       "2024-02-22-dsc06548-enhanced-nr": {
         "id": "2024-02-22-dsc06548-enhanced-nr",
-        "locationId": "sg-singapore",
+        "locationId": "sg-changi-exhibition-centre",
         "eventId": "sg-singapore-airshow-2024",
         "subjects": [
           {
@@ -8272,7 +8442,7 @@
       },
       "2024-02-22-dsc06214-enhanced-nr": {
         "id": "2024-02-22-dsc06214-enhanced-nr",
-        "locationId": "sg-singapore",
+        "locationId": "sg-changi-exhibition-centre",
         "eventId": "sg-singapore-airshow-2024",
         "subjects": [
           {
@@ -8310,7 +8480,7 @@
       },
       "2024-02-22-dsc06179-enhanced-nr": {
         "id": "2024-02-22-dsc06179-enhanced-nr",
-        "locationId": "sg-singapore",
+        "locationId": "sg-changi-exhibition-centre",
         "eventId": "sg-singapore-airshow-2024",
         "subjects": [
           {
@@ -8348,8 +8518,8 @@
       },
       "2024-02-18-qc-dsc04655-enhanced-nr": {
         "id": "2024-02-18-qc-dsc04655-enhanced-nr",
-        "locationId": "sg-singapore",
-        "eventId": "",
+        "locationId": "sg-changi-exhibition-centre",
+        "eventId": "sg-singapore-airshow-2024",
         "subjects": [
           {
             "aircraftId": "comac-c919",
@@ -8424,7 +8594,7 @@
       },
       "2024-02-18-dsc05211-enhanced-nr": {
         "id": "2024-02-18-dsc05211-enhanced-nr",
-        "locationId": "sg-singapore",
+        "locationId": "sg-changi-exhibition-centre",
         "eventId": "sg-singapore-airshow-2024",
         "subjects": [
           {
@@ -21462,6 +21632,12 @@
         "2026-01-10-dsc04119",
         "2026-01-10-dsc04086"
       ],
+      "general-dynamics-f-16b": [
+        "2026-01-10-dsc04071",
+        "2026-01-10-dsc04065",
+        "2026-01-10-dsc04059",
+        "2026-01-10-dsc04052"
+      ],
       "grumman-c-2a-greyhound": [
         "2023-12-20-c2-vrc40",
         "2023-02-07-c2-vrc30"
@@ -22360,6 +22536,12 @@
         "2026-01-10-dsc04119",
         "2026-01-10-dsc04086"
       ],
+      "th-403rd-fighter-squadron": [
+        "2026-01-10-dsc04071",
+        "2026-01-10-dsc04065",
+        "2026-01-10-dsc04059",
+        "2026-01-10-dsc04052"
+      ],
       "th-411st-fighter-squadron": [
         "2026-01-10-dsc06434",
         "2026-01-10-dsc06402",
@@ -22862,7 +23044,17 @@
         "2026-02-03-raaf-f35a-2",
         "2026-02-03-raaf-f35a-1",
         "2026-01-31-raaf-f35a-4",
-        "2026-01-31-raaf-f35a-3"
+        "2026-01-31-raaf-f35a-3",
+        "2024-02-22-dsc06822-enhanced-nr",
+        "2024-02-22-dsc06817-enhanced-nr",
+        "2024-02-22-dsc06779-enhanced-nr",
+        "2024-02-22-dsc06744-enhanced-nr",
+        "2024-02-22-dsc06694-enhanced-nr",
+        "2024-02-22-dsc06548-enhanced-nr",
+        "2024-02-22-dsc06214-enhanced-nr",
+        "2024-02-22-dsc06179-enhanced-nr",
+        "2024-02-18-qc-dsc04655-enhanced-nr",
+        "2024-02-18-dsc05211-enhanced-nr"
       ],
       "sg-seletar-airport": [
         "2023-04-29-firefly-2",
@@ -22890,17 +23082,7 @@
         "2024-05-03-dsc08053-enhanced-nr",
         "2024-03-04-usaf-ak-f35a-2",
         "2024-03-04-usaf-ak-f35a-1",
-        "2024-02-22-dsc06822-enhanced-nr",
-        "2024-02-22-dsc06817-enhanced-nr",
-        "2024-02-22-dsc06779-enhanced-nr",
-        "2024-02-22-dsc06744-enhanced-nr",
-        "2024-02-22-dsc06694-enhanced-nr",
-        "2024-02-22-dsc06548-enhanced-nr",
-        "2024-02-22-dsc06214-enhanced-nr",
-        "2024-02-22-dsc06179-enhanced-nr",
-        "2024-02-18-qc-dsc04655-enhanced-nr",
         "2024-02-18-dsc05282-enhanced-nr",
-        "2024-02-18-dsc05211-enhanced-nr",
         "2024-02-13-dsc03195-enhanced-nr",
         "2024-02-13-dsc03158-enhanced-nr",
         "2024-02-13-dsc03123-enhanced-nr",
@@ -23038,7 +23220,11 @@
         "2026-01-10-dsc04426",
         "2026-01-10-dsc04380",
         "2026-01-10-dsc04119",
-        "2026-01-10-dsc04086"
+        "2026-01-10-dsc04086",
+        "2026-01-10-dsc04071",
+        "2026-01-10-dsc04065",
+        "2026-01-10-dsc04059",
+        "2026-01-10-dsc04052"
       ],
       "vn-tan-son-nhat-international-airport": [
         "2025-08-18-dsc00153",
@@ -23268,6 +23454,7 @@
         "2024-02-22-dsc06548-enhanced-nr",
         "2024-02-22-dsc06214-enhanced-nr",
         "2024-02-22-dsc06179-enhanced-nr",
+        "2024-02-18-qc-dsc04655-enhanced-nr",
         "2024-02-18-dsc05282-enhanced-nr",
         "2024-02-18-dsc05211-enhanced-nr",
         "2024-02-13-dsc03195-enhanced-nr",
@@ -23379,7 +23566,11 @@
         "2026-01-10-dsc04426",
         "2026-01-10-dsc04380",
         "2026-01-10-dsc04119",
-        "2026-01-10-dsc04086"
+        "2026-01-10-dsc04086",
+        "2026-01-10-dsc04071",
+        "2026-01-10-dsc04065",
+        "2026-01-10-dsc04059",
+        "2026-01-10-dsc04052"
       ],
       "sg-singapore-airshow-2026": [
         "2026-02-03-rsaf-apache-flare",
@@ -23501,6 +23692,9 @@
       ],
       "general-dynamics-f-16a": [
         "th-103rd-fighter-squadron"
+      ],
+      "general-dynamics-f-16b": [
+        "th-403rd-fighter-squadron"
       ],
       "grumman-c-2a-greyhound": [
         "us-vrc-30",
