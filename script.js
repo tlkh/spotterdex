@@ -37,7 +37,7 @@
   ];
   const AIRCRAFT_FAMILY_LABELS = new Map(AIRCRAFT_FAMILY_DEFINITIONS.map((family) => [family.id, family.label]));
   const MOBILE_MAP_MEDIA_QUERY = "(max-width: 1040px)";
-  const FOCUSED_MOBILE_MEDIA_QUERY = "(max-width: 760px)";
+  const FOCUSED_MOBILE_MEDIA_QUERY = "(max-width: 1040px)";
   const REDUCED_MOTION_MEDIA_QUERY = "(prefers-reduced-motion: reduce)";
   const LEAFLET_SCRIPT_URL = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
   const LEAFLET_SCRIPT_INTEGRITY = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
@@ -83,8 +83,8 @@
     squadronQuery: "",
     squadronCountryFilter: "",
     statsSection: "summary",
-    recentPhotoLimit: RECENT_PHOTO_LIMIT,
-    recentPhotoResizeObserver: null,
+    detailRailDrag: null,
+    suppressDetailRailClickUntil: 0,
     map: null,
     markerLayer: null,
     mapLeaderLayer: null,
@@ -362,8 +362,6 @@
     } else if (viewId === "dexView") {
       els.aircraftSearch = document.getElementById("aircraftSearch");
       els.dexFamilyFilter = document.getElementById("dexFamilyFilter");
-      els.recentPhotosStrip = document.getElementById("recentPhotosStrip");
-      els.recentPhotosCount = document.getElementById("recentPhotosCount");
       els.dexHeroMedia = document.getElementById("dexHeroMedia");
       els.dexHeroFeature = document.getElementById("dexHeroFeature");
       els.dexHeroAction = document.getElementById("dexHeroAction");
@@ -792,6 +790,11 @@
     document.addEventListener("pointermove", handleSheetPointerMove, { passive: false });
     document.addEventListener("pointerup", handleSheetPointerUp);
     document.addEventListener("pointercancel", handleSheetPointerUp);
+    document.addEventListener("pointerdown", handleDetailRailPointerDown);
+    document.addEventListener("pointermove", handleDetailRailPointerMove, { passive: false });
+    document.addEventListener("pointerup", handleDetailRailPointerUp);
+    document.addEventListener("pointercancel", handleDetailRailPointerUp);
+    document.addEventListener("click", suppressDetailRailClick, true);
     window.addEventListener("popstate", handleHistoryNavigation);
     window.addEventListener("hashchange", handleHistoryNavigation);
     window.addEventListener("pagehide", saveCurrentSessionState);
@@ -812,7 +815,6 @@
       updateViewerInfoState();
       updateMobileAppChrome();
       refreshMapLayout();
-      updateRecentPhotoLimit();
       if (state.renderedViews.has("dexView")) {
         renderDex();
       }
@@ -1650,6 +1652,77 @@
     panel.classList.add("is-sheet-dragging");
   }
 
+  function detailPhotoRailForTarget(target) {
+    if (!(target instanceof Element)) {
+      return null;
+    }
+    return target.closest(
+      ".detail-view .photo-groups:not(.is-single-group) > section .photo-grid, "
+      + ".detail-view .aircraft-type-photo-groups:not(.is-single-group) > section .photo-grid, "
+      + ".detail-view .airshow-squadron-groups:not(.is-single-group) > section .photo-grid"
+    );
+  }
+
+  function handleDetailRailPointerDown(event) {
+    if (event.pointerType !== "mouse" || event.button !== 0 || !isFocusedMobileLayout()) {
+      return;
+    }
+    const rail = detailPhotoRailForTarget(event.target);
+    if (!rail || rail.scrollWidth <= rail.clientWidth + 1) {
+      return;
+    }
+    state.detailRailDrag = {
+      rail,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startScrollLeft: rail.scrollLeft,
+      moved: false
+    };
+    rail.setPointerCapture?.(event.pointerId);
+  }
+
+  function handleDetailRailPointerMove(event) {
+    const drag = state.detailRailDrag;
+    if (!drag || drag.pointerId !== event.pointerId) {
+      return;
+    }
+    const deltaX = event.clientX - drag.startX;
+    const deltaY = event.clientY - drag.startY;
+    if (!drag.moved && Math.abs(deltaX) < 5) {
+      return;
+    }
+    if (!drag.moved && Math.abs(deltaY) > Math.abs(deltaX)) {
+      handleDetailRailPointerUp(event);
+      return;
+    }
+    drag.moved = true;
+    drag.rail.classList.add("is-mouse-dragging");
+    drag.rail.scrollLeft = drag.startScrollLeft - deltaX;
+    event.preventDefault();
+  }
+
+  function handleDetailRailPointerUp(event) {
+    const drag = state.detailRailDrag;
+    if (!drag || drag.pointerId !== event.pointerId) {
+      return;
+    }
+    drag.rail.classList.remove("is-mouse-dragging");
+    drag.rail.releasePointerCapture?.(event.pointerId);
+    if (drag.moved) {
+      state.suppressDetailRailClickUntil = performance.now() + 250;
+    }
+    state.detailRailDrag = null;
+  }
+
+  function suppressDetailRailClick(event) {
+    if (performance.now() > state.suppressDetailRailClickUntil || !detailPhotoRailForTarget(event.target)) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
   function handleSheetPointerMove(event) {
     const drag = state.sheetDrag;
     if (!drag || drag.pointerId !== event.pointerId) {
@@ -2041,7 +2114,6 @@
       updateMapPanelCoach();
     } else if (directoryView === "dexView") {
       renderDexHero();
-      renderRecentPhotos();
       renderDex();
     } else if (directoryView === "squadronsView") {
       renderSquadronsPage();
@@ -4029,78 +4101,6 @@
       .slice(0, 8);
   }
 
-  function renderRecentPhotos() {
-    if (!els.recentPhotosStrip || !els.recentPhotosCount) {
-      return;
-    }
-
-    const photos = recentPhotos(state.recentPhotoLimit);
-    els.recentPhotosCount.textContent = `${photos.length} photo${photos.length === 1 ? "" : "s"}`;
-    els.recentPhotosStrip.style.setProperty("--recent-columns", String(Math.max(1, photos.length)));
-
-    if (!photos.length) {
-      els.recentPhotosStrip.innerHTML = '<div class="empty-state compact">Add dated photos to populate recent frames.</div>';
-      return;
-    }
-
-    els.recentPhotosStrip.innerHTML = photos
-      .map((photo, index) => {
-        return `
-          <button
-            class="recent-photo-card"
-            type="button"
-            data-photo-id="${escapeAttr(photo.id)}"
-            data-photo-context="recent"
-            style="--dex-delay: ${Math.min(index, 7) * 55}ms"
-          >
-            ${renderResponsivePhotoImage(photo, `${photoSubjectLabel(photo)} at ${photo.locationName}`, {
-              sizes: "(max-width: 520px) 50vw, (max-width: 900px) 33vw, 20vw"
-            })}
-            <span>
-              <strong>${escapeHtml(photoSubjectLabel(photo))}</strong>
-              <small>${escapeHtml(photo.locationName)} - ${escapeHtml(displayPhotoDate(photo))}</small>
-            </span>
-          </button>
-        `;
-      })
-      .join("");
-
-    ensureRecentPhotoSizing();
-  }
-
-  function ensureRecentPhotoSizing() {
-    if (!els.recentPhotosStrip) {
-      return;
-    }
-
-    if (!state.recentPhotoResizeObserver && "ResizeObserver" in window) {
-      state.recentPhotoResizeObserver = new ResizeObserver(() => updateRecentPhotoLimit());
-      state.recentPhotoResizeObserver.observe(els.recentPhotosStrip);
-    }
-    window.requestAnimationFrame(updateRecentPhotoLimit);
-  }
-
-  function updateRecentPhotoLimit() {
-    if (!els.recentPhotosStrip || els.recentPhotosStrip.offsetParent === null) {
-      return;
-    }
-
-    const width = els.recentPhotosStrip.getBoundingClientRect().width;
-    if (!width) {
-      return;
-    }
-
-    const minimumCardWidth = width < 520 ? 155 : width < 820 ? 190 : 230;
-    const gap = 8;
-    const nextLimit = Math.max(1, Math.min(RECENT_PHOTO_LIMIT, Math.floor((width + gap) / (minimumCardWidth + gap))));
-    if (nextLimit === state.recentPhotoLimit) {
-      return;
-    }
-
-    state.recentPhotoLimit = nextLimit;
-    renderRecentPhotos();
-  }
-
   function renderDexHero() {
     if (!els.dexHeroMedia || !els.dexHeroFeature) {
       return;
@@ -4553,9 +4553,7 @@
       : dateStart
         ? formatDisplayDate(dateStart)
         : "Date unknown";
-    const locations = unique(photos.map((photo) => photo.locationName));
     const units = unique(photos.map((photo) => photo.squadronName));
-    const countries = unique(photos.map((photo) => photo.country));
     const groups = airshowPhotoGroups(photos);
 
     els.airshowDetail.innerHTML = `
@@ -4564,7 +4562,7 @@
         backLabel: "Airshows",
         eyebrow: "Event field report",
         title: airshow.name,
-        description: `${dateLabel} · ${photos.length} photographed frame${photos.length === 1 ? "" : "s"}`,
+        description: dateLabel,
         image: heroImage,
         alt: `${airshow.name} hero photo`,
         actions: renderFieldGuideActions("Airshow field report"),
@@ -4572,18 +4570,14 @@
       })}
       ${renderPageWriteUp(airshow.writeUp, "About this airshow")}
 
-      <div class="entry-stat-grid" aria-label="Airshow statistics">
-        ${statTile("Photos", photos.length)}
-        ${statTile("Locations", locations.length)}
+      <div class="entry-stat-grid entry-stat-grid-single" aria-label="Airshow statistics">
         ${statTile("Units", units.length)}
-        ${statTile("Countries", countries.length)}
       </div>
 
       <section class="detail-photo-section airshow-detail-archive">
         <div class="detail-section-heading">
           <div>
-            <p class="eyebrow">Complete event archive</p>
-            <h2>All frames</h2>
+            <h2>Event archive</h2>
           </div>
           <span class="count-pill">${photos.length}</span>
         </div>
@@ -4629,7 +4623,7 @@
 
   function renderAirshowPhotoGroups(groups) {
     return `
-      <div class="airshow-squadron-groups">
+      <div class="airshow-squadron-groups${groups.length === 1 ? " is-single-group" : ""}">
         ${groups.map((group, index) => {
           const logo = group.logo
             ? `<span class="airshow-squadron-logo"><img src="${escapeAttr(group.logo)}" alt="${escapeAttr(`${group.title} logo`)}"></span>`
@@ -4891,7 +4885,9 @@
         backLabel: "All squadrons",
         eyebrow: squadron.country || "Squadron",
         title: squadron.name,
-        description: `${photos.length} viewable photo${photos.length === 1 ? "" : "s"}${squadron.aircraftTypes.length ? ` across ${squadron.aircraftTypes.length} aircraft type${squadron.aircraftTypes.length === 1 ? "" : "s"}` : ""}`,
+        description: squadron.aircraftTypes.length
+          ? `${squadron.aircraftTypes.length} aircraft type${squadron.aircraftTypes.length === 1 ? "" : "s"}`
+          : "",
         image: heroImage,
         alt: `${squadron.name} hero photo`,
         mark: logo,
@@ -4913,8 +4909,7 @@
       <section class="detail-photo-section">
         <div class="detail-section-heading">
           <div>
-            <p class="eyebrow">Aircraft archive</p>
-            <h2>All images</h2>
+            <h2>Aircraft archive</h2>
           </div>
           <span class="count-pill">${otherPhotos.length}</span>
         </div>
@@ -4954,7 +4949,7 @@
         backLabel: "World Map",
         eyebrow: locationKicker(pin),
         title: pin.name,
-        description: `${photos.length} photo${photos.length === 1 ? "" : "s"} at this location`,
+        description: "",
         image: heroImage,
         alt: `${pin.name} hero photo`,
         actions: renderFieldGuideActions("Location field guide"),
@@ -4968,10 +4963,10 @@
             <h2 id="locationProfileHeading">${escapeHtml(profileLabel)}</h2>
           </div>
           <dl class="detail-overview-stats" aria-label="Location statistics">
-            ${archiveStat("Photos", photos.length)}
-            ${archiveStat("Location tags", locationPhotos.length)}
-            ${archiveStat("Aircraft types", typeCount)}
-            ${archiveStat("Units", unitCount)}
+            ${photos.length ? archiveStat("Photos", photos.length) : ""}
+            ${locationPhotos.length ? archiveStat("Location tags", locationPhotos.length) : ""}
+            ${typeCount ? archiveStat("Aircraft types", typeCount) : ""}
+            ${unitCount ? archiveStat("Units", unitCount) : ""}
           </dl>
           <div class="location-profile-marks">
             ${identityMarks}
@@ -4988,7 +4983,7 @@
       <section class="detail-photo-section">
         <div class="detail-section-heading">
           <div>
-            <p class="eyebrow">Aircraft and unit archive</p>
+            <h2>Aircraft and unit archive</h2>
           </div>
           <span class="count-pill">${otherPhotos.length}</span>
         </div>
@@ -5091,7 +5086,7 @@
         <div class="detail-hero-content">
           <p class="eyebrow">${escapeHtml(eyebrow)}</p>
           <h1>${escapeHtml(title)}</h1>
-          <p>${escapeHtml(description)}</p>
+          ${description ? `<p>${escapeHtml(description)}</p>` : ""}
         </div>
         ${mark ? `<span class="detail-hero-mark" aria-hidden="true">${mark}</span>` : ""}
       </section>
@@ -6020,11 +6015,8 @@
   }
 
   function aircraftGridMetrics() {
-    if (window.matchMedia("(max-width: 760px)").matches) {
+    if (window.matchMedia("(max-width: 1040px)").matches) {
       return { columns: 1, normalSpan: 1, wideSpan: 1 };
-    }
-    if (window.matchMedia("(max-width: 900px)").matches) {
-      return { columns: 12, normalSpan: 6, wideSpan: 12 };
     }
     return { columns: 12, normalSpan: 4, wideSpan: 8 };
   }
@@ -6065,7 +6057,7 @@
         backLabel: "Aircraft Dex",
         eyebrow: "Aircraft type",
         title: entry.typeName,
-        description: `${stats.photoCount} photo${stats.photoCount === 1 ? "" : "s"} across ${unitCount} ${unitLabel}`,
+        description: `${unitCount} ${unitLabel}`,
         image: heroImage,
         alt: `${entry.typeName} hero photo`,
         actions: renderFieldGuideActions("Aircraft field guide"),
@@ -6079,8 +6071,6 @@
             <h2 id="aircraftArchiveHeading">Browse the collection</h2>
           </div>
           <dl class="detail-overview-stats" aria-label="Aircraft statistics">
-            ${archiveStat("Photos", stats.photoCount)}
-            ${archiveStat(entryUnitNoun(entry, 2, true), unitCount)}
             ${archiveStat("Locations", stats.locationCount)}
             ${archiveStat("Latest", stats.latestDate ? formatDisplayDate(stats.latestDate) : "No photos")}
           </dl>
@@ -6096,8 +6086,7 @@
         <span id="${state.dexGroupMode === "location" ? "aircraftLocationPhotos" : "aircraftUnitPhotos"}" class="aircraft-photo-anchor" aria-hidden="true"></span>
         <div class="detail-section-heading">
           <div>
-            <p class="eyebrow">Photo archive</p>
-            <h2>${escapeHtml(selectedLocation ? `${selectedLocation.name} photos` : "All frames")}</h2>
+            <h2>${escapeHtml(selectedLocation ? `${selectedLocation.name} photos` : "Photo archive")}</h2>
           </div>
           <span class="count-pill">${archivePhotos.length}</span>
         </div>
@@ -6261,10 +6250,11 @@
     if (!photos.length) {
       return '<div class="empty-state">No photos found for this selection yet.</div>';
     }
+    const groups = groupPhotos(photos, mode);
 
     return `
-      <div class="photo-groups photo-groups-${escapeAttr(context)}">
-        ${groupPhotos(photos, mode)
+      <div class="photo-groups photo-groups-${escapeAttr(context)}${groups.length === 1 ? " is-single-group" : ""}">
+        ${groups
           .map(
             (group, index) => {
               const targetId = aircraftPhotoGroupTargetId(mode, group);
@@ -6344,10 +6334,11 @@
     if (!photos.length) {
       return '<div class="empty-state">No photos found for this section yet.</div>';
     }
+    const groups = aircraftTypePhotoGroups(photos);
 
     return `
-      <div class="aircraft-type-photo-groups">
-        ${aircraftTypePhotoGroups(photos).map((group, index) => `
+      <div class="aircraft-type-photo-groups${groups.length === 1 ? " is-single-group" : ""}">
+        ${groups.map((group, index) => `
           <section class="aircraft-type-photo-group">
             <div class="group-header">
               <div>
