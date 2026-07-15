@@ -97,10 +97,18 @@ class ColourQualityTests(unittest.TestCase):
         flags = build_quality_flags(metrics, None)
 
         self.assertGreaterEqual(metrics["empty_space_ratio"], 0.55)
-        self.assertTrue(any(flag["id"] == "empty-space" for flag in flags))
+        self.assertLess(metrics["empty_space_ratio"], 0.80)
+        self.assertFalse(any(flag["id"] == "empty-space" for flag in flags))
 
-        stricter_flags = build_quality_flags(metrics, None, {"empty_space_percent": 60})
-        self.assertFalse(any(flag["id"] == "empty-space" for flag in stricter_flags))
+        very_empty = Image.new("RGB", (160, 100), (100, 150, 210))
+        very_empty_draw = ImageDraw.Draw(very_empty)
+        very_empty_draw.rectangle((0, 90, 159, 99), fill=(20, 20, 20))
+        for x in range(0, 160, 8):
+            very_empty_draw.line((x, 90, x, 99), fill=(220, 220, 220), width=1)
+        very_empty_metrics = compute_quality_metrics(very_empty, very_empty.width * very_empty.height)
+        very_empty_flags = build_quality_flags(very_empty_metrics, None)
+        self.assertGreater(very_empty_metrics["empty_space_ratio"], 0.80)
+        self.assertTrue(any(flag["id"] == "empty-space" for flag in very_empty_flags))
 
     def test_collection_colour_outlier_is_compared_with_average(self) -> None:
         qualities = {
@@ -171,6 +179,31 @@ class ColourQualityTests(unittest.TestCase):
 
 
 class QualityPrefixTests(unittest.TestCase):
+    def test_build_settings_are_saved_and_reloaded(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manager = SpotterDexManager(root)
+
+            result = manager.save_build_settings(
+                {
+                    "settings": {
+                        "image_width": 1920,
+                        "thumbnail_width": 768,
+                        "image_jpeg_quality": 82,
+                        "thumbnail_jpeg_quality": 64,
+                    }
+                }
+            )
+
+            self.assertEqual(result["buildSettings"]["image_width"], 1920)
+            self.assertEqual(result["buildSettings"]["image_jpeg_quality"], 82)
+            reloaded = SpotterDexManager(root)
+            self.assertEqual(reloaded.build_settings["thumbnail_width"], 768)
+            self.assertEqual(reloaded.build_settings["thumbnail_jpeg_quality"], 64)
+
+            with self.assertRaises(ValueError):
+                manager.save_build_settings({"settings": {"image_jpeg_quality": 96}})
+
     def test_quality_settings_are_saved_and_reloaded(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

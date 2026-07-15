@@ -6255,7 +6255,14 @@ button.location-unit-chip:focus-visible,
   }
 
   #dexView .dex-browser {
+    width: 100%;
+    padding-inline: 0;
     padding-block: 44px;
+  }
+
+  #dexView .dex-browser-heading,
+  #dexView .archive-pagination {
+    padding-inline: 16px;
   }
 
   .dex-section-heading {
@@ -6274,20 +6281,30 @@ button.location-unit-chip:focus-visible,
 
   #dexView .recent-photo-strip {
     grid-template-columns: repeat(var(--recent-columns, 2), minmax(0, 1fr));
-    margin: 0;
+    width: calc(100% + 32px);
+    max-width: none;
+    margin-inline: -16px;
     padding: 0;
+    gap: 0;
+  }
+
+  #dexView .recent-photo-card {
+    border-radius: 0;
   }
 
   #dexView .aircraft-grid {
+    width: 100%;
     grid-template-columns: 1fr;
     grid-auto-rows: 194px;
-    gap: 10px;
+    gap: 0;
+    margin-inline: 0;
   }
 
   #dexView .aircraft-card {
     min-height: 0;
     grid-column: 1;
     grid-row: auto;
+    border-radius: 0;
   }
 
   #dexView .aircraft-card.is-wide {
@@ -6386,14 +6403,14 @@ button.location-unit-chip:focus-visible,
   }
 
   .squadron-directory {
-    width: calc(100% - 32px);
+    width: 100%;
   }
 
   #squadronsView .squadron-command-bar {
     position: relative;
     top: auto;
     z-index: 1;
-    padding: 18px 0;
+    padding: 18px 16px;
     background: #0d0f10;
     backdrop-filter: none;
   }
@@ -6413,15 +6430,31 @@ button.location-unit-chip:focus-visible,
     padding-top: 22px;
   }
 
+  #squadronsView .squadron-country-header,
+  #squadronsView .archive-pagination {
+    margin-inline: 16px;
+  }
+
   #squadronsView .squadron-logo-grid {
+    width: 100%;
     grid-template-columns: 1fr;
     grid-auto-rows: 276px;
-    gap: 10px;
+    gap: 0;
+    margin-inline: 0;
   }
 
   #squadronsView .squadron-logo-card {
     grid-column: 1;
     grid-row: auto;
+    border-radius: 0;
+  }
+
+  #squadronsView .squadron-card-hero {
+    top: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    object-fit: cover;
   }
 
   #squadronsView .squadron-logo-body {
@@ -10193,6 +10226,50 @@ button.location-unit-chip:focus-visible,
       content-visibility: auto;
       contain-intrinsic-size: 240px;
     }
+  }
+}
+
+/* Detail-page photo archives use the full phone canvas. Keep navigation and
+   group labels inset while the images themselves form a continuous tile wall. */
+@media (max-width: 760px) {
+  .detail-view .detail-photo-section {
+    width: auto;
+    gap: 12px;
+    margin-inline: -10px;
+    padding: 12px 0;
+    border-inline: 0;
+    border-radius: 0;
+  }
+
+  .detail-view .detail-photo-section > .detail-section-heading {
+    flex-direction: row;
+    margin-inline: 16px;
+  }
+
+  .detail-view .photo-groups,
+  .detail-view .aircraft-type-photo-groups,
+  .detail-view .airshow-squadron-groups {
+    gap: 16px;
+  }
+
+  .detail-view .photo-groups > section > .group-header,
+  .detail-view .aircraft-type-photo-group > .group-header,
+  #airshowDetailView .airshow-squadron-heading {
+    margin-inline: 16px;
+  }
+
+  .detail-view .photo-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .detail-view .photo-card {
+    border-radius: 0;
+  }
+
+  .detail-view .detail-gallery-load-more {
+    width: calc(100% - 32px);
+    margin-inline: 16px;
   }
 }
 

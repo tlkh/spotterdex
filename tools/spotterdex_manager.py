@@ -132,6 +132,24 @@ QC_FILE_PREFIX = "QC_"
 # build cache" does not wipe manual review decisions.
 QUALITY_ACK_PATH = ROOT / ".spotterdex-manager-quality.json"
 QUALITY_SETTINGS_PATH = ROOT / ".spotterdex-manager-quality-settings.json"
+BUILD_SETTINGS_PATH = ROOT / ".spotterdex-manager-build-settings.json"
+
+# Build-local image output settings. These are kept out of the catalog and
+# generated site so a reviewer can tune output size and compression without
+# changing source data.
+BUILD_SETTING_DEFAULTS: Dict[str, int] = {
+    "image_width": 2560,
+    "thumbnail_width": 1024,
+    "image_jpeg_quality": 70,
+    "thumbnail_jpeg_quality": 55,
+}
+
+BUILD_SETTING_BOUNDS: Dict[str, Tuple[int, int]] = {
+    "image_width": (640, 10000),
+    "thumbnail_width": (160, 5000),
+    "image_jpeg_quality": (1, 95),
+    "thumbnail_jpeg_quality": (1, 95),
+}
 
 # These settings are manager-local review preferences. They are deliberately
 # kept out of the catalog and generated site so a reviewer can tune the queue
@@ -152,7 +170,7 @@ QUALITY_SETTING_DEFAULTS: Dict[str, Any] = {
     "collection_colour_minimum_delta": COLLECTION_COLOUR_MINIMUM_DELTA,
     "collection_colour_z_threshold": COLLECTION_COLOUR_Z_THRESHOLD,
     "empty_space_enabled": True,
-    "empty_space_percent": 55,
+    "empty_space_percent": 80,
     "empty_space_local_contrast": 10,
     "empty_space_edge_density": 12,
     "empty_space_min_tonal_range": LOW_CONTRAST_TONAL_RANGE,
@@ -231,7 +249,9 @@ class SpotterDexManager:
         self.raw_assets_dir = self.root / "raw_assets"
         self.quality_ack_path = self.root / QUALITY_ACK_PATH.name
         self.quality_settings_path = self.root / QUALITY_SETTINGS_PATH.name
+        self.build_settings_path = self.root / BUILD_SETTINGS_PATH.name
         self.quality_settings = self._load_quality_settings()
+        self.build_settings = self._load_build_settings()
         self._exif_date_cache: Dict[str, str] = {}
         self._image_dimension_cache: Dict[str, Tuple[int, int]] = {}
         self._image_quality_cache: Dict[str, Tuple[int, int, Tuple[Tuple[str, Any], ...], Dict[str, Any]]] = {}
@@ -317,6 +337,17 @@ class SpotterDexManager:
         raw = data.get("settings") if isinstance(data, dict) else None
         return normalize_quality_settings(raw if isinstance(raw, dict) else data)
 
+    def _load_build_settings(self) -> Dict[str, int]:
+        """Load manager-local image build settings, falling back safely to defaults."""
+        if not self.build_settings_path.exists():
+            return dict(BUILD_SETTING_DEFAULTS)
+        try:
+            data = json.loads(self.build_settings_path.read_text("utf-8"))
+        except (OSError, ValueError):
+            return dict(BUILD_SETTING_DEFAULTS)
+        raw = data.get("settings") if isinstance(data, dict) else None
+        return normalize_build_settings(raw if isinstance(raw, dict) else data)
+
     def save_quality_settings(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Validate and persist manager-local image quality review settings."""
         if payload.get("reset") is True:
@@ -337,6 +368,27 @@ class SpotterDexManager:
             "ok": True,
             "qualitySettings": dict(settings),
             "message": "Image quality settings saved; the quality queue was refreshed.",
+        }
+
+    def save_build_settings(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate and persist manager-local image build settings."""
+        if payload.get("reset") is True:
+            settings = dict(BUILD_SETTING_DEFAULTS)
+        else:
+            raw = payload.get("settings") if isinstance(payload.get("settings"), dict) else payload
+            settings = normalize_build_settings(raw, strict=True)
+        try:
+            self.build_settings_path.write_text(
+                json.dumps({"settings": settings}, ensure_ascii=True, indent=2) + "\n",
+                "utf-8",
+            )
+        except OSError as exc:
+            raise ValueError(f"Could not save image build settings: {exc}") from exc
+        self.build_settings = settings
+        return {
+            "ok": True,
+            "buildSettings": dict(settings),
+            "message": "Image build settings saved.",
         }
 
     @staticmethod
@@ -714,6 +766,7 @@ class SpotterDexManager:
             "assets": assets,
             "airshowEvents": airshow_events,
             "qualitySettings": dict(self.quality_settings),
+            "buildSettings": dict(self.build_settings),
         }
 
     def _database_connection(self, *, read_only: bool = False) -> sqlite3.Connection:
@@ -1143,6 +1196,7 @@ class SpotterDexManager:
             "assets": assets,
             "airshowEvents": sorted(airshow_events, key=lambda item: item["name"]),
             "qualitySettings": dict(self.quality_settings),
+            "buildSettings": dict(self.build_settings),
         }
 
     @staticmethod
@@ -2888,7 +2942,16 @@ class SpotterDexManager:
         stderr: List[str] = []
         summary: Dict[str, Any] = {}
         done: Dict[str, Any] = {}
-        for event_name, event_payload in self.stream_build(strict=payload.get("strict") is True):
+        requested_settings = payload.get("buildSettings") if isinstance(payload, dict) else None
+        build_settings = (
+            normalize_build_settings(requested_settings, strict=True)
+            if isinstance(requested_settings, dict)
+            else None
+        )
+        for event_name, event_payload in self.stream_build(
+            strict=payload.get("strict") is True,
+            build_settings=build_settings,
+        ):
             if event_name == "log":
                 target = stderr if event_payload.get("stream") == "stderr" else stdout
                 target.append(str(event_payload.get("line") or ""))
@@ -2906,10 +2969,28 @@ class SpotterDexManager:
             "message": done.get("message", "Build failed."),
         }
 
-    def stream_build(self, strict: bool = False) -> Iterable[Tuple[str, Dict[str, Any]]]:
+    def stream_build(
+        self,
+        strict: bool = False,
+        build_settings: Optional[Dict[str, Any]] = None,
+    ) -> Iterable[Tuple[str, Dict[str, Any]]]:
         before_snapshot = snapshot_generated_outputs(self.root)
         before_counts = read_manifest_counts(self.root)
-        command = [sys.executable, "-u", "tools/build_spotterdex.py", "--progress-lines"]
+        active_build_settings = normalize_build_settings(build_settings or self.build_settings, strict=True)
+        command = [
+            sys.executable,
+            "-u",
+            "tools/build_spotterdex.py",
+            "--progress-lines",
+            "--width",
+            str(active_build_settings["image_width"]),
+            "--thumb-width",
+            str(active_build_settings["thumbnail_width"]),
+            "--jpeg-quality",
+            str(active_build_settings["image_jpeg_quality"]),
+            "--thumb-jpeg-quality",
+            str(active_build_settings["thumbnail_jpeg_quality"]),
+        ]
         if strict:
             command.append("--strict")
 
@@ -3763,7 +3844,23 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
             if parsed.path == "/api/build-stream":
                 query = parse_qs(parsed.query)
                 strict = query.get("strict", ["0"])[0] in {"1", "true", "yes"}
-                self._send_build_stream(strict=strict)
+                build_query_keys = {
+                    "image_width": "width",
+                    "thumbnail_width": "thumb-width",
+                    "image_jpeg_quality": "jpeg-quality",
+                    "thumbnail_jpeg_quality": "thumb-jpeg-quality",
+                }
+                requested_settings = {
+                    key: query[query_key][0]
+                    for key, query_key in build_query_keys.items()
+                    if query.get(query_key)
+                }
+                build_settings = (
+                    normalize_build_settings(requested_settings, strict=True)
+                    if requested_settings
+                    else None
+                )
+                self._send_build_stream(strict=strict, build_settings=build_settings)
                 return
             if parsed.path == "/favicon.ico":
                 icon_path = self.context.manager.root / "assets/icons/spotterdex-app-icon.png"
@@ -3802,6 +3899,7 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
                 "/api/set-pin-hero": self.context.manager.set_pin_hero,
                 "/api/clear-build-cache": self.context.manager.clear_build_cache,
                 "/api/save-quality-settings": self.context.manager.save_quality_settings,
+                "/api/save-build-settings": self.context.manager.save_build_settings,
                 "/api/backup-database": self.context.manager.backup_database,
                 "/api/acknowledge-quality": self.context.manager.set_quality_acknowledgement,
                 "/api/mark-quality-failures": self.context.manager.mark_quality_failures,
@@ -3845,7 +3943,11 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
             payload["traceback"] = traceback.format_exc()
         self._send_json(payload, status=status)
 
-    def _send_build_stream(self, strict: bool = False) -> None:
+    def _send_build_stream(
+        self,
+        strict: bool = False,
+        build_settings: Optional[Dict[str, Any]] = None,
+    ) -> None:
         self.send_response(HTTPStatus.OK.value)
         self.send_header("Content-Type", "text/event-stream; charset=utf-8")
         self.send_header("Cache-Control", "no-store")
@@ -3861,7 +3963,10 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
             self.wfile.flush()
 
         try:
-            for event_name, payload in self.context.manager.stream_build(strict=strict):
+            for event_name, payload in self.context.manager.stream_build(
+                strict=strict,
+                build_settings=build_settings,
+            ):
                 send_event(event_name, payload)
             self.close_connection = True
         except BrokenPipeError:
@@ -4743,7 +4848,9 @@ def build_quality_flags(
 
     if (
         active_settings["empty_space_enabled"]
-        and metrics.get("empty_space_ratio", 0.0) >= active_settings["empty_space_percent"] / 100
+        # Keep the composition check deliberately conservative even when an
+        # older manager-local settings file contains the former lower threshold.
+        and metrics.get("empty_space_ratio", 0.0) > max(80, active_settings["empty_space_percent"]) / 100
         and tonal_range >= active_settings["empty_space_min_tonal_range"]
     ):
         empty_space_percent = round(metrics["empty_space_ratio"] * 100)
@@ -5088,6 +5195,28 @@ def normalize_quality_settings(value: Any, *, strict: bool = False) -> Dict[str,
         if strict:
             raise ValueError("Underexposure luminance must be lower than overexposure luminance.")
         settings = dict(QUALITY_SETTING_DEFAULTS)
+    return settings
+
+
+def normalize_build_settings(value: Any, *, strict: bool = False) -> Dict[str, int]:
+    """Return validated manager-local image build settings."""
+    raw = value if isinstance(value, dict) else {}
+    settings = dict(BUILD_SETTING_DEFAULTS)
+    for key, default in BUILD_SETTING_DEFAULTS.items():
+        if key not in raw:
+            continue
+        candidate = raw[key]
+        try:
+            if isinstance(candidate, bool):
+                raise ValueError("must be a whole number")
+            parsed = int(str(candidate).strip())
+            minimum, maximum = BUILD_SETTING_BOUNDS[key]
+            if not minimum <= parsed <= maximum:
+                raise ValueError(f"must be between {minimum} and {maximum}")
+            settings[key] = parsed
+        except (TypeError, ValueError) as exc:
+            if strict:
+                raise ValueError(f"Build setting '{key}' {exc}.") from exc
     return settings
 
 

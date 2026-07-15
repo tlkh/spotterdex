@@ -212,6 +212,18 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--width", type=int, default=2560, help="Processed JPEG width in pixels (default: 2560).")
     parser.add_argument("--thumb-width", type=int, default=1024, help="Generated thumbnail width in pixels (default: 1024).")
+    parser.add_argument(
+        "--jpeg-quality",
+        type=int,
+        default=FULL_JPEG_QUALITY,
+        help=f"Full-size JPEG quality from 1 to 95 (default: {FULL_JPEG_QUALITY}).",
+    )
+    parser.add_argument(
+        "--thumb-jpeg-quality",
+        type=int,
+        default=THUMB_JPEG_QUALITY,
+        help=f"Thumbnail JPEG quality from 1 to 95 (default: {THUMB_JPEG_QUALITY}).",
+    )
     parser.add_argument("--logo-max-size", type=int, default=512, help="Maximum squadron logo width or height in pixels.")
     parser.add_argument("--strict", action="store_true", help="Return a non-zero exit code if validation warnings are found.")
     parser.add_argument("--no-progress", action="store_true", help="Disable terminal progress bars during the build.")
@@ -236,10 +248,27 @@ def normalize_worker_count(value: Optional[int]) -> int:
     return max(1, (os.cpu_count() or 1) - 1)
 
 
+def validate_image_build_settings(args: argparse.Namespace) -> Optional[str]:
+    """Validate image output settings supplied by the CLI or manager."""
+    if not 640 <= int(args.width) <= 10000:
+        return "--width must be between 640 and 10000 pixels."
+    if not 160 <= int(args.thumb_width) <= 5000:
+        return "--thumb-width must be between 160 and 5000 pixels."
+    if not 1 <= int(args.jpeg_quality) <= 95:
+        return "--jpeg-quality must be between 1 and 95."
+    if not 1 <= int(args.thumb_jpeg_quality) <= 95:
+        return "--thumb-jpeg-quality must be between 1 and 95."
+    return None
+
+
 def main() -> int:
     args = parse_args()
     global PROGRESS_LINE_MODE
     PROGRESS_LINE_MODE = args.progress_lines
+    image_settings_error = validate_image_build_settings(args)
+    if image_settings_error:
+        print(image_settings_error, file=sys.stderr)
+        return 2
     root = args.root.resolve()
     warnings = BuildWarningLog()
 
@@ -512,6 +541,8 @@ def build_database_catalog(args: argparse.Namespace, root: Path, warnings: Build
                 "source_ref": {"photoId": photo["id"]},
                 "target_width": args.width,
                 "thumb_width": args.thumb_width,
+                "full_jpeg_quality": args.jpeg_quality,
+                "thumb_jpeg_quality": args.thumb_jpeg_quality,
                 "pin_lookup": pin_lookup,
                 "make_demo_images": args.make_demo_images,
             }
@@ -2799,6 +2830,11 @@ def deduplicate_generated_images(
         )
 
 
+def jpeg_profile(kind: str, quality: int, subsampling: int) -> str:
+    """Identify the width-independent JPEG encoding settings in output files."""
+    return f"spotterdex-{kind}-jpeg-v4-q{int(quality)}-s{int(subsampling)}"
+
+
 def jpeg_matches_profile(image: Image.Image, profile: str) -> bool:
     """Return whether a generated JPEG was encoded with the current web profile."""
     comment = image.info.get("comment", b"")
@@ -2838,6 +2874,10 @@ def process_photo_job(job: Dict[str, Any]) -> Dict[str, Any]:
     photo_item = job["photo_item"]
     type_name = str(job["type_name"])
     squadron_name = str(job["squadron_name"])
+    full_jpeg_quality = int(job.get("full_jpeg_quality", FULL_JPEG_QUALITY))
+    thumb_jpeg_quality = int(job.get("thumb_jpeg_quality", THUMB_JPEG_QUALITY))
+    full_jpeg_profile = jpeg_profile("full", full_jpeg_quality, FULL_JPEG_SUBSAMPLING)
+    thumb_jpeg_profile = jpeg_profile("thumb", thumb_jpeg_quality, THUMB_JPEG_SUBSAMPLING)
 
     if not source_path.exists():
         if job.get("make_demo_images"):
@@ -2874,8 +2914,8 @@ def process_photo_job(job: Dict[str, Any]) -> Dict[str, Any]:
                 with Image.open(output_path) as processed_image, Image.open(thumb_path) as thumbnail_image:
                     processed_size = processed_image.size
                     thumbnail_size = thumbnail_image.size
-                    full_profile_matches = jpeg_matches_profile(processed_image, FULL_JPEG_PROFILE)
-                    thumb_profile_matches = jpeg_matches_profile(thumbnail_image, THUMB_JPEG_PROFILE)
+                    full_profile_matches = jpeg_matches_profile(processed_image, full_jpeg_profile)
+                    thumb_profile_matches = jpeg_matches_profile(thumbnail_image, thumb_jpeg_profile)
                 # A changed build width or thumbnail width requires a fresh output,
                 # even when the source image has not changed.
                 reuse_existing = (
@@ -2892,17 +2932,17 @@ def process_photo_job(job: Dict[str, Any]) -> Dict[str, Any]:
                 save_web_jpeg(
                     processed,
                     output_path,
-                    quality=FULL_JPEG_QUALITY,
+                    quality=full_jpeg_quality,
                     subsampling=FULL_JPEG_SUBSAMPLING,
-                    profile=FULL_JPEG_PROFILE,
+                    profile=full_jpeg_profile,
                     exif=output_exif,
                 )
                 save_web_jpeg(
                     thumbnail,
                     thumb_path,
-                    quality=THUMB_JPEG_QUALITY,
+                    quality=thumb_jpeg_quality,
                     subsampling=THUMB_JPEG_SUBSAMPLING,
-                    profile=THUMB_JPEG_PROFILE,
+                    profile=thumb_jpeg_profile,
                     exif=output_exif,
                 )
                 processed_size = processed.size

@@ -4908,7 +4908,7 @@
         </div>
         ${squadronLevelPhotos.length
           ? renderDetailPhotoGrid(squadronLevelPhotos, "squadron", "squadron-level")
-          : '<p class="muted">No unit-level photos tagged directly to this squadron.</p>'}
+          : ""}
       </section>
       <section class="detail-photo-section">
         <div class="detail-section-heading">
@@ -4989,7 +4989,6 @@
         <div class="detail-section-heading">
           <div>
             <p class="eyebrow">Aircraft and unit archive</p>
-            <p class="muted">Aircraft- and squadron-tagged photos, newest first.</p>
           </div>
           <span class="count-pill">${otherPhotos.length}</span>
         </div>

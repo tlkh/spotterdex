@@ -2125,11 +2125,11 @@
         if (input.type === "checkbox") input.checked = Boolean(settings[key]);
         else input.value = settings[key];
       });
-      $("qualitySettingsStatus").textContent = state.data ? "Settings apply to the next quality scan." : "";
+      $("qualitySettingsStatus").textContent = state.data ? "Empty-space detection settings apply to the next quality scan." : "";
     }
 
     function collectQualitySettings() {
-      const settings = {};
+      const settings = {...(state.data?.qualitySettings || {})};
       document.querySelectorAll("[data-quality-setting]").forEach((input) => {
         settings[input.dataset.qualitySetting] = input.type === "checkbox"
           ? input.checked
@@ -2140,6 +2140,36 @@
 
     async function saveQualitySettings(reset = false) {
       const result = await api("/api/save-quality-settings", reset ? {reset: true} : {settings: collectQualitySettings()});
+      toast(result.message);
+      await loadState(true);
+    }
+
+    function renderBuildSettings() {
+      const settings = state.data?.buildSettings || {};
+      document.querySelectorAll("[data-build-setting]").forEach((input) => {
+        const key = input.dataset.buildSetting;
+        if (!(key in settings) || document.activeElement === input) return;
+        input.value = settings[key];
+      });
+      $("buildSettingsStatus").textContent = state.data
+        ? "These values are used by the next build. Save settings to keep them for future sessions."
+        : "";
+    }
+
+    function collectBuildSettings() {
+      const defaults = state.data?.buildSettings || {};
+      const settings = {};
+      document.querySelectorAll("[data-build-setting]").forEach((input) => {
+        const value = Number(input.value);
+        settings[input.dataset.buildSetting] = Number.isFinite(value) && value > 0
+          ? value
+          : defaults[input.dataset.buildSetting];
+      });
+      return settings;
+    }
+
+    async function saveBuildSettings(reset = false) {
+      const result = await api("/api/save-build-settings", reset ? {reset: true} : {settings: collectBuildSettings()});
       toast(result.message);
       await loadState(true);
     }
@@ -2807,6 +2837,7 @@
     }
 
     async function runBuild() {
+      const buildSettings = collectBuildSettings();
       $("buildBtn").disabled = true;
       $("buildBtn2").disabled = true;
       $("buildStatus").textContent = "Running";
@@ -2817,7 +2848,14 @@
       setTab("build");
       await new Promise((resolve, reject) => {
         let finished = false;
-        const source = new EventSource(`/api/build-stream?nonce=${Date.now()}`);
+        const params = new URLSearchParams({nonce: String(Date.now())});
+        Object.entries({
+          width: buildSettings.image_width,
+          "thumb-width": buildSettings.thumbnail_width,
+          "jpeg-quality": buildSettings.image_jpeg_quality,
+          "thumb-jpeg-quality": buildSettings.thumbnail_jpeg_quality
+        }).forEach(([key, value]) => params.set(key, String(value)));
+        const source = new EventSource(`/api/build-stream?${params.toString()}`);
 
         source.addEventListener("status", (event) => {
           const payload = JSON.parse(event.data);
@@ -2875,6 +2913,7 @@
     }
 
     function renderOrphans() {
+      renderBuildSettings();
       const orphans = state.orphans;
       const summary = $("orphanSummary");
       const list = $("orphanList");
@@ -3178,6 +3217,12 @@
           toast(error.message);
         }
       });
+      $("saveBuildSettingsBtn").addEventListener("click", () => {
+        saveBuildSettings().catch((error) => toast(error.message));
+      });
+      $("resetBuildSettingsBtn").addEventListener("click", () => {
+        saveBuildSettings(true).catch((error) => toast(error.message));
+      });
       $("findOrphansBtn").addEventListener("click", () => findOrphans().catch((error) => toast(error.message)));
       $("deleteOrphansBtn").addEventListener("click", () => deleteOrphans().catch((error) => toast(error.message)));
       $("writeUpType").addEventListener("change", () => renderWriteUpEditor());
@@ -3223,11 +3268,8 @@
         state.qualityShowAcknowledged = event.target.checked;
         renderQualityControl();
       });
-      $("saveQualitySettingsBtn").addEventListener("click", () => {
+      document.querySelector("[data-quality-setting='empty_space_enabled']").addEventListener("change", () => {
         saveQualitySettings().catch((error) => toast(error.message));
-      });
-      $("resetQualitySettingsBtn").addEventListener("click", () => {
-        saveQualitySettings(true).catch((error) => toast(error.message));
       });
       $("qualityFilters").addEventListener("click", (event) => {
         const button = event.target.closest("[data-quality-filter]");

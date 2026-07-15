@@ -6,5 +6,6 @@ raw_assets/
 .spotterdex-manager-cache/
 .spotterdex-manager-quality.json
 .spotterdex-manager-quality-settings.json
+.spotterdex-manager-build-settings.json
 .playwright*
 content/backups/
