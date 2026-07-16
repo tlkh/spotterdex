@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-14T13:52:53+00:00",
+  "generatedAt": "2026-07-16T16:06:22+00:00",
   "entities": {
     "countries": {
       "au": {
@@ -1826,6 +1826,120 @@
           "DateTimeOriginal": "2026:04:08 12:10:54",
           "DateTimeDigitized": "2026:04:08 12:10:54",
           "DateTime": "2026:07:04 19:52:08"
+        }
+      },
+      "2026-04-08-dsc09026": {
+        "id": "2026-04-08-dsc09026",
+        "locationId": "jp-gifu-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "kawasaki-ec-2",
+            "unitId": "jp-electronic-warfare-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2026",
+        "date": "2026-04-08",
+        "sortDate": "2026-04-08",
+        "livery": "",
+        "title": "",
+        "caption": "EC-2 landing after a test flight",
+        "image": "assets/generated/photos/2026-04-08-dsc09026.jpg",
+        "thumbnail": "assets/generated/thumbs/2026-04-08-dsc09026.jpg",
+        "source": "raw_assets/DSC09026.jpg",
+        "originalSize": "8388 x 5592",
+        "processedSize": "2560 x 1707",
+        "thumbnailSize": "1024 x 683",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "200mm",
+          "FocalLengthIn35mmFilm": "200mm",
+          "FNumber": "f/8.0",
+          "ExposureTime": "1/2000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "400",
+          "DateTimeOriginal": "2026:04:08 14:50:32",
+          "DateTimeDigitized": "2026:04:08 14:50:32",
+          "DateTime": "2026:07:16 23:01:02"
+        }
+      },
+      "2026-04-08-dsc08980": {
+        "id": "2026-04-08-dsc08980",
+        "locationId": "jp-gifu-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "kawasaki-ec-2",
+            "unitId": "jp-electronic-warfare-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2026",
+        "date": "2026-04-08",
+        "sortDate": "2026-04-08",
+        "livery": "",
+        "title": "",
+        "caption": "EC-2 landing after a test flight",
+        "image": "assets/generated/photos/2026-04-08-dsc08980.jpg",
+        "thumbnail": "assets/generated/thumbs/2026-04-08-dsc08980.jpg",
+        "source": "raw_assets/DSC08980.jpg",
+        "originalSize": "7576 x 5682",
+        "processedSize": "2560 x 1920",
+        "thumbnailSize": "1024 x 768",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "241mm",
+          "FocalLengthIn35mmFilm": "241mm",
+          "FNumber": "f/8.0",
+          "ExposureTime": "1/2000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "320",
+          "DateTimeOriginal": "2026:04:08 14:50:22",
+          "DateTimeDigitized": "2026:04:08 14:50:22",
+          "DateTime": "2026:07:16 23:01:00"
+        }
+      },
+      "2026-04-08-dsc08967": {
+        "id": "2026-04-08-dsc08967",
+        "locationId": "jp-gifu-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "kawasaki-ec-2",
+            "unitId": "jp-electronic-warfare-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2026",
+        "date": "2026-04-08",
+        "sortDate": "2026-04-08",
+        "livery": "",
+        "title": "",
+        "caption": "EC-2 landing after a test flight",
+        "image": "assets/generated/photos/2026-04-08-dsc08967.jpg",
+        "thumbnail": "assets/generated/thumbs/2026-04-08-dsc08967.jpg",
+        "source": "raw_assets/DSC08967.jpg",
+        "originalSize": "7347 x 5510",
+        "processedSize": "2560 x 1920",
+        "thumbnailSize": "1024 x 768",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "344mm",
+          "FocalLengthIn35mmFilm": "344mm",
+          "FNumber": "f/8.0",
+          "ExposureTime": "1/2000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "320",
+          "DateTimeOriginal": "2026:04:08 14:50:19",
+          "DateTimeDigitized": "2026:04:08 14:50:19",
+          "DateTime": "2026:07:16 23:00:59"
         }
       },
       "2026-04-08-681203": {
@@ -21712,6 +21826,9 @@
         "2023-10-06-dsc01681-enhanced-nr"
       ],
       "kawasaki-ec-2": [
+        "2026-04-08-dsc09026",
+        "2026-04-08-dsc08980",
+        "2026-04-08-dsc08967",
         "2026-04-08-681203"
       ],
       "kawasaki-oh-1-ninja": [
@@ -22381,6 +22498,9 @@
         "2023-11-11-dsc08070-enhanced-nr"
       ],
       "jp-electronic-warfare-squadron": [
+        "2026-04-08-dsc09026",
+        "2026-04-08-dsc08980",
+        "2026-04-08-dsc08967",
         "2026-04-08-681203",
         "2025-12-10-181202"
       ],
@@ -22722,6 +22842,9 @@
       "jp-gifu-air-base": [
         "2026-04-08-xx8523",
         "2026-04-08-xx5606",
+        "2026-04-08-dsc09026",
+        "2026-04-08-dsc08980",
+        "2026-04-08-dsc08967",
         "2026-04-08-681203",
         "2026-04-08-638101",
         "2026-04-08-128928",

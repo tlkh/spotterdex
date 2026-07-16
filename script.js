@@ -3,7 +3,6 @@
   const EMPTY_PHOTOS = Object.freeze([]);
   const RECENT_PHOTO_LIMIT = 8;
   const MOBILE_ARCHIVE_PAGE_SIZE = 12;
-  const MOBILE_DETAIL_PAGE_SIZE = 12;
   const MOBILE_ARCHIVE_PREFETCH_OFFSET = Math.max(0, Math.floor(MOBILE_ARCHIVE_PAGE_SIZE / 2) - 1);
   const VIEWER_SWIPE_MIN_DISTANCE = 56;
   const VIEWER_SWIPE_MAX_DURATION = 650;
@@ -143,7 +142,6 @@
     toastTimer: null,
     mapControlPanelOpen: true,
     renderedViews: new Set(),
-    detailGalleries: new Map(),
     pageNavigationLoading: false,
     fullDataPromise: null,
     lastHandledHistoryUrl: "",
@@ -1061,12 +1059,6 @@
     const detailBackButton = event.target.closest("[data-detail-back]");
     if (detailBackButton) {
       setActiveTab(detailBackButton.dataset.detailBack);
-      return;
-    }
-
-    const detailLoadButton = event.target.closest("[data-detail-load-more]");
-    if (detailLoadButton) {
-      appendDetailGalleryPage(detailLoadButton);
       return;
     }
 
@@ -3993,7 +3985,7 @@
             <strong>${escapeHtml(group.title)}</strong>
             <span class="location-type-meta">
               <span>${escapeHtml(photoCount)}</span>
-              <span aria-hidden="true">${isExpanded ? "−" : "+"}</span>
+              <span aria-hidden="true">↗</span>
             </span>
           </span>
         </button>
@@ -4553,26 +4545,21 @@
       : dateStart
         ? formatDisplayDate(dateStart)
         : "Date unknown";
-    const units = unique(photos.map((photo) => photo.squadronName));
     const groups = airshowPhotoGroups(photos);
 
     els.airshowDetail.innerHTML = `
       ${renderDetailHero({
         backView: "airshowsView",
         backLabel: "Airshows",
-        eyebrow: "Event field report",
+        eyebrow: "",
         title: airshow.name,
         description: dateLabel,
         image: heroImage,
         alt: `${airshow.name} hero photo`,
-        actions: renderFieldGuideActions("Airshow field report"),
+        actions: renderFieldGuideActions("Airshow actions"),
         className: "airshow-field-guide-hero"
       })}
       ${renderPageWriteUp(airshow.writeUp, "About this airshow")}
-
-      <div class="entry-stat-grid entry-stat-grid-single" aria-label="Airshow statistics">
-        ${statTile("Units", units.length)}
-      </div>
 
       <section class="detail-photo-section airshow-detail-archive">
         <div class="detail-section-heading">
@@ -4591,7 +4578,7 @@
   }
 
   function airshowHeroPhoto(airshow, photos) {
-    return state.photoById.get(airshow.heroPhotoId) || photos[0] || null;
+    return state.photoById.get(airshow.heroPhotoId) || [...photos].sort(sortPhotos)[0] || null;
   }
 
   function airshowPhotoGroups(photos) {
@@ -4615,10 +4602,7 @@
         eyebrow: squadron?.unitLabel || photo.unitLabel || unitDisplayLabel(unitType),
         logo: squadron?.logo || ""
       };
-    }, sortPhotosOldest, (a, b) => {
-        const dateDiff = (a.photos[0]?.sortTime || 0) - (b.photos[0]?.sortTime || 0);
-        return dateDiff || a.title.localeCompare(b.title);
-    });
+    }, sortPhotos, reverseChronologicalGroupSorter);
   }
 
   function renderAirshowPhotoGroups(groups) {
@@ -4664,6 +4648,31 @@
       return timeDiff;
     }
     return `${photoSubjectLabel(a)} ${a.locationName}`.localeCompare(`${photoSubjectLabel(b)} ${b.locationName}`);
+  }
+
+  function chronologicalGroupSorter(a, b) {
+    const firstA = firstChronologicalPhoto(a.photos);
+    const firstB = firstChronologicalPhoto(b.photos);
+    const timeDiff = (firstA?.sortTime || 0) - (firstB?.sortTime || 0);
+    if (timeDiff) {
+      return timeDiff;
+    }
+    const firstLabelA = firstA ? `${photoSubjectLabel(firstA)} ${firstA.locationName}` : a.title;
+    const firstLabelB = firstB ? `${photoSubjectLabel(firstB)} ${firstB.locationName}` : b.title;
+    return firstLabelA.localeCompare(firstLabelB) || a.title.localeCompare(b.title);
+  }
+
+  function reverseChronologicalGroupSorter(a, b) {
+    return chronologicalGroupSorter(b, a);
+  }
+
+  function firstChronologicalPhoto(photos) {
+    return (photos || []).reduce((first, photo) => {
+      if (!first || sortPhotosOldest(photo, first) < 0) {
+        return photo;
+      }
+      return first;
+    }, null);
   }
 
   function renderSquadronCountryRail(squadrons) {
@@ -4938,8 +4947,6 @@
       : profile.heroAsset
         ? profile.heroAsset.image || profile.heroAsset.thumbnail || ""
         : "";
-    const typeCount = locationPhotoGroups(pin, photos, "type").length;
-    const unitCount = locationPhotoGroups(pin, photos, "squadron").length;
     const identityMarks = renderLocationIdentityMarks(profile.families, profile.units);
     const profileLabel = [pin.country, pin.icao].filter(Boolean).join(" · ") || "Location archive";
 
@@ -4953,29 +4960,26 @@
         image: heroImage,
         alt: `${pin.name} hero photo`,
         actions: renderFieldGuideActions("Location field guide"),
+        footer: `
+          <div class="location-hero-profile" aria-label="Location profile">
+            <div class="location-hero-profile-title">
+              <p class="eyebrow">Location profile</p>
+              <h2>${escapeHtml(profileLabel)}</h2>
+            </div>
+            <dl class="detail-overview-stats location-hero-profile-stats" aria-label="Location statistics">
+              ${photos.length ? archiveStat("Photos", photos.length) : ""}
+            </dl>
+            <div class="location-profile-marks">
+              ${identityMarks}
+            </div>
+          </div>
+        `,
         className: "location-field-guide-hero"
       })}
       ${renderPageWriteUp(pin.writeUp, "About this location")}
-      <section class="detail-overview-card location-profile-overview" aria-labelledby="locationProfileHeading">
-        <div class="detail-overview-toolbar location-profile-toolbar">
-          <div class="detail-overview-title">
-            <p class="eyebrow">Location profile</p>
-            <h2 id="locationProfileHeading">${escapeHtml(profileLabel)}</h2>
-          </div>
-          <dl class="detail-overview-stats" aria-label="Location statistics">
-            ${photos.length ? archiveStat("Photos", photos.length) : ""}
-            ${locationPhotos.length ? archiveStat("Location tags", locationPhotos.length) : ""}
-            ${typeCount ? archiveStat("Aircraft types", typeCount) : ""}
-            ${unitCount ? archiveStat("Units", unitCount) : ""}
-          </dl>
-          <div class="location-profile-marks">
-            ${identityMarks}
-          </div>
-        </div>
-      </section>
       ${
         locationPhotos.length
-          ? `<section class="detail-photo-section location-specific-photo-section">
+          ? `<section class="detail-photo-section location-specific-photo-section${otherPhotos.length ? " has-other-sections" : ""}">
               ${renderDetailPhotoGrid(locationPhotos, "location", "location-tagged", { hidePhotoSubject: true })}
             </section>`
           : ""
@@ -5076,7 +5080,7 @@
     return html;
   }
 
-  function renderDetailHero({ backView, backLabel, eyebrow, title, description, image, alt, mark = "", actions = "", className = "" }) {
+  function renderDetailHero({ backView, backLabel, eyebrow, title, description, image, alt, mark = "", actions = "", footer = "", className = "" }) {
     return `
       <section class="detail-hero${image ? " has-image" : ""}${className ? ` ${escapeAttr(className)}` : ""}">
         ${image ? `<img src="${escapeAttr(image)}" alt="${escapeAttr(alt)}">` : ""}
@@ -5084,11 +5088,12 @@
         <button class="detail-back-button" type="button" data-detail-back="${escapeAttr(backView)}">← ${escapeHtml(backLabel)}</button>
         ${actions}
         <div class="detail-hero-content">
-          <p class="eyebrow">${escapeHtml(eyebrow)}</p>
+          ${eyebrow ? `<p class="eyebrow">${escapeHtml(eyebrow)}</p>` : ""}
           <h1>${escapeHtml(title)}</h1>
           ${description ? `<p>${escapeHtml(description)}</p>` : ""}
         </div>
         ${mark ? `<span class="detail-hero-mark" aria-hidden="true">${mark}</span>` : ""}
+        ${footer}
       </section>
     `;
   }
@@ -5105,59 +5110,18 @@
     const key = normalizeKey(galleryKey) || `gallery-${normalizeKey(photos[0]?.id || "photos")}`;
     const galleryId = `detail-gallery-${key}`;
     const gridId = `${galleryId}-grid`;
-    const mobile = isFocusedMobileLayout();
-    const visiblePhotos = mobile ? photos.slice(0, MOBILE_DETAIL_PAGE_SIZE) : photos;
-    state.detailGalleries.set(key, { photos, context, options });
-    const hasMore = visiblePhotos.length < photos.length;
-    const remaining = photos.length - visiblePhotos.length;
     const photoGridCount = Math.min(photos.length, 4);
 
     return `
-      <div class="detail-gallery" id="${escapeAttr(galleryId)}" data-detail-gallery-visible="${visiblePhotos.length}" data-detail-gallery-total="${photos.length}">
+      <div class="detail-gallery" id="${escapeAttr(galleryId)}">
         <div class="photo-grid photo-grid-count-${photoGridCount}${photos.length === 1 ? " photo-grid-single" : ""} ${escapeAttr(className)}" id="${escapeAttr(gridId)}">
-          ${visiblePhotos.map((photo) => renderPhotoCard(photo, context, {
+          ${photos.map((photo) => renderPhotoCard(photo, context, {
             ...options,
             fullResolution: options.fullResolution ?? photos.length === 1
           })).join("")}
         </div>
-        ${hasMore
-          ? `<button class="detail-gallery-load-more" type="button" data-detail-load-more="${escapeAttr(key)}" aria-controls="${escapeAttr(galleryId)}-grid">Show ${remaining} more photo${remaining === 1 ? "" : "s"}</button>`
-          : ""}
       </div>
     `;
-  }
-
-  function appendDetailGalleryPage(button) {
-    if (!isFocusedMobileLayout()) {
-      return;
-    }
-    const key = button.dataset.detailLoadMore || "";
-    const galleryRecord = state.detailGalleries.get(key);
-    const gallery = document.getElementById(`detail-gallery-${key}`);
-    const grid = gallery?.querySelector(".photo-grid");
-    if (!galleryRecord || !gallery || !grid) {
-      return;
-    }
-
-    const visibleCount = Number(gallery.dataset.detailGalleryVisible) || 0;
-    const nextCount = Math.min(visibleCount + MOBILE_DETAIL_PAGE_SIZE, galleryRecord.photos.length);
-    grid.insertAdjacentHTML(
-      "beforeend",
-      galleryRecord.photos
-        .slice(visibleCount, nextCount)
-        .map((photo) => renderPhotoCard(photo, galleryRecord.context, {
-          ...galleryRecord.options,
-          fullResolution: galleryRecord.options?.fullResolution ?? galleryRecord.photos.length === 1
-        }))
-        .join("")
-    );
-    gallery.dataset.detailGalleryVisible = String(nextCount);
-    const remaining = galleryRecord.photos.length - nextCount;
-    if (!remaining) {
-      button.remove();
-    } else {
-      button.textContent = `Show ${remaining} more photo${remaining === 1 ? "" : "s"}`;
-    }
   }
 
   function updateStatsFocalMode(mode) {
@@ -5414,7 +5378,7 @@
       records.push(statsLimitRecord(
         "Smallest aperture",
         formatApertureValue(smallestAperture.value),
-        `${frameCountLabel(smallestAperture.photos.length)} · maximum depth`,
+        `${frameCountLabel(smallestAperture.photos.length)} · extreme exposure control`,
         smallestAperture,
         "aperture-value",
         smallestAperture.value
@@ -5491,7 +5455,6 @@
         ${renderResponsivePhotoImage(photo, `${record.label}: ${photoSubjectLabel(photo)} at ${photo.locationName}`, {
           sizes: "(max-width: 640px) 100vw, (max-width: 1100px) 50vw, 25vw"
         })}
-        <span class="stats-limit-scrim" aria-hidden="true"></span>
         <span class="stats-limit-copy">
           <small>${escapeHtml(record.label)}</small>
           <strong>${escapeHtml(record.value)}</strong>
@@ -6070,10 +6033,6 @@
             <p class="eyebrow">Archive browser</p>
             <h2 id="aircraftArchiveHeading">Browse the collection</h2>
           </div>
-          <dl class="detail-overview-stats" aria-label="Aircraft statistics">
-            ${archiveStat("Locations", stats.locationCount)}
-            ${archiveStat("Latest", stats.latestDate ? formatDisplayDate(stats.latestDate) : "No photos")}
-          </dl>
           <div class="segmented" role="radiogroup" aria-label="Organize aircraft photos">
             ${segmentButton(unitGroupLabel, "squadron", state.dexGroupMode, "data-dex-group", "aircraftUnitPhotos")}
             ${segmentButton("Location", "location", state.dexGroupMode, "data-dex-group", "aircraftLocationPhotos")}
@@ -6228,15 +6187,6 @@
     `;
   }
 
-  function statTile(label, value) {
-    return `
-      <div>
-        <strong>${escapeHtml(value)}</strong>
-        <span>${escapeHtml(label)}</span>
-      </div>
-    `;
-  }
-
   function archiveStat(label, value) {
     return `
       <div>
@@ -6309,24 +6259,33 @@
     `;
   }
 
+  function aircraftArchiveGroupSorter(a, b) {
+    const kindA = a.groupKind === "unit" ? 0 : 1;
+    const kindB = b.groupKind === "unit" ? 0 : 1;
+    return kindA - kindB || chronologicalGroupSorter(a, b);
+  }
+
   function aircraftTypePhotoGroups(photos) {
     return groupPhotoRecords(
       photos,
       (photo) => {
-        const title = photo.tagScope === "aircraft" && photo.aircraftType
-          ? photo.aircraftType
-          : "Unit-only images";
+        const isAircraft = photo.tagScope === "aircraft";
+        const squadron = isAircraft ? null : squadronForPhoto(photo);
+        const unitType = squadron?.unitType || photo.unitType;
+        const title = isAircraft
+          ? photo.aircraftType || "Unknown aircraft"
+          : squadron?.name || photo.squadronName || unknownUnitName(unitType);
         return {
-          key: `aircraft-type-${normalizeKey(title)}`,
+          key: isAircraft
+            ? `aircraft-type-${normalizeKey(title)}`
+            : `unit-${normalizeKey(`${squadron?.id || photo.country || ""}-${title}-${unitType || ""}`)}`,
           title,
-          eyebrow: photo.tagScope === "aircraft" ? "Aircraft type" : ""
+          eyebrow: isAircraft ? "Aircraft type" : squadron?.unitLabel || photo.unitLabel || unitDisplayLabel(unitType),
+          groupKind: isAircraft ? "aircraft" : "unit"
         };
       },
       sortPhotos,
-      (a, b) => {
-        const latestDiff = (b.photos[0]?.sortTime || 0) - (a.photos[0]?.sortTime || 0);
-        return latestDiff || a.title.localeCompare(b.title);
-      }
+      aircraftArchiveGroupSorter
     );
   }
 

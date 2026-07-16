@@ -932,6 +932,9 @@ INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_over
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2026-04-08-128928', '128928.jpg', 'jp-gifu-air-base', NULL, NULL, '', 'Mitsubishi F-15J (12-8928) from ADTW landing at Gifu Air Base', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2026-04-08-638101', '638101.jpg', 'jp-gifu-air-base', NULL, NULL, '', 'Mitsubishi F-2B (63-8101) landing at Gifu Air Base', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2026-04-08-681203', '681203.jpg', 'jp-gifu-air-base', NULL, NULL, '', 'Kawasaki EC-2 (68-1203) landing at Gifu Air Base after a test flight.', '', 0);
+INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2026-04-08-dsc08967', 'DSC08967.jpg', 'jp-gifu-air-base', NULL, NULL, '', 'EC-2 landing after a test flight', '', 0);
+INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2026-04-08-dsc08980', 'DSC08980.jpg', 'jp-gifu-air-base', NULL, NULL, '', 'EC-2 landing after a test flight', '', 0);
+INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2026-04-08-dsc09026', 'DSC09026.jpg', 'jp-gifu-air-base', NULL, NULL, '', 'EC-2 landing after a test flight', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2026-04-08-xx5606', 'QC_xx5606.jpg', 'jp-gifu-air-base', NULL, NULL, '', 'Kawasaki T-4 from the Air Development and Test Wing landing at Gifu Air Base', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2026-04-08-xx8523', 'QC_xx8523.jpg', 'jp-gifu-air-base', NULL, NULL, '', 'Mitsubishi F-2A from ADTW landing at Gifu Air Base', '', 0);
 
@@ -1420,6 +1423,9 @@ INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", 
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2026-04-08-128928', 0, 'mitsubishi-f-15j-eagle', 'jp-air-development-and-test-wing', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2026-04-08-638101', 0, 'mitsubishi-f-2b', 'jp-air-development-and-test-wing', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2026-04-08-681203', 0, 'kawasaki-ec-2', 'jp-electronic-warfare-squadron', 1);
+INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2026-04-08-dsc08967', 0, 'kawasaki-ec-2', 'jp-electronic-warfare-squadron', 1);
+INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2026-04-08-dsc08980', 0, 'kawasaki-ec-2', 'jp-electronic-warfare-squadron', 1);
+INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2026-04-08-dsc09026', 0, 'kawasaki-ec-2', 'jp-electronic-warfare-squadron', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2026-04-08-xx5606', 0, 'kawasaki-t-4', 'jp-air-development-and-test-wing', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2026-04-08-xx8523', 0, 'mitsubishi-f-2a', 'jp-air-development-and-test-wing', 1);
 
