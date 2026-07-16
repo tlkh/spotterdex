@@ -7351,7 +7351,16 @@
       return;
     }
     const zoom = state.viewerZoom || 1;
-    els.viewerImage.style.transform = `translate3d(${state.viewerPanX}px, ${state.viewerPanY}px, 0) scale(${zoom})`;
+    if (isMobileViewerLayout()) {
+      const size = `${zoom * 100}%`;
+      els.viewerImage.style.width = size;
+      els.viewerImage.style.height = size;
+      els.viewerImage.style.transform = `translate3d(${state.viewerPanX}px, ${state.viewerPanY}px, 0)`;
+    } else {
+      els.viewerImage.style.width = "";
+      els.viewerImage.style.height = "";
+      els.viewerImage.style.transform = `translate3d(${state.viewerPanX}px, ${state.viewerPanY}px, 0) scale(${zoom})`;
+    }
     els.viewerImage.classList.toggle("is-zoomed", zoom > 1);
     els.viewerImageFrame?.classList.toggle("is-zoomed", zoom > 1);
     if (els.viewerZoomResetButton) {
@@ -7364,10 +7373,17 @@
     if (!els.viewerImage || !els.viewerImageFrame) {
       return;
     }
-    const width = els.viewerImage.clientWidth || els.viewerImageFrame.clientWidth || 0;
-    const height = els.viewerImage.clientHeight || els.viewerImageFrame.clientHeight || 0;
-    const maxX = Math.max(0, (width * state.viewerZoom - els.viewerImageFrame.clientWidth) / 2);
-    const maxY = Math.max(0, (height * state.viewerZoom - els.viewerImageFrame.clientHeight) / 2);
+    const isMobile = isMobileViewerLayout();
+    const width = isMobile
+      ? els.viewerImageFrame.clientWidth
+      : els.viewerImage.clientWidth || els.viewerImageFrame.clientWidth || 0;
+    const height = isMobile
+      ? els.viewerImageFrame.clientHeight
+      : els.viewerImage.clientHeight || els.viewerImageFrame.clientHeight || 0;
+    const scaledWidth = width * state.viewerZoom;
+    const scaledHeight = height * state.viewerZoom;
+    const maxX = Math.max(0, (scaledWidth - els.viewerImageFrame.clientWidth) / 2);
+    const maxY = Math.max(0, (scaledHeight - els.viewerImageFrame.clientHeight) / 2);
     state.viewerPanX = Math.min(maxX, Math.max(-maxX, state.viewerPanX));
     state.viewerPanY = Math.min(maxY, Math.max(-maxY, state.viewerPanY));
   }

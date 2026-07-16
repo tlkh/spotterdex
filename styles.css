@@ -7755,6 +7755,7 @@ button.location-unit-chip:focus-visible,
     height: 100%;
     max-width: none;
     max-height: none;
+    will-change: auto;
   }
 
   .viewer-button {
