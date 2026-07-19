@@ -4,8 +4,16 @@
   const RECENT_PHOTO_LIMIT = 8;
   const MOBILE_ARCHIVE_PAGE_SIZE = 12;
   const MOBILE_ARCHIVE_PREFETCH_OFFSET = Math.max(0, Math.floor(MOBILE_ARCHIVE_PAGE_SIZE / 2) - 1);
-  const VIEWER_SWIPE_MIN_DISTANCE = 56;
-  const VIEWER_SWIPE_MAX_DURATION = 650;
+  const GESTURE_INTENT_DISTANCE = 8;
+  const GESTURE_AXIS_DOMINANCE = 1.25;
+  const GESTURE_SAMPLE_LIMIT = 6;
+  const GESTURE_SAMPLE_WINDOW_MS = 100;
+  const MOTION_DECELERATION_RATE = 0.99;
+  const MOTION_RUBBERBAND_CONSTANT = 0.55;
+  const MOTION_SPRING_RESPONSE = 0.34;
+  const MOTION_SPRING_DAMPING = 0.82;
+  const MOTION_POSITION_EPSILON = 0.5;
+  const MOTION_VELOCITY_EPSILON = 5;
   const MAP_LABEL_GAP_DESKTOP = 6;
   const MAP_LABEL_GAP_COMPACT = 4;
   const MAP_CLUSTER_SCREEN_DISTANCE_DESKTOP = 120;
@@ -21,9 +29,6 @@
   const MAP_PANEL_COACH_STORAGE_KEY = "spotterdex-map-panel-coach-dismissed";
   const MOBILE_SESSION_KEY_PREFIX = "spotterdex-mobile-session-v1:";
   const INSTALL_DISMISSED_STORAGE_KEY = "spotterdex-install-dismissed-v1";
-  const SHEET_DISMISS_DISTANCE = 140;
-  const SHEET_SNAP_DISTANCE = 52;
-  const SHEET_DISMISS_VELOCITY = 0.78;
   const DEFAULT_SHARE_IMAGE_ALT = "Aircraft formation over Gifu Air Base in Japan";
   const FOCAL_DISTRIBUTION_FIRST_CENTER = 100;
   const FOCAL_DISTRIBUTION_BIN_WIDTH = 100;
@@ -48,6 +53,7 @@
   let statsExifLoadPromise = null;
   let mobileShellEventsBound = false;
   let viewerEventsBound = false;
+  const motionControllers = new WeakMap();
   const PAGE_ROUTES = {
     mapView: "index.html",
     locationDetailView: "index.html",
@@ -129,20 +135,22 @@
     viewerPointers: new Map(),
     viewerDragOrigin: null,
     viewerPinchStart: null,
-    viewerSwipeStart: null,
+    viewerGestureGeometry: null,
+    viewerCarouselDrag: null,
     viewerInfoSnap: "expanded",
     viewerHistoryPushed: false,
     viewerReturnFocus: null,
     mobileMapPanel: null,
     mapSheetSnap: "compact",
     sheetDrag: null,
+    suppressMapLocationClickUntil: 0,
+    scrollEdgeFrame: 0,
     installPromptEvent: null,
     connectivityOffline: false,
     sessionRestore: null,
     toastTimer: null,
     mapControlPanelOpen: true,
     renderedViews: new Set(),
-    pageNavigationLoading: false,
     fullDataPromise: null,
     lastHandledHistoryUrl: "",
     isApplyingHash: false
@@ -153,6 +161,7 @@
   document.addEventListener("DOMContentLoaded", init);
 
   async function init() {
+    ensureAppToast();
     ensureMobileAppShell();
     cacheElements();
     state.sessionRestore = readPageSessionState();
@@ -171,6 +180,7 @@
     updateMobileAppChrome();
     updateConnectivityUi({ announce: false });
     restoreSessionScroll(state.sessionRestore);
+    scheduleScrollEdgeUpdate();
     schedulePageShellWarmup();
   }
 
@@ -250,7 +260,11 @@
           </div>
           <div class="viewer-image-frame">
             <button class="viewer-button previous" type="button" id="previousPhotoButton" aria-label="Previous photo">◀</button>
-            <img id="viewerImage" alt="" draggable="false">
+            <div class="viewer-carousel-track" id="viewerCarouselTrack">
+              <img class="viewer-carousel-preview" id="viewerPreviousImage" alt="" aria-hidden="true" draggable="false">
+              <img id="viewerImage" alt="" draggable="false">
+              <img class="viewer-carousel-preview" id="viewerNextImage" alt="" aria-hidden="true" draggable="false">
+            </div>
             <button class="viewer-button next" type="button" id="nextPhotoButton" aria-label="Next photo">▶</button>
           </div>
           <div class="viewer-filmstrip" id="viewerFilmstrip" aria-label="Photo thumbnails"></div>
@@ -258,7 +272,11 @@
         <aside class="viewer-info" id="viewerInfo">
           <div class="viewer-info-sheet-bar">
             <button class="viewer-info-sheet-handle" type="button" data-sheet-handle="viewer" aria-label="Collapse photo information" aria-expanded="true"></button>
-            <button class="viewer-info-close" type="button" id="viewerInfoCloseButton" aria-label="Close photo information">Close</button>
+            <button class="viewer-info-close" type="button" id="viewerInfoCloseButton" aria-label="Close photo information" title="Close photo information">
+              <svg class="viewer-control-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="m6 6 12 12M18 6 6 18"></path>
+              </svg>
+            </button>
           </div>
           <p class="eyebrow" id="viewerKicker">Photo</p>
           <h2 id="viewerTitle">Photo details</h2>
@@ -269,6 +287,18 @@
     `);
     cacheViewerElements();
     bindPhotoViewerEvents();
+  }
+
+  function ensureAppToast() {
+    let toast = document.getElementById("appToast");
+    if (!toast) {
+      document.body.insertAdjacentHTML(
+        "beforeend",
+        '<div class="app-toast" id="appToast" role="status" aria-live="polite" hidden></div>'
+      );
+      toast = document.getElementById("appToast");
+    }
+    els.appToast = toast;
   }
 
   function ensureMobileAppShell() {
@@ -303,11 +333,6 @@
         <span><strong>Install SpotterDex</strong><small>Open it from your home screen.</small></span>
         <button type="button" id="mobileInstallButton">Install</button>
         <button class="mobile-install-dismiss" type="button" id="mobileInstallDismiss" aria-label="Dismiss install prompt">×</button>
-      </div>
-      <div class="app-toast" id="appToast" role="status" aria-live="polite" hidden></div>
-      <div class="page-loading-indicator" id="pageLoadingIndicator" role="status" aria-live="polite" aria-label="Loading page" hidden>
-        <span class="page-loading-spinner" aria-hidden="true"></span>
-        <span id="pageLoadingLabel">Loading…</span>
       </div>
     `);
     cacheMobileElements();
@@ -418,14 +443,15 @@
     els.mobileMapPhotoCount = document.getElementById("mobileMapPhotoCount");
     els.mobileMapPhotoLocation = document.getElementById("mobileMapPhotoLocation");
     els.appToast = document.getElementById("appToast");
-    els.pageLoadingIndicator = document.getElementById("pageLoadingIndicator");
-    els.pageLoadingLabel = document.getElementById("pageLoadingLabel");
   }
 
   function cacheViewerElements() {
     els.photoViewer = document.getElementById("photoViewer");
     els.viewerImageFrame = document.querySelector(".viewer-image-frame");
+    els.viewerCarouselTrack = document.getElementById("viewerCarouselTrack");
+    els.viewerPreviousImage = document.getElementById("viewerPreviousImage");
     els.viewerImage = document.getElementById("viewerImage");
+    els.viewerNextImage = document.getElementById("viewerNextImage");
     els.viewerKicker = document.getElementById("viewerKicker");
     els.viewerTitle = document.getElementById("viewerTitle");
     els.viewerCaption = document.getElementById("viewerCaption");
@@ -465,7 +491,7 @@
   }
 
   function bindPhotoViewerEvents() {
-    if (viewerEventsBound || !els.photoViewer || !els.viewerImage) {
+    if (viewerEventsBound || !els.photoViewer || !els.viewerImage || !els.viewerCarouselTrack) {
       return;
     }
     viewerEventsBound = true;
@@ -479,14 +505,14 @@
     els.viewerZoomInButton?.addEventListener("click", () => setViewerZoom(state.viewerZoom + 0.25));
     els.viewerShareButton?.addEventListener("click", () => shareViewerPhoto());
     els.viewerFullscreenButton?.addEventListener("click", toggleViewerFullscreen);
-    els.viewerImage.addEventListener("contextmenu", (event) => event.preventDefault());
+    els.viewerCarouselTrack.addEventListener("contextmenu", (event) => event.preventDefault());
     els.viewerImage.setAttribute("draggable", "false");
-    els.viewerImage.addEventListener("wheel", handleViewerWheel, { passive: false });
-    els.viewerImage.addEventListener("pointerdown", handleViewerPointerDown);
-    els.viewerImage.addEventListener("pointermove", handleViewerPointerMove);
-    els.viewerImage.addEventListener("pointerup", handleViewerPointerUp);
-    els.viewerImage.addEventListener("pointercancel", handleViewerPointerUp);
-    els.viewerImage.addEventListener("dblclick", () => {
+    els.viewerCarouselTrack.addEventListener("wheel", handleViewerWheel, { passive: false });
+    els.viewerCarouselTrack.addEventListener("pointerdown", handleViewerPointerDown);
+    els.viewerCarouselTrack.addEventListener("pointermove", handleViewerPointerMove);
+    els.viewerCarouselTrack.addEventListener("pointerup", handleViewerPointerUp);
+    els.viewerCarouselTrack.addEventListener("pointercancel", handleViewerPointerUp);
+    els.viewerCarouselTrack.addEventListener("dblclick", () => {
       if (state.viewerZoom > 1) {
         resetViewerTransform();
       } else {
@@ -770,6 +796,7 @@
     document.getElementById("fitPinsButton")?.addEventListener("click", handleHeaderMapButton);
     document.getElementById("fitPinsPanelButton")?.addEventListener("click", fitMapToPins);
     els.mapPanelCoachDismiss?.addEventListener("click", dismissMapPanelCoach);
+    els.worldMap?.addEventListener("pointerdown", handleMapDirectInteraction, { capture: true, passive: true });
 
     els.locationSearch?.addEventListener("input", renderLocations);
     els.aircraftSearch?.addEventListener("input", () => {
@@ -796,7 +823,9 @@
     window.addEventListener("popstate", handleHistoryNavigation);
     window.addEventListener("hashchange", handleHistoryNavigation);
     window.addEventListener("pagehide", saveCurrentSessionState);
-    window.addEventListener("pageshow", () => setPageNavigationLoading(false));
+    window.addEventListener("pageshow", scheduleScrollEdgeUpdate);
+    document.addEventListener("scroll", scheduleScrollEdgeUpdate, { passive: true, capture: true });
+    window.addEventListener("scroll", scheduleScrollEdgeUpdate, { passive: true });
     window.addEventListener("online", () => updateConnectivityUi({ offline: false }));
     window.addEventListener("offline", () => updateConnectivityUi({ offline: true }));
     window.addEventListener("beforeinstallprompt", handleInstallPrompt);
@@ -808,10 +837,21 @@
     document.addEventListener("fullscreenchange", updateViewerFullscreenButton);
     window.addEventListener("resize", debounce(() => {
       ensureMobileAppShell();
+      updateMobileMapHeader();
+      updateRecentLocationNav();
       updateMapPanelState();
       updateMapPanelCoach();
       updateViewerInfoState();
       updateMobileAppChrome();
+      cancelGesturesForGeometryChange();
+      syncMotionSurfaceGeometry();
+      if (isViewerOpen()) {
+        resetViewerCarousel();
+        measureViewerGestureGeometry();
+        constrainViewerPan(state.viewerGestureGeometry);
+        updateViewerTransform();
+      }
+      scheduleScrollEdgeUpdate();
       refreshMapLayout();
       if (state.renderedViews.has("dexView")) {
         renderDex();
@@ -831,13 +871,6 @@
       }
     }, 150));
 
-    if (
-      window.matchMedia("(hover: hover) and (pointer: fine)").matches
-      && !isReducedMotion()
-    ) {
-      document.addEventListener("pointermove", handleLensPointerMove, { passive: true });
-      document.addEventListener("pointerout", handleLensPointerOut, { passive: true });
-    }
   }
 
   function openDirectoryView(viewId) {
@@ -870,36 +903,6 @@
     }
   }
 
-  function handleLensPointerMove(event) {
-    const surface = event.target instanceof Element
-      ? event.target.closest(".photo-card, .recent-photo-card, .location-recent-card, .location-hero, .squadron-logo-card")
-      : null;
-    if (!surface) {
-      return;
-    }
-
-    const rect = surface.getBoundingClientRect();
-    if (!rect.width || !rect.height) {
-      return;
-    }
-
-    const x = Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100));
-    const y = Math.max(0, Math.min(100, ((event.clientY - rect.top) / rect.height) * 100));
-    surface.style.setProperty("--lens-x", `${x.toFixed(1)}%`);
-    surface.style.setProperty("--lens-y", `${y.toFixed(1)}%`);
-    surface.style.setProperty("--lens-opacity", "1");
-  }
-
-  function handleLensPointerOut(event) {
-    const surface = event.target instanceof Element
-      ? event.target.closest(".photo-card, .recent-photo-card, .location-recent-card, .location-hero, .squadron-logo-card")
-      : null;
-    if (!surface || (event.relatedTarget instanceof Node && surface.contains(event.relatedTarget))) {
-      return;
-    }
-    surface.style.setProperty("--lens-opacity", "0");
-  }
-
   function handleDocumentClick(event) {
     if (event.target.closest("#viewerInfoButton")) {
       return;
@@ -929,6 +932,13 @@
 
     const mapPanelButton = event.target.closest("[data-map-panel-toggle]");
     if (mapPanelButton) {
+      if (
+        mapPanelButton.classList.contains("mobile-map-location-card")
+        && (performance.now() < state.suppressMapLocationClickUntil || mapPanelButton.dataset.dragged === "true")
+      ) {
+        delete mapPanelButton.dataset.dragged;
+        return;
+      }
       toggleMapPanel(mapPanelButton.dataset.mapPanelToggle);
       return;
     }
@@ -1175,6 +1185,7 @@
 
   function setMapPanel(panel, options = {}) {
     const nextPanel = panel === "locations" || panel === "results" ? panel : null;
+    const previousPanel = state.mobileMapPanel;
     if (nextPanel) {
       dismissMapPanelCoach();
       if (options.snap === "compact" || options.snap === "expanded") {
@@ -1189,6 +1200,25 @@
 
     if (state.mobileMapPanel === "results") {
       scheduleMobileMapResults();
+    }
+
+    if (isFocusedMobileLayout() && options.motion !== false) {
+      if (previousPanel && nextPanel && previousPanel !== nextPanel) {
+        moveSheetTo(previousPanel === "locations" ? "locations" : "map", "closed");
+      }
+      if (nextPanel) {
+        const surface = nextPanel === "locations" ? "locations" : "map";
+        const targetSnap = nextPanel === "locations" ? "open" : state.mapSheetSnap;
+        moveSheetTo(surface, targetSnap, {
+          fromSnap: previousPanel === nextPanel ? null : "closed"
+        });
+      } else if (previousPanel) {
+        moveSheetTo(previousPanel === "locations" ? "locations" : "map", "closed");
+      }
+    } else if (isFocusedMobileLayout() && nextPanel) {
+      const surface = nextPanel === "locations" ? "locations" : "map";
+      const descriptor = sheetMotionDescriptor(surface);
+      descriptor?.panel.classList.add("is-motion-presented");
     }
 
     if (state.map && !isMobileMapLayout()) {
@@ -1239,9 +1269,8 @@
     els.mapWorkspace.classList.toggle("is-results-open", activePanel === "results");
     els.mapWorkspace.classList.toggle("is-sheet-expanded", activePanel && state.mapSheetSnap === "expanded");
     if (els.mapPanelBackdrop) {
-      const isOpen = Boolean(activePanel && isFocusedMobileLayout());
-      els.mapPanelBackdrop.setAttribute("aria-hidden", String(!isOpen));
-      els.mapPanelBackdrop.tabIndex = isOpen ? 0 : -1;
+      els.mapPanelBackdrop.setAttribute("aria-hidden", "true");
+      els.mapPanelBackdrop.tabIndex = -1;
     }
 
     els.mapPanelToggles.forEach((button) => {
@@ -1407,18 +1436,14 @@
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button) {
       return;
     }
-    if (state.pageNavigationLoading) {
-      event.preventDefault();
-      return;
-    }
     const link = event.currentTarget;
     const targetView = link.dataset.mobileTabView;
     if (!targetView) {
       return;
     }
-    event.preventDefault();
     const activeView = document.querySelector("[data-view].is-active")?.id || currentPageViewId();
     if (navigationViewFor(activeView) === targetView) {
+      event.preventDefault();
       if (activeView !== targetView) {
         handleMobileContextBack();
       } else {
@@ -1426,12 +1451,6 @@
       }
       return;
     }
-    els.mobileTabLinks?.forEach((tabLink) => {
-      const isDestination = tabLink === link;
-      tabLink.classList.toggle("is-active", isDestination);
-      if (isDestination) tabLink.setAttribute("aria-current", "page");
-      else tabLink.removeAttribute("aria-current");
-    });
     saveCurrentSessionState();
     const saved = readPageSessionState(targetView);
     let destination = new URL(link.getAttribute("href"), document.baseURI);
@@ -1446,33 +1465,7 @@
         // Use the tab's root URL when saved session data is malformed.
       }
     }
-    const destinationLabel = link.querySelector("span")?.textContent.trim() || "page";
-    setPageNavigationLoading(true, destinationLabel);
-    window.requestAnimationFrame(() => {
-      if (state.pageNavigationLoading) {
-        window.location.assign(destination.href);
-      }
-    });
-  }
-
-  function setPageNavigationLoading(isLoading, label = "page") {
-    state.pageNavigationLoading = isLoading;
-    const indicator = els.pageLoadingIndicator;
-    if (indicator) {
-      indicator.hidden = !isLoading;
-      indicator.setAttribute("aria-label", isLoading ? `Loading ${label}` : "Loading page");
-    }
-    if (els.pageLoadingLabel) {
-      els.pageLoadingLabel.textContent = isLoading ? `Loading ${label}…` : "Loading…";
-    }
-    document.body.classList.toggle("is-page-navigation-loading", isLoading);
-    els.mobileTabLinks?.forEach((tabLink) => {
-      if (isLoading) {
-        tabLink.setAttribute("aria-disabled", "true");
-      } else {
-        tabLink.removeAttribute("aria-disabled");
-      }
-    });
+    link.href = destination.href;
   }
 
   function handleMobileContextBack() {
@@ -1481,8 +1474,69 @@
     if (activeView === collectionView) {
       return;
     }
-    openDirectoryView(collectionView);
+    const detailKinds = {
+      aircraftDetailView: "aircraft",
+      squadronDetailView: "squadron",
+      airshowDetailView: "airshow",
+      locationDetailView: "location"
+    };
+    if (window.history.state?.spotterdexKind === detailKinds[activeView]) {
+      window.history.back();
+      return;
+    }
+    if (collectionView === "dexView") state.selectedAircraftId = null;
+    else if (collectionView === "squadronsView") state.selectedSquadronId = null;
+    else if (collectionView === "airshowsView") state.selectedAirshowId = null;
+    setActiveTab(collectionView, { updateHash: false });
+    clearDeepLink({ replace: true });
     window.scrollTo({ top: 0, behavior: "auto" });
+  }
+
+  function handleMapDirectInteraction() {
+    if (!isFocusedMobileLayout()) {
+      return;
+    }
+    if (state.mobileMapPanel === "locations") {
+      setMapPanel(null);
+    } else if (state.mobileMapPanel === "results" && state.mapSheetSnap === "expanded") {
+      setMapPanel("results", { snap: "compact" });
+    }
+  }
+
+  function scheduleScrollEdgeUpdate() {
+    if (state.scrollEdgeFrame) {
+      return;
+    }
+    state.scrollEdgeFrame = window.requestAnimationFrame(() => {
+      state.scrollEdgeFrame = 0;
+      updateScrollEdgeStates();
+    });
+  }
+
+  function updateScrollEdgeStates() {
+    const root = document.documentElement;
+    const scrollTop = window.scrollY || root.scrollTop || 0;
+    const pageRemaining = root.scrollHeight - (scrollTop + window.innerHeight);
+    document.body.classList.toggle("has-page-scroll-above", scrollTop > 4);
+    document.body.classList.toggle("has-page-scroll-below", pageRemaining > 4);
+
+    document.querySelectorAll("#mapControlPanel, #mapResults, #viewerInfo").forEach((element) => {
+      const overflow = element.scrollHeight > element.clientHeight + 1;
+      element.classList.toggle("has-scroll-above", overflow && element.scrollTop > 4);
+      element.classList.toggle(
+        "has-scroll-below",
+        overflow && element.scrollTop + element.clientHeight < element.scrollHeight - 4
+      );
+    });
+
+    document.querySelectorAll("#viewerFilmstrip, #dexFamilyFilter, #squadronCountryRail, .dex-family-options, .squadron-country-nav").forEach((element) => {
+      const overflow = element.scrollWidth > element.clientWidth + 1;
+      element.classList.toggle("has-scroll-before", overflow && element.scrollLeft > 4);
+      element.classList.toggle(
+        "has-scroll-after",
+        overflow && element.scrollLeft + element.clientWidth < element.scrollWidth - 4
+      );
+    });
   }
 
   function updateMobileAppChrome() {
@@ -1586,8 +1640,16 @@
     window.clearTimeout(state.toastTimer);
     els.appToast.textContent = message;
     els.appToast.hidden = false;
+    window.requestAnimationFrame(() => {
+      els.appToast?.classList.add("is-visible");
+    });
     state.toastTimer = window.setTimeout(() => {
-      els.appToast.hidden = true;
+      els.appToast.classList.remove("is-visible");
+      state.toastTimer = window.setTimeout(() => {
+        if (!els.appToast.classList.contains("is-visible")) {
+          els.appToast.hidden = true;
+        }
+      }, 180);
     }, 2400);
   }
 
@@ -1600,48 +1662,348 @@
     }).catch((error) => console.warn("SpotterDex service worker registration failed", error));
   }
 
+  function projectMotion(initialVelocity, decelerationRate = MOTION_DECELERATION_RATE) {
+    return (initialVelocity / 1000) * decelerationRate / (1 - decelerationRate);
+  }
+
+  function rubberbandMotion(overshoot, dimension, constant = MOTION_RUBBERBAND_CONSTANT) {
+    const distance = Math.max(1, dimension);
+    return (overshoot * distance * constant) / (distance + constant * Math.abs(overshoot));
+  }
+
+  function motionControllerFor(element, apply) {
+    let controller = motionControllers.get(element);
+    if (!controller) {
+      controller = {
+        element,
+        apply,
+        value: 0,
+        velocity: 0,
+        target: 0,
+        frame: 0,
+        initialized: false,
+        lastTime: 0
+      };
+      motionControllers.set(element, controller);
+    }
+    controller.apply = apply;
+    return controller;
+  }
+
+  function setMotionValue(controller, value) {
+    controller.value = Number.isFinite(value) ? value : 0;
+    controller.apply(controller.value);
+  }
+
+  function stopMotion(controller) {
+    if (!controller) {
+      return;
+    }
+    window.cancelAnimationFrame(controller.frame);
+    controller.frame = 0;
+    controller.lastTime = 0;
+    controller.element.classList.remove("is-motion-settling");
+  }
+
+  function settleMotion(controller, target, initialVelocity = controller.velocity, onComplete) {
+    stopMotion(controller);
+    controller.target = target;
+    controller.velocity = Number.isFinite(initialVelocity) ? initialVelocity : 0;
+    controller.element.classList.add("is-motion-settling");
+
+    const complete = () => {
+      setMotionValue(controller, target);
+      controller.velocity = 0;
+      controller.frame = 0;
+      controller.lastTime = 0;
+      controller.element.classList.remove("is-motion-settling");
+      onComplete?.();
+    };
+
+    if (isReducedMotion()) {
+      complete();
+      return;
+    }
+
+    const angularFrequency = (2 * Math.PI) / MOTION_SPRING_RESPONSE;
+    const stiffness = angularFrequency * angularFrequency;
+    const damping = 2 * MOTION_SPRING_DAMPING * angularFrequency;
+    const tick = (time) => {
+      if (!controller.lastTime) {
+        controller.lastTime = time;
+      }
+      const deltaTime = Math.min(0.032, Math.max(0.001, (time - controller.lastTime) / 1000));
+      controller.lastTime = time;
+      const acceleration = -stiffness * (controller.value - target) - damping * controller.velocity;
+      controller.velocity += acceleration * deltaTime;
+      setMotionValue(controller, controller.value + controller.velocity * deltaTime);
+      if (
+        Math.abs(controller.value - target) <= MOTION_POSITION_EPSILON
+        && Math.abs(controller.velocity) <= MOTION_VELOCITY_EPSILON
+      ) {
+        complete();
+        return;
+      }
+      controller.frame = window.requestAnimationFrame(tick);
+    };
+    controller.frame = window.requestAnimationFrame(tick);
+  }
+
+  function pushGestureSample(samples, position, time = performance.now()) {
+    samples.push({ position, time });
+    while (samples.length > GESTURE_SAMPLE_LIMIT || (samples[0] && time - samples[0].time > GESTURE_SAMPLE_WINDOW_MS)) {
+      samples.shift();
+    }
+  }
+
+  function gestureVelocity(samples) {
+    if (samples.length < 2) {
+      return 0;
+    }
+    const first = samples[0];
+    const last = samples[samples.length - 1];
+    const elapsed = (last.time - first.time) / 1000;
+    return elapsed > 0 ? (last.position - first.position) / elapsed : 0;
+  }
+
+  function boundedMotionValue(value, minimum, maximum, dimension) {
+    if (value < minimum) {
+      return minimum + rubberbandMotion(value - minimum, dimension);
+    }
+    if (value > maximum) {
+      return maximum + rubberbandMotion(value - maximum, dimension);
+    }
+    return value;
+  }
+
+  function sheetMotionDescriptor(surface) {
+    if (!isFocusedMobileLayout()) {
+      return null;
+    }
+    const landscapeViewer = surface === "viewer" && window.matchMedia("(orientation: landscape)").matches;
+    const panel = surface === "locations"
+      ? els.mapControlPanel
+      : surface === "map"
+        ? els.mapResults
+        : surface === "viewer"
+          ? els.viewerInfo
+          : null;
+    if (!panel) {
+      return null;
+    }
+    const bounds = panel.getBoundingClientRect();
+    if (surface === "locations") {
+      const height = Math.max(1, bounds.height || panel.scrollHeight || window.innerHeight * 0.62);
+      return {
+        surface,
+        panel,
+        axis: "y",
+        dimension: height,
+        snaps: [
+          { name: "closed", value: -(height + 12) },
+          { name: "open", value: 0 }
+        ]
+      };
+    }
+    if (surface === "map") {
+      const height = Math.max(1, bounds.height || window.innerHeight);
+      const compactVisible = Math.min(height, Math.min(310, Math.max(224, window.innerHeight * 0.34)));
+      return {
+        surface,
+        panel,
+        axis: "y",
+        dimension: height,
+        snaps: [
+          { name: "expanded", value: 0 },
+          { name: "compact", value: Math.max(0, height - compactVisible) },
+          { name: "closed", value: height + 92 }
+        ]
+      };
+    }
+    if (landscapeViewer) {
+      const width = Math.max(1, bounds.width || Math.min(390, window.innerWidth * 0.54));
+      return {
+        surface,
+        panel,
+        axis: "x",
+        dimension: width,
+        snaps: [
+          { name: "expanded", value: 0 },
+          { name: "closed", value: width }
+        ]
+      };
+    }
+    const height = Math.max(1, bounds.height || Math.min(680, window.innerHeight * 0.7));
+    const compactVisible = Math.min(height, Math.min(520, window.innerHeight * 0.44));
+    return {
+      surface,
+      panel,
+      axis: "y",
+      dimension: height,
+      snaps: [
+        { name: "expanded", value: 0 },
+        { name: "compact", value: Math.max(0, height - compactVisible) },
+        { name: "closed", value: height }
+      ]
+    };
+  }
+
+  function sheetSnapForState(surface) {
+    if (surface === "locations") {
+      return state.mobileMapPanel === "locations" ? "open" : "closed";
+    }
+    if (surface === "map") {
+      return state.mobileMapPanel === "results" ? state.mapSheetSnap : "closed";
+    }
+    if (surface === "viewer") {
+      if (!state.viewerInfoOpen) {
+        return "closed";
+      }
+      return window.matchMedia("(orientation: landscape)").matches ? "expanded" : state.viewerInfoSnap;
+    }
+    return "closed";
+  }
+
+  function sheetMotionController(descriptor, initialSnap = sheetSnapForState(descriptor.surface)) {
+    const controller = motionControllerFor(descriptor.panel, (value) => {
+      descriptor.panel.style.transform = descriptor.axis === "x"
+        ? `translate3d(${value}px, 0, 0)`
+        : `translate3d(0, ${value}px, 0)`;
+    });
+    if (!controller.initialized) {
+      const initial = descriptor.snaps.find((snap) => snap.name === initialSnap) || descriptor.snaps[0];
+      setMotionValue(controller, initial.value);
+      controller.initialized = true;
+    }
+    return controller;
+  }
+
+  function moveSheetTo(surface, snapName, options = {}) {
+    const descriptor = sheetMotionDescriptor(surface);
+    if (!descriptor) {
+      return;
+    }
+    const target = descriptor.snaps.find((snap) => snap.name === snapName) || descriptor.snaps[0];
+    const controller = sheetMotionController(descriptor, options.fromSnap || snapName);
+    if (options.fromSnap) {
+      const from = descriptor.snaps.find((snap) => snap.name === options.fromSnap);
+      if (from) {
+        stopMotion(controller);
+        setMotionValue(controller, from.value);
+        controller.velocity = 0;
+      }
+    }
+    if (snapName !== "closed") {
+      descriptor.panel.classList.add("is-motion-presented");
+    }
+    const finish = () => {
+      if (snapName === "closed") {
+        descriptor.panel.classList.remove("is-motion-presented");
+      }
+      scheduleScrollEdgeUpdate();
+      options.onComplete?.();
+    };
+    if (options.immediate) {
+      stopMotion(controller);
+      setMotionValue(controller, target.value);
+      controller.velocity = 0;
+      finish();
+      return;
+    }
+    settleMotion(controller, target.value, options.velocity, finish);
+  }
+
+  function syncMotionSurfaceGeometry() {
+    ["locations", "map", "viewer"].forEach((surface) => {
+      const descriptor = sheetMotionDescriptor(surface);
+      if (!descriptor) {
+        const panel = surface === "locations" ? els.mapControlPanel : surface === "map" ? els.mapResults : els.viewerInfo;
+        if (panel) {
+          const controller = motionControllers.get(panel);
+          stopMotion(controller);
+          panel.style.removeProperty("transform");
+          panel.classList.remove("is-motion-presented");
+          if (controller) controller.initialized = false;
+        }
+        return;
+      }
+      const snapName = sheetSnapForState(surface);
+      const snap = descriptor.snaps.find((entry) => entry.name === snapName) || descriptor.snaps[0];
+      const controller = sheetMotionController(descriptor, snapName);
+      stopMotion(controller);
+      setMotionValue(controller, snap.value);
+      controller.velocity = 0;
+      descriptor.panel.classList.toggle("is-motion-presented", snapName !== "closed");
+    });
+  }
+
+  function cancelGesturesForGeometryChange() {
+    const sheetDrag = state.sheetDrag;
+    if (sheetDrag) {
+      sheetDrag.descriptor.panel.classList.remove("is-sheet-dragging");
+      if (sheetDrag.handle.hasPointerCapture?.(sheetDrag.pointerId)) {
+        sheetDrag.handle.releasePointerCapture(sheetDrag.pointerId);
+      }
+      state.sheetDrag = null;
+    }
+    const carouselPointerId = state.viewerCarouselDrag?.pointerId;
+    if (carouselPointerId != null && els.viewerCarouselTrack?.hasPointerCapture?.(carouselPointerId)) {
+      els.viewerCarouselTrack.releasePointerCapture(carouselPointerId);
+    }
+    state.viewerPointers.clear();
+    state.viewerDragOrigin = null;
+    state.viewerPinchStart = null;
+    state.viewerCarouselDrag = null;
+    els.viewerCarouselTrack?.classList.remove("is-carousel-dragging");
+    els.viewerImage?.classList.remove("is-dragging");
+  }
+
   function toggleSheetSnap(kind) {
-    if (kind === "map" && state.mobileMapPanel) {
-      state.mapSheetSnap = state.mapSheetSnap === "expanded" ? "compact" : "expanded";
-      updateMapPanelState();
+    if (kind === "map" && state.mobileMapPanel === "results") {
+      setMapPanel("results", { snap: state.mapSheetSnap === "expanded" ? "compact" : "expanded" });
       return;
     }
     if (kind === "viewer" && state.viewerInfoOpen) {
-      state.viewerInfoSnap = state.viewerInfoSnap === "expanded" ? "compact" : "expanded";
-      updateViewerInfoState();
+      setViewerInfoOpen(true, { snap: state.viewerInfoSnap === "expanded" ? "compact" : "expanded" });
     }
   }
 
   function handleSheetPointerDown(event) {
-    const handle = event.target instanceof Element ? event.target.closest("[data-sheet-handle]") : null;
-    if (!handle || event.button) {
+    const target = event.target instanceof Element ? event.target : null;
+    const topDrawerHandle = target?.closest(".mobile-map-location-card");
+    const handle = topDrawerHandle || target?.closest("[data-sheet-handle]");
+    if (!handle || event.button !== 0) {
       return;
     }
-    const kind = handle.dataset.sheetHandle;
-    if ((kind === "map" && !isFocusedMobileLayout()) || (kind === "viewer" && !isMobileViewerLayout())) {
+    const surface = topDrawerHandle ? "locations" : handle.dataset.sheetHandle === "map" ? "map" : "viewer";
+    if ((surface !== "viewer" && !isFocusedMobileLayout()) || (surface === "viewer" && !isMobileViewerLayout())) {
       return;
     }
-    const landscapeViewer = kind === "viewer" && window.matchMedia("(orientation: landscape)").matches;
-    const panel = kind === "map"
-      ? state.mobileMapPanel === "locations" ? els.mapControlPanel : state.mobileMapPanel === "results" ? els.mapResults : null
-      : state.viewerInfoOpen ? els.viewerInfo : null;
-    if (!panel) {
+    if ((surface === "map" && state.mobileMapPanel !== "results") || (surface === "viewer" && !state.viewerInfoOpen)) {
       return;
     }
+    const descriptor = sheetMotionDescriptor(surface);
+    if (!descriptor) return;
+    const originalSnap = sheetSnapForState(surface);
+    const controller = sheetMotionController(descriptor, originalSnap);
+    stopMotion(controller);
+    if (surface === "locations") descriptor.panel.classList.add("is-motion-presented");
+    const primary = descriptor.axis === "x" ? event.clientX : event.clientY;
     state.sheetDrag = {
-      kind,
+      surface,
       handle,
-      panel,
+      descriptor,
+      controller,
       pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
-      startedAt: performance.now(),
-      originalSnap: kind === "map" ? state.mapSheetSnap : state.viewerInfoSnap,
-      landscapeViewer,
-      moved: false
+      startValue: controller.value,
+      originalSnap,
+      samples: [{ position: primary, time: performance.now() }],
+      moved: false,
+      rejected: false
     };
     handle.setPointerCapture?.(event.pointerId);
-    panel.classList.add("is-sheet-dragging");
   }
 
   function detailPhotoRailForTarget(target) {
@@ -1651,7 +2013,9 @@
     return target.closest(
       ".detail-view .photo-groups:not(.is-single-group) > section .photo-grid, "
       + ".detail-view .aircraft-type-photo-groups:not(.is-single-group) > section .photo-grid, "
-      + ".detail-view .airshow-squadron-groups:not(.is-single-group) > section .photo-grid"
+      + ".detail-view .airshow-squadron-groups:not(.is-single-group) > section .photo-grid, "
+      + ".detail-view .location-specific-photo-section.has-other-sections .photo-grid, "
+      + ".detail-view .squadron-specific-photo-section.has-other-sections .photo-grid"
     );
   }
 
@@ -1671,7 +2035,6 @@
       startScrollLeft: rail.scrollLeft,
       moved: false
     };
-    rail.setPointerCapture?.(event.pointerId);
   }
 
   function handleDetailRailPointerMove(event) {
@@ -1689,6 +2052,7 @@
       return;
     }
     drag.moved = true;
+    drag.rail.setPointerCapture?.(event.pointerId);
     drag.rail.classList.add("is-mouse-dragging");
     drag.rail.scrollLeft = drag.startScrollLeft - deltaX;
     event.preventDefault();
@@ -1700,7 +2064,9 @@
       return;
     }
     drag.rail.classList.remove("is-mouse-dragging");
-    drag.rail.releasePointerCapture?.(event.pointerId);
+    if (drag.rail.hasPointerCapture?.(event.pointerId)) {
+      drag.rail.releasePointerCapture(event.pointerId);
+    }
     if (drag.moved) {
       state.suppressDetailRailClickUntil = performance.now() + 250;
     }
@@ -1722,21 +2088,50 @@
     }
     const deltaX = event.clientX - drag.startX;
     const deltaY = event.clientY - drag.startY;
-    const distance = drag.landscapeViewer ? deltaX : deltaY;
-    if (Math.abs(distance) > 7) {
-      drag.moved = true;
-      drag.handle.dataset.dragged = "true";
+    const primaryDelta = drag.descriptor.axis === "x" ? deltaX : deltaY;
+    const crossDelta = drag.descriptor.axis === "x" ? deltaY : deltaX;
+    if (!drag.moved && !drag.rejected) {
+      const primaryDistance = Math.abs(primaryDelta);
+      const crossDistance = Math.abs(crossDelta);
+      if (primaryDistance < GESTURE_INTENT_DISTANCE && crossDistance < GESTURE_INTENT_DISTANCE) {
+        return;
+      }
+      if (primaryDistance >= crossDistance * GESTURE_AXIS_DOMINANCE) {
+        drag.moved = true;
+        if (drag.surface === "locations" && state.mobileMapPanel === "results") {
+          setMapPanel(null);
+        }
+        drag.handle.dataset.dragged = "true";
+        drag.descriptor.panel.classList.add("is-sheet-dragging");
+      } else if (crossDistance >= primaryDistance * GESTURE_AXIS_DOMINANCE) {
+        drag.rejected = true;
+        drag.handle.dataset.dragged = "true";
+        if (drag.surface === "locations") {
+          state.suppressMapLocationClickUntil = performance.now() + 350;
+        }
+      } else {
+        return;
+      }
     }
-    if (!drag.moved) {
+    if (!drag.moved || drag.rejected) {
       return;
     }
     event.preventDefault();
-    if (drag.landscapeViewer) {
-      drag.panel.style.setProperty("--sheet-drag-x", `${Math.max(0, deltaX)}px`);
-    } else {
-      const height = drag.panel.getBoundingClientRect().height || window.innerHeight;
-      drag.panel.style.setProperty("--sheet-drag-y", `${Math.max(-height * 0.5, Math.min(height, deltaY))}px`);
-    }
+    const values = drag.descriptor.snaps.map((snap) => snap.value);
+    const minimum = Math.min(...values);
+    const maximum = Math.max(...values);
+    const nextValue = boundedMotionValue(
+      drag.startValue + primaryDelta,
+      minimum,
+      maximum,
+      drag.descriptor.dimension
+    );
+    setMotionValue(drag.controller, nextValue);
+    pushGestureSample(
+      drag.samples,
+      drag.descriptor.axis === "x" ? event.clientX : event.clientY,
+      performance.now()
+    );
   }
 
   function handleSheetPointerUp(event) {
@@ -1744,32 +2139,44 @@
     if (!drag || drag.pointerId !== event.pointerId) {
       return;
     }
-    const delta = drag.landscapeViewer ? event.clientX - drag.startX : event.clientY - drag.startY;
-    const duration = Math.max(1, performance.now() - drag.startedAt);
-    const velocity = delta / duration;
-    drag.panel.classList.remove("is-sheet-dragging");
-    drag.panel.style.removeProperty("--sheet-drag-x");
-    drag.panel.style.removeProperty("--sheet-drag-y");
+    const cancelled = event.type === "pointercancel";
+    if (drag.moved && !cancelled) {
+      pushGestureSample(
+        drag.samples,
+        drag.descriptor.axis === "x" ? event.clientX : event.clientY,
+        performance.now()
+      );
+    }
+    const velocity = cancelled ? 0 : gestureVelocity(drag.samples);
+    drag.descriptor.panel.classList.remove("is-sheet-dragging");
     drag.handle.releasePointerCapture?.(event.pointerId);
     state.sheetDrag = null;
-    if (!drag.moved) {
+    if (!drag.moved || drag.rejected) {
+      if (drag.surface === "locations" && drag.originalSnap === "closed") {
+        drag.descriptor.panel.classList.remove("is-motion-presented");
+      }
       return;
     }
-
-    const dismiss = delta > SHEET_DISMISS_DISTANCE || velocity > SHEET_DISMISS_VELOCITY;
-    if (drag.kind === "map") {
-      if (dismiss) {
-        setMapPanel(null);
-      } else {
-        state.mapSheetSnap = delta < -SHEET_SNAP_DISTANCE ? "expanded" : delta > SHEET_SNAP_DISTANCE ? "compact" : drag.originalSnap;
-        updateMapPanelState();
-      }
-    } else if (dismiss) {
-      setViewerInfoOpen(false);
-    } else {
-      state.viewerInfoSnap = delta < -SHEET_SNAP_DISTANCE ? "expanded" : delta > SHEET_SNAP_DISTANCE ? "compact" : drag.originalSnap;
-      updateViewerInfoState();
+    drag.handle.dataset.dragged = "true";
+    if (drag.surface === "locations") {
+      state.suppressMapLocationClickUntil = performance.now() + 350;
     }
+    const projected = drag.controller.value + (cancelled ? 0 : projectMotion(velocity));
+    const target = cancelled
+      ? drag.descriptor.snaps.find((snap) => snap.name === drag.originalSnap)
+      : drag.descriptor.snaps.reduce((nearest, snap) => (
+          Math.abs(snap.value - projected) < Math.abs(nearest.value - projected) ? snap : nearest
+        ));
+    if (!target) return;
+
+    if (drag.surface === "locations") {
+      setMapPanel(target.name === "closed" ? null : "locations", { motion: false });
+    } else if (drag.surface === "map") {
+      setMapPanel(target.name === "closed" ? null : "results", { snap: target.name, motion: false });
+    } else {
+      setViewerInfoOpen(target.name !== "closed", { snap: target.name, motion: false });
+    }
+    moveSheetTo(drag.surface, target.name, { velocity });
   }
 
   function setActiveTab(viewId, options = {}) {
@@ -4503,7 +4910,7 @@
           type="button"
           data-airshow-id="${escapeAttr(airshow.id)}"
           aria-label="${escapeAttr(`Open ${airshow.name}: ${photos.length} photo${photos.length === 1 ? "" : "s"}.`)}"
-          style="--airshow-delay: ${Math.min(index, 8) * 55}ms"
+          style="--airshow-delay: ${Math.min(index, 5) * 30}ms"
         >
           ${cover ? renderResponsivePhotoImage(hero, `${airshow.name} hero photo`, {
             sizes: "(max-width: 760px) 100vw, 50vw",
@@ -4820,7 +5227,7 @@
         class="squadron-logo-card${activeClass}"
         type="button"
         data-squadron-id="${escapeAttr(squadron.id)}"
-        style="--squadron-delay: ${Math.min(index, 10) * 44}ms"
+        style="--squadron-delay: ${Math.min(index, 5) * 30}ms"
         aria-label="Open ${escapeAttr(squadron.name)} squadron record"
         title="${escapeAttr(squadron.name)}"
       >
@@ -4903,7 +5310,7 @@
         className: "squadron-field-guide-hero"
       })}
       ${renderPageWriteUp(squadron.writeUp, "About this squadron")}
-      <section class="detail-photo-section squadron-unit-archive">
+      <section class="detail-photo-section squadron-unit-archive squadron-specific-photo-section${otherPhotos.length ? " has-other-sections" : ""}">
         <div class="detail-section-heading">
           <div>
             <p class="eyebrow">Aircraft types</p>
@@ -5639,7 +6046,7 @@
         class="aircraft-card${isWide ? " is-wide" : ""}${activeClass}"
         type="button"
         data-aircraft-id="${escapeAttr(entry.id)}"
-        style="--dex-delay: ${Math.min(index, 12) * 42}ms"
+        style="--dex-delay: ${Math.min(index, 5) * 30}ms"
         aria-label="Open ${escapeAttr(entry.typeName)} field guide"
       >
         <div class="aircraft-cover">
@@ -7090,7 +7497,7 @@
     document.body.classList.remove("is-viewer-open");
     document.body.style.overflow = "";
     setViewerBackgroundInert(false);
-    setViewerInfoOpen(false);
+    setViewerInfoOpen(false, { motion: false });
     resetViewerTransform();
     state.viewerHistoryPushed = false;
     updateMapPanelCoach();
@@ -7153,13 +7560,13 @@
     const renderToken = ++state.viewerRenderToken;
     state.viewerRevealToken = 0;
     els.viewerImage.classList.remove("is-entering");
-    els.viewerImageFrame?.classList.remove("is-focusing");
     els.photoViewer.style.setProperty(
       "--viewer-backdrop",
       imageSource ? `url(${JSON.stringify(imageSource)})` : "none"
     );
     els.viewerImage.addEventListener("load", () => revealViewerPhoto(renderToken), { once: true });
     els.viewerImage.src = imageSource;
+    renderViewerCarouselNeighbors(photo);
     if (els.viewerImage.complete && imageSource) {
       window.requestAnimationFrame(() => revealViewerPhoto(renderToken));
     }
@@ -7300,11 +7707,7 @@
       return;
     }
     state.viewerRevealToken = renderToken;
-    els.viewerImage.classList.remove("is-entering");
-    els.viewerImageFrame.classList.remove("is-focusing");
-    void els.viewerImageFrame.offsetWidth;
     els.viewerImage.classList.add("is-entering");
-    els.viewerImageFrame.classList.add("is-focusing");
   }
 
   function renderViewerTelemetry(photo) {
@@ -7323,6 +7726,57 @@
       .join("");
   }
 
+  function renderViewerCarouselNeighbors(currentPhoto) {
+    if (!els.viewerCarouselTrack || !els.viewerPreviousImage || !els.viewerNextImage) {
+      return;
+    }
+    const count = state.activePhotoIds.length;
+    const hasNeighbors = count > 1;
+    const previousIndex = (state.activePhotoIndex - 1 + count) % Math.max(1, count);
+    const nextIndex = (state.activePhotoIndex + 1) % Math.max(1, count);
+    const previousPhoto = hasNeighbors ? state.photoById.get(state.activePhotoIds[previousIndex]) : currentPhoto;
+    const nextPhoto = hasNeighbors ? state.photoById.get(state.activePhotoIds[nextIndex]) : currentPhoto;
+    els.viewerPreviousImage.src = previousPhoto?.image || "";
+    els.viewerNextImage.src = nextPhoto?.image || "";
+    els.viewerCarouselTrack.classList.toggle("is-single-photo", !hasNeighbors);
+    scheduleScrollEdgeUpdate();
+  }
+
+  function viewerCarouselMotionController() {
+    if (!els.viewerCarouselTrack) {
+      return null;
+    }
+    const controller = motionControllerFor(els.viewerCarouselTrack, (value) => {
+      els.viewerCarouselTrack.style.transform = `translate3d(calc(-33.333333% + ${value}px), 0, 0)`;
+    });
+    if (!controller.initialized) {
+      setMotionValue(controller, 0);
+      controller.initialized = true;
+    }
+    return controller;
+  }
+
+  function resetViewerCarousel() {
+    state.viewerCarouselDrag = null;
+    const controller = viewerCarouselMotionController();
+    if (!controller) return;
+    stopMotion(controller);
+    setMotionValue(controller, 0);
+    controller.velocity = 0;
+    els.viewerCarouselTrack.classList.remove("is-carousel-dragging");
+  }
+
+  function settleViewerCarousel(target, velocity = 0) {
+    const controller = viewerCarouselMotionController();
+    if (!controller) return;
+    const direction = target < 0 ? 1 : target > 0 ? -1 : 0;
+    settleMotion(controller, target, velocity, () => {
+      if (!direction) return;
+      setMotionValue(controller, 0);
+      stepPhoto(direction);
+    });
+  }
+
   function resetViewerTransform() {
     state.viewerZoom = 1;
     state.viewerPanX = 0;
@@ -7330,18 +7784,19 @@
     state.viewerPointers.clear();
     state.viewerDragOrigin = null;
     state.viewerPinchStart = null;
-    state.viewerSwipeStart = null;
+    resetViewerCarousel();
     els.viewerImage?.classList.remove("is-dragging");
     updateViewerTransform();
   }
 
-  function setViewerZoom(value) {
+  function setViewerZoom(value, options = {}) {
     state.viewerZoom = Math.min(4, Math.max(1, Number(value) || 1));
     if (state.viewerZoom <= 1) {
       state.viewerPanX = 0;
       state.viewerPanY = 0;
     } else {
-      constrainViewerPan();
+      resetViewerCarousel();
+      constrainViewerPan(options.geometry || measureViewerGestureGeometry());
     }
     updateViewerTransform();
   }
@@ -7351,16 +7806,7 @@
       return;
     }
     const zoom = state.viewerZoom || 1;
-    if (isMobileViewerLayout()) {
-      const size = `${zoom * 100}%`;
-      els.viewerImage.style.width = size;
-      els.viewerImage.style.height = size;
-      els.viewerImage.style.transform = `translate3d(${state.viewerPanX}px, ${state.viewerPanY}px, 0)`;
-    } else {
-      els.viewerImage.style.width = "";
-      els.viewerImage.style.height = "";
-      els.viewerImage.style.transform = `translate3d(${state.viewerPanX}px, ${state.viewerPanY}px, 0) scale(${zoom})`;
-    }
+    els.viewerImage.style.transform = `translate3d(${state.viewerPanX}px, ${state.viewerPanY}px, 0) scale(${zoom})`;
     els.viewerImage.classList.toggle("is-zoomed", zoom > 1);
     els.viewerImageFrame?.classList.toggle("is-zoomed", zoom > 1);
     if (els.viewerZoomResetButton) {
@@ -7369,21 +7815,39 @@
     }
   }
 
-  function constrainViewerPan() {
+  function measureViewerGestureGeometry() {
     if (!els.viewerImage || !els.viewerImageFrame) {
-      return;
+      state.viewerGestureGeometry = null;
+      return null;
     }
     const isMobile = isMobileViewerLayout();
-    const width = isMobile
-      ? els.viewerImageFrame.clientWidth
-      : els.viewerImage.clientWidth || els.viewerImageFrame.clientWidth || 0;
-    const height = isMobile
-      ? els.viewerImageFrame.clientHeight
-      : els.viewerImage.clientHeight || els.viewerImageFrame.clientHeight || 0;
+    const frameWidth = els.viewerImageFrame.clientWidth || 0;
+    const frameHeight = els.viewerImageFrame.clientHeight || 0;
+    const contentWidth = isMobile
+      ? frameWidth
+      : els.viewerImage.clientWidth || frameWidth;
+    const contentHeight = isMobile
+      ? frameHeight
+      : els.viewerImage.clientHeight || frameHeight;
+    state.viewerGestureGeometry = {
+      frameWidth: Math.max(1, frameWidth),
+      frameHeight: Math.max(1, frameHeight),
+      contentWidth: Math.max(1, contentWidth),
+      contentHeight: Math.max(1, contentHeight)
+    };
+    return state.viewerGestureGeometry;
+  }
+
+  function constrainViewerPan(geometry = state.viewerGestureGeometry || measureViewerGestureGeometry()) {
+    if (!geometry) {
+      return;
+    }
+    const width = geometry.contentWidth;
+    const height = geometry.contentHeight;
     const scaledWidth = width * state.viewerZoom;
     const scaledHeight = height * state.viewerZoom;
-    const maxX = Math.max(0, (scaledWidth - els.viewerImageFrame.clientWidth) / 2);
-    const maxY = Math.max(0, (scaledHeight - els.viewerImageFrame.clientHeight) / 2);
+    const maxX = Math.max(0, (scaledWidth - geometry.frameWidth) / 2);
+    const maxY = Math.max(0, (scaledHeight - geometry.frameHeight) / 2);
     state.viewerPanX = Math.min(maxX, Math.max(-maxX, state.viewerPanX));
     state.viewerPanY = Math.min(maxY, Math.max(-maxY, state.viewerPanY));
   }
@@ -7401,7 +7865,8 @@
     if (!isViewerOpen()) {
       return;
     }
-    els.viewerImage.setPointerCapture?.(event.pointerId);
+    const gestureGeometry = measureViewerGestureGeometry();
+    els.viewerCarouselTrack.setPointerCapture?.(event.pointerId);
     state.viewerPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
     if (state.viewerPointers.size === 1) {
       state.viewerDragOrigin = {
@@ -7410,9 +7875,27 @@
         panX: state.viewerPanX,
         panY: state.viewerPanY
       };
-      state.viewerSwipeStart = state.viewerZoom <= 1 && event.pointerType !== "mouse"
-        ? { pointerId: event.pointerId, x: event.clientX, y: event.clientY, time: performance.now() }
-        : null;
+      if (state.viewerZoom <= 1 && event.pointerType !== "mouse" && state.activePhotoIds.length > 1) {
+        const controller = viewerCarouselMotionController();
+        const resumeTarget = controller.target;
+        const resumeVelocity = controller.velocity;
+        stopMotion(controller);
+        state.viewerCarouselDrag = {
+          pointerId: event.pointerId,
+          startX: event.clientX,
+          startY: event.clientY,
+          startValue: controller.value,
+          controller,
+          resumeTarget,
+          resumeVelocity,
+          width: gestureGeometry?.frameWidth || 1,
+          samples: [{ position: event.clientX, time: performance.now() }],
+          moved: false,
+          rejected: false
+        };
+      } else {
+        state.viewerCarouselDrag = null;
+      }
     } else if (state.viewerPointers.size === 2) {
       const [first, second] = Array.from(state.viewerPointers.values());
       state.viewerPinchStart = {
@@ -7420,7 +7903,7 @@
         zoom: state.viewerZoom
       };
       state.viewerDragOrigin = null;
-      state.viewerSwipeStart = null;
+      resetViewerCarousel();
     }
     if (state.viewerZoom > 1 || state.viewerPointers.size > 1) {
       els.viewerImage.classList.add("is-dragging");
@@ -7434,29 +7917,57 @@
     }
     state.viewerPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
     if (state.viewerPointers.size >= 2 && state.viewerPinchStart) {
-      state.viewerSwipeStart = null;
+      state.viewerCarouselDrag = null;
       const [first, second] = Array.from(state.viewerPointers.values());
       const distance = Math.hypot(second.x - first.x, second.y - first.y);
-      setViewerZoom(state.viewerPinchStart.zoom * (distance / Math.max(1, state.viewerPinchStart.distance)));
+      setViewerZoom(
+        state.viewerPinchStart.zoom * (distance / Math.max(1, state.viewerPinchStart.distance)),
+        { geometry: state.viewerGestureGeometry }
+      );
       event.preventDefault();
       return;
     }
     if (state.viewerZoom > 1 && state.viewerDragOrigin) {
       state.viewerPanX = state.viewerDragOrigin.panX + event.clientX - state.viewerDragOrigin.x;
       state.viewerPanY = state.viewerDragOrigin.panY + event.clientY - state.viewerDragOrigin.y;
-      constrainViewerPan();
+      constrainViewerPan(state.viewerGestureGeometry);
       updateViewerTransform();
       event.preventDefault();
+      return;
     }
+    const drag = state.viewerCarouselDrag;
+    if (!drag || drag.pointerId !== event.pointerId || state.viewerZoom > 1) {
+      return;
+    }
+    const deltaX = event.clientX - drag.startX;
+    const deltaY = event.clientY - drag.startY;
+    if (!drag.moved && !drag.rejected) {
+      const horizontal = Math.abs(deltaX);
+      const vertical = Math.abs(deltaY);
+      if (horizontal < GESTURE_INTENT_DISTANCE && vertical < GESTURE_INTENT_DISTANCE) {
+        return;
+      }
+      if (horizontal >= vertical * GESTURE_AXIS_DOMINANCE) {
+        drag.moved = true;
+        els.viewerCarouselTrack.classList.add("is-carousel-dragging");
+      } else if (vertical >= horizontal * GESTURE_AXIS_DOMINANCE) {
+        drag.rejected = true;
+        settleViewerCarousel(0, 0);
+        return;
+      } else {
+        return;
+      }
+    }
+    if (!drag.moved || drag.rejected) return;
+    const width = drag.width;
+    setMotionValue(drag.controller, boundedMotionValue(drag.startValue + deltaX, -width, width, width));
+    pushGestureSample(drag.samples, event.clientX, performance.now());
+    event.preventDefault();
   }
 
   function handleViewerPointerUp(event) {
-    const swipe = state.viewerSwipeStart?.pointerId === event.pointerId && event.type === "pointerup"
-      ? {
-          x: event.clientX - state.viewerSwipeStart.x,
-          y: event.clientY - state.viewerSwipeStart.y,
-          duration: performance.now() - state.viewerSwipeStart.time
-        }
+    const carouselDrag = state.viewerCarouselDrag?.pointerId === event.pointerId
+      ? state.viewerCarouselDrag
       : null;
     state.viewerPointers.delete(event.pointerId);
     if (state.viewerPointers.size < 2) {
@@ -7474,17 +7985,21 @@
       state.viewerDragOrigin = null;
       els.viewerImage.classList.remove("is-dragging");
     }
-    state.viewerSwipeStart = null;
+    state.viewerCarouselDrag = null;
+    els.viewerCarouselTrack.classList.remove("is-carousel-dragging");
 
-    if (
-      swipe
-      && state.viewerZoom <= 1
-      && swipe.duration <= VIEWER_SWIPE_MAX_DURATION
-      && Math.abs(swipe.x) >= VIEWER_SWIPE_MIN_DISTANCE
-      && Math.abs(swipe.x) > Math.abs(swipe.y) * 1.25
-    ) {
+    if (carouselDrag && !carouselDrag.rejected && carouselDrag.moved && state.viewerZoom <= 1) {
+      const cancelled = event.type === "pointercancel";
+      if (!cancelled) pushGestureSample(carouselDrag.samples, event.clientX, performance.now());
+      const velocity = cancelled ? 0 : gestureVelocity(carouselDrag.samples);
+      const width = carouselDrag.width;
+      const projected = carouselDrag.controller.value + (isReducedMotion() || cancelled ? 0 : projectMotion(velocity));
+      const threshold = width * 0.28;
+      const target = projected <= -threshold ? -width : projected >= threshold ? width : 0;
+      settleViewerCarousel(target, velocity);
       event.preventDefault();
-      stepPhoto(swipe.x < 0 ? 1 : -1);
+    } else if (carouselDrag && !carouselDrag.rejected && !carouselDrag.moved && carouselDrag.resumeTarget) {
+      settleViewerCarousel(carouselDrag.resumeTarget, carouselDrag.resumeVelocity);
     }
   }
 
@@ -7568,12 +8083,30 @@
     }
   }
 
-  function setViewerInfoOpen(isOpen) {
+  function setViewerInfoOpen(isOpen, options = {}) {
+    const wasOpen = state.viewerInfoOpen;
     if (isOpen && !state.viewerInfoOpen) {
       state.viewerInfoSnap = "expanded";
     }
+    if (isOpen && (options.snap === "compact" || options.snap === "expanded")) {
+      state.viewerInfoSnap = options.snap;
+    }
     state.viewerInfoOpen = Boolean(isOpen);
     updateViewerInfoState();
+    if (isMobileViewerLayout() && options.motion !== false) {
+      const targetSnap = state.viewerInfoOpen
+        ? window.matchMedia("(orientation: landscape)").matches ? "expanded" : state.viewerInfoSnap
+        : "closed";
+      moveSheetTo("viewer", targetSnap, {
+        fromSnap: state.viewerInfoOpen && !wasOpen ? "closed" : null
+      });
+    } else if (isMobileViewerLayout()) {
+      if (state.viewerInfoOpen) {
+        els.viewerInfo?.classList.add("is-motion-presented");
+      } else {
+        moveSheetTo("viewer", "closed", { immediate: true });
+      }
+    }
   }
 
   function updateViewerInfoState() {
