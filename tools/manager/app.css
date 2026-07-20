@@ -1143,6 +1143,422 @@
       padding-top: 0;
       border-top: 0;
     }
+    .airshow-story-manager-head,
+    .airshow-story-toolbar,
+    .story-moment-footer {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .airshow-story-toolbar {
+      align-items: end;
+    }
+    .airshow-story-toolbar > .field {
+      width: min(420px, 100%);
+    }
+    .airshow-story-actions,
+    .story-order-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .toggle-control {
+      display: inline-flex;
+      min-height: 38px;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .toggle-control input {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+    }
+    .story-guidance {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .story-coverage {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--surface) 78%, var(--panel));
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .story-coverage.is-warning {
+      border-color: color-mix(in srgb, var(--warning, #b7791f) 48%, var(--line));
+      color: var(--ink);
+    }
+    .story-bulk-tools {
+      display: grid;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: color-mix(in srgb, var(--surface) 84%, var(--panel));
+    }
+    .story-bulk-head,
+    .story-bulk-controls,
+    .story-bulk-selection-actions {
+      display: flex;
+      gap: 8px;
+      align-items: end;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    .story-bulk-head h4 {
+      margin: 0;
+      color: var(--ink);
+      font-size: 13px;
+    }
+    .story-bulk-head p {
+      margin: 3px 0 0;
+      font-size: 11px;
+    }
+    .story-bulk-controls {
+      justify-content: flex-start;
+    }
+    .story-bulk-controls .field {
+      min-width: 220px;
+    }
+    .story-photo-pool {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 8px;
+    }
+    .story-photo-pool-item {
+      display: grid;
+      grid-template-columns: auto 48px minmax(0, 1fr);
+      gap: 8px;
+      align-items: center;
+      min-width: 0;
+      padding: 7px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--surface);
+    }
+    .story-photo-pool-item.is-selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 15%, transparent);
+    }
+    .story-photo-pool-item input {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+    }
+    .story-photo-pool-item img,
+    .story-photo-pool-thumb {
+      width: 48px;
+      height: 36px;
+      overflow: hidden;
+      border-radius: 4px;
+      background: #151719;
+      object-fit: cover;
+    }
+    .story-photo-pool-copy {
+      display: grid;
+      min-width: 0;
+      gap: 2px;
+    }
+    .story-photo-pool-copy strong,
+    .story-photo-pool-copy span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .story-photo-pool-copy strong {
+      color: var(--ink);
+      font-size: 11px;
+    }
+    .story-photo-pool-copy span {
+      color: var(--muted);
+      font-size: 10px;
+    }
+    .story-photo-pool-copy .is-unassigned {
+      color: var(--accent);
+    }
+    .airshow-story-editor {
+      display: grid;
+      gap: 12px;
+    }
+    .airshow-story-moment-card {
+      display: grid;
+      grid-template-columns: 66px minmax(180px, 0.72fr) minmax(280px, 1.7fr);
+      gap: 14px;
+      align-items: start;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: var(--surface);
+      box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+      transition: border-color 140ms ease, box-shadow 140ms ease, opacity 140ms ease;
+    }
+    .airshow-story-moment-card:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 13%, transparent);
+    }
+    .airshow-story-moment-card.is-dragging {
+      opacity: 0.45;
+    }
+    .airshow-story-moment-order {
+      display: grid;
+      gap: 8px;
+      justify-items: center;
+      color: var(--muted);
+    }
+    .airshow-story-moment-order strong {
+      color: var(--ink);
+      font-size: 18px;
+      font-variant-numeric: tabular-nums;
+    }
+    .story-drag-handle {
+      cursor: grab;
+      font-size: 18px;
+      letter-spacing: -5px;
+    }
+    .story-order-actions {
+      justify-content: center;
+    }
+    .story-order-actions .btn.icon {
+      min-width: 28px;
+      min-height: 28px;
+      padding: 4px 7px;
+    }
+    .story-photo-focal {
+      position: relative;
+      width: 100%;
+      min-height: 170px;
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #151719;
+      cursor: crosshair;
+    }
+    .story-photo-focal img,
+    .story-photo-focal .missing {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 170px;
+      object-fit: cover;
+    }
+    .story-photo-focal .missing {
+      display: grid;
+      place-items: center;
+      color: #fff;
+    }
+    .story-focal-marker {
+      position: absolute;
+      top: var(--story-focal-y);
+      left: var(--story-focal-x);
+      width: 22px;
+      height: 22px;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.7), 0 2px 8px rgba(0, 0, 0, 0.45);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .story-focal-marker::before,
+    .story-focal-marker::after {
+      position: absolute;
+      background: #fff;
+      content: "";
+    }
+    .story-focal-marker::before {
+      top: 9px;
+      right: -5px;
+      left: -5px;
+      height: 2px;
+    }
+    .story-focal-marker::after {
+      top: -5px;
+      bottom: -5px;
+      left: 9px;
+      width: 2px;
+    }
+    .airshow-story-moment-fields {
+      display: grid;
+      gap: 10px;
+    }
+    .story-supporting {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--surface) 78%, var(--panel));
+    }
+    .story-supporting-head {
+      display: flex;
+      gap: 12px;
+      align-items: end;
+      justify-content: space-between;
+    }
+    .story-supporting-head > div:first-child {
+      display: grid;
+      gap: 3px;
+    }
+    .story-supporting-head strong {
+      color: var(--ink);
+      font-size: 12px;
+    }
+    .story-supporting-head span,
+    .story-supporting-empty {
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .story-support-add {
+      width: min(380px, 100%);
+    }
+    .story-supporting-list {
+      display: grid;
+      gap: 8px;
+    }
+    .story-supporting-photo {
+      display: grid;
+      grid-template-columns: 76px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      min-width: 0;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--surface);
+    }
+    .story-supporting-thumb {
+      width: 76px;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+      border-radius: 5px;
+      background: #151719;
+    }
+    .story-supporting-thumb img,
+    .story-supporting-thumb .missing {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .story-supporting-thumb .missing {
+      display: grid;
+      place-items: center;
+      padding: 4px;
+      color: #fff;
+      font-size: 9px;
+      text-align: center;
+    }
+    .story-supporting-photo > span {
+      min-width: 0;
+      overflow: hidden;
+      color: var(--ink);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.4;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .story-supporting-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .story-supporting-actions .btn.icon {
+      min-width: 28px;
+      min-height: 28px;
+      padding: 4px 7px;
+    }
+    .story-supporting-actions .btn.danger {
+      min-height: 28px;
+      padding: 4px 8px;
+      font-size: 10px;
+    }
+    .story-supporting-empty {
+      padding: 9px;
+      border: 1px dashed var(--line);
+      border-radius: 7px;
+      text-align: center;
+    }
+    .story-moment-footer {
+      align-items: end;
+    }
+    .story-moment-footer > label {
+      display: grid;
+      grid-template-columns: auto minmax(120px, 1fr) 42px;
+      gap: 8px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .story-moment-footer input[type="range"] {
+      width: 100%;
+      padding: 0;
+    }
+    .story-moment-footer output {
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+    @media (max-width: 980px) {
+      .airshow-story-moment-card {
+        grid-template-columns: 52px minmax(180px, 0.8fr) minmax(240px, 1.2fr);
+      }
+      .airshow-story-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+      }
+    }
+    @media (max-width: 720px) {
+      .airshow-story-manager-head,
+      .story-moment-footer {
+        align-items: stretch;
+        flex-direction: column;
+      }
+      .airshow-story-moment-card {
+        grid-template-columns: 42px minmax(0, 1fr);
+      }
+      .airshow-story-moment-fields {
+        grid-column: 1 / -1;
+      }
+      .story-supporting-head {
+        align-items: stretch;
+        flex-direction: column;
+      }
+      .story-support-add {
+        width: 100%;
+      }
+      .story-supporting-photo {
+        grid-template-columns: 64px minmax(0, 1fr);
+      }
+      .story-supporting-thumb {
+        width: 64px;
+      }
+      .story-supporting-actions {
+        grid-column: 1 / -1;
+        justify-content: end;
+      }
+      .story-bulk-controls {
+        align-items: stretch;
+        flex-direction: column;
+      }
+      .story-bulk-controls .field,
+      .story-bulk-controls button {
+        width: 100%;
+      }
+    }
     .write-up-toolbar {
       display: grid;
       grid-template-columns: minmax(150px, 0.35fr) minmax(260px, 1fr);

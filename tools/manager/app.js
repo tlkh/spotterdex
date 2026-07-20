@@ -22,6 +22,8 @@
       },
       qualityShowAcknowledged: false,
       qualityFilter: "hard",
+      qualityPollTimer: null,
+      qualityPollInFlight: false,
       captionAssist: {
         attachAssetPath: "",
         editPhotoKey: "",
@@ -39,7 +41,13 @@
         ready: false,
         items: [],
         message: ""
-      }
+      },
+      airshowStoryEventId: "",
+      airshowStoryDraft: null,
+      airshowStoryDirty: false,
+      draggedStoryMoment: -1,
+      airshowStorySelection: new Set(),
+      airshowPreviewWindow: null
     };
     const viewMeta = {
       attach: ["Attach Photos", "Tag new raw images and maintain their catalog metadata."],
@@ -212,6 +220,58 @@
       state.bulkEdit.tagged = new Set([...state.bulkEdit.tagged].filter((key) => validTaggedKeys.has(key)));
       renderShared();
       renderActiveView();
+      syncQualityPolling();
+    }
+
+    function qualityScanActive() {
+      const status = state.data?.quality?.status;
+      return status === "running" || status === "queued";
+    }
+
+    function qualityProgressMessage() {
+      const quality = state.data?.quality || {};
+      if (qualityScanActive()) {
+        const completed = Number(quality.completed || 0);
+        const total = Number(quality.total || 0);
+        return total
+          ? `Quality check is running in the background (${completed} of ${total} source photos checked). Results will appear here automatically.`
+          : "Quality check is running in the background. Results will appear here automatically.";
+      }
+      if (quality.status === "error") return quality.message || "The background quality check failed.";
+      return "";
+    }
+
+    function syncQualityPolling() {
+      if (!qualityScanActive()) {
+        if (state.qualityPollTimer) window.clearInterval(state.qualityPollTimer);
+        state.qualityPollTimer = null;
+        return;
+      }
+      if (!state.qualityPollTimer) {
+        state.qualityPollTimer = window.setInterval(() => pollQualityStatus(), 800);
+      }
+    }
+
+    async function pollQualityStatus() {
+      if (state.qualityPollInFlight || !state.data) return;
+      state.qualityPollInFlight = true;
+      try {
+        const payload = await api("/api/quality-status");
+        state.data.quality = payload.quality || state.data.quality;
+        if (state.data.quality?.status === "ready") {
+          await loadState(true);
+          return;
+        }
+        renderStats();
+        if (state.activeTab === "quality") renderQualityControl();
+      } catch (error) {
+        if (state.qualityPollTimer) window.clearInterval(state.qualityPollTimer);
+        state.qualityPollTimer = null;
+        if (state.activeTab === "quality") renderQualityControl();
+      } finally {
+        state.qualityPollInFlight = false;
+        syncQualityPolling();
+      }
     }
 
     function renderShared() {
@@ -233,7 +293,7 @@
         "locations-database": renderLocationDatabase,
         writeups: renderWriteUpEditor,
         "bulk-captions": renderBulkCaptions,
-        airshows: () => { renderAirshowHeroManager(); renderAirshowMissingImages(); renderBulkEvents(); },
+        airshows: () => { renderAirshowStoryManager(); renderAirshowHeroManager(); renderAirshowMissingImages(); renderBulkEvents(); },
         missing: renderMissingFields,
         quality: renderQualityControl,
         "location-heroes": renderLocationHeroManager,
@@ -332,7 +392,9 @@
         + (project.missingEntryFieldCount || 0);
       $("newAssetNavBadge").textContent = project.untaggedAssetCount || 0;
       $("missingNavBadge").textContent = missingCount;
-      $("qualityNavBadge").textContent = project.qualityIssueAssetCount || 0;
+      $("qualityNavBadge").textContent = qualityScanActive()
+        ? "…"
+        : project.qualityIssueAssetCount || 0;
     }
 
     function assetMatchesSearch(asset, term) {
@@ -467,6 +529,7 @@
 
     function renderQualityControl() {
       renderQualitySettings();
+      const qualityProgress = qualityProgressMessage();
       const flagged = (state.data?.assets || []).filter((asset) => (
         asset.isPhotoSource && (asset.isUnderResolution || (asset.qualityFlags || []).length)
       ));
@@ -507,17 +570,21 @@
       $("qualityWarningCount").textContent = warnings.length;
       $("qualityPassedCount").textContent = passedQcEdits.length;
       $("qualityApprovePassed").hidden = state.qualityFilter !== "passed";
-      $("qualityApprovePassed").disabled = passedQcEdits.length === 0;
+      $("qualityApprovePassed").disabled = qualityScanActive() || passedQcEdits.length === 0;
       $("qualityApprovePassed").textContent = passedQcEdits.length
         ? `Approve ${passedQcEdits.length} passing QC_ image${passedQcEdits.length === 1 ? "" : "s"}`
         : "No passing QC_ images to approve";
-      $("qualityPrefixFailures").disabled = prefixNeeded === 0;
+      $("qualityPrefixFailures").disabled = qualityScanActive() || prefixNeeded === 0;
       $("qualityPrefixFailures").textContent = prefixNeeded
         ? `Prefix ${prefixNeeded} ${state.qualityFilter === "warnings" ? "warning" : "failure"}${prefixNeeded === 1 ? "" : "s"} with QC_`
         : state.qualityFilter === "passed"
           ? "QC_ edits in this tab already pass"
           : `All ${state.qualityFilter === "warnings" ? "warnings" : "hard failures"} have QC_ prefixes or are reviewed`;
-      $("qualitySummary").textContent = `${flagged.length} of ${allPhotoSources.length} source photograph(s) flagged: ${belowMinimum} below ${minimum}px, ${exposure} exposure, ${colour} colour, ${emptySpace} empty-space advisory. ${acknowledged} marked reviewed; ${hardPrefixNeeded} hard failure(s) need a QC_ filename; ${passedQcEdits.length} QC_ edit(s) now pass all checks.`;
+      $("qualitySummary").textContent = qualityProgress || `${flagged.length} of ${allPhotoSources.length} source photograph(s) flagged: ${belowMinimum} below ${minimum}px, ${exposure} exposure, ${colour} colour, ${emptySpace} empty-space advisory. ${acknowledged} marked reviewed; ${hardPrefixNeeded} hard failure(s) need a QC_ filename; ${passedQcEdits.length} QC_ edit(s) now pass all checks.`;
+      if (qualityScanActive()) {
+        $("qualityList").innerHTML = '<div class="empty">The quality queue will appear when the background scan completes.</div>';
+        return;
+      }
       if (!assets.length) {
         const reviewedInQueue = activeQueue.filter((asset) => asset.qualityAcknowledged).length;
         const queueLabel = state.qualityFilter === "warnings"
@@ -659,6 +726,493 @@
     function configuredAirshowHero(eventName) {
       const key = airshowEventKey(eventName);
       return (state.data?.airshowEvents || []).find((event) => airshowEventKey(event.name) === key)?.hero || {};
+    }
+
+    function airshowStoryEvent(eventId = state.airshowStoryEventId) {
+      return (state.data?.airshowEvents || []).find((event) => event.id === eventId) || null;
+    }
+
+    function airshowStoryPhotos(eventId = state.airshowStoryEventId) {
+      return (state.data?.masterPhotos || [])
+        .filter((photo) => photo.eventId === eventId)
+        .slice()
+        .sort((a, b) => {
+          const aTime = String(a.capturedAt || a.exifDate || a.date || "");
+          const bTime = String(b.capturedAt || b.exifDate || b.date || "");
+          return aTime.localeCompare(bTime) || String(a.path || a.id).localeCompare(String(b.path || b.id));
+        });
+    }
+
+    function storyPhotoSubject(photo) {
+      const subjects = Array.isArray(photo?.subjects) ? photo.subjects : [];
+      return subjects.find((subject) => subject.isPrimary) || subjects[0] || {};
+    }
+
+    function storyPhotoHeadline(photo) {
+      const subject = storyPhotoSubject(photo);
+      return subject.aircraftType || subject.unitName || "At the show";
+    }
+
+    function storyPhotoBody(photo) {
+      const subject = storyPhotoSubject(photo);
+      return photo.caption || photo.title || subject.unitName || photo.location || "";
+    }
+
+    function formatStoryCaptureLabel(value) {
+      const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
+      if (!match) return "Sequence time unavailable";
+      const month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][Number(match[2]) - 1] || match[2];
+      const day = String(Number(match[3]));
+      return match[4] ? `${day} ${month} · ${match[4]}:${match[5]}` : `${day} ${month}`;
+    }
+
+    function cloneStory(value) {
+      const copy = JSON.parse(JSON.stringify(value || {mode: "standard", segments: []}));
+      const segments = Array.isArray(copy.segments)
+        ? copy.segments
+        : (Array.isArray(copy.moments) ? copy.moments : []);
+      return {
+        ...copy,
+        segments: segments.map((segment, index) => ({
+          ...segment,
+          position: index,
+          overlaySide: segment.overlaySide === "right" ? "right" : "left",
+          photos: Array.isArray(segment.photos) ? segment.photos : []
+        }))
+      };
+    }
+
+    function loadAirshowStoryDraft(eventId, force = false) {
+      const event = airshowStoryEvent(eventId);
+      if (!event) {
+        state.airshowStoryEventId = "";
+        state.airshowStoryDraft = {mode: "standard", segments: []};
+        state.airshowStoryDirty = false;
+        state.airshowStorySelection.clear();
+        return;
+      }
+      if (!force && state.airshowStoryEventId === eventId && state.airshowStoryDraft) return;
+      state.airshowStoryEventId = eventId;
+      state.airshowStoryDraft = cloneStory(event.story || {mode: event.storyMode || "standard", segments: []});
+      state.airshowStoryDraft.mode = event.storyMode || state.airshowStoryDraft.mode || "standard";
+      state.airshowStoryDirty = false;
+      state.airshowStorySelection.clear();
+    }
+
+    function markAirshowStoryDirty() {
+      state.airshowStoryDirty = true;
+      const event = airshowStoryEvent();
+      const count = state.airshowStoryDraft?.segments?.length || 0;
+      $("airshowStorySummary").textContent = `${event?.name || "Airshow"} · ${count} segment${count === 1 ? "" : "s"} · Unsaved changes`;
+      sendAirshowStoryPreview();
+    }
+
+    function storyPhotoCoverage(segments, photos) {
+      const eventPhotoIds = new Set(photos.map((photo) => photo.id));
+      const owners = new Map();
+      for (const [segmentIndex, segment] of segments.entries()) {
+        for (const record of segment.photos || []) {
+          const photoId = String(record.photoId || "");
+          if (!photoId) continue;
+          const entries = owners.get(photoId) || [];
+          entries.push(segmentIndex);
+          owners.set(photoId, entries);
+        }
+      }
+      const assigned = [...owners.keys()].filter((photoId) => eventPhotoIds.has(photoId));
+      const duplicates = [...owners.entries()].filter(([, segmentIndexes]) => segmentIndexes.length > 1);
+      const invalid = [...owners.keys()].filter((photoId) => !eventPhotoIds.has(photoId));
+      return {
+        eventPhotoIds,
+        owners,
+        assigned,
+        unassigned: photos.filter((photo) => !owners.has(photo.id)),
+        duplicates,
+        invalid
+      };
+    }
+
+    function renderAirshowStoryBulk(segments, photos, coverage) {
+      const coverageNode = $("airshowStoryCoverage");
+      const pool = $("airshowStoryPhotoPool");
+      const target = $("airshowStoryBulkTarget");
+      if (!coverageNode || !pool || !target) return;
+      const previousTarget = target.value;
+      const duplicateCount = coverage.duplicates.length;
+      const invalidCount = coverage.invalid.length;
+      const warning = coverage.unassigned.length || duplicateCount || invalidCount;
+      coverageNode.className = `story-coverage${warning ? " is-warning" : ""}`;
+      coverageNode.textContent = `${coverage.assigned.length} of ${photos.length} event photos assigned to the story · ${coverage.unassigned.length} unassigned${duplicateCount ? ` · ${duplicateCount} duplicate assignment${duplicateCount === 1 ? "" : "s"}` : ""}${invalidCount ? ` · ${invalidCount} invalid assignment${invalidCount === 1 ? "" : "s"}` : ""}`;
+      target.innerHTML = segments.length
+        ? segments.map((segment, index) => `<option value="${index}">${String(index + 1).padStart(2, "0")} · ${escapeHtml(segment.headline || "Untitled segment")}</option>`).join("")
+        : '<option value="">No segments available</option>';
+      if (segments[Number(previousTarget)]) target.value = previousTarget;
+      const validPhotoIds = new Set(photos.map((photo) => photo.id));
+      state.airshowStorySelection = new Set([...state.airshowStorySelection].filter((photoId) => validPhotoIds.has(photoId)));
+      pool.innerHTML = photos.length
+        ? photos.map((photo) => {
+          const ownerIndexes = coverage.owners.get(photo.id) || [];
+          const ownerLabel = ownerIndexes.length
+            ? ownerIndexes.map((index) => `Segment ${index + 1}`).join(", ")
+            : "Unassigned";
+          const ownerClass = ownerIndexes.length ? "" : " is-unassigned";
+          const checked = state.airshowStorySelection.has(photo.id) ? " checked" : "";
+          const source = photo.sourceAssetPath ? thumbUrl(photo.sourceAssetPath) : "";
+          return `
+            <label class="story-photo-pool-item${checked ? " is-selected" : ""}">
+              <input type="checkbox" data-story-selection="${escapeHtml(photo.id)}"${checked} aria-label="Select ${escapeHtml(storyPhotoOptionLabel(photo))}">
+              ${source ? `<img src="${source}" alt="">` : '<span class="story-photo-pool-thumb"></span>'}
+              <span class="story-photo-pool-copy">
+                <strong>${escapeHtml(storyPhotoHeadline(photo))}</strong>
+                <span>${escapeHtml(formatStoryCaptureLabel(photo.capturedAt || photo.exifDate || photo.date))} · <span class="${ownerClass.trim()}">${escapeHtml(ownerLabel)}</span></span>
+              </span>
+            </label>
+          `;
+        }).join("")
+        : '<div class="empty">No event photos are available.</div>';
+    }
+
+    function sendAirshowStoryPreview() {
+      const previewWindow = state.airshowPreviewWindow;
+      if (!previewWindow || previewWindow.closed || !state.airshowStoryDraft || !state.airshowStoryEventId) return;
+      previewWindow.postMessage({
+        type: "spotterdex-story-preview",
+        eventId: state.airshowStoryEventId,
+        story: cloneStory(state.airshowStoryDraft)
+      }, window.location.origin);
+    }
+
+    function openAirshowStoryPreview() {
+      const event = airshowStoryEvent();
+      const draft = state.airshowStoryDraft;
+      if (!event || !draft?.segments?.length) {
+        toast("Create at least one segment before opening a preview.");
+        return;
+      }
+      const previewUrl = `/preview/airshows.html?storyPreview=1#airshow=${encodeURIComponent(event.id)}`;
+      state.airshowPreviewWindow = window.open(previewUrl, "spotterdex-airshow-preview");
+      if (!state.airshowPreviewWindow) {
+        toast("Allow pop-ups to open the airshow preview.");
+        return;
+      }
+      state.airshowPreviewWindow.focus();
+      window.setTimeout(sendAirshowStoryPreview, 300);
+    }
+
+    function selectedAirshowStoryPhotoIds() {
+      return [...state.airshowStorySelection].filter(Boolean);
+    }
+
+    function updateAirshowStorySelection(photoId, selected) {
+      if (selected) state.airshowStorySelection.add(photoId);
+      else state.airshowStorySelection.delete(photoId);
+      renderAirshowStoryManager();
+    }
+
+    function selectedStoryTargetSegment() {
+      const index = Number($("airshowStoryBulkTarget")?.value);
+      return Number.isInteger(index) ? state.airshowStoryDraft?.segments?.[index] || null : null;
+    }
+
+    function assignSelectedAirshowPhotos({moveOnly = false} = {}) {
+      const selectedIds = new Set(selectedAirshowStoryPhotoIds());
+      const target = selectedStoryTargetSegment();
+      if (!selectedIds.size || !target) {
+        toast("Select photos and a target segment first.");
+        return;
+      }
+      const photos = airshowStoryPhotos();
+      const coverage = storyPhotoCoverage(state.airshowStoryDraft.segments || [], photos);
+      const moveIds = new Set([...selectedIds].filter((photoId) => !moveOnly || coverage.owners.has(photoId)));
+      if (!moveIds.size) {
+        toast("Move selected requires photos already assigned to a segment.");
+        return;
+      }
+      const moved = [];
+      for (const segment of state.airshowStoryDraft.segments || []) {
+        const keep = [];
+        for (const record of segment.photos || []) {
+          if (moveIds.has(record.photoId)) moved.push(record);
+          else keep.push(record);
+        }
+        segment.photos = keep;
+      }
+      const movedIds = new Set(moved.map((record) => record.photoId));
+      for (const photo of photos) {
+        if (moveIds.has(photo.id) && !movedIds.has(photo.id)) {
+          moved.push({photoId: photo.id, focalX: 0.5, focalY: 0.5, motion: "auto"});
+        }
+      }
+      target.photos = [...(target.photos || []), ...moved];
+      state.airshowStoryDraft.segments = (state.airshowStoryDraft.segments || [])
+        .filter((segment) => segment === target || (segment.photos || []).length)
+        .map((segment, index) => ({...segment, position: index}));
+      state.airshowStorySelection.clear();
+      markAirshowStoryDirty();
+      renderAirshowStoryManager();
+    }
+
+    function sortTargetAirshowPhotos() {
+      const target = selectedStoryTargetSegment();
+      if (!target) {
+        toast("Choose a target segment first.");
+        return;
+      }
+      const photoById = new Map(airshowStoryPhotos().map((photo) => [photo.id, photo]));
+      target.photos = (target.photos || []).slice().sort((a, b) => {
+        const aPhoto = photoById.get(a.photoId);
+        const bPhoto = photoById.get(b.photoId);
+        return String(aPhoto?.capturedAt || aPhoto?.exifDate || aPhoto?.date || "").localeCompare(String(bPhoto?.capturedAt || bPhoto?.exifDate || bPhoto?.date || "")) || String(a.photoId).localeCompare(String(b.photoId));
+      });
+      markAirshowStoryDirty();
+      renderAirshowStoryManager();
+    }
+
+    function removeDuplicateAirshowPhotos() {
+      const seen = new Set();
+      let removed = 0;
+      for (const segment of state.airshowStoryDraft?.segments || []) {
+        segment.photos = (segment.photos || []).filter((record) => {
+          if (seen.has(record.photoId)) {
+            removed += 1;
+            return false;
+          }
+          seen.add(record.photoId);
+          return true;
+        });
+      }
+      state.airshowStoryDraft.segments = (state.airshowStoryDraft.segments || [])
+        .filter((segment) => (segment.photos || []).length)
+        .map((segment, index) => ({...segment, position: index}));
+      if (!removed) {
+        toast("No duplicate story photo assignments found.");
+        return;
+      }
+      markAirshowStoryDirty();
+      renderAirshowStoryManager();
+      toast(`Removed ${removed} duplicate photo assignment${removed === 1 ? "" : "s"}.`);
+    }
+
+    function storyPhotoOptionLabel(photo) {
+      return `${formatStoryCaptureLabel(photo.capturedAt || photo.exifDate || photo.date)} — ${storyPhotoHeadline(photo)}${storyPhotoSubject(photo).unitName ? ` / ${storyPhotoSubject(photo).unitName}` : ""}`;
+    }
+
+    function renderAirshowStoryManager() {
+      const events = (state.data?.airshowEvents || []).filter((event) => (
+        (state.data?.masterPhotos || []).some((photo) => photo.eventId === event.id)
+      ));
+      const previousEventId = state.airshowStoryEventId;
+      $("airshowStoryEvent").innerHTML = events.length
+        ? events.map((event) => `<option value="${escapeHtml(event.id)}">${escapeHtml(event.name)}</option>`).join("")
+        : '<option value="">No events with photos</option>';
+      const nextEventId = events.some((event) => event.id === previousEventId) ? previousEventId : events[0]?.id || "";
+      $("airshowStoryEvent").value = nextEventId;
+      loadAirshowStoryDraft(nextEventId);
+
+      const event = airshowStoryEvent();
+      const draft = state.airshowStoryDraft || {mode: "standard", segments: []};
+      const segments = draft.segments || [];
+      const photos = airshowStoryPhotos();
+      $("airshowStoryEnabled").checked = draft.mode === "cinematic";
+      $("airshowStoryEnabled").disabled = !event;
+      $("generateAirshowStoryBtn").disabled = !event || photos.length < 2;
+      const usedPhotoCount = new Set(segments.flatMap((segment) => (segment.photos || []).map((photo) => photo.photoId))).size;
+      $("addAirshowStoryMomentBtn").disabled = !event || usedPhotoCount >= photos.length;
+      $("previewAirshowStoryBtn").disabled = !event || !segments.length;
+      $("resetAirshowStoryBtn").disabled = !event || !state.airshowStoryDirty;
+      $("saveAirshowStoryBtn").disabled = !event || !state.airshowStoryDirty;
+      if (!event) {
+        $("airshowStorySummary").textContent = "Tag at least two photos with an event to build cinematic segments.";
+        $("airshowStoryCoverage").textContent = "No airshow event selected.";
+        $("airshowStoryPhotoPool").innerHTML = "";
+        $("airshowStoryBulkTarget").innerHTML = '<option value="">No segments available</option>';
+        $("airshowStoryEditor").innerHTML = '<div class="empty">No airshow events with photos are available.</div>';
+        return;
+      }
+      if (!state.airshowStoryDirty) {
+        const suffix = draft.mode === "cinematic" ? "Cinematic page enabled" : "Standard page";
+        $("airshowStorySummary").textContent = `${event.name} · ${segments.length} segment${segments.length === 1 ? "" : "s"} · ${suffix}`;
+      }
+      if (!segments.length) {
+        renderAirshowStoryBulk(segments, photos, storyPhotoCoverage(segments, photos));
+        $("airshowStoryEditor").innerHTML = '<div class="empty">No chronological segments yet. Generate EXIF segments or add a segment manually.</div>';
+        return;
+      }
+
+      renderAirshowStoryBulk(segments, photos, storyPhotoCoverage(segments, photos));
+      const usedPhotoIds = new Set(segments.flatMap((segment) => (segment.photos || []).map((photo) => photo.photoId)));
+      $("airshowStoryEditor").innerHTML = segments.map((segment, index) => {
+        const storyPhoto = segment.photos?.[0] || {};
+        const supportingPhotos = (segment.photos || []).slice(1);
+        const photoIdsOwnedByOtherSegments = new Set(segments
+          .filter((_, segmentIndex) => segmentIndex !== index)
+          .flatMap((otherSegment) => (otherSegment.photos || []).map((photo) => photo.photoId)));
+        const selectedPhoto = photos.find((photo) => photo.id === storyPhoto.photoId) || null;
+        const heroOptions = photos
+          .filter((photo) => !photoIdsOwnedByOtherSegments.has(photo.id))
+          .map((photo) => `<option value="${escapeHtml(photo.id)}"${photo.id === storyPhoto.photoId ? " selected" : ""}>${escapeHtml(storyPhotoOptionLabel(photo))}</option>`)
+          .join("");
+        const supportOptions = photos
+          .filter((photo) => !usedPhotoIds.has(photo.id))
+          .map((photo) => `<option value="${escapeHtml(photo.id)}">${escapeHtml(storyPhotoOptionLabel(photo))}</option>`)
+          .join("");
+        const focalX = Number.isFinite(Number(storyPhoto.focalX)) ? Number(storyPhoto.focalX) : 0.5;
+        const focalY = Number.isFinite(Number(storyPhoto.focalY)) ? Number(storyPhoto.focalY) : 0.5;
+        const media = selectedPhoto?.sourceAssetPath
+          ? `<img src="${thumbUrl(selectedPhoto.sourceAssetPath)}" loading="lazy" alt="${escapeHtml(storyPhotoHeadline(selectedPhoto))}">`
+          : '<span class="missing">Photo unavailable</span>';
+        return `
+          <article class="airshow-story-moment-card" data-story-moment="${index}" aria-label="Segment ${index + 1}">
+            <div class="airshow-story-moment-order">
+              <span class="story-drag-handle" draggable="true" aria-hidden="true">⋮⋮</span>
+              <strong>${String(index + 1).padStart(2, "0")}</strong>
+              <div class="story-order-actions" aria-label="Reorder segment">
+                <button class="btn icon" type="button" data-story-move="-1" data-story-index="${index}" aria-label="Move segment earlier"${index === 0 ? " disabled" : ""}>↑</button>
+                <button class="btn icon" type="button" data-story-move="1" data-story-index="${index}" aria-label="Move segment later"${index === segments.length - 1 ? " disabled" : ""}>↓</button>
+              </div>
+            </div>
+            <button class="story-photo-focal" type="button" data-story-focal="${index}" style="--story-focal-x:${focalX * 100}%;--story-focal-y:${focalY * 100}%" aria-label="Set hero focal point for segment ${index + 1}">
+              ${media}
+              <span class="story-focal-marker" aria-hidden="true"></span>
+            </button>
+            <div class="airshow-story-moment-fields">
+              <div class="field wide"><label>Hero photo</label><select data-story-photo="${index}">${heroOptions}</select></div>
+              <div class="form-grid">
+                <div class="field"><label>Sequence label</label><input data-story-field="label" data-story-index="${index}" value="${escapeHtml(segment.label || "")}" placeholder="6 Oct · 08:44"></div>
+                <div class="field"><label>Overlay side</label><select data-story-overlay="${index}"><option value="left"${segment.overlaySide === "right" ? "" : " selected"}>Left</option><option value="right"${segment.overlaySide === "right" ? " selected" : ""}>Right</option></select></div>
+              </div>
+              <div class="field"><label>Hero motion</label><select data-story-motion="${index}">${["auto", "push-left", "push-right", "pull-in", "hold"].map((motion) => `<option value="${motion}"${motion === (storyPhoto.motion || "auto") ? " selected" : ""}>${motion.replace(/-/g, " ")}</option>`).join("")}</select></div>
+              <div class="field wide"><label>Segment title</label><input data-story-field="headline" data-story-index="${index}" value="${escapeHtml(segment.headline || "")}" placeholder="Defaults to the hero subject"></div>
+              <div class="field wide"><label>Segment caption</label><textarea data-story-field="body" data-story-index="${index}" rows="2" placeholder="Defaults to the hero photo caption">${escapeHtml(segment.body || "")}</textarea></div>
+              <section class="story-supporting" aria-label="Supporting photos for segment ${index + 1}">
+                <div class="story-supporting-head">
+                  <div>
+                    <strong>Supporting photos</strong>
+                    <span>${supportingPhotos.length} added</span>
+                  </div>
+                  <label class="field story-support-add">
+                    <span>Add supporting photo</span>
+                    <select data-story-support-add="${index}" aria-label="Add supporting photo to segment ${index + 1}"${!supportOptions ? " disabled" : ""}>
+                      <option value="">${supportOptions ? "Choose an unused event photo…" : "No unused event photos"}</option>
+                      ${supportOptions}
+                    </select>
+                  </label>
+                </div>
+                <div class="story-supporting-list">
+                  ${supportingPhotos.length ? supportingPhotos.map((supportRecord, supportIndex) => {
+                    const photo = photos.find((candidate) => candidate.id === supportRecord.photoId);
+                    const supportMedia = photo?.sourceAssetPath
+                      ? `<img src="${thumbUrl(photo.sourceAssetPath)}" loading="lazy" alt="">`
+                      : '<span class="missing">Photo unavailable</span>';
+                    const label = photo ? storyPhotoOptionLabel(photo) : `Unavailable photo ${supportRecord.photoId || ""}`;
+                    return `
+                      <article class="story-supporting-photo">
+                        <div class="story-supporting-thumb">${supportMedia}</div>
+                        <span>${escapeHtml(label)}</span>
+                        <div class="story-supporting-actions" aria-label="Reorder or remove supporting photo ${supportIndex + 1}">
+                          <button class="btn icon" type="button" data-story-support-move="-1" data-story-index="${index}" data-story-support-index="${supportIndex}" aria-label="Move supporting photo ${supportIndex + 1} earlier"${supportIndex === 0 ? " disabled" : ""}>↑</button>
+                          <button class="btn icon" type="button" data-story-support-move="1" data-story-index="${index}" data-story-support-index="${supportIndex}" aria-label="Move supporting photo ${supportIndex + 1} later"${supportIndex === supportingPhotos.length - 1 ? " disabled" : ""}>↓</button>
+                          <button class="btn danger ghost" type="button" data-story-support-remove="${supportIndex}" data-story-index="${index}" aria-label="Remove supporting photo ${supportIndex + 1}">Remove</button>
+                        </div>
+                      </article>
+                    `;
+                  }).join("") : '<div class="story-supporting-empty">No supporting photos. The segment will show only its hero.</div>'}
+                </div>
+              </section>
+              <div class="story-moment-footer">
+                <span class="subtle">One hero and any number of supporting photos.</span>
+                <button class="btn danger ghost" type="button" data-story-remove="${index}">Remove Segment</button>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function generateAirshowStoryDraft() {
+      const photos = airshowStoryPhotos();
+      if (state.airshowStoryDraft?.segments?.length && !window.confirm("Replace the current segment draft with newly grouped EXIF segments?")) return;
+      const groups = [];
+      let currentGroup = null;
+      for (const photo of photos) {
+        const capturedAt = String(photo.capturedAt || photo.exifDate || photo.date || "unknown");
+        const day = capturedAt.slice(0, 10);
+        const capturedMs = Date.parse(capturedAt);
+        const startsNewGroup = !currentGroup
+          || currentGroup.day !== day
+          || (Number.isFinite(capturedMs) && Number.isFinite(currentGroup.lastCapturedMs) && capturedMs - currentGroup.lastCapturedMs > 120 * 60 * 1000);
+        if (startsNewGroup) {
+          currentGroup = {day, lastCapturedMs: capturedMs, photos: []};
+          groups.push(currentGroup);
+        }
+        currentGroup.photos.push(photo);
+        currentGroup.lastCapturedMs = capturedMs;
+      }
+      const motions = ["push-left", "pull-in", "push-right", "hold"];
+      state.airshowStoryDraft = {
+        mode: groups.length >= 2 ? "cinematic" : "standard",
+        segments: groups.map((group, index) => {
+          const photo = group.photos[0];
+          return {
+            id: "",
+            position: index,
+            label: formatStoryCaptureLabel(photo.capturedAt || photo.exifDate || photo.date),
+            headline: storyPhotoHeadline(photo),
+            body: storyPhotoBody(photo),
+            overlaySide: index % 2 ? "right" : "left",
+            photos: group.photos.map((groupPhoto, photoIndex) => ({
+              photoId: groupPhoto.id,
+              focalX: 0.5,
+              focalY: 0.5,
+              motion: photoIndex === 0 ? motions[index % motions.length] : "auto"
+            }))
+          };
+        })
+      };
+      markAirshowStoryDirty();
+      renderAirshowStoryManager();
+      toast(`Grouped ${photos.length} photo${photos.length === 1 ? "" : "s"} into ${state.airshowStoryDraft.segments.length} deterministic EXIF segment${state.airshowStoryDraft.segments.length === 1 ? "" : "s"}.`);
+    }
+
+    function addAirshowStoryMoment() {
+      const draft = state.airshowStoryDraft;
+      const used = new Set((draft?.segments || []).flatMap((segment) => (segment.photos || []).map((photo) => photo.photoId)));
+      const photo = airshowStoryPhotos().find((candidate) => !used.has(candidate.id));
+      if (!photo || !draft) return toast("Every event photo is already used in a segment.");
+      draft.segments.push({
+        id: "",
+        position: draft.segments.length,
+        label: formatStoryCaptureLabel(photo.capturedAt || photo.exifDate || photo.date),
+        headline: storyPhotoHeadline(photo),
+        body: storyPhotoBody(photo),
+        overlaySide: draft.segments.length % 2 ? "right" : "left",
+        photos: [{photoId: photo.id, focalX: 0.5, focalY: 0.5, motion: "auto"}]
+      });
+      markAirshowStoryDirty();
+      renderAirshowStoryManager();
+    }
+
+    function moveAirshowStoryMoment(fromIndex, toIndex) {
+      const segments = state.airshowStoryDraft?.segments || [];
+      if (fromIndex < 0 || fromIndex >= segments.length || toIndex < 0 || toIndex >= segments.length || fromIndex === toIndex) return;
+      const [segment] = segments.splice(fromIndex, 1);
+      segments.splice(toIndex, 0, segment);
+      segments.forEach((item, index) => { item.position = index; });
+      markAirshowStoryDirty();
+      renderAirshowStoryManager();
+    }
+
+    async function saveAirshowStory() {
+      const event = airshowStoryEvent();
+      if (!event || !state.airshowStoryDraft) return;
+      const mode = $("airshowStoryEnabled").checked ? "cinematic" : "standard";
+      const segments = state.airshowStoryDraft.segments || [];
+      if (mode === "cinematic" && segments.length < 2) throw new Error("Add at least two segments before enabling the cinematic page.");
+      const result = await api("/api/save-event-story", {eventId: event.id, mode, segments});
+      state.airshowStoryDraft = null;
+      state.airshowStoryDirty = false;
+      await loadState(true);
+      toast(result.message);
     }
 
     function airshowHeroMatches(hero, entry, photo) {
@@ -2125,7 +2679,11 @@
         if (input.type === "checkbox") input.checked = Boolean(settings[key]);
         else input.value = settings[key];
       });
-      $("qualitySettingsStatus").textContent = state.data ? "Empty-space detection settings apply to the next quality scan." : "";
+      $("qualitySettingsStatus").textContent = state.data
+        ? qualityScanActive()
+          ? "Quality check is running in the background. Settings changes start a fresh scan."
+          : "Empty-space detection settings apply to the next quality scan."
+        : "";
     }
 
     function collectQualitySettings() {
@@ -3039,6 +3597,182 @@
       $("missingSearch").addEventListener("input", renderMissingFields);
       $("missingFilter").addEventListener("change", renderMissingFields);
       $("bulkEventSearch").addEventListener("input", renderBulkEvents);
+      $("airshowStoryEvent").addEventListener("change", (event) => {
+        const nextEventId = event.target.value;
+        if (state.airshowStoryDirty && !window.confirm("Discard unsaved segment changes and open another event?")) {
+          event.target.value = state.airshowStoryEventId;
+          return;
+        }
+        loadAirshowStoryDraft(nextEventId, true);
+        renderAirshowStoryManager();
+      });
+      $("airshowStoryEnabled").addEventListener("change", (event) => {
+        if (!state.airshowStoryDraft) return;
+        state.airshowStoryDraft.mode = event.target.checked ? "cinematic" : "standard";
+        markAirshowStoryDirty();
+        $("resetAirshowStoryBtn").disabled = false;
+        $("saveAirshowStoryBtn").disabled = false;
+      });
+      $("generateAirshowStoryBtn").addEventListener("click", generateAirshowStoryDraft);
+      $("addAirshowStoryMomentBtn").addEventListener("click", addAirshowStoryMoment);
+      $("resetAirshowStoryBtn").addEventListener("click", () => {
+        loadAirshowStoryDraft(state.airshowStoryEventId, true);
+        renderAirshowStoryManager();
+      });
+      $("saveAirshowStoryBtn").addEventListener("click", () => saveAirshowStory().catch((error) => toast(error.message)));
+      $("airshowStoryEditor").addEventListener("input", (event) => {
+        const field = event.target.closest("[data-story-field]");
+        if (field) {
+          const segment = state.airshowStoryDraft?.segments?.[Number(field.dataset.storyIndex)];
+          if (!segment) return;
+          segment[field.dataset.storyField] = field.value;
+          markAirshowStoryDirty();
+          $("resetAirshowStoryBtn").disabled = false;
+          $("saveAirshowStoryBtn").disabled = false;
+        }
+      });
+      $("airshowStoryEditor").addEventListener("change", (event) => {
+        const photoSelect = event.target.closest("[data-story-photo]");
+        const motionSelect = event.target.closest("[data-story-motion]");
+        const overlaySelect = event.target.closest("[data-story-overlay]");
+        const supportSelect = event.target.closest("[data-story-support-add]");
+        if (photoSelect) {
+          const index = Number(photoSelect.dataset.storyPhoto);
+          const segment = state.airshowStoryDraft?.segments?.[index];
+          const photo = airshowStoryPhotos().find((candidate) => candidate.id === photoSelect.value);
+          if (!segment || !photo) return;
+          segment.label = formatStoryCaptureLabel(photo.capturedAt || photo.exifDate || photo.date);
+          segment.headline = storyPhotoHeadline(photo);
+          segment.body = storyPhotoBody(photo);
+          const currentSegmentPhotoIndex = (segment.photos || []).findIndex((record) => record.photoId === photo.id);
+          if (currentSegmentPhotoIndex > 0) {
+            const previousHero = segment.photos[0];
+            segment.photos[0] = segment.photos[currentSegmentPhotoIndex];
+            segment.photos[currentSegmentPhotoIndex] = previousHero;
+          } else if (currentSegmentPhotoIndex < 0) {
+            segment.photos = [
+              {photoId: photo.id, focalX: 0.5, focalY: 0.5, motion: segment.photos?.[0]?.motion || "auto"},
+              ...(segment.photos || []).slice(1)
+            ];
+          }
+          markAirshowStoryDirty();
+          renderAirshowStoryManager();
+        }
+        if (motionSelect) {
+          const segment = state.airshowStoryDraft?.segments?.[Number(motionSelect.dataset.storyMotion)];
+          if (!segment?.photos?.[0]) return;
+          segment.photos[0].motion = motionSelect.value;
+          markAirshowStoryDirty();
+          $("resetAirshowStoryBtn").disabled = false;
+          $("saveAirshowStoryBtn").disabled = false;
+        }
+        if (overlaySelect) {
+          const segment = state.airshowStoryDraft?.segments?.[Number(overlaySelect.dataset.storyOverlay)];
+          if (!segment) return;
+          segment.overlaySide = overlaySelect.value === "right" ? "right" : "left";
+          markAirshowStoryDirty();
+          $("resetAirshowStoryBtn").disabled = false;
+          $("saveAirshowStoryBtn").disabled = false;
+        }
+        if (supportSelect?.value) {
+          const segment = state.airshowStoryDraft?.segments?.[Number(supportSelect.dataset.storySupportAdd)];
+          const usedPhotoIds = new Set((state.airshowStoryDraft?.segments || []).flatMap((item) => (item.photos || []).map((photo) => photo.photoId)));
+          const photo = airshowStoryPhotos().find((candidate) => candidate.id === supportSelect.value);
+          if (!segment || !photo || usedPhotoIds.has(photo.id)) return;
+          segment.photos.push({photoId: photo.id, focalX: 0.5, focalY: 0.5, motion: "auto"});
+          markAirshowStoryDirty();
+          renderAirshowStoryManager();
+        }
+      });
+      $("airshowStoryPhotoPool").addEventListener("change", (event) => {
+        const checkbox = event.target.closest("[data-story-selection]");
+        if (!checkbox) return;
+        updateAirshowStorySelection(checkbox.dataset.storySelection, checkbox.checked);
+      });
+      $("airshowStorySelectAllBtn").addEventListener("click", () => {
+        airshowStoryPhotos().forEach((photo) => state.airshowStorySelection.add(photo.id));
+        renderAirshowStoryManager();
+      });
+      $("airshowStoryClearSelectionBtn").addEventListener("click", () => {
+        state.airshowStorySelection.clear();
+        renderAirshowStoryManager();
+      });
+      $("airshowStoryAssignSelectedBtn").addEventListener("click", () => assignSelectedAirshowPhotos());
+      $("airshowStoryMoveSelectedBtn").addEventListener("click", () => assignSelectedAirshowPhotos({moveOnly: true}));
+      $("airshowStorySortSelectedBtn").addEventListener("click", sortTargetAirshowPhotos);
+      $("airshowStoryDeduplicateBtn").addEventListener("click", removeDuplicateAirshowPhotos);
+      $("previewAirshowStoryBtn").addEventListener("click", openAirshowStoryPreview);
+      window.addEventListener("message", (event) => {
+        if (event.data?.type !== "spotterdex-story-preview-ready") return;
+        if (state.airshowPreviewWindow && event.source !== state.airshowPreviewWindow) return;
+        sendAirshowStoryPreview();
+      });
+      $("airshowStoryEditor").addEventListener("click", (event) => {
+        const move = event.target.closest("[data-story-move]");
+        const remove = event.target.closest("[data-story-remove]");
+        const focal = event.target.closest("[data-story-focal]");
+        const supportMove = event.target.closest("[data-story-support-move]");
+        const supportRemove = event.target.closest("[data-story-support-remove]");
+        if (move) {
+          const from = Number(move.dataset.storyIndex);
+          moveAirshowStoryMoment(from, from + Number(move.dataset.storyMove));
+        }
+        if (remove) {
+          const index = Number(remove.dataset.storyRemove);
+          state.airshowStoryDraft?.segments?.splice(index, 1);
+          (state.airshowStoryDraft?.segments || []).forEach((segment, segmentIndex) => { segment.position = segmentIndex; });
+          markAirshowStoryDirty();
+          renderAirshowStoryManager();
+        }
+        if (supportMove) {
+          const segment = state.airshowStoryDraft?.segments?.[Number(supportMove.dataset.storyIndex)];
+          const from = Number(supportMove.dataset.storySupportIndex) + 1;
+          const to = from + Number(supportMove.dataset.storySupportMove);
+          if (!segment || from < 1 || to < 1 || from >= segment.photos.length || to >= segment.photos.length) return;
+          const [photo] = segment.photos.splice(from, 1);
+          segment.photos.splice(to, 0, photo);
+          markAirshowStoryDirty();
+          renderAirshowStoryManager();
+        }
+        if (supportRemove) {
+          const segment = state.airshowStoryDraft?.segments?.[Number(supportRemove.dataset.storyIndex)];
+          const supportIndex = Number(supportRemove.dataset.storySupportRemove) + 1;
+          if (!segment || supportIndex < 1 || supportIndex >= segment.photos.length) return;
+          segment.photos.splice(supportIndex, 1);
+          markAirshowStoryDirty();
+          renderAirshowStoryManager();
+        }
+        if (focal) {
+          const segment = state.airshowStoryDraft?.segments?.[Number(focal.dataset.storyFocal)];
+          if (!segment?.photos?.[0]) return;
+          const rect = focal.getBoundingClientRect();
+          segment.photos[0].focalX = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+          segment.photos[0].focalY = Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height));
+          markAirshowStoryDirty();
+          renderAirshowStoryManager();
+        }
+      });
+      $("airshowStoryEditor").addEventListener("dragstart", (event) => {
+        const card = event.target.closest("[data-story-moment]");
+        if (!card) return;
+        state.draggedStoryMoment = Number(card.dataset.storyMoment);
+        card.classList.add("is-dragging");
+        event.dataTransfer.effectAllowed = "move";
+      });
+      $("airshowStoryEditor").addEventListener("dragover", (event) => {
+        if (event.target.closest("[data-story-moment]")) event.preventDefault();
+      });
+      $("airshowStoryEditor").addEventListener("drop", (event) => {
+        const card = event.target.closest("[data-story-moment]");
+        if (!card) return;
+        event.preventDefault();
+        moveAirshowStoryMoment(state.draggedStoryMoment, Number(card.dataset.storyMoment));
+        state.draggedStoryMoment = -1;
+      });
+      $("airshowStoryEditor").addEventListener("dragend", () => {
+        state.draggedStoryMoment = -1;
+        document.querySelectorAll(".airshow-story-moment-card.is-dragging").forEach((card) => card.classList.remove("is-dragging"));
+      });
       $("bulkExcludeAiCaptions").addEventListener("change", (event) => {
         state.bulkCaptions.excludeAi = event.target.checked;
         resetBulkCaptionQueue();

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-16T16:06:22+00:00",
+  "generatedAt": "2026-07-20T05:16:10+00:00",
   "entities": {
     "countries": {
       "au": {
@@ -1647,7 +1647,114 @@
           "jp-komatsu-air-base"
         ],
         "heroPhotoId": "2023-10-06-dsc00151-enhanced-nr",
-        "writeUp": ""
+        "writeUp": "",
+        "story": {
+          "mode": "cinematic",
+          "segments": [
+            {
+              "id": "jp-komatsu-air-show-2023-opening-formation",
+              "label": "6 Oct \u00b7 08:44",
+              "headline": "Opening formation",
+              "body": "Mixed unit formation fly-by at Komatsu Air Base \u00b7 JASDF F-15DJ Aggressor (Flanker livery) at Komatsu Air Base",
+              "overlaySide": "left",
+              "photos": [
+                {
+                  "photoId": "2023-10-06-dsc09277-enhanced-nr",
+                  "focalX": 0.55,
+                  "focalY": 0.45,
+                  "motion": "pull-in"
+                },
+                {
+                  "photoId": "2023-10-06-dsc09323-enhanced-nr",
+                  "focalX": 0.58,
+                  "focalY": 0.44,
+                  "motion": "push-left"
+                }
+              ]
+            },
+            {
+              "id": "jp-komatsu-air-show-2023-search-and-rescue",
+              "label": "6 Oct \u00b7 09:20",
+              "headline": "Morning demonstrations",
+              "body": "Hawker U-125A from the Air Rescue Wing during a SAR demonstration at Komatsu Air Base. \u00b7 F-15J from 306 TFS during Komatsu Air Show",
+              "overlaySide": "right",
+              "photos": [
+                {
+                  "photoId": "2023-10-06-dsc09828-enhanced-nr",
+                  "focalX": 0.65,
+                  "focalY": 0.44,
+                  "motion": "push-right"
+                },
+                {
+                  "photoId": "2023-10-06-dsc00945-enhanced-nr",
+                  "focalX": 0.6,
+                  "focalY": 0.48,
+                  "motion": "pull-in"
+                }
+              ]
+            },
+            {
+              "id": "jp-komatsu-air-show-2023-test-colours-on-the-runway",
+              "label": "6 Oct \u00b7 14:53",
+              "headline": "Afternoon arrivals",
+              "body": "A Mitsubishi F-2A from the Air Development and Test Wing lands at Komatsu Air Base with drag parachute deployed, carrying four captive ASM-2 missiles and two captive AAM-3 missiles \u00b7 P-1 MPA from Atsugi Air Base landing at Komatsu \u00b7 C-2 at Komatsu Air Base \u00b7 US-2 landing at Komatsu Air Base",
+              "overlaySide": "left",
+              "photos": [
+                {
+                  "photoId": "2023-10-06-dsc01453-enhanced-nr",
+                  "focalX": 0.62,
+                  "focalY": 0.56,
+                  "motion": "push-left"
+                },
+                {
+                  "photoId": "2023-10-06-dsc01604-enhanced-nr",
+                  "focalX": 0.62,
+                  "focalY": 0.52,
+                  "motion": "push-right"
+                },
+                {
+                  "photoId": "2023-10-06-dsc01681-enhanced-nr",
+                  "focalX": 0.56,
+                  "focalY": 0.58,
+                  "motion": "push-left"
+                },
+                {
+                  "photoId": "2023-10-06-dsc01758-enhanced-nr",
+                  "focalX": 0.58,
+                  "focalY": 0.58,
+                  "motion": "hold"
+                }
+              ]
+            },
+            {
+              "id": "jp-komatsu-air-show-2023-day-two-begins",
+              "label": "7 Oct \u00b7 07:36",
+              "headline": "Day two launches",
+              "body": "F-15J from 303 TFS \u00b7 F-15J from 306 TFS taking off from Komatsu Air Base \u00b7 F-15DJ Aggressor taking off from Komatsu Air Base",
+              "overlaySide": "right",
+              "photos": [
+                {
+                  "photoId": "2023-10-07-dsc01871-enhanced-nr",
+                  "focalX": 0.66,
+                  "focalY": 0.44,
+                  "motion": "pull-in"
+                },
+                {
+                  "photoId": "2023-10-07-dsc02141-enhanced-nr",
+                  "focalX": 0.54,
+                  "focalY": 0.5,
+                  "motion": "push-right"
+                },
+                {
+                  "photoId": "2023-10-07-dsc02176-enhanced-nr",
+                  "focalX": 0.57,
+                  "focalY": 0.5,
+                  "motion": "push-left"
+                }
+              ]
+            }
+          ]
+        }
       },
       "jp-hamamatsu-air-show-2023": {
         "id": "jp-hamamatsu-air-show-2023",
@@ -1715,7 +1822,114 @@
           "jp-chitose-air-base"
         ],
         "heroPhotoId": "2024-08-21-dsc08019-enhanced-nr",
-        "writeUp": ""
+        "writeUp": "",
+        "story": {
+          "mode": "cinematic",
+          "segments": [
+            {
+              "id": "jp-chitose-air-show-2024-rehearsal-take-off",
+              "label": "21 Aug \u00b7 07:25",
+              "headline": "Take-off",
+              "body": "F-15J from Chitose Air Base squadrons line up for take-off",
+              "overlaySide": "left",
+              "photos": [
+                {
+                  "photoId": "2024-08-21-dsc05932-enhanced-nr",
+                  "focalX": 0.5,
+                  "focalY": 0.5,
+                  "motion": "push-left"
+                },
+                {
+                  "photoId": "2024-08-21-dsc05993-enhanced-nr",
+                  "focalX": 0.5,
+                  "focalY": 0.5,
+                  "motion": "auto"
+                },
+                {
+                  "photoId": "2024-08-21-dsc06371-enhanced-nr",
+                  "focalX": 0.5,
+                  "focalY": 0.5,
+                  "motion": "auto"
+                }
+              ]
+            },
+            {
+              "id": "jp-chitose-air-show-2024-rehearsal-low-pass",
+              "label": "21 Aug \u00b7 10:18",
+              "headline": "Low Pass",
+              "body": "F-15J making a low pass at Chitose Air Base",
+              "overlaySide": "right",
+              "photos": [
+                {
+                  "photoId": "2024-08-21-dsc07818-enhanced-nr",
+                  "focalX": 0.5,
+                  "focalY": 0.5,
+                  "motion": "push-right"
+                },
+                {
+                  "photoId": "2024-08-21-dsc07833-enhanced-nr",
+                  "focalX": 0.5,
+                  "focalY": 0.5,
+                  "motion": "auto"
+                },
+                {
+                  "photoId": "2024-08-21-dsc06698-enhanced-nr",
+                  "focalX": 0.5,
+                  "focalY": 0.5,
+                  "motion": "auto"
+                }
+              ]
+            },
+            {
+              "id": "jp-chitose-air-show-2024-rehearsal-203-tfs-commemorative-livery",
+              "label": "21 Aug \u00b7 10:24",
+              "headline": "203 TFS Commemorative Livery",
+              "body": "203 TFS 60th Anniversary Special Livery during an Airshow Rehearsal",
+              "overlaySide": "left",
+              "photos": [
+                {
+                  "photoId": "2024-08-21-dsc08013-enhanced-nr",
+                  "focalX": 0.5,
+                  "focalY": 0.5,
+                  "motion": "auto"
+                },
+                {
+                  "photoId": "2024-08-21-dsc08019-enhanced-nr",
+                  "focalX": 0.5,
+                  "focalY": 0.5,
+                  "motion": "auto"
+                },
+                {
+                  "photoId": "2024-08-21-dsc08164-enhanced-nr",
+                  "focalX": 0.5,
+                  "focalY": 0.5,
+                  "motion": "auto"
+                },
+                {
+                  "photoId": "2024-08-21-dsc08215-enhanced-nr",
+                  "focalX": 0.5,
+                  "focalY": 0.5,
+                  "motion": "auto"
+                }
+              ]
+            },
+            {
+              "id": "jp-chitose-air-show-2024-rehearsal-boeing-777-300er",
+              "label": "21 Aug \u00b7 10:35",
+              "headline": "Boeing 777-300ER",
+              "body": "Cygnus performing touch-and-go at Chitose Air Base",
+              "overlaySide": "right",
+              "photos": [
+                {
+                  "photoId": "2024-08-21-dsc00349-enhanced-nr",
+                  "focalX": 0.5,
+                  "focalY": 0.5,
+                  "motion": "push-left"
+                }
+              ]
+            }
+          ]
+        }
       },
       "jp-tsuiki-air-show-2025": {
         "id": "jp-tsuiki-air-show-2025",

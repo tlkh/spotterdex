@@ -48,7 +48,7 @@ CREATE TABLE events (
     starts_on TEXT CHECK (starts_on IS NULL OR starts_on GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
     ends_on TEXT CHECK (ends_on IS NULL OR ends_on GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
     hero_photo_id TEXT REFERENCES photos(id) DEFERRABLE INITIALLY DEFERRED,
-    write_up TEXT NOT NULL DEFAULT '',
+    write_up TEXT NOT NULL DEFAULT '', story_mode TEXT NOT NULL DEFAULT 'standard' CHECK (story_mode IN ('standard','cinematic')),
     CHECK (starts_on IS NULL OR ends_on IS NULL OR starts_on <= ends_on)
 ) WITHOUT ROWID;
 
@@ -86,6 +86,28 @@ CREATE TABLE photo_subjects (
     CHECK (aircraft_id IS NOT NULL OR unit_id IS NOT NULL)
 ) WITHOUT ROWID;
 
+CREATE TABLE event_story_moments (
+                id TEXT PRIMARY KEY,
+                event_id TEXT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+                position INTEGER NOT NULL CHECK (position >= 0),
+                label TEXT NOT NULL DEFAULT '',
+                headline TEXT NOT NULL DEFAULT '',
+                body TEXT NOT NULL DEFAULT '',
+                scroll_weight REAL NOT NULL DEFAULT 1.35 CHECK (scroll_weight BETWEEN 0.6 AND 2.5), overlay_side TEXT NOT NULL DEFAULT 'left' CHECK (overlay_side IN ('left','right')),
+                UNIQUE (event_id, position)
+            ) WITHOUT ROWID;
+
+CREATE TABLE event_story_photos (
+                moment_id TEXT NOT NULL REFERENCES event_story_moments(id) ON DELETE CASCADE,
+                position INTEGER NOT NULL CHECK (position >= 0),
+                photo_id TEXT NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
+                focal_x REAL NOT NULL DEFAULT 0.5 CHECK (focal_x BETWEEN 0 AND 1),
+                focal_y REAL NOT NULL DEFAULT 0.5 CHECK (focal_y BETWEEN 0 AND 1),
+                motion TEXT NOT NULL DEFAULT 'auto' CHECK (motion IN ('auto','push-left','push-right','pull-in','hold')),
+                PRIMARY KEY (moment_id, position),
+                UNIQUE (moment_id, photo_id)
+            ) WITHOUT ROWID;
+
 CREATE UNIQUE INDEX one_primary_subject_per_photo
 ON photo_subjects(photo_id) WHERE is_primary = 1;
 
@@ -93,11 +115,15 @@ CREATE INDEX photos_by_event ON photos(event_id);
 
 CREATE INDEX photos_by_location ON photos(location_id);
 
+CREATE INDEX story_moments_by_event ON event_story_moments(event_id, position);
+
+CREATE INDEX story_photos_by_photo ON event_story_photos(photo_id);
+
 CREATE INDEX subjects_by_aircraft ON photo_subjects(aircraft_id);
 
 CREATE INDEX subjects_by_unit ON photo_subjects(unit_id);
 
-INSERT INTO "metadata" ("key", "value") VALUES ('schema_version', '3');
+INSERT INTO "metadata" ("key", "value") VALUES ('schema_version', '5');
 
 INSERT INTO "countries" ("id", "name") VALUES ('au', 'Australia');
 INSERT INTO "countries" ("id", "name") VALUES ('bm', 'Bermuda');
@@ -291,18 +317,18 @@ INSERT INTO "locations" ("id", "name", "country_id", "icao", "latitude", "longit
 INSERT INTO "locations" ("id", "name", "country_id", "icao", "latitude", "longitude", "enabled", "hero_photo_id", "write_up") VALUES ('th-don-muang-royal-thai-air-force-base', 'Don Muang Royal Thai Air Force Base', 'th', 'VTBD', 13.9126, 100.607, 1, '2026-01-10-dsc05725', '');
 INSERT INTO "locations" ("id", "name", "country_id", "icao", "latitude", "longitude", "enabled", "hero_photo_id", "write_up") VALUES ('vn-tan-son-nhat-international-airport', 'Tan Son Nhat International Airport', 'vn', 'VVTS', 10.8189, 106.6519, 1, '2025-08-18-dsc00026', '');
 
-INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up") VALUES ('jp-chitose-air-show-2024-rehearsal', 'Chitose Air Show 2024 (Rehearsal)', '2024-08-21', '2024-08-21', '2024-08-21-dsc08019-enhanced-nr', '');
-INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up") VALUES ('jp-gifu-air-show-2023', 'Gifu Air Show 2023', '2023-11-11', '2023-11-12', '2023-11-12-dsc01224-enhanced-nr', '');
-INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up") VALUES ('jp-hamamatsu-air-show-2023', 'Hamamatsu Air Show 2023', '2023-10-29', '2023-10-29', NULL, '');
-INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up") VALUES ('jp-kisarazu-air-show-2023', 'Kisarazu Air Show 2023', '2023-10-01', '2023-10-01', '2023-10-01-dsc09035-enhanced-nr', '');
-INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up") VALUES ('jp-komatsu-air-show-2023', 'Komatsu Air Show 2023', '2023-10-06', '2023-10-07', '2023-10-06-dsc00151-enhanced-nr', '');
-INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up") VALUES ('jp-tsuiki-air-show-2023', 'Tsuiki Air Show 2023', '2023-11-26', '2023-11-26', '2023-11-26-dsc04647-enhanced-nr', '');
-INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up") VALUES ('jp-tsuiki-air-show-2025', 'Tsuiki Air Show 2025', '2025-11-29', '2025-11-30', '2025-11-30-trio-jasdf-8tfs', '');
-INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up") VALUES ('sg-ndp-2023', 'NDP 2023', '2023-06-10', '2023-08-09', '2023-08-09-dsc02325-enhanced-nr2', '');
-INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up") VALUES ('sg-ndp-2024', 'NDP 2024', '2024-06-22', '2024-06-22', NULL, '');
-INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up") VALUES ('sg-singapore-airshow-2024', 'Singapore Airshow 2024', '2024-02-13', '2024-02-22', '2024-02-22-dsc06214-enhanced-nr', '');
-INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up") VALUES ('sg-singapore-airshow-2026', 'Singapore Airshow 2026', '2026-01-31', '2026-02-03', '2026-02-03-rsaf-apache-flare', '');
-INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up") VALUES ('th-wan-dek-2026', 'Wan Dek 2026', '2026-01-10', '2026-01-10', '2026-01-10-dsc05351', '');
+INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up", "story_mode") VALUES ('jp-chitose-air-show-2024-rehearsal', 'Chitose Air Show 2024 (Rehearsal)', '2024-08-21', '2024-08-21', '2024-08-21-dsc08019-enhanced-nr', '', 'cinematic');
+INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up", "story_mode") VALUES ('jp-gifu-air-show-2023', 'Gifu Air Show 2023', '2023-11-11', '2023-11-12', '2023-11-12-dsc01224-enhanced-nr', '', 'standard');
+INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up", "story_mode") VALUES ('jp-hamamatsu-air-show-2023', 'Hamamatsu Air Show 2023', '2023-10-29', '2023-10-29', NULL, '', 'standard');
+INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up", "story_mode") VALUES ('jp-kisarazu-air-show-2023', 'Kisarazu Air Show 2023', '2023-10-01', '2023-10-01', '2023-10-01-dsc09035-enhanced-nr', '', 'standard');
+INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up", "story_mode") VALUES ('jp-komatsu-air-show-2023', 'Komatsu Air Show 2023', '2023-10-06', '2023-10-07', '2023-10-06-dsc00151-enhanced-nr', '', 'cinematic');
+INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up", "story_mode") VALUES ('jp-tsuiki-air-show-2023', 'Tsuiki Air Show 2023', '2023-11-26', '2023-11-26', '2023-11-26-dsc04647-enhanced-nr', '', 'standard');
+INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up", "story_mode") VALUES ('jp-tsuiki-air-show-2025', 'Tsuiki Air Show 2025', '2025-11-29', '2025-11-30', '2025-11-30-trio-jasdf-8tfs', '', 'standard');
+INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up", "story_mode") VALUES ('sg-ndp-2023', 'NDP 2023', '2023-06-10', '2023-08-09', '2023-08-09-dsc02325-enhanced-nr2', '', 'standard');
+INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up", "story_mode") VALUES ('sg-ndp-2024', 'NDP 2024', '2024-06-22', '2024-06-22', NULL, '', 'standard');
+INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up", "story_mode") VALUES ('sg-singapore-airshow-2024', 'Singapore Airshow 2024', '2024-02-13', '2024-02-22', '2024-02-22-dsc06214-enhanced-nr', '', 'standard');
+INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up", "story_mode") VALUES ('sg-singapore-airshow-2026', 'Singapore Airshow 2026', '2026-01-31', '2026-02-03', '2026-02-03-rsaf-apache-flare', '', 'standard');
+INSERT INTO "events" ("id", "name", "starts_on", "ends_on", "hero_photo_id", "write_up", "story_mode") VALUES ('th-wan-dek-2026', 'Wan Dek 2026', '2026-01-10', '2026-01-10', '2026-01-10-dsc05351', '', 'standard');
 
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('airbus-a300-600st', 'fr-airbus');
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('airbus-a320-200', 'jp-starflyer');
@@ -1428,5 +1454,37 @@ INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", 
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2026-04-08-dsc09026', 0, 'kawasaki-ec-2', 'jp-electronic-warfare-squadron', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2026-04-08-xx5606', 0, 'kawasaki-t-4', 'jp-air-development-and-test-wing', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2026-04-08-xx8523', 0, 'mitsubishi-f-2a', 'jp-air-development-and-test-wing', 1);
+
+INSERT INTO "event_story_moments" ("id", "event_id", "position", "label", "headline", "body", "scroll_weight", "overlay_side") VALUES ('jp-chitose-air-show-2024-rehearsal-203-tfs-commemorative-livery', 'jp-chitose-air-show-2024-rehearsal', 2, '21 Aug · 10:24', '203 TFS Commemorative Livery', '203 TFS 60th Anniversary Special Livery during an Airshow Rehearsal', 1.0, 'left');
+INSERT INTO "event_story_moments" ("id", "event_id", "position", "label", "headline", "body", "scroll_weight", "overlay_side") VALUES ('jp-chitose-air-show-2024-rehearsal-boeing-777-300er', 'jp-chitose-air-show-2024-rehearsal', 3, '21 Aug · 10:35', 'Boeing 777-300ER', 'Cygnus performing touch-and-go at Chitose Air Base', 1.0, 'right');
+INSERT INTO "event_story_moments" ("id", "event_id", "position", "label", "headline", "body", "scroll_weight", "overlay_side") VALUES ('jp-chitose-air-show-2024-rehearsal-low-pass', 'jp-chitose-air-show-2024-rehearsal', 1, '21 Aug · 10:18', 'Low Pass', 'F-15J making a low pass at Chitose Air Base', 1.0, 'right');
+INSERT INTO "event_story_moments" ("id", "event_id", "position", "label", "headline", "body", "scroll_weight", "overlay_side") VALUES ('jp-chitose-air-show-2024-rehearsal-take-off', 'jp-chitose-air-show-2024-rehearsal', 0, '21 Aug · 07:25', 'Take-off', 'F-15J from Chitose Air Base squadrons line up for take-off', 1.0, 'left');
+INSERT INTO "event_story_moments" ("id", "event_id", "position", "label", "headline", "body", "scroll_weight", "overlay_side") VALUES ('jp-komatsu-air-show-2023-day-two-begins', 'jp-komatsu-air-show-2023', 3, '7 Oct · 07:36', 'Day two launches', 'F-15J from 303 TFS · F-15J from 306 TFS taking off from Komatsu Air Base · F-15DJ Aggressor taking off from Komatsu Air Base', 1.0, 'right');
+INSERT INTO "event_story_moments" ("id", "event_id", "position", "label", "headline", "body", "scroll_weight", "overlay_side") VALUES ('jp-komatsu-air-show-2023-opening-formation', 'jp-komatsu-air-show-2023', 0, '6 Oct · 08:44', 'Opening formation', 'Mixed unit formation fly-by at Komatsu Air Base · JASDF F-15DJ Aggressor (Flanker livery) at Komatsu Air Base', 1.0, 'left');
+INSERT INTO "event_story_moments" ("id", "event_id", "position", "label", "headline", "body", "scroll_weight", "overlay_side") VALUES ('jp-komatsu-air-show-2023-search-and-rescue', 'jp-komatsu-air-show-2023', 1, '6 Oct · 09:20', 'Morning demonstrations', 'Hawker U-125A from the Air Rescue Wing during a SAR demonstration at Komatsu Air Base. · F-15J from 306 TFS during Komatsu Air Show', 1.0, 'right');
+INSERT INTO "event_story_moments" ("id", "event_id", "position", "label", "headline", "body", "scroll_weight", "overlay_side") VALUES ('jp-komatsu-air-show-2023-test-colours-on-the-runway', 'jp-komatsu-air-show-2023', 2, '6 Oct · 14:53', 'Afternoon arrivals', 'A Mitsubishi F-2A from the Air Development and Test Wing lands at Komatsu Air Base with drag parachute deployed, carrying four captive ASM-2 missiles and two captive AAM-3 missiles · P-1 MPA from Atsugi Air Base landing at Komatsu · C-2 at Komatsu Air Base · US-2 landing at Komatsu Air Base', 1.0, 'left');
+
+INSERT INTO "event_story_photos" ("moment_id", "position", "photo_id", "focal_x", "focal_y", "motion") VALUES ('jp-chitose-air-show-2024-rehearsal-203-tfs-commemorative-livery', 0, '2024-08-21-dsc08013-enhanced-nr', 0.5, 0.5, 'auto');
+INSERT INTO "event_story_photos" ("moment_id", "position", "photo_id", "focal_x", "focal_y", "motion") VALUES ('jp-chitose-air-show-2024-rehearsal-203-tfs-commemorative-livery', 1, '2024-08-21-dsc08019-enhanced-nr', 0.5, 0.5, 'auto');
+INSERT INTO "event_story_photos" ("moment_id", "position", "photo_id", "focal_x", "focal_y", "motion") VALUES ('jp-chitose-air-show-2024-rehearsal-203-tfs-commemorative-livery', 2, '2024-08-21-dsc08164-enhanced-nr', 0.5, 0.5, 'auto');
+INSERT INTO "event_story_photos" ("moment_id", "position", "photo_id", "focal_x", "focal_y", "motion") VALUES ('jp-chitose-air-show-2024-rehearsal-203-tfs-commemorative-livery', 3, '2024-08-21-dsc08215-enhanced-nr', 0.5, 0.5, 'auto');
+INSERT INTO "event_story_photos" ("moment_id", "position", "photo_id", "focal_x", "focal_y", "motion") VALUES ('jp-chitose-air-show-2024-rehearsal-boeing-777-300er', 0, '2024-08-21-dsc00349-enhanced-nr', 0.5, 0.5, 'push-left');
+INSERT INTO "event_story_photos" ("moment_id", "position", "photo_id", "focal_x", "focal_y", "motion") VALUES ('jp-chitose-air-show-2024-rehearsal-low-pass', 0, '2024-08-21-dsc07818-enhanced-nr', 0.5, 0.5, 'push-right');
+INSERT INTO "event_story_photos" ("moment_id", "position", "photo_id", "focal_x", "focal_y", "motion") VALUES ('jp-chitose-air-show-2024-rehearsal-low-pass', 1, '2024-08-21-dsc07833-enhanced-nr', 0.5, 0.5, 'auto');
+INSERT INTO "event_story_photos" ("moment_id", "position", "photo_id", "focal_x", "focal_y", "motion") VALUES ('jp-chitose-air-show-2024-rehearsal-low-pass', 2, '2024-08-21-dsc06698-enhanced-nr', 0.5, 0.5, 'auto');
+INSERT INTO "event_story_photos" ("moment_id", "position", "photo_id", "focal_x", "focal_y", "motion") VALUES ('jp-chitose-air-show-2024-rehearsal-take-off', 0, '2024-08-21-dsc05932-enhanced-nr', 0.5, 0.5, 'push-left');
+INSERT INTO "event_story_photos" ("moment_id", "position", "photo_id", "focal_x", "focal_y", "motion") VALUES ('jp-chitose-air-show-2024-rehearsal-take-off', 1, '2024-08-21-dsc05993-enhanced-nr', 0.5, 0.5, 'auto');
+INSERT INTO "event_story_photos" ("moment_id", "position", "photo_id", "focal_x", "focal_y", "motion") VALUES ('jp-chitose-air-show-2024-rehearsal-take-off', 2, '2024-08-21-dsc06371-enhanced-nr', 0.5, 0.5, 'auto');
+INSERT INTO "event_story_photos" ("moment_id", "position", "photo_id", "focal_x", "focal_y", "motion") VALUES ('jp-komatsu-air-show-2023-day-two-begins', 0, '2023-10-07-dsc01871-enhanced-nr', 0.66, 0.44, 'pull-in');
+INSERT INTO "event_story_photos" ("moment_id", "position", "photo_id", "focal_x", "focal_y", "motion") VALUES ('jp-komatsu-air-show-2023-day-two-begins', 1, '2023-10-07-dsc02141-enhanced-nr', 0.54, 0.5, 'push-right');
+INSERT INTO "event_story_photos" ("moment_id", "position", "photo_id", "focal_x", "focal_y", "motion") VALUES ('jp-komatsu-air-show-2023-day-two-begins', 2, '2023-10-07-dsc02176-enhanced-nr', 0.57, 0.5, 'push-left');
+INSERT INTO "event_story_photos" ("moment_id", "position", "photo_id", "focal_x", "focal_y", "motion") VALUES ('jp-komatsu-air-show-2023-opening-formation', 0, '2023-10-06-dsc09277-enhanced-nr', 0.55, 0.45, 'pull-in');
+INSERT INTO "event_story_photos" ("moment_id", "position", "photo_id", "focal_x", "focal_y", "motion") VALUES ('jp-komatsu-air-show-2023-opening-formation', 1, '2023-10-06-dsc09323-enhanced-nr', 0.58, 0.44, 'push-left');
+INSERT INTO "event_story_photos" ("moment_id", "position", "photo_id", "focal_x", "focal_y", "motion") VALUES ('jp-komatsu-air-show-2023-search-and-rescue', 0, '2023-10-06-dsc09828-enhanced-nr', 0.65, 0.44, 'push-right');
+INSERT INTO "event_story_photos" ("moment_id", "position", "photo_id", "focal_x", "focal_y", "motion") VALUES ('jp-komatsu-air-show-2023-search-and-rescue', 1, '2023-10-06-dsc00945-enhanced-nr', 0.6, 0.48, 'pull-in');
+INSERT INTO "event_story_photos" ("moment_id", "position", "photo_id", "focal_x", "focal_y", "motion") VALUES ('jp-komatsu-air-show-2023-test-colours-on-the-runway', 0, '2023-10-06-dsc01453-enhanced-nr', 0.62, 0.56, 'push-left');
+INSERT INTO "event_story_photos" ("moment_id", "position", "photo_id", "focal_x", "focal_y", "motion") VALUES ('jp-komatsu-air-show-2023-test-colours-on-the-runway', 1, '2023-10-06-dsc01604-enhanced-nr', 0.62, 0.52, 'push-right');
+INSERT INTO "event_story_photos" ("moment_id", "position", "photo_id", "focal_x", "focal_y", "motion") VALUES ('jp-komatsu-air-show-2023-test-colours-on-the-runway', 2, '2023-10-06-dsc01681-enhanced-nr', 0.56, 0.58, 'push-left');
+INSERT INTO "event_story_photos" ("moment_id", "position", "photo_id", "focal_x", "focal_y", "motion") VALUES ('jp-komatsu-air-show-2023-test-colours-on-the-runway', 3, '2023-10-06-dsc01758-enhanced-nr', 0.58, 0.58, 'hold');
 
 COMMIT;

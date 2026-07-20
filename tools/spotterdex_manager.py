@@ -34,7 +34,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 from urllib.error import HTTPError, URLError
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 from urllib.request import Request, urlopen
 
 try:
@@ -69,6 +69,18 @@ MANAGER_STATIC_FILES = {
     "app.html": "text/html; charset=utf-8",
     "app.css": "text/css; charset=utf-8",
     "app.js": "application/javascript; charset=utf-8",
+}
+PREVIEW_ROOT_FILES = {
+    "airshows.html",
+    "index.html",
+    "aircraft-dex.html",
+    "squadrons.html",
+    "stats.html",
+    "styles.css",
+    "script.js",
+    "manifest.webmanifest",
+    "robots.txt",
+    "sitemap.xml",
 }
 # Generated JPEG output directories scanned by the orphan detector.
 GENERATED_ORPHAN_DIRS = ("assets/generated/photos", "assets/generated/thumbs")
@@ -253,8 +265,21 @@ class SpotterDexManager:
         self.quality_settings = self._load_quality_settings()
         self.build_settings = self._load_build_settings()
         self._exif_date_cache: Dict[str, str] = {}
+        self._exif_timestamp_cache: Dict[str, str] = {}
         self._image_dimension_cache: Dict[str, Tuple[int, int]] = {}
         self._image_quality_cache: Dict[str, Tuple[int, int, Tuple[Tuple[str, Any], ...], Dict[str, Any]]] = {}
+        self._quality_lock = threading.RLock()
+        self._quality_generation = 0
+        self._quality_thread: Optional[threading.Thread] = None
+        self._quality_running_key: Optional[Tuple[Any, ...]] = None
+        self._quality_results_key: Optional[Tuple[Any, ...]] = None
+        self._quality_results: Dict[str, Dict[str, Any]] = {}
+        self._quality_status: Dict[str, Any] = {
+            "status": "idle",
+            "completed": 0,
+            "total": 0,
+            "message": "Quality check has not started.",
+        }
 
     def clear_build_cache(self, _payload: Dict[str, Any]) -> Dict[str, Any]:
         """Discard manager thumbnails and in-memory image metadata caches."""
@@ -274,18 +299,44 @@ class SpotterDexManager:
 
         metadata_count = (
             len(self._exif_date_cache)
+            + len(self._exif_timestamp_cache)
             + len(self._image_dimension_cache)
             + len(self._image_quality_cache)
         )
-        self._exif_date_cache.clear()
-        self._image_dimension_cache.clear()
-        self._image_quality_cache.clear()
+        with self._quality_lock:
+            self._quality_generation += 1
+            self._quality_running_key = None
+            self._quality_results_key = None
+            self._quality_results.clear()
+            self._quality_status = {
+                "status": "idle",
+                "completed": 0,
+                "total": 0,
+                "message": "Quality check has not started.",
+            }
+            self._exif_date_cache.clear()
+            self._exif_timestamp_cache.clear()
+            self._image_dimension_cache.clear()
+            self._image_quality_cache.clear()
         return {
             "ok": True,
             "removedFiles": file_count,
             "removedBytes": byte_count,
             "message": f"Cleared {file_count} cached file(s) and reset {metadata_count} image metadata record(s).",
         }
+
+    def quality_status(self, _payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Return the lightweight status of the background source-quality scan."""
+        with self._quality_lock:
+            quality = dict(self._quality_status)
+        return {"ok": True, "quality": quality}
+
+    def _quality_ready_state(self) -> Dict[str, Any]:
+        state = self.get_state()
+        quality = state.get("quality") or {}
+        if quality.get("status") != "ready":
+            raise ValueError(quality.get("message") or "Quality check is still running; try again when it is complete.")
+        return state
 
     def backup_database(self, _payload: Dict[str, Any]) -> Dict[str, Any]:
         if not self.database_path.exists():
@@ -363,11 +414,22 @@ class SpotterDexManager:
         except OSError as exc:
             raise ValueError(f"Could not save image quality settings: {exc}") from exc
         self.quality_settings = settings
-        self._image_quality_cache.clear()
+        with self._quality_lock:
+            self._quality_generation += 1
+            self._quality_running_key = None
+            self._quality_results_key = None
+            self._quality_results.clear()
+            self._image_quality_cache.clear()
+            self._quality_status = {
+                "status": "idle",
+                "completed": 0,
+                "total": 0,
+                "message": "Quality settings changed; the next state load will start a new scan.",
+            }
         return {
             "ok": True,
             "qualitySettings": dict(settings),
-            "message": "Image quality settings saved; the quality queue was refreshed.",
+            "message": "Image quality settings saved; a new background quality scan will start now.",
         }
 
     def save_build_settings(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -431,7 +493,7 @@ class SpotterDexManager:
         if requested is not None and not isinstance(requested, list):
             raise ValueError("Quality paths must be a list.")
 
-        state_assets = {asset["path"]: asset for asset in self.get_state().get("assets", [])}
+        state_assets = {asset["path"]: asset for asset in self._quality_ready_state().get("assets", [])}
         raw_candidates = list(state_assets) if requested is None else requested
         candidate_paths = [clean_text(value) for value in raw_candidates]
         candidate_paths = list(dict.fromkeys(path for path in candidate_paths if path))
@@ -546,7 +608,7 @@ class SpotterDexManager:
         if requested is not None and not isinstance(requested, list):
             raise ValueError("Quality paths must be a list.")
 
-        state_assets = {asset["path"]: asset for asset in self.get_state().get("assets", [])}
+        state_assets = {asset["path"]: asset for asset in self._quality_ready_state().get("assets", [])}
         raw_candidates = list(state_assets) if requested is None else requested
         candidate_paths = [clean_text(value) for value in raw_candidates]
         candidate_paths = list(dict.fromkeys(path for path in candidate_paths if path))
@@ -767,6 +829,7 @@ class SpotterDexManager:
             "airshowEvents": airshow_events,
             "qualitySettings": dict(self.quality_settings),
             "buildSettings": dict(self.build_settings),
+            "quality": self.quality_status()["quality"],
         }
 
     def _database_connection(self, *, read_only: bool = False) -> sqlite3.Connection:
@@ -848,6 +911,12 @@ class SpotterDexManager:
             subjects: Dict[str, List[Dict[str, Any]]] = {}
             for row in connection.execute("SELECT * FROM photo_subjects ORDER BY photo_id,position"):
                 subjects.setdefault(str(row["photo_id"]), []).append(dict(row))
+            story_moments: Dict[str, List[Dict[str, Any]]] = {}
+            for row in connection.execute("SELECT * FROM event_story_moments ORDER BY event_id,position"):
+                story_moments.setdefault(str(row["event_id"]), []).append(dict(row))
+            story_photos: Dict[str, List[Dict[str, Any]]] = {}
+            for row in connection.execute("SELECT * FROM event_story_photos ORDER BY moment_id,position"):
+                story_photos.setdefault(str(row["moment_id"]), []).append(dict(row))
             relations = [dict(row) for row in connection.execute("SELECT * FROM aircraft_units ORDER BY aircraft_id,unit_id")]
             integrity_errors = validate_database(connection, raw_assets_dir=self.raw_assets_dir)
             snapshot_current = snapshot_is_current(connection, self.sql_snapshot_path)
@@ -860,7 +929,12 @@ class SpotterDexManager:
             event = events.get(photo.get("event_id")) or {}
             source_path = self.raw_assets_dir / photo["source_path"]
             exists = source_path.is_file()
-            exif_date = read_image_capture_date(source_path, self._exif_date_cache) if exists else ""
+            exif_timestamp = (
+                read_image_capture_timestamp(source_path, self._exif_timestamp_cache) if exists else ""
+            )
+            exif_date = exif_timestamp[:10] or (
+                read_image_capture_date(source_path, self._exif_date_cache) if exists else ""
+            )
             width, height = read_image_dimensions(source_path, self._image_dimension_cache) if exists else (0, 0)
             photo_item = {
                 "path": photo["source_path"],
@@ -884,6 +958,7 @@ class SpotterDexManager:
                 "date": photo.get("date_override") or "",
                 "year": (photo.get("date_override") or exif_date or "")[:4],
                 "exifDate": exif_date,
+                "capturedAt": exif_timestamp or photo.get("date_override") or "",
                 "airshow": event.get("name", ""),
                 "livery": photo.get("livery") or "",
                 "title": photo.get("title") or "",
@@ -1141,6 +1216,7 @@ class SpotterDexManager:
                     "airshow": event.get("name", ""),
                     "date": photo.get("date_override") or "",
                     "exifDate": record["exifDate"],
+                    "capturedAt": record["capturedAt"],
                     "title": photo.get("title") or "",
                     "caption": photo.get("caption") or "",
                     "livery": photo.get("livery") or "",
@@ -1153,10 +1229,46 @@ class SpotterDexManager:
             -(capture_date_sort_value(item.get("date") or item.get("exifDate") or "")),
             item["path"],
         ))
-        airshow_events = [
-            {"id": event["id"], "name": event["name"], "writeUp": clean_text(event.get("write_up")), "hero": reference_by_photo.get(event.get("hero_photo_id"), {})}
-            for event in events.values()
-        ]
+        airshow_events: List[Dict[str, Any]] = []
+        for event in events.values():
+            segments: List[Dict[str, Any]] = []
+            for moment in story_moments.get(str(event["id"]), []):
+                moment_photo_items: List[Dict[str, Any]] = []
+                for relation in story_photos.get(str(moment["id"]), []):
+                    photo = photos.get(str(relation["photo_id"])) or {}
+                    record = photo_record_cache.get(str(relation["photo_id"])) or {}
+                    moment_photo_items.append(
+                        {
+                            "photoId": relation["photo_id"],
+                            "path": photo.get("source_path") or "",
+                            "capturedAt": record.get("capturedAt") or "",
+                            "focalX": float(relation["focal_x"]),
+                            "focalY": float(relation["focal_y"]),
+                            "motion": relation["motion"],
+                        }
+                    )
+                segments.append(
+                    {
+                        "id": moment["id"],
+                        "position": int(moment["position"]),
+                        "label": moment["label"],
+                        "headline": moment["headline"],
+                        "body": moment["body"],
+                        "overlaySide": moment["overlay_side"],
+                        "photos": moment_photo_items,
+                    }
+                )
+            airshow_events.append(
+                {
+                    "id": event["id"],
+                    "name": event["name"],
+                    "writeUp": clean_text(event.get("write_up")),
+                    "heroPhotoId": clean_text(event.get("hero_photo_id")),
+                    "hero": reference_by_photo.get(event.get("hero_photo_id"), {}),
+                    "storyMode": event.get("story_mode") or "standard",
+                    "story": {"mode": event.get("story_mode") or "standard", "segments": segments},
+                }
+            )
         squadron_groups = self._squadron_groups(entries)
         return {
             "project": {
@@ -1197,6 +1309,7 @@ class SpotterDexManager:
             "airshowEvents": sorted(airshow_events, key=lambda item: item["name"]),
             "qualitySettings": dict(self.quality_settings),
             "buildSettings": dict(self.build_settings),
+            "quality": self.quality_status()["quality"],
         }
 
     @staticmethod
@@ -1530,6 +1643,36 @@ class SpotterDexManager:
     def _database_clear_photo_hero_references(connection: sqlite3.Connection, photo_id: str) -> None:
         for table in ("aircraft", "units", "locations", "events"):
             connection.execute(f"UPDATE {table} SET hero_photo_id=NULL WHERE hero_photo_id=?", (photo_id,))
+        affected_events = [
+            str(row[0])
+            for row in connection.execute(
+                "SELECT DISTINCT m.event_id FROM event_story_moments m "
+                "JOIN event_story_photos sp ON sp.moment_id=m.id WHERE sp.photo_id=?",
+                (photo_id,),
+            )
+        ]
+        connection.execute(
+            "DELETE FROM event_story_moments WHERE id IN "
+            "(SELECT moment_id FROM event_story_photos WHERE photo_id=?)",
+            (photo_id,),
+        )
+        for event_id in affected_events:
+            moment_ids = [
+                str(row[0])
+                for row in connection.execute(
+                    "SELECT id FROM event_story_moments WHERE event_id=? ORDER BY position,id",
+                    (event_id,),
+                )
+            ]
+            connection.execute(
+                "UPDATE event_story_moments SET position=position+10000 WHERE event_id=?",
+                (event_id,),
+            )
+            for position, moment_id in enumerate(moment_ids):
+                connection.execute(
+                    "UPDATE event_story_moments SET position=? WHERE id=?",
+                    (position, moment_id),
+                )
 
     def _database_delete_master_photo(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         photo_id = clean_text(payload.get("photoId"))
@@ -1689,6 +1832,171 @@ class SpotterDexManager:
                 raise ValueError("The selected page no longer exists.")
             connection.execute(f'UPDATE "{table}" SET write_up=? WHERE id=?', (write_up, entity_id))
             return {"ok": True, "message": f"Write-up saved for {entity[0]}."}
+
+        return self._database_write(operation)
+
+    def _database_save_event_story(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        event_id = clean_text(payload.get("eventId"))
+        mode = clean_text(payload.get("mode")) or "standard"
+        using_legacy_moments = "segments" not in payload
+        raw_segments = payload.get("moments") if using_legacy_moments else payload.get("segments")
+        if raw_segments is None:
+            raw_segments = []
+        if not event_id:
+            raise ValueError("Choose an airshow event.")
+        if mode not in {"standard", "cinematic"}:
+            raise ValueError("Story mode must be standard or cinematic.")
+        if not isinstance(raw_segments, list):
+            raise ValueError("Story segments must be a list.")
+        if mode == "cinematic" and len(raw_segments) < 2:
+            raise ValueError("A cinematic story needs at least two segments.")
+
+        def limited_text(value: Any, label: str, maximum: int) -> str:
+            text = clean_text(value)
+            if len(text) > maximum:
+                raise ValueError(f"{label} must be {maximum} characters or fewer.")
+            return text
+
+        def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            event = connection.execute("SELECT name FROM events WHERE id=?", (event_id,)).fetchone()
+            if not event:
+                raise ValueError("The selected airshow event no longer exists.")
+            event_photo_count = int(connection.execute("SELECT COUNT(*) FROM photos WHERE event_id=?", (event_id,)).fetchone()[0])
+            existing_owners = {
+                str(row["id"]): str(row["event_id"])
+                for row in connection.execute("SELECT id,event_id FROM event_story_moments")
+            }
+            normalized: List[Dict[str, Any]] = []
+            used_segment_ids: set[str] = set()
+            used_photo_ids: set[str] = set()
+            for position, raw_segment in enumerate(raw_segments):
+                if not isinstance(raw_segment, dict):
+                    raise ValueError("Every story segment must be an object.")
+                requested_id = clean_text(raw_segment.get("id"))
+                if requested_id:
+                    if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", requested_id):
+                        raise ValueError(f"Invalid story segment id: {requested_id}")
+                    owner = existing_owners.get(requested_id)
+                    if owner and owner != event_id:
+                        raise ValueError(f"Story segment id {requested_id} belongs to another event.")
+                    moment_id = requested_id
+                else:
+                    base = slugify(
+                        f"{event_id}-{limited_text(raw_segment.get('headline'), 'Headline', 160) or f'segment-{position + 1:02d}'}"
+                    )
+                    moment_id = base
+                    suffix = 2
+                    while moment_id in used_segment_ids or (
+                        moment_id in existing_owners and existing_owners[moment_id] != event_id
+                    ):
+                        moment_id = f"{base}-{suffix}"
+                        suffix += 1
+                if moment_id in used_segment_ids:
+                    raise ValueError(f"Story segment id {moment_id} is duplicated.")
+                used_segment_ids.add(moment_id)
+
+                try:
+                    scroll_weight = float(raw_segment.get("scrollWeight", 1.0))
+                except (TypeError, ValueError) as exc:
+                    raise ValueError("Story scroll weight must be a number.") from exc
+                if not 0.6 <= scroll_weight <= 2.5:
+                    raise ValueError("Story scroll weight must be between 0.6 and 2.5.")
+                overlay_side = clean_text(raw_segment.get("overlaySide"))
+                if not overlay_side and using_legacy_moments:
+                    overlay_side = "right" if position % 2 else "left"
+                if not overlay_side:
+                    overlay_side = "left"
+                if overlay_side not in {"left", "right"}:
+                    raise ValueError("Segment overlay side must be left or right.")
+                raw_photos = raw_segment.get("photos") or []
+                if not isinstance(raw_photos, list) or len(raw_photos) < 1:
+                    raise ValueError("Each story segment needs at least one photo.")
+                normalized_photos: List[Dict[str, Any]] = []
+                for photo_position, raw_photo in enumerate(raw_photos):
+                    if not isinstance(raw_photo, dict):
+                        raise ValueError("Every story photo must be an object.")
+                    photo_id = clean_text(raw_photo.get("photoId"))
+                    photo = connection.execute(
+                        "SELECT event_id FROM photos WHERE id=?",
+                        (photo_id,),
+                    ).fetchone()
+                    if not photo or str(photo[0] or "") != event_id:
+                        raise ValueError("Every story photo must be tagged with the selected event.")
+                    if photo_id in used_photo_ids:
+                        raise ValueError("A photo can appear only once in an airshow story.")
+                    used_photo_ids.add(photo_id)
+                    try:
+                        focal_x = float(raw_photo.get("focalX", 0.5))
+                        focal_y = float(raw_photo.get("focalY", 0.5))
+                    except (TypeError, ValueError) as exc:
+                        raise ValueError("Story focal points must be numbers.") from exc
+                    if not 0 <= focal_x <= 1 or not 0 <= focal_y <= 1:
+                        raise ValueError("Story focal points must be between zero and one.")
+                    motion = clean_text(raw_photo.get("motion")) or "auto"
+                    if motion not in {"auto", "push-left", "push-right", "pull-in", "hold"}:
+                        raise ValueError(f"Unsupported story motion preset: {motion}")
+                    normalized_photos.append(
+                        {
+                            "position": photo_position,
+                            "photoId": photo_id,
+                            "focalX": focal_x,
+                            "focalY": focal_y,
+                            "motion": motion,
+                        }
+                    )
+                normalized.append(
+                    {
+                        "id": moment_id,
+                        "position": position,
+                        "label": limited_text(raw_segment.get("label"), "Segment label", 100),
+                        "headline": limited_text(raw_segment.get("headline"), "Headline", 160),
+                        "body": limited_text(raw_segment.get("body"), "Segment caption", 600),
+                        "overlaySide": overlay_side,
+                        "scrollWeight": scroll_weight,
+                        "photos": normalized_photos,
+                    }
+                )
+
+            connection.execute("UPDATE events SET story_mode=? WHERE id=?", (mode, event_id))
+            connection.execute("DELETE FROM event_story_moments WHERE event_id=?", (event_id,))
+            for moment in normalized:
+                connection.execute(
+                    "INSERT INTO event_story_moments(id,event_id,position,label,headline,body,overlay_side,scroll_weight) "
+                    "VALUES(?,?,?,?,?,?,?,?)",
+                    (
+                        moment["id"],
+                        event_id,
+                        moment["position"],
+                        moment["label"],
+                        moment["headline"],
+                        moment["body"],
+                        moment["overlaySide"],
+                        moment["scrollWeight"],
+                    ),
+                )
+                for photo in moment["photos"]:
+                    connection.execute(
+                        "INSERT INTO event_story_photos(moment_id,position,photo_id,focal_x,focal_y,motion) "
+                        "VALUES(?,?,?,?,?,?)",
+                        (
+                            moment["id"],
+                            photo["position"],
+                            photo["photoId"],
+                            photo["focalX"],
+                            photo["focalY"],
+                            photo["motion"],
+                        ),
+                    )
+            return {
+                "ok": True,
+                "eventId": event_id,
+                "segmentCount": len(normalized),
+                "momentCount": len(normalized),
+                "eventPhotoCount": event_photo_count,
+                "assignedPhotoCount": len(used_photo_ids),
+                "unassignedPhotoCount": max(0, event_photo_count - len(used_photo_ids)),
+                "message": f"Airshow story saved for {event[0]} ({len(used_photo_ids)} of {event_photo_count} event photos assigned).",
+            }
 
         return self._database_write(operation)
 
@@ -2795,6 +3103,11 @@ class SpotterDexManager:
             raise ValueError("Write-up editing is available for the canonical database only.")
         return self._database_update_write_up(payload)
 
+    def save_event_story(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        if not self.database_path.exists():
+            raise ValueError("Cinematic event stories are available for the canonical database only.")
+        return self._database_save_event_story(payload)
+
     def create_entry(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         if self.database_path.exists():
             return self._database_create_entry(payload)
@@ -3601,6 +3914,141 @@ class SpotterDexManager:
         entries.sort(key=lambda item: (item["country"], item["squadronName"]))
         return entries
 
+    @staticmethod
+    def _quality_scan_key(candidates: List[Dict[str, Any]], settings: Dict[str, Any]) -> Tuple[Any, ...]:
+        candidate_key = tuple(
+            (
+                item["path"],
+                int(item.get("size") or 0),
+                int(item.get("modified") or 0),
+                int(item.get("width") or 0),
+                int(item.get("height") or 0),
+            )
+            for item in candidates
+        )
+        settings_key = tuple(sorted((str(key), repr(value)) for key, value in settings.items()))
+        return candidate_key, settings_key
+
+    def _quality_snapshot(self, scan_key: Tuple[Any, ...]) -> Dict[str, Dict[str, Any]]:
+        with self._quality_lock:
+            if self._quality_results_key != scan_key:
+                return {}
+            return {
+                path: {
+                    **value,
+                    "flags": [dict(flag) for flag in value.get("flags", [])],
+                }
+                for path, value in self._quality_results.items()
+            }
+
+    def _ensure_quality_scan(
+        self,
+        candidates: List[Dict[str, Any]],
+        settings: Dict[str, Any],
+        scan_key: Tuple[Any, ...],
+    ) -> None:
+        if not candidates:
+            with self._quality_lock:
+                self._quality_generation += 1
+                self._quality_running_key = None
+                self._quality_results_key = scan_key
+                self._quality_results = {}
+                self._quality_status = {
+                    "status": "ready",
+                    "completed": 0,
+                    "total": 0,
+                    "message": "No source photos require a quality check.",
+                }
+            return
+
+        with self._quality_lock:
+            if self._quality_results_key == scan_key:
+                return
+            if self._quality_status.get("status") == "running" and self._quality_running_key == scan_key:
+                return
+            self._quality_generation += 1
+            generation = self._quality_generation
+            self._quality_running_key = scan_key
+            self._quality_status = {
+                "status": "running",
+                "completed": 0,
+                "total": len(candidates),
+                "message": "Quality check is running in the background.",
+            }
+            worker = threading.Thread(
+                target=self._run_quality_scan,
+                args=(generation, scan_key, candidates, settings),
+                name="spotterdex-quality-scan",
+                daemon=True,
+            )
+            self._quality_thread = worker
+            worker.start()
+
+    def _run_quality_scan(
+        self,
+        generation: int,
+        scan_key: Tuple[Any, ...],
+        candidates: List[Dict[str, Any]],
+        settings: Dict[str, Any],
+    ) -> None:
+        quality_by_path: Dict[str, Dict[str, Any]] = {}
+        # Give the initial /api/state response a short head start so the
+        # manager shell becomes usable before image analysis consumes CPU.
+        time.sleep(0.15)
+        with self._quality_lock:
+            if generation != self._quality_generation:
+                return
+        worker_count = min(8, len(candidates), max(1, os.cpu_count() or 1))
+        try:
+            with ThreadPoolExecutor(max_workers=worker_count) as executor:
+                futures = {
+                    executor.submit(
+                        analyse_image_quality,
+                        item["pathObject"],
+                        self._image_quality_cache,
+                        settings,
+                    ): item["path"]
+                    for item in candidates
+                }
+                for future, rel in futures.items():
+                    try:
+                        cached_quality = future.result()
+                        quality_by_path[rel] = {
+                            **cached_quality,
+                            "flags": [dict(flag) for flag in cached_quality.get("flags", [])],
+                        }
+                    except Exception:
+                        quality_by_path[rel] = {"flags": []}
+                    with self._quality_lock:
+                        if generation != self._quality_generation:
+                            return
+                        self._quality_status["completed"] = len(quality_by_path)
+
+            add_collection_colour_analysis(quality_by_path, settings)
+            with self._quality_lock:
+                if generation != self._quality_generation:
+                    return
+                self._quality_running_key = None
+                self._quality_results_key = scan_key
+                self._quality_results = quality_by_path
+                self._quality_status = {
+                    "status": "ready",
+                    "completed": len(candidates),
+                    "total": len(candidates),
+                    "message": "Quality check complete.",
+                }
+        except Exception as exc:  # pragma: no cover - defensive worker guard
+            with self._quality_lock:
+                if generation != self._quality_generation:
+                    return
+                self._quality_running_key = None
+                self._quality_status = {
+                    "status": "error",
+                    "completed": len(quality_by_path),
+                    "total": len(candidates),
+                    "message": f"Quality check failed: {exc}",
+                }
+
     def _scan_assets(self, tag_map: Dict[str, List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
         assets: List[Dict[str, Any]] = []
         quality_settings = dict(self.quality_settings)
@@ -3633,30 +4081,10 @@ class SpotterDexManager:
                 }
             )
 
-        quality_by_path: Dict[str, Dict[str, Any]] = {}
         photo_candidates = [item for item in candidates if item["isPhotoSource"]]
-        if photo_candidates:
-            worker_count = min(8, len(photo_candidates), max(1, os.cpu_count() or 1))
-            with ThreadPoolExecutor(max_workers=worker_count) as executor:
-                futures = {
-                    executor.submit(
-                        analyse_image_quality,
-                        item["pathObject"],
-                        self._image_quality_cache,
-                        quality_settings,
-                    ): item["path"]
-                    for item in photo_candidates
-                }
-                for future, rel in futures.items():
-                    try:
-                        cached_quality = future.result()
-                        quality_by_path[rel] = {
-                            **cached_quality,
-                            "flags": [dict(flag) for flag in cached_quality.get("flags", [])],
-                        }
-                    except Exception:
-                        quality_by_path[rel] = {"flags": []}
-            add_collection_colour_analysis(quality_by_path, quality_settings)
+        quality_scan_key = self._quality_scan_key(photo_candidates, quality_settings)
+        quality_by_path = self._quality_snapshot(quality_scan_key)
+        self._ensure_quality_scan(photo_candidates, quality_settings, quality_scan_key)
 
         # Read the EXIF capture date for every raw asset so the selector grid can
         # be ordered by when the frame was shot rather than by filesystem mtime.
@@ -3819,6 +4247,9 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802 - http.server API
         try:
             parsed = urlparse(self.path)
+            if parsed.path.startswith("/preview/"):
+                self._send_preview_asset(parsed.path)
+                return
             manager_path = parsed.path.removeprefix("/manager") or "/"
             if manager_path in {"/", "/index.html", "/app.html"}:
                 self._send_manager_asset("app.html")
@@ -3828,6 +4259,9 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
                 return
             if parsed.path == "/api/state":
                 self._send_json(self.context.manager.get_state())
+                return
+            if parsed.path == "/api/quality-status":
+                self._send_json(self.context.manager.quality_status())
                 return
             if parsed.path == "/api/thumb":
                 query = parse_qs(parsed.query)
@@ -3882,6 +4316,7 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
                 "/api/delete-entry": self.context.manager.delete_entry,
                 "/api/update-aircraft-settings": self.context.manager.update_aircraft_settings,
                 "/api/update-write-up": self.context.manager.update_write_up,
+                "/api/save-event-story": self.context.manager.save_event_story,
                 "/api/update-photo": self.context.manager.update_photo,
                 "/api/update-master-photo": self.context.manager.update_master_photo,
                 "/api/bulk-update-photos": self.context.manager.bulk_update_photos,
@@ -3927,7 +4362,9 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
         return json.loads(raw.decode("utf-8"))
 
     def _send_json(self, payload: Dict[str, Any], status: HTTPStatus = HTTPStatus.OK) -> None:
-        content = json.dumps(payload, ensure_ascii=True, indent=2).encode("utf-8")
+        # Manager responses are consumed by browser JavaScript; compact JSON
+        # reduces the cold-start payload without changing the data contract.
+        content = json.dumps(payload, ensure_ascii=True, separators=(",", ":")).encode("utf-8")
         self._send_bytes(content, "application/json; charset=utf-8", status=status)
 
     def _send_error(self, status: HTTPStatus, message: str) -> None:
@@ -4000,6 +4437,25 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
             return
         # Read from disk on every request so UI edits appear on a browser refresh
         # without restarting the local server.
+        self._send_bytes(asset_path.read_bytes(), content_type)
+
+    def _send_preview_asset(self, request_path: str) -> None:
+        relative = unquote(request_path.removeprefix("/preview/")).lstrip("/")
+        root_name = relative.split("/", 1)[0]
+        allowed = (
+            relative in PREVIEW_ROOT_FILES
+            or root_name in {"assets", "data"}
+        )
+        if not allowed:
+            self._send_error(HTTPStatus.NOT_FOUND, "Preview asset not found")
+            return
+        asset_path = (self.context.manager.root / relative).resolve()
+        if not self.context.manager._is_within(asset_path, self.context.manager.root) or not asset_path.is_file():
+            self._send_error(HTTPStatus.NOT_FOUND, "Preview asset not found")
+            return
+        content_type = mimetypes.guess_type(str(asset_path))[0] or "application/octet-stream"
+        if asset_path.suffix == ".js":
+            content_type = "application/javascript; charset=utf-8"
         self._send_bytes(asset_path.read_bytes(), content_type)
 
     def _send_bytes(
@@ -4197,6 +4653,54 @@ def read_image_capture_date(path: Path, cache: Dict[str, str]) -> str:
                     values.append(raw.get(tag_id))
             for value in values:
                 result = normalize_date_value(value)
+                if result:
+                    break
+    except Exception:
+        result = ""
+    cache[cache_key] = result
+    return result
+
+
+def normalize_capture_timestamp(value: Any) -> str:
+    """Normalize an EXIF timestamp without inventing a timezone."""
+    text = clean_text(value)
+    match = re.match(
+        r"^(\d{4})[-:/](\d{1,2})[-:/](\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?",
+        text,
+    )
+    if not match:
+        return ""
+    year, month, day, hour, minute, second = match.groups()
+    date_value = f"{year}-{int(month):02d}-{int(day):02d}"
+    if hour is None or minute is None:
+        return date_value
+    return f"{date_value}T{int(hour):02d}:{int(minute):02d}:{int(second or '0'):02d}"
+
+
+def read_image_capture_timestamp(path: Path, cache: Dict[str, str]) -> str:
+    try:
+        stat = path.stat()
+    except OSError:
+        return ""
+    cache_key = f"{path.resolve()}|{stat.st_mtime_ns}|{stat.st_size}"
+    if cache_key in cache:
+        return cache[cache_key]
+
+    result = ""
+    try:
+        with Image.open(path) as opened:
+            raw = opened.getexif()
+            values: List[Any] = []
+            if raw:
+                exif_ifd = read_exif_sub_ifd(raw)
+                for tag_name in ("DateTimeOriginal", "DateTimeDigitized", "DateTime"):
+                    tag_id = exif_tag_id(tag_name)
+                    if not tag_id:
+                        continue
+                    values.append(exif_ifd.get(tag_id))
+                    values.append(raw.get(tag_id))
+            for value in values:
+                result = normalize_capture_timestamp(value)
                 if result:
                     break
     except Exception:

@@ -254,6 +254,54 @@
               <div class="subtle" id="bulkEventSummary">Set event heroes and find photos that need an event tag.</div>
             </div>
           </div>
+          <section class="airshow-management-section" aria-labelledby="airshowStoryHeading">
+            <div class="airshow-story-manager-head">
+              <div>
+                <h3 class="panel-title" id="airshowStoryHeading">Cinematic Segments</h3>
+                <div class="subtle" id="airshowStorySummary">Group event photographs into reviewed chronological segments with one hero and optional supporting frames.</div>
+              </div>
+              <label class="toggle-control" for="airshowStoryEnabled">
+                <input id="airshowStoryEnabled" type="checkbox">
+                <span>Cinematic page</span>
+              </label>
+            </div>
+            <div class="airshow-story-toolbar">
+              <div class="field wide">
+                <label for="airshowStoryEvent">Event</label>
+                <select id="airshowStoryEvent"></select>
+              </div>
+              <div class="airshow-story-actions">
+                <button class="btn ghost" id="generateAirshowStoryBtn" type="button">Generate EXIF Segments</button>
+                <button class="btn ghost" id="addAirshowStoryMomentBtn" type="button">Add Segment</button>
+                <button class="btn ghost" id="previewAirshowStoryBtn" type="button">Preview Draft</button>
+                <button class="btn ghost" id="resetAirshowStoryBtn" type="button">Reset</button>
+                <button class="btn primary" id="saveAirshowStoryBtn" type="button">Save Segments</button>
+              </div>
+            </div>
+            <p class="story-guidance">EXIF generation starts a new segment on a new calendar day or after a gap over two hours. It follows capture time by default; use the segment ↑↓ controls to manually reorder, then the saved order becomes authoritative. It keeps every event photo available for review, does not infer an official flying display schedule, and never adds unassigned photos to the browser story.</p>
+            <div class="story-coverage" id="airshowStoryCoverage" role="status" aria-live="polite"></div>
+            <section class="story-bulk-tools" aria-labelledby="airshowStoryBulkHeading">
+              <div class="story-bulk-head">
+                <div>
+                  <h4 id="airshowStoryBulkHeading">Bulk photo actions</h4>
+                  <p class="subtle">Select event photos below, then assign or move them into a segment.</p>
+                </div>
+                <div class="story-bulk-selection-actions">
+                  <button class="btn ghost" id="airshowStorySelectAllBtn" type="button">Select all</button>
+                  <button class="btn ghost" id="airshowStoryClearSelectionBtn" type="button">Clear</button>
+                </div>
+              </div>
+              <div class="story-bulk-controls">
+                <label class="field"><span>Target segment</span><select id="airshowStoryBulkTarget"></select></label>
+                <button class="btn ghost" id="airshowStoryAssignSelectedBtn" type="button">Assign selected</button>
+                <button class="btn ghost" id="airshowStoryMoveSelectedBtn" type="button">Move selected</button>
+                <button class="btn ghost" id="airshowStorySortSelectedBtn" type="button">Sort target by capture time</button>
+                <button class="btn danger ghost" id="airshowStoryDeduplicateBtn" type="button">Remove duplicates</button>
+              </div>
+              <div class="story-photo-pool" id="airshowStoryPhotoPool"></div>
+            </section>
+            <div class="airshow-story-editor" id="airshowStoryEditor"></div>
+          </section>
           <section class="airshow-management-section" aria-labelledby="airshowHeroHeading">
             <div>
               <h3 class="panel-title" id="airshowHeroHeading">Event Hero Photos</h3>
@@ -326,7 +374,7 @@
           <div class="bar">
             <div>
               <h2 class="panel-title">Source Image Quality</h2>
-              <div class="subtle" id="qualitySummary">Checking source image dimensions.</div>
+              <div class="subtle" id="qualitySummary" role="status" aria-live="polite">Quality checks run in the background so the manager can open quickly.</div>
             </div>
             <div class="actions">
               <button class="btn secondary" id="qualityPrefixFailures" type="button">Prefix failures with QC_</button>

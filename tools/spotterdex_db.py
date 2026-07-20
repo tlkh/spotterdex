@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Sequence, Tuple
 
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 5
 AIRCRAFT_FAMILIES = ("fighter", "helicopter", "light", "medium", "heavy")
 UNIT_KINDS = ("squadron", "organisation")
 
@@ -32,6 +32,8 @@ TABLE_ORDER = (
     "event_locations",
     "photos",
     "photo_subjects",
+    "event_story_moments",
+    "event_story_photos",
 )
 
 SCHEMA_SQL = """
@@ -84,6 +86,7 @@ CREATE TABLE events (
     starts_on TEXT CHECK (starts_on IS NULL OR starts_on GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
     ends_on TEXT CHECK (ends_on IS NULL OR ends_on GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
     hero_photo_id TEXT REFERENCES photos(id) DEFERRABLE INITIALLY DEFERRED,
+    story_mode TEXT NOT NULL DEFAULT 'standard' CHECK (story_mode IN ('standard','cinematic')),
     write_up TEXT NOT NULL DEFAULT '',
     CHECK (starts_on IS NULL OR ends_on IS NULL OR starts_on <= ends_on)
 ) WITHOUT ROWID;
@@ -122,6 +125,29 @@ CREATE TABLE photo_subjects (
     CHECK (aircraft_id IS NOT NULL OR unit_id IS NOT NULL)
 ) WITHOUT ROWID;
 
+CREATE TABLE event_story_moments (
+    id TEXT PRIMARY KEY,
+    event_id TEXT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL CHECK (position >= 0),
+    label TEXT NOT NULL DEFAULT '',
+    headline TEXT NOT NULL DEFAULT '',
+    body TEXT NOT NULL DEFAULT '',
+    scroll_weight REAL NOT NULL DEFAULT 1.0 CHECK (scroll_weight BETWEEN 0.6 AND 2.5),
+    overlay_side TEXT NOT NULL DEFAULT 'left' CHECK (overlay_side IN ('left','right')),
+    UNIQUE (event_id, position)
+) WITHOUT ROWID;
+
+CREATE TABLE event_story_photos (
+    moment_id TEXT NOT NULL REFERENCES event_story_moments(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL CHECK (position >= 0),
+    photo_id TEXT NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
+    focal_x REAL NOT NULL DEFAULT 0.5 CHECK (focal_x BETWEEN 0 AND 1),
+    focal_y REAL NOT NULL DEFAULT 0.5 CHECK (focal_y BETWEEN 0 AND 1),
+    motion TEXT NOT NULL DEFAULT 'auto' CHECK (motion IN ('auto','push-left','push-right','pull-in','hold')),
+    PRIMARY KEY (moment_id, position),
+    UNIQUE (moment_id, photo_id)
+) WITHOUT ROWID;
+
 CREATE UNIQUE INDEX one_primary_subject_per_photo
 ON photo_subjects(photo_id) WHERE is_primary = 1;
 
@@ -129,6 +155,8 @@ CREATE INDEX photos_by_location ON photos(location_id);
 CREATE INDEX photos_by_event ON photos(event_id);
 CREATE INDEX subjects_by_aircraft ON photo_subjects(aircraft_id);
 CREATE INDEX subjects_by_unit ON photo_subjects(unit_id);
+CREATE INDEX story_moments_by_event ON event_story_moments(event_id, position);
+CREATE INDEX story_photos_by_photo ON event_story_photos(photo_id);
 """.strip()
 
 
@@ -143,14 +171,65 @@ def _upgrade_existing_schema(connection: sqlite3.Connection) -> None:
     if not version_row:
         return
     version = int(version_row[0])
+    changed = False
     if version == 2:
         columns = {row[1] for row in connection.execute("PRAGMA table_info(aircraft)")}
         if "double_width" not in columns:
             connection.execute("ALTER TABLE aircraft ADD COLUMN double_width INTEGER CHECK (double_width IN (0,1))")
+        version = 3
+        changed = True
+    if version == 3:
+        event_columns = {row[1] for row in connection.execute("PRAGMA table_info(events)")}
+        if "story_mode" not in event_columns:
+            connection.execute(
+                "ALTER TABLE events ADD COLUMN story_mode TEXT NOT NULL DEFAULT 'standard' "
+                "CHECK (story_mode IN ('standard','cinematic'))"
+            )
+        connection.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS event_story_moments (
+                id TEXT PRIMARY KEY,
+                event_id TEXT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+                position INTEGER NOT NULL CHECK (position >= 0),
+                label TEXT NOT NULL DEFAULT '',
+                headline TEXT NOT NULL DEFAULT '',
+                body TEXT NOT NULL DEFAULT '',
+                scroll_weight REAL NOT NULL DEFAULT 1.0 CHECK (scroll_weight BETWEEN 0.6 AND 2.5),
+                UNIQUE (event_id, position)
+            ) WITHOUT ROWID;
+            CREATE TABLE IF NOT EXISTS event_story_photos (
+                moment_id TEXT NOT NULL REFERENCES event_story_moments(id) ON DELETE CASCADE,
+                position INTEGER NOT NULL CHECK (position >= 0),
+                photo_id TEXT NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
+                focal_x REAL NOT NULL DEFAULT 0.5 CHECK (focal_x BETWEEN 0 AND 1),
+                focal_y REAL NOT NULL DEFAULT 0.5 CHECK (focal_y BETWEEN 0 AND 1),
+                motion TEXT NOT NULL DEFAULT 'auto' CHECK (motion IN ('auto','push-left','push-right','pull-in','hold')),
+                PRIMARY KEY (moment_id, position),
+                UNIQUE (moment_id, photo_id)
+            ) WITHOUT ROWID;
+            CREATE INDEX IF NOT EXISTS story_moments_by_event ON event_story_moments(event_id, position);
+            CREATE INDEX IF NOT EXISTS story_photos_by_photo ON event_story_photos(photo_id);
+            """
+        )
+        version = 4
+        changed = True
+    if version == 4:
+        moment_columns = {row[1] for row in connection.execute("PRAGMA table_info(event_story_moments)")}
+        if "overlay_side" not in moment_columns:
+            connection.execute(
+                "ALTER TABLE event_story_moments ADD COLUMN overlay_side TEXT NOT NULL DEFAULT 'left' "
+                "CHECK (overlay_side IN ('left','right'))"
+            )
+            connection.execute(
+                "UPDATE event_story_moments SET overlay_side='right' WHERE position % 2 = 1"
+            )
+        version = 5
+        changed = True
+    if version != SCHEMA_VERSION:
+        raise ValueError(f"Unsupported catalog schema version {version}; expected {SCHEMA_VERSION}.")
+    if changed:
         connection.execute("UPDATE metadata SET value=? WHERE key='schema_version'", (str(SCHEMA_VERSION),))
         connection.commit()
-    elif version != SCHEMA_VERSION:
-        raise ValueError(f"Unsupported catalog schema version {version}; expected {SCHEMA_VERSION}.")
 
 
 def connect_database(path: Path, *, read_only: bool = False) -> sqlite3.Connection:
@@ -258,7 +337,7 @@ def validate_database(connection: sqlite3.Connection, *, raw_assets_dir: Path | 
         errors.append(f"Expected schema version {SCHEMA_VERSION}.")
 
     slug_pattern = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
-    for table in ("countries", "aircraft", "units", "locations", "events", "photos"):
+    for table in ("countries", "aircraft", "units", "locations", "events", "photos", "event_story_moments"):
         for row in connection.execute(f'SELECT id FROM "{table}"'):
             if not slug_pattern.fullmatch(str(row[0])):
                 errors.append(f"Invalid semantic id in {table}: {row[0]}")
@@ -293,6 +372,36 @@ def validate_database(connection: sqlite3.Connection, *, raw_assets_dir: Path | 
     for row in invalid_pairs:
         errors.append(f"Photo {row[0]} uses unregistered aircraft/unit pair {row[1]} + {row[2]}.")
 
+    for row in connection.execute(
+        "SELECT m.id,m.event_id,p.photo_id,ph.event_id "
+        "FROM event_story_moments m "
+        "JOIN event_story_photos p ON p.moment_id=m.id "
+        "JOIN photos ph ON ph.id=p.photo_id "
+        "WHERE ph.event_id IS NULL OR ph.event_id<>m.event_id"
+    ):
+        errors.append(
+            f"Event story segment {row[0]} belongs to {row[1]} but uses photo {row[2]} from {row[3] or 'no event'}."
+        )
+
+    for row in connection.execute(
+        "SELECT m.id,COUNT(p.photo_id) AS photo_count "
+        "FROM event_story_moments m LEFT JOIN event_story_photos p ON p.moment_id=m.id "
+        "GROUP BY m.id HAVING photo_count<1"
+    ):
+        errors.append(f"Event story segment {row[0]} has {row[1]} photos; expected at least one.")
+
+    for row in connection.execute(
+        "SELECT id,overlay_side FROM event_story_moments WHERE overlay_side NOT IN ('left','right')"
+    ):
+        errors.append(f"Event story segment {row[0]} has invalid overlay side: {row[1]}.")
+
+    for event_id, positions in _group_positions(connection, "event_story_moments", "event_id"):
+        if positions != list(range(len(positions))):
+            errors.append(f"Event story {event_id} segment positions must be contiguous from zero.")
+    for moment_id, positions in _group_positions(connection, "event_story_photos", "moment_id"):
+        if positions != list(range(len(positions))):
+            errors.append(f"Event story segment {moment_id} photo positions must be contiguous from zero.")
+
     if raw_assets_dir is not None:
         root = raw_assets_dir.resolve()
         for row in connection.execute("SELECT id, source_path FROM photos"):
@@ -309,3 +418,16 @@ def validate_database(connection: sqlite3.Connection, *, raw_assets_dir: Path | 
 
 def rows_as_dicts(connection: sqlite3.Connection, query: str, params: Sequence[Any] = ()) -> List[Dict[str, Any]]:
     return [dict(row) for row in connection.execute(query, params)]
+
+
+def _group_positions(
+    connection: sqlite3.Connection,
+    table: str,
+    group_column: str,
+) -> List[Tuple[str, List[int]]]:
+    grouped: Dict[str, List[int]] = {}
+    for row in connection.execute(
+        f'SELECT "{group_column}",position FROM "{table}" ORDER BY "{group_column}",position'
+    ):
+        grouped.setdefault(str(row[0]), []).append(int(row[1]))
+    return list(grouped.items())

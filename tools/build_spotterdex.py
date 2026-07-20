@@ -473,6 +473,16 @@ def build_database_catalog(args: argparse.Namespace, root: Path, warnings: Build
             connection,
             "SELECT photo_id,position,aircraft_id,unit_id,is_primary FROM photo_subjects ORDER BY photo_id,position",
         )
+        story_moment_rows = rows_as_dicts(
+            connection,
+            "SELECT id,event_id,position,label,headline,body,overlay_side "
+            "FROM event_story_moments ORDER BY event_id,position",
+        )
+        story_photo_rows = rows_as_dicts(
+            connection,
+            "SELECT moment_id,position,photo_id,focal_x,focal_y,motion "
+            "FROM event_story_photos ORDER BY moment_id,position",
+        )
     finally:
         connection.close()
 
@@ -689,6 +699,8 @@ def build_database_catalog(args: argparse.Namespace, root: Path, warnings: Build
         event_rows=event_rows,
         aircraft_units=aircraft_units,
         event_locations=event_locations,
+        story_moment_rows=story_moment_rows,
+        story_photo_rows=story_photo_rows,
         photos=photos,
         logo_by_unit=logo_by_unit,
         indexes={
@@ -798,6 +810,8 @@ def normalized_v2_manifest(
     event_rows: List[Dict[str, Any]],
     aircraft_units: List[Dict[str, Any]],
     event_locations: List[Dict[str, Any]],
+    story_moment_rows: List[Dict[str, Any]],
+    story_photo_rows: List[Dict[str, Any]],
     photos: List[Dict[str, Any]],
     logo_by_unit: Dict[str, str],
     indexes: Dict[str, Dict[str, List[str]]],
@@ -805,6 +819,28 @@ def normalized_v2_manifest(
     event_location_ids: Dict[str, List[str]] = {}
     for relation in event_locations:
         event_location_ids.setdefault(relation["event_id"], []).append(relation["location_id"])
+    story_photos_by_moment: Dict[str, List[Dict[str, Any]]] = {}
+    for relation in story_photo_rows:
+        story_photos_by_moment.setdefault(str(relation["moment_id"]), []).append(
+            {
+                "photoId": relation["photo_id"],
+                "focalX": float(relation["focal_x"]),
+                "focalY": float(relation["focal_y"]),
+                "motion": relation["motion"],
+            }
+        )
+    story_segments_by_event: Dict[str, List[Dict[str, Any]]] = {}
+    for moment in story_moment_rows:
+        story_segments_by_event.setdefault(str(moment["event_id"]), []).append(
+            {
+                "id": moment["id"],
+                "label": moment["label"],
+                "headline": moment["headline"],
+                "body": moment["body"],
+                "overlaySide": moment["overlay_side"],
+                "photos": story_photos_by_moment.get(str(moment["id"]), []),
+            }
+        )
     photo_entities: Dict[str, Dict[str, Any]] = {}
     event_by_name = {row["name"]: row["id"] for row in event_rows}
     for photo in photos:
@@ -878,6 +914,16 @@ def normalized_v2_manifest(
                     "locationIds": event_location_ids.get(row["id"], []),
                     "heroPhotoId": row.get("hero_photo_id") or "",
                     "writeUp": row.get("write_up") or "",
+                    **(
+                        {
+                            "story": {
+                                "mode": "cinematic",
+                                "segments": story_segments_by_event.get(row["id"], []),
+                            }
+                        }
+                        if row.get("story_mode") == "cinematic"
+                        else {}
+                    ),
                 }
                 for row in event_rows
             },
