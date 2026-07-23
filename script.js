@@ -5263,6 +5263,13 @@
         const scene = slide.querySelector("[data-story-scene]");
         const image = scene?.querySelector(".airshow-story-scene-image");
         if (!scene || !image || !scene.clientWidth || !scene.clientHeight) return;
+        const copy = slide.querySelector(".airshow-story-copy");
+        if (copy) {
+          const sceneBounds = scene.getBoundingClientRect();
+          const copyBounds = copy.getBoundingClientRect();
+          const mediaBottom = Math.max(0, sceneBounds.bottom - copyBounds.top + 14);
+          slide.style.setProperty("--airshow-story-mobile-media-bottom", `${mediaBottom.toFixed(2)}px`);
+        }
         const ratio = image.naturalWidth && image.naturalHeight
           ? image.naturalWidth / image.naturalHeight
           : 16 / 9;
@@ -5295,23 +5302,6 @@
       });
     }
 
-    function syncStoryRoutePosition() {
-      if (activeIndex < 0 || !routeButtons.length) return;
-      const stage = root.querySelector(".airshow-story-stage");
-      const copy = slides[activeIndex]?.querySelector(".airshow-story-copy");
-      if (!stage || !copy) return;
-      const stageBounds = stage.getBoundingClientRect();
-      const copyBounds = copy.getBoundingClientRect();
-      const routeHeight = root.querySelector(".airshow-story-route")?.offsetHeight || 0;
-      const center = copyBounds.top - stageBounds.top + copyBounds.height / 2;
-      const minimum = routeHeight / 2;
-      const maximum = Math.max(minimum, stageBounds.height - routeHeight / 2);
-      root.style.setProperty(
-        "--airshow-story-route-center",
-        `${Math.min(maximum, Math.max(minimum, center)).toFixed(2)}px`
-      );
-    }
-
     function activateSlide(index) {
       if (index === activeIndex || index < 0 || index >= slides.length) return;
       activeIndex = index;
@@ -5328,7 +5318,6 @@
       syncSceneMedia(index);
       if (progress) progress.style.transform = `scaleX(${((index + 1) / slides.length).toFixed(4)})`;
       root.classList.toggle("is-complete", index === slides.length - 1);
-      window.requestAnimationFrame(syncStoryRoutePosition);
     }
 
     routeButtons.forEach((button, index) => {
@@ -5367,11 +5356,6 @@
       passive: true,
       signal: abortController.signal
     });
-    window.addEventListener("resize", syncStoryRoutePosition, {
-      passive: true,
-      signal: abortController.signal
-    });
-
     function releaseWheelGestureAfterPause() {
       if (wheelGestureTimer) window.clearTimeout(wheelGestureTimer);
       wheelGestureTimer = window.setTimeout(() => {

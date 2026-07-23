@@ -2281,6 +2281,8 @@ img {
 
 @media (max-width: 640px) {
   .airshow-story-slide {
+    --airshow-story-mobile-media-top: 72px;
+    --airshow-story-mobile-media-bottom: 320px;
     display: block;
     padding: 0;
     background: #111416;
@@ -2309,17 +2311,19 @@ img {
 
   .airshow-story-scene-image {
     position: absolute;
-    top: 72px !important;
-    right: auto !important;
+    top: var(--airshow-story-mobile-media-top) !important;
+    right: 0 !important;
     bottom: auto !important;
-    left: 50% !important;
-    z-index: 1;
+    left: 0 !important;
+    z-index: 2;
     width: 100% !important;
-    height: auto !important;
-    max-height: 50% !important;
+    height: calc(100% - var(--airshow-story-mobile-media-top) - var(--airshow-story-mobile-media-bottom)) !important;
+    max-height: none !important;
     object-fit: contain !important;
     object-position: center center !important;
-    transform: translateX(-50%);
+    filter: none !important;
+    opacity: 1;
+    transform: none;
   }
 
   .airshow-story-vignette {
@@ -2443,12 +2447,12 @@ img {
   }
 }
 
-/* Keep mobile story pagination centered on the active lower-third. The
-   JavaScript value follows the copy height so the intro and segment slides
-   share one stable alignment without hard-coded per-slide offsets. */
+/* Keep mobile story pagination anchored to the stage instead of the active
+   lower-third. Story cards vary in height, so following their center makes
+   the route jump whenever the active slide changes. */
 @media (max-width: 640px) {
   .airshow-story-route {
-    top: var(--airshow-story-route-center, 50%);
+    top: 50%;
   }
 }
 
