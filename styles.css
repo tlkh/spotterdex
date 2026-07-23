@@ -2403,14 +2403,14 @@ img {
   .airshow-story-route {
     top: auto;
     right: 8px;
-    bottom: 42px;
+    bottom: auto;
     left: auto;
     display: grid;
     gap: 2px;
     align-items: stretch;
     justify-content: initial;
     padding: 4px;
-    transform: none;
+    transform: translateY(-50%);
   }
 
   .airshow-story-route button {
@@ -2440,6 +2440,15 @@ img {
     background: rgba(8, 10, 11, 0.9);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
+  }
+}
+
+/* Keep mobile story pagination centered on the active lower-third. The
+   JavaScript value follows the copy height so the intro and segment slides
+   share one stable alignment without hard-coded per-slide offsets. */
+@media (max-width: 640px) {
+  .airshow-story-route {
+    top: var(--airshow-story-route-center, 50%);
   }
 }
 
@@ -11432,6 +11441,14 @@ body {
     opacity: 1;
   }
 
+  /* The lightbox sheet already has its own material edge and shadow. Sticky
+     scroll gradients land on top of titles and metadata on short screens, so
+     keep those affordances for map sheets but disable them for the viewer. */
+  .photo-viewer .viewer-info::before,
+  .photo-viewer .viewer-info::after {
+    display: none;
+  }
+
   #viewerFilmstrip,
   #dexFamilyFilter,
   #squadronCountryRail,
@@ -11961,6 +11978,13 @@ h3 {
 
 .viewer-info-sheet-bar {
   background: color-mix(in srgb, var(--material-glass-bg) 92%, #050505 8%);
+}
+
+.viewer-button.previous,
+.viewer-button.next,
+.viewer-button.previous:hover,
+.viewer-button.next:hover {
+  transform: translateY(-50%);
 }
 
 .viewer-info .metadata-section {
