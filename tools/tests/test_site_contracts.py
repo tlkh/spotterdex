@@ -59,6 +59,31 @@ class GeneratedPageContractTests(unittest.TestCase):
                 )
 
 
+class ArchiveLayoutContractTests(unittest.TestCase):
+    """Country sections are a vertical stack, not a card grid."""
+
+    def test_country_list_never_gets_column_tracks(self) -> None:
+        # .squadron-country-list holds one section per country, each with its own
+        # heading and card grid. Giving the list columns halves every section and
+        # leaves the phone card rules stacking one narrow card per row.
+        offenders = [
+            selector.strip()
+            for selector, body in _css_rules()
+            if "squadron-country-list" in selector and "grid-template-columns" in body
+        ]
+        self.assertEqual(offenders, [])
+
+
+def _css_rules() -> list[tuple[str, str]]:
+    """Return (selector list, declarations) for every rule in styles.css.
+
+    The pattern only matches innermost blocks, so @media preludes are skipped
+    rather than returned as selectors.
+    """
+    styles = (ROOT / "styles.css").read_text("utf-8")
+    return re.findall(r"([^{}]+)\{([^{}]*)\}", styles)
+
+
 class ServiceWorkerContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.worker = (ROOT / "service-worker.js").read_text("utf-8")

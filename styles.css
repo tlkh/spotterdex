@@ -12422,7 +12422,6 @@ body {
   }
 
   .aircraft-grid,
-  .squadron-country-list,
   .stats-dashboard-grid,
   .exif-dashboard-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -12431,10 +12430,22 @@ body {
 
 @media (max-width: 620px) {
   .aircraft-grid,
-  .squadron-country-list,
   .stats-dashboard-grid,
   .exif-dashboard-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Squadrons stacks one country section per row at every width; the card grid
+   inside each section carries the column count. */
+@media (min-width: 621px) and (max-width: 1040px) {
+  #squadronsView .squadron-logo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: clamp(264px, 32.4vw, 312px);
+  }
+
+  #squadronsView .squadron-logo-card {
+    grid-column: auto;
   }
 }
 
