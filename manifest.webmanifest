@@ -1,0 +1,37 @@
+{
+  "name": "SpotterDex - Timothy's Logbook",
+  "short_name": "SpotterDex",
+  "description": "An aircraft spotting logbook and aviation photography field guide.",
+  "id": "./index.html",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#080a0b",
+  "theme_color": "#111416",
+  "icons": [
+    {
+      "src": "assets/icons/spotterdex-app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icons/spotterdex-app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icons/spotterdex-app-icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    { "name": "World Map", "url": "./index.html", "icons": [{ "src": "assets/icons/spotterdex-app-icon-192.png", "sizes": "192x192" }] },
+    { "name": "Aircraft Dex", "url": "./aircraft-dex.html", "icons": [{ "src": "assets/icons/spotterdex-app-icon-192.png", "sizes": "192x192" }] },
+    { "name": "Squadrons", "url": "./squadrons.html", "icons": [{ "src": "assets/icons/spotterdex-app-icon-192.png", "sizes": "192x192" }] }
+  ]
+}

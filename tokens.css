@@ -1,0 +1,81 @@
+/* Hallmark · token export · SpotterDex atmospheric app system */
+:root {
+  color-scheme: dark;
+
+  --color-paper: oklch(17.38% 0.0026 67.7);
+  --color-surface: oklch(21.06% 0.0050 67.6);
+  --color-surface-strong: oklch(25% 0.0072 67.5);
+  --color-surface-deep: oklch(16.66% 0.0039 229.1);
+  --color-ink: oklch(95.58% 0.0086 84.6);
+  --color-ink-soft: oklch(95.9% 0.0115 84.6);
+  --color-muted: oklch(71.87% 0.0152 74.4);
+  --color-muted-strong: oklch(81.01% 0.0183 81.3);
+  --color-rule: oklch(32.07% 0.0113 67.4);
+  --color-rule-strong: oklch(41.35% 0.016 71.1);
+  --color-accent: oklch(78.92% 0.0827 86);
+  --color-accent-strong: oklch(88.43% 0.059 86.5);
+  --color-accent-active: oklch(70.55% 0.0605 82.2);
+  --color-accent-soft: oklch(29.19% 0.0092 67.5);
+  --color-pin: oklch(87.86% 0.0209 81.8);
+  --color-focus: oklch(78.92% 0.0827 86 / 0.9);
+
+  --color-white-04: oklch(100% 0 0 / 0.04);
+  --color-white-06: oklch(100% 0 0 / 0.06);
+  --color-white-08: oklch(100% 0 0 / 0.08);
+  --color-white-12: oklch(100% 0 0 / 0.12);
+  --color-white-14: oklch(100% 0 0 / 0.14);
+  --color-white-16: oklch(100% 0 0 / 0.16);
+  --color-white-18: oklch(100% 0 0 / 0.18);
+  --color-white-28: oklch(100% 0 0 / 0.28);
+  --color-black-24: oklch(0% 0 0 / 0.24);
+  --color-black-34: oklch(0% 0 0 / 0.34);
+  --color-black-42: oklch(0% 0 0 / 0.42);
+  --color-black-46: oklch(0% 0 0 / 0.46);
+  --color-glass: oklch(16.66% 0.0039 229.1 / 0.94);
+  --color-glass-strong: oklch(16.66% 0.0039 229.1 / 0.985);
+  --color-scrim: oklch(0% 0 0 / 0.72);
+  --color-scrim-22: oklch(0% 0 0 / 0.22);
+  --color-scrim-28: oklch(0% 0 0 / 0.28);
+  --color-scrim-58: oklch(0% 0 0 / 0.58);
+  --color-scrim-86: oklch(0% 0 0 / 0.86);
+  --color-scrim-88: oklch(0% 0 0 / 0.88);
+  --color-scrim-92: oklch(0% 0 0 / 0.92);
+  --color-scrim-94: oklch(0% 0 0 / 0.94);
+
+  --font-body: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  --font-display: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2rem;
+  --space-xl: 3rem;
+  --space-2xl: 4.5rem;
+  --space-3xl: 7rem;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1.0625rem;
+  --text-lg: 1.375rem;
+  --text-xl: 1.75rem;
+  --text-2xl: 2.5rem;
+
+  --radius-control: 0.75rem;
+  --radius-card: 1rem;
+  --radius-sheet: 1rem;
+  --radius-pill: 999px;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-sheet: 300ms;
+
+  --shadow-soft: 0 8px 22px oklch(0% 0 0 / 0.24);
+  --shadow-elevated: 0 24px 70px oklch(0% 0 0 / 0.35);
+  --shadow-sheet: 0 -18px 48px oklch(0% 0 0 / 0.34);
+}

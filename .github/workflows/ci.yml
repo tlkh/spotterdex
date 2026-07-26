@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify catalog and site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Python dependencies
+        run: python3 -m pip install --requirement requirements.txt
+
+      # raw_assets/ is deliberately not committed, so the image pipeline and the
+      # raw source-path checks cannot run here. Everything below is repo-only.
+      - name: Validate catalog
+        run: python3 tools/spotterdex_catalog.py validate --skip-raw-assets
+
+      - name: Run test suite
+        run: python3 -m unittest discover -s tools/tests -v
+
+      - name: Check JavaScript syntax
+        run: |
+          node --check script.js
+          node --check service-worker.js
+          node --check tools/manager/app.js
+
+      - name: Check Python syntax
+        run: python3 -m compileall -q tools
+
+      - name: Confirm generated pages match the generator
+        run: |
+          python3 tools/build_pages.py
+          git diff --exit-code -- '*.html'
