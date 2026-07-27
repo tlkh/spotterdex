@@ -9189,14 +9189,6 @@ button.location-unit-chip:focus-visible,
     --mobile-page-content-bottom-padding: var(--space-lg);
   }
 
-  /* The map is a full-screen canvas. iOS standalone mode can report an
-     oversized lower inset here, leaving a visibly detached tab bar above the
-     home indicator. Keep the navigation's lower breathing room compact. */
-  body[data-page-view="mapView"] {
-    --mobile-bottom-inset: clamp(var(--space-xs), env(safe-area-inset-bottom), var(--space-md));
-    --mobile-tab-height: calc(60px + var(--mobile-bottom-inset));
-  }
-
   .site-header {
     min-height: var(--mobile-header-height);
     padding: max(10px, env(safe-area-inset-top)) 12px 10px;
@@ -10110,7 +10102,7 @@ button.location-unit-chip:focus-visible,
     display: grid;
     min-height: var(--mobile-tab-height);
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    align-items: start;
+    align-items: end;
     padding: 5px 4px max(5px, env(safe-area-inset-bottom));
     border-top: 1px solid rgba(255, 255, 255, 0.12);
     background: rgba(13, 15, 16, 0.985);
@@ -10459,6 +10451,23 @@ button.location-unit-chip:focus-visible,
 
   .mobile-tab-bar {
     padding-bottom: var(--mobile-bottom-inset);
+  }
+
+  /* In iOS standalone mode, the dynamic viewport can stop above the home
+     indicator even though the page background paints behind it. Extend only
+     the tab-bar material through that viewport shortfall; its controls retain
+     their safe-area position. */
+  @supports (height: 100lvh) {
+    @media (display-mode: standalone) {
+      :root {
+        --mobile-standalone-bottom-bleed: max(0px, calc(100lvh - 100dvh));
+      }
+
+      .mobile-tab-bar {
+        bottom: calc(0px - var(--mobile-standalone-bottom-bleed));
+        padding-bottom: calc(var(--mobile-bottom-inset) + var(--mobile-standalone-bottom-bleed));
+      }
+    }
   }
 
   .site-header .brand-mark {
