@@ -9183,6 +9183,11 @@ button.location-unit-chip:focus-visible,
     --mobile-bottom-inset: max(12px, env(safe-area-inset-bottom));
     --mobile-header-height: calc(55px + max(10px, env(safe-area-inset-top)));
     --mobile-tab-height: calc(60px + var(--mobile-bottom-inset));
+    --mobile-archive-hero-title-inset: max(var(--space-xs), env(safe-area-inset-top));
+    --mobile-archive-hero-padding-top: calc(var(--space-md) + var(--mobile-archive-hero-title-inset));
+    --mobile-archive-hero-padding-bottom: var(--space-lg);
+    --mobile-page-content-bottom-padding: var(--space-lg);
+    --mobile-page-bottom-clearance: calc(var(--mobile-page-content-bottom-padding) + var(--space-sm));
   }
 
   .site-header {
@@ -12346,13 +12351,14 @@ body {
 }
 
 @media (max-width: 1040px) {
+  #dexView .dex-hero,
   #squadronsView .squadron-archive-hero,
   #airshowsView .airshow-archive-hero,
   #statsView .stats-archive-hero {
     min-height: 0;
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
-    padding: 24px 20px;
+    padding: var(--mobile-archive-hero-padding-top) 20px var(--mobile-archive-hero-padding-bottom);
   }
 
   #squadronsView .squadron-archive-copy,
@@ -12385,6 +12391,23 @@ body {
   #statsView .stats-directory {
     width: calc(100% - 2rem);
     padding-top: var(--space-sm);
+  }
+
+  #dexView .dex-browser,
+  #squadronsView .squadron-directory,
+  #airshowsView .airshow-directory,
+  #statsView .stats-directory {
+    padding-bottom: var(--mobile-page-content-bottom-padding);
+  }
+
+  body[data-page-view="mapView"].is-map-canvas-active #mapView .map-workspace,
+  #mapView #mapResults {
+    height: calc(100dvh - var(--mobile-header-height) - var(--mobile-tab-height) - var(--mobile-page-bottom-clearance));
+    min-height: calc(100svh - var(--mobile-header-height) - var(--mobile-tab-height) - var(--mobile-page-bottom-clearance));
+  }
+
+  #mapView #mapResults {
+    max-height: calc(100dvh - var(--mobile-header-height) - var(--mobile-tab-height) - var(--mobile-page-bottom-clearance));
   }
 
   .mobile-context-bar {
