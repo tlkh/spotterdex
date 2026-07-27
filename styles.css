@@ -9187,7 +9187,14 @@ button.location-unit-chip:focus-visible,
     --mobile-archive-hero-padding-top: calc(var(--space-md) + var(--mobile-archive-hero-title-inset));
     --mobile-archive-hero-padding-bottom: var(--space-lg);
     --mobile-page-content-bottom-padding: var(--space-lg);
-    --mobile-page-bottom-clearance: calc(var(--mobile-page-content-bottom-padding) + var(--space-sm));
+  }
+
+  /* The map is a full-screen canvas. iOS standalone mode can report an
+     oversized lower inset here, leaving a visibly detached tab bar above the
+     home indicator. Keep the navigation's lower breathing room compact. */
+  body[data-page-view="mapView"] {
+    --mobile-bottom-inset: clamp(var(--space-xs), env(safe-area-inset-bottom), var(--space-md));
+    --mobile-tab-height: calc(60px + var(--mobile-bottom-inset));
   }
 
   .site-header {
@@ -12398,16 +12405,6 @@ body {
   #airshowsView .airshow-directory,
   #statsView .stats-directory {
     padding-bottom: var(--mobile-page-content-bottom-padding);
-  }
-
-  body[data-page-view="mapView"].is-map-canvas-active #mapView .map-workspace,
-  #mapView #mapResults {
-    height: calc(100dvh - var(--mobile-header-height) - var(--mobile-tab-height) - var(--mobile-page-bottom-clearance));
-    min-height: calc(100svh - var(--mobile-header-height) - var(--mobile-tab-height) - var(--mobile-page-bottom-clearance));
-  }
-
-  #mapView #mapResults {
-    max-height: calc(100dvh - var(--mobile-header-height) - var(--mobile-tab-height) - var(--mobile-page-bottom-clearance));
   }
 
   .mobile-context-bar {
