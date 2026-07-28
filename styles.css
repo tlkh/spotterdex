@@ -7608,8 +7608,11 @@ button.location-unit-chip:focus-visible,
     position: fixed;
     inset: 0;
     width: 100%;
-    height: 100vh;
-    height: 100dvh;
+    /* Let top/bottom from inset fill the layout viewport. An explicit 100dvh
+       height wins over bottom and, on iOS standalone, can stop above the home
+       indicator — leaving a black gap under the tab bar. */
+    height: auto;
+    min-height: 100dvh;
     overflow: hidden;
     overscroll-behavior: none;
   }
@@ -10467,7 +10470,8 @@ button.location-unit-chip:focus-visible,
      indicator even though the page background paints behind it. Extend only
      the tab-bar material through that viewport shortfall; its controls retain
      their safe-area position. Scrollable pages usually report 100dvh ~= 100lvh,
-     so the bleed stays at 0 there. The map page zeros this variable above. */
+     so the bleed stays at 0 there. The map page zeros this variable above and
+     also pins the tab bar explicitly below. */
   @supports (height: 100lvh) {
     @media (display-mode: standalone) {
       :root {
@@ -10477,6 +10481,14 @@ button.location-unit-chip:focus-visible,
       .mobile-tab-bar {
         bottom: calc(0px - var(--mobile-standalone-bottom-bleed));
         padding-bottom: calc(var(--mobile-bottom-inset) + var(--mobile-standalone-bottom-bleed));
+      }
+
+      /* Map body is a fixed full-screen canvas. Do not apply the lvh/dvh bleed:
+         it double-counts the home-indicator gap and lifts the tab icons. */
+      body[data-page-view="mapView"] .mobile-tab-bar {
+        bottom: 0;
+        min-height: calc(56px + var(--mobile-bottom-inset));
+        padding-bottom: var(--mobile-bottom-inset);
       }
     }
   }
