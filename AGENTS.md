@@ -150,12 +150,14 @@ Rules:
 - `SHELL_CACHE_VERSION` and `MEDIA_CACHE_VERSION` are rewritten by the builder from a hash of the precached assets and the image profile. Never edit them by hand, and never treat them as meaningful in review.
 - `SHELL_PATHS` is the single source of truth for the precache list; the builder parses it to compute the shell hash. Adding a shell asset means adding it there, and a missing entry becomes a build warning.
 - Every generated payload name under `data/` must match `isCatalogData`. A catalog bundle that falls through to the shell strategy serves the previous deploy to returning visitors.
+- Updated workers remain waiting until the in-page update card sends `SKIP_WAITING`; do not restore unconditional install-time activation. `GET_VERSION` lets the client scope “Later” to one generated shell version, and reload occurs only after the user chooses Update.
 
 ## Site behavior
 
 - All five pages load `data/spotterdex-core.js`.
 - Stats loads `data/spotterdex-exif.js` on demand.
 - The viewer lazily fetches `data/spotterdex.json` for full metadata.
+- Universal search is injected by `script.js` and uses only the core bundle. It indexes aircraft, squadron-type units, enabled locations, events, and public photo metadata; photo matches open their aircraft, event, squadron, or location context rather than the viewer.
 - Squadron pages use canonical unit IDs, not country/name-derived compatibility IDs.
 - Organisation units remain in the Dex, map, search, stats, and viewer but are hidden from the Squadrons page.
 - Map labels retain visible OpenStreetMap attribution; mobile prefers ICAO labels.

@@ -45,13 +45,16 @@
         <a class="tab-button" href="airshows.html">Airshows</a>
         <a class="tab-button is-active" href="stats.html" aria-current="page">Stats</a>
       </nav>
-      <select class="nav-select" id="viewSelect" aria-label="Main view">
+      <div class="header-actions">
+        <button class="header-global-search-trigger" type="button" data-global-search-trigger aria-label="Search SpotterDex" title="Search SpotterDex" aria-keyshortcuts="Control+K Meta+K"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="m16.5 16.5 4 4"></path></svg></button>
+        <select class="nav-select" id="viewSelect" aria-label="Main view">
           <option value="index.html">World Map</option>
           <option value="aircraft-dex.html">Aircraft Dex</option>
           <option value="squadrons.html">Squadrons</option>
           <option value="airshows.html">Airshows</option>
           <option value="stats.html" selected>Stats</option>
-      </select>
+        </select>
+      </div>
     </header>
 
     <main class="app-shell" id="main">

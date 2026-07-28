@@ -100,9 +100,29 @@ def map_globe_icon() -> str:
     )
 
 
+def search_icon() -> str:
+    return (
+        '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">'
+        '<circle cx="11" cy="11" r="7"></circle>'
+        '<path d="m16.5 16.5 4 4"></path>'
+        '</svg>'
+    )
+
+
+def global_search_button() -> str:
+    return (
+        '<button class="header-global-search-trigger" type="button" '
+        'data-global-search-trigger aria-label="Search SpotterDex" '
+        'title="Search SpotterDex" aria-keyshortcuts="Control+K Meta+K">'
+        f'{search_icon()}'
+        '</button>'
+    )
+
+
 def render_header(active_file: str, is_map: bool) -> str:
     active_options = page_options(active_file)
     navigation = page_navigation(active_file)
+    search_button = global_search_button()
     if is_map:
         return f'''    <header class="site-header">
       <div class="brand">
@@ -120,6 +140,7 @@ def render_header(active_file: str, is_map: bool) -> str:
       </nav>
 
       <div class="header-actions">
+        {search_button}
         <button class="header-fit-button" type="button" id="fitPinsButton" aria-label="Fit all map locations" title="Fit all map locations">
           {map_globe_icon()}
         </button>
@@ -155,9 +176,12 @@ def render_header(active_file: str, is_map: bool) -> str:
       <nav class="tab-nav" aria-label="Main views">
 {navigation}
       </nav>
-      <select class="nav-select" id="viewSelect" aria-label="Main view">
+      <div class="header-actions">
+        {search_button}
+        <select class="nav-select" id="viewSelect" aria-label="Main view">
 {active_options}
-      </select>
+        </select>
+      </div>
     </header>'''
 
 

@@ -1,7 +1,7 @@
 // Both version strings are rewritten by tools/build_spotterdex.py from a hash of
 // the shell assets and the image profile. Do not edit them by hand: a stale
 // version keeps returning visitors on the previously deployed shell.
-const SHELL_CACHE_VERSION = "spotterdex-shell-22b9d4ebb9d32285";
+const SHELL_CACHE_VERSION = "spotterdex-shell-793e9066564ce814";
 const MEDIA_CACHE_VERSION = "spotterdex-media-6648c110b6fce385";
 const SHELL_CACHE = `${SHELL_CACHE_VERSION}-shell`;
 const THUMB_CACHE = `${MEDIA_CACHE_VERSION}-thumbs`;
@@ -32,7 +32,6 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(SHELL_CACHE)
       .then((cache) => cache.addAll(SHELL_PATHS.map(scopedUrl)))
-      .then(() => self.skipWaiting())
   );
 });
 
@@ -43,6 +42,16 @@ self.addEventListener("activate", (event) => {
       .then((names) => Promise.all(names.filter((name) => name.startsWith("spotterdex-") && !retainedCaches.has(name)).map((name) => caches.delete(name))))
       .then(() => self.clients.claim())
   );
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    event.waitUntil(self.skipWaiting());
+    return;
+  }
+  if (event.data?.type === "GET_VERSION") {
+    event.ports[0]?.postMessage({ version: SHELL_CACHE_VERSION });
+  }
 });
 
 self.addEventListener("fetch", (event) => {

@@ -49,6 +49,21 @@ class GeneratedPageContractTests(unittest.TestCase):
         # An @import would serialise the two stylesheet requests behind styles.css.
         self.assertNotIn("@import", (ROOT / "styles.css").read_text("utf-8"))
 
+    def test_every_page_header_exposes_universal_search(self) -> None:
+        for filename in build_pages.PAGE_DEFINITIONS:
+            with self.subTest(page=filename):
+                document = build_pages.render_page(filename, ROOT)
+                self.assertIn("data-global-search-trigger", document)
+                self.assertIn('aria-keyshortcuts="Control+K Meta+K"', document)
+
+    def test_archive_pages_rely_on_universal_search(self) -> None:
+        documents = {
+            filename: build_pages.render_page(filename, ROOT)
+            for filename in ("aircraft-dex.html", "squadrons.html")
+        }
+        self.assertNotIn("aircraftSearch", documents["aircraft-dex.html"])
+        self.assertNotIn("squadronSearch", documents["squadrons.html"])
+
     def test_committed_pages_match_the_generator(self) -> None:
         for filename in build_pages.PAGE_DEFINITIONS:
             with self.subTest(page=filename):
@@ -122,6 +137,53 @@ class ServiceWorkerContractTests(unittest.TestCase):
                 match = re.search(rf'const {constant} = "([^"]+)"', self.worker)
                 self.assertIsNotNone(match)
                 self.assertRegex(match.group(1), r"^spotterdex-(shell|media)-[0-9a-f]{16}$")
+
+    def test_updates_wait_for_user_activation(self) -> None:
+        install = re.search(
+            r'self\.addEventListener\("install".*?(?=self\.addEventListener\("activate")',
+            self.worker,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(install)
+        self.assertNotIn("skipWaiting", install.group(0))
+        self.assertIn('event.data?.type === "SKIP_WAITING"', self.worker)
+        self.assertIn("event.waitUntil(self.skipWaiting())", self.worker)
+
+    def test_worker_reports_its_generated_shell_version(self) -> None:
+        self.assertIn('event.data?.type === "GET_VERSION"', self.worker)
+        self.assertIn("version: SHELL_CACHE_VERSION", self.worker)
+
+
+class ServiceWorkerClientContractTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.script = (ROOT / "script.js").read_text("utf-8")
+
+    def test_client_detects_waiting_workers_without_automatic_reload(self) -> None:
+        for hook in ("updatefound", "statechange", "controllerchange", "visibilitychange"):
+            with self.subTest(hook=hook):
+                self.assertIn(f'"{hook}"', self.script)
+        controller_handler = re.search(
+            r"function handleServiceWorkerControllerChange\(\) \{(.*?)\n  \}",
+            self.script,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(controller_handler)
+        self.assertRegex(
+            controller_handler.group(1),
+            r"if \(state\.updateReloadPending\)[\s\S]*?window\.location\.reload\(\)",
+        )
+
+    def test_client_has_universal_search_and_actionable_update_ui(self) -> None:
+        for contract in (
+            "buildGlobalSearchIndex",
+            "globalSearchMatches",
+            "data-global-search-trigger",
+            "appUpdatePrompt",
+            "SKIP_WAITING",
+            "GET_VERSION",
+        ):
+            with self.subTest(contract=contract):
+                self.assertIn(contract, self.script)
 
 
 class ServiceWorkerStampingTests(unittest.TestCase):

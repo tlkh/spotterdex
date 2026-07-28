@@ -29,6 +29,16 @@
   const MAP_PANEL_COACH_STORAGE_KEY = "spotterdex-map-panel-coach-dismissed";
   const MOBILE_SESSION_KEY_PREFIX = "spotterdex-mobile-session-v1:";
   const INSTALL_DISMISSED_STORAGE_KEY = "spotterdex-install-dismissed-v1";
+  const UPDATE_DISMISSED_STORAGE_KEY = "spotterdex-update-dismissed-v1";
+  const SEARCH_RESULT_LIMIT_PER_KIND = 6;
+  const SEARCH_KIND_ORDER = ["aircraft", "squadron", "location", "airshow", "photo"];
+  const SEARCH_KIND_LABELS = {
+    aircraft: "Aircraft",
+    squadron: "Squadrons",
+    location: "Locations",
+    airshow: "Airshows",
+    photo: "Photos"
+  };
   const DEFAULT_SHARE_IMAGE_ALT = "Aircraft formation over Gifu Air Base in Japan";
   const FOCAL_DISTRIBUTION_FIRST_CENTER = 100;
   const FOCAL_DISTRIBUTION_BIN_WIDTH = 100;
@@ -53,6 +63,7 @@
   let statsExifLoadPromise = null;
   let mobileShellEventsBound = false;
   let viewerEventsBound = false;
+  let serviceWorkerEventsBound = false;
   const motionControllers = new WeakMap();
   const PAGE_ROUTES = {
     mapView: "index.html",
@@ -87,7 +98,6 @@
     dexVisibleCount: MOBILE_ARCHIVE_PAGE_SIZE,
     squadronVisibleCount: MOBILE_ARCHIVE_PAGE_SIZE,
     airshowVisibleCount: MOBILE_ARCHIVE_PAGE_SIZE,
-    squadronQuery: "",
     squadronCountryFilter: "",
     statsSection: "summary",
     detailRailDrag: null,
@@ -152,6 +162,18 @@
     connectivityOffline: false,
     sessionRestore: null,
     toastTimer: null,
+    searchIndex: [],
+    searchResults: [],
+    searchActiveIndex: -1,
+    searchReady: false,
+    searchReturnFocus: null,
+    serviceWorkerRegistration: null,
+    waitingServiceWorker: null,
+    updateVersion: "",
+    updateReloadPending: false,
+    updateRequiresReloadOnly: false,
+    updateCheckTime: 0,
+    serviceWorkerHadController: false,
     mapControlPanelOpen: true,
     renderedViews: new Set(),
     fullDataPromise: null,
@@ -165,6 +187,8 @@
 
   async function init() {
     ensureAppToast();
+    ensureGlobalSearch();
+    ensureAppUpdatePrompt();
     ensureMobileAppShell();
     cacheElements();
     state.sessionRestore = readPageSessionState();
@@ -172,6 +196,11 @@
     setupEvents();
 
     state.data = prepareData(await loadData());
+    state.searchIndex = buildGlobalSearchIndex();
+    state.searchReady = true;
+    if (isGlobalSearchOpen()) {
+      renderGlobalSearchResults();
+    }
     chooseInitialSelections();
     restoreSessionSelections(state.sessionRestore);
     renderAll();
@@ -326,6 +355,64 @@
     els.appToast = toast;
   }
 
+  function ensureGlobalSearch() {
+    if (!document.getElementById("mobileGlobalSearchTrigger")) {
+      document.body.insertAdjacentHTML("beforeend", `
+        <button class="mobile-global-search-trigger" id="mobileGlobalSearchTrigger" type="button" data-global-search-trigger aria-label="Search SpotterDex" title="Search SpotterDex" aria-keyshortcuts="Control+K Meta+K">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m16.5 16.5 4 4"></path>
+          </svg>
+        </button>
+      `);
+    }
+    if (!document.getElementById("globalSearchOverlay")) {
+      document.body.insertAdjacentHTML("beforeend", `
+        <div class="global-search-overlay" id="globalSearchOverlay" role="dialog" aria-modal="true" aria-labelledby="globalSearchTitle" hidden>
+          <button class="global-search-backdrop" type="button" tabindex="-1" data-global-search-close aria-label="Close search"></button>
+          <section class="global-search-panel">
+            <header class="global-search-heading">
+              <div>
+                <p class="eyebrow">Search the archive</p>
+                <h2 id="globalSearchTitle">Find anything</h2>
+              </div>
+              <button class="global-search-close" type="button" data-global-search-close aria-label="Close search" title="Close search">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+              </button>
+            </header>
+            <label class="global-search-control" for="globalSearchInput">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m16.5 16.5 4 4"></path>
+              </svg>
+              <input id="globalSearchInput" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Aircraft, squadron, location, airshow, or photo" role="combobox" aria-autocomplete="list" aria-controls="globalSearchResults" aria-expanded="true">
+              <kbd aria-hidden="true">⌘ K</kbd>
+            </label>
+            <p class="global-search-summary" id="globalSearchSummary" aria-live="polite">Start typing to search the entire SpotterDex.</p>
+            <div class="global-search-results" id="globalSearchResults" role="listbox" aria-label="Search results"></div>
+          </section>
+        </div>
+      `);
+    }
+  }
+
+  function ensureAppUpdatePrompt() {
+    if (document.getElementById("appUpdatePrompt")) {
+      return;
+    }
+    document.body.insertAdjacentHTML("beforeend", `
+      <section class="app-update-prompt" id="appUpdatePrompt" role="region" aria-label="SpotterDex update" aria-live="polite" hidden>
+        <img src="assets/icons/spotterdex-app-icon-192.png" alt="">
+        <span>
+          <strong>Update available</strong>
+          <small>Reload to use the latest SpotterDex.</small>
+        </span>
+        <button class="app-update-action" type="button" id="appUpdateButton">Update</button>
+        <button class="app-update-dismiss" type="button" id="appUpdateDismiss" aria-label="Update later">Later</button>
+      </section>
+    `);
+  }
+
   function ensureMobileAppShell() {
     if (document.getElementById("mobileTabBar")) {
       cacheMobileElements();
@@ -390,6 +477,15 @@
     els.twitterImageAlt = document.querySelector('meta[name="twitter:image:alt"]');
     els.canonical = document.querySelector('link[rel="canonical"]');
     els.viewSelect = document.getElementById("viewSelect");
+    els.globalSearchTriggers = document.querySelectorAll("[data-global-search-trigger]");
+    els.mobileGlobalSearchTrigger = document.getElementById("mobileGlobalSearchTrigger");
+    els.globalSearchOverlay = document.getElementById("globalSearchOverlay");
+    els.globalSearchInput = document.getElementById("globalSearchInput");
+    els.globalSearchResults = document.getElementById("globalSearchResults");
+    els.globalSearchSummary = document.getElementById("globalSearchSummary");
+    els.appUpdatePrompt = document.getElementById("appUpdatePrompt");
+    els.appUpdateButton = document.getElementById("appUpdateButton");
+    els.appUpdateDismiss = document.getElementById("appUpdateDismiss");
     const viewId = currentPageViewId();
     if (viewId === "mapView") {
       els.aircraftCount = document.getElementById("aircraftCount");
@@ -408,7 +504,6 @@
       els.mapResults = document.getElementById("mapResults");
       els.locationDetail = document.getElementById("locationDetail");
     } else if (viewId === "dexView") {
-      els.aircraftSearch = document.getElementById("aircraftSearch");
       els.dexFamilyFilter = document.getElementById("dexFamilyFilter");
       els.dexHeroMedia = document.getElementById("dexHeroMedia");
       els.dexHeroFeature = document.getElementById("dexHeroFeature");
@@ -422,7 +517,6 @@
       els.dexCount = document.getElementById("dexCount");
     } else if (viewId === "squadronsView") {
       els.squadronLogoGrid = document.getElementById("squadronLogoGrid");
-      els.squadronSearch = document.getElementById("squadronSearch");
       els.squadronPagination = document.getElementById("squadronPagination");
       els.squadronCountryRail = document.getElementById("squadronCountryRail");
       els.squadronHeroMedia = document.getElementById("squadronHeroMedia");
@@ -759,6 +853,332 @@
     return data;
   }
 
+  function buildGlobalSearchIndex() {
+    const records = [];
+    const addRecord = (record, keywords) => {
+      const label = String(record.label || "").trim();
+      records.push({
+        ...record,
+        label,
+        searchLabel: normalizeText(label),
+        haystack: normalizeText([label, record.id, record.meta, ...keywords].filter(Boolean).join(" "))
+      });
+    };
+
+    state.data.aircraft.forEach((entry) => {
+      const cover = state.photoById.get(entry.coverPhoto);
+      addRecord({
+        kind: "aircraft",
+        id: entry.id,
+        label: entry.typeName,
+        meta: [AIRCRAFT_FAMILY_LABELS.get(entry.aircraftFamily), entry.countries.join(", ")].filter(Boolean).join(" · "),
+        thumbnail: cover?.thumbnail || cover?.image || "",
+        targetKind: "aircraft",
+        targetId: entry.id
+      }, [
+        entry.aircraftFamily,
+        ...entry.countries,
+        ...(entry.squadrons || []).flatMap((unit) => [unit.name, unit.country, unit.unitLabel])
+      ]);
+    });
+
+    const squadrons = collectSquadrons();
+    const squadronIds = new Set(squadrons.map((squadron) => squadron.id));
+    squadrons.forEach((squadron) => {
+      addRecord({
+        kind: "squadron",
+        id: squadron.id,
+        label: squadron.name,
+        meta: [squadron.country, squadron.aircraftTypes.slice(0, 3).join(", ")].filter(Boolean).join(" · "),
+        thumbnail: squadron.logo || squadron.heroPhoto?.thumbnail || squadron.heroPhoto?.image || "",
+        targetKind: "squadron",
+        targetId: squadron.id
+      }, [squadron.country, ...squadron.aircraftTypes]);
+    });
+
+    state.enabledPins.forEach((pin) => {
+      const pinPhotos = photosForPin(pin);
+      const hero = state.photoById.get(pin.heroPhotoId) || pinPhotos[0];
+      addRecord({
+        kind: "location",
+        id: pin.id,
+        label: pin.name,
+        meta: [normalizeIcao(pin.icao), pin.country, `${pinPhotos.length} photo${pinPhotos.length === 1 ? "" : "s"}`].filter(Boolean).join(" · "),
+        thumbnail: hero?.thumbnail || hero?.image || "",
+        targetKind: "location",
+        targetId: pin.id
+      }, [pin.icao, pin.country]);
+    });
+
+    state.data.airshows.forEach((airshow) => {
+      const hero = state.photoById.get(airshow.heroPhotoId) || state.photoById.get(airshow.photoIds[0]);
+      const dateRange = airshow.firstDate && airshow.latestDate && airshow.firstDate !== airshow.latestDate
+        ? `${formatDisplayDate(airshow.firstDate)} – ${formatDisplayDate(airshow.latestDate)}`
+        : formatDisplayDate(airshow.latestDate || airshow.firstDate);
+      addRecord({
+        kind: "airshow",
+        id: airshow.id,
+        label: airshow.name,
+        meta: [dateRange, `${airshow.photoCount} photo${airshow.photoCount === 1 ? "" : "s"}`].filter(Boolean).join(" · "),
+        thumbnail: hero?.thumbnail || hero?.image || "",
+        targetKind: "airshow",
+        targetId: airshow.id
+      }, [airshow.firstDate, airshow.latestDate]);
+    });
+
+    state.data.photos.forEach((photo) => {
+      let targetKind = "location";
+      let targetId = photo.pinId;
+      if (photo.aircraftId && state.aircraftById.has(photo.aircraftId)) {
+        targetKind = "aircraft";
+        targetId = photo.aircraftId;
+      } else if (photo.eventId && state.airshowById.has(photo.eventId)) {
+        targetKind = "airshow";
+        targetId = photo.eventId;
+      } else if (photo.squadronId && squadronIds.has(photo.squadronId)) {
+        targetKind = "squadron";
+        targetId = photo.squadronId;
+      }
+      if (!targetId) {
+        return;
+      }
+      const label = photo.title || photoSubjectLabel(photo);
+      addRecord({
+        kind: "photo",
+        id: photo.id,
+        label,
+        meta: [
+          photoSubjectLabel(photo),
+          photo.squadronName,
+          photo.locationName,
+          photo.airshow,
+          displayPhotoDate(photo)
+        ].filter(Boolean).join(" · "),
+        thumbnail: photo.thumbnail || photo.image || "",
+        targetKind,
+        targetId
+      }, [
+        photo.aircraftType,
+        photo.squadronName,
+        photo.locationName,
+        photo.country,
+        photo.airshow,
+        photo.livery,
+        photo.date,
+        photo.year
+      ]);
+    });
+
+    return records;
+  }
+
+  function globalSearchScore(record, query, tokens) {
+    if (!tokens.every((token) => record.haystack.includes(token))) {
+      return -1;
+    }
+    let score = 100;
+    if (record.searchLabel === query) score += 1000;
+    else if (normalizeText(record.id) === query) score += 900;
+    else if (record.searchLabel.startsWith(query)) score += 600;
+    else if (record.searchLabel.includes(query)) score += 350;
+    tokens.forEach((token) => {
+      if (record.searchLabel.startsWith(token)) score += 120;
+      else if (record.searchLabel.includes(token)) score += 60;
+      const position = record.haystack.indexOf(token);
+      score += Math.max(0, 30 - Math.min(30, position));
+    });
+    return score;
+  }
+
+  function globalSearchMatches(query) {
+    const normalizedQuery = normalizeText(query).replace(/\s+/g, " ");
+    const tokens = normalizedQuery.split(" ").filter(Boolean);
+    if (!tokens.length) {
+      return [];
+    }
+    const byKind = new Map(SEARCH_KIND_ORDER.map((kind) => [kind, []]));
+    state.searchIndex.forEach((record) => {
+      const score = globalSearchScore(record, normalizedQuery, tokens);
+      if (score >= 0) {
+        byKind.get(record.kind)?.push({ ...record, score });
+      }
+    });
+    const matches = [];
+    SEARCH_KIND_ORDER.forEach((kind) => {
+      const records = byKind.get(kind)
+        .sort((a, b) => b.score - a.score || a.label.localeCompare(b.label))
+        .slice(0, SEARCH_RESULT_LIMIT_PER_KIND);
+      matches.push(...records);
+    });
+    return matches;
+  }
+
+  function renderGlobalSearchResults() {
+    if (!els.globalSearchResults || !els.globalSearchSummary) {
+      return;
+    }
+    const query = els.globalSearchInput?.value || "";
+    if (!state.searchReady) {
+      state.searchResults = [];
+      state.searchActiveIndex = -1;
+      els.globalSearchSummary.textContent = "Loading the catalog…";
+      els.globalSearchResults.innerHTML = '<p class="global-search-empty">Preparing aircraft, squadrons, locations, airshows, and photos.</p>';
+      return;
+    }
+    if (!normalizeText(query)) {
+      state.searchResults = [];
+      state.searchActiveIndex = -1;
+      els.globalSearchSummary.textContent = "Start typing to search the entire SpotterDex.";
+      els.globalSearchResults.innerHTML = `
+        <div class="global-search-hint">
+          <span>Search across the field guide</span>
+          <small>Try an aircraft type, ICAO code, squadron, event, photo title, or date.</small>
+        </div>
+      `;
+      els.globalSearchInput?.removeAttribute("aria-activedescendant");
+      return;
+    }
+
+    state.searchResults = globalSearchMatches(query);
+    state.searchActiveIndex = state.searchResults.length ? 0 : -1;
+    if (!state.searchResults.length) {
+      els.globalSearchSummary.textContent = `No results for “${query.trim()}”.`;
+      els.globalSearchResults.innerHTML = '<p class="global-search-empty">No matching records. Try a broader term or ICAO code.</p>';
+      els.globalSearchInput?.removeAttribute("aria-activedescendant");
+      return;
+    }
+
+    els.globalSearchSummary.textContent = `${state.searchResults.length} result${state.searchResults.length === 1 ? "" : "s"} for “${query.trim()}”.`;
+    let resultIndex = 0;
+    els.globalSearchResults.innerHTML = SEARCH_KIND_ORDER.map((kind) => {
+      const records = state.searchResults.filter((record) => record.kind === kind);
+      if (!records.length) {
+        return "";
+      }
+      const headingId = `global-search-${kind}-heading`;
+      const items = records.map((record) => {
+        const index = resultIndex;
+        const active = index === state.searchActiveIndex;
+        resultIndex += 1;
+        const targetLabel = SEARCH_KIND_LABELS[record.targetKind] || "Record";
+        return `
+          <button
+            class="global-search-result${active ? " is-active" : ""}"
+            id="globalSearchResult${index}"
+            type="button"
+            role="option"
+            aria-selected="${active ? "true" : "false"}"
+            data-search-result-index="${index}"
+          >
+            ${record.thumbnail
+              ? `<img src="${escapeAttr(record.thumbnail)}" alt="" loading="lazy" decoding="async">`
+              : `<span class="global-search-result-fallback" aria-hidden="true">${escapeHtml((SEARCH_KIND_LABELS[kind] || kind).slice(0, 2).toUpperCase())}</span>`}
+            <span class="global-search-result-copy">
+              <strong>${escapeHtml(record.label)}</strong>
+              <small>${escapeHtml(record.meta || SEARCH_KIND_LABELS[kind])}</small>
+            </span>
+            <span class="global-search-result-target">${record.kind === "photo" ? `Open ${escapeHtml(targetLabel)}` : "Open"}</span>
+          </button>
+        `;
+      }).join("");
+      return `<section class="global-search-group" aria-labelledby="${headingId}"><h3 id="${headingId}">${SEARCH_KIND_LABELS[kind]}</h3>${items}</section>`;
+    }).join("");
+    updateGlobalSearchActiveResult();
+  }
+
+  function isGlobalSearchOpen() {
+    return Boolean(els.globalSearchOverlay && !els.globalSearchOverlay.hidden);
+  }
+
+  function openGlobalSearch(event) {
+    if (isViewerOpen()) {
+      return;
+    }
+    event?.preventDefault();
+    state.searchReturnFocus = event?.currentTarget || document.activeElement;
+    if (state.mobileMapPanel) {
+      setMapPanel(null, { motion: false });
+    }
+    els.globalSearchOverlay.hidden = false;
+    document.body.classList.add("is-search-open");
+    setGlobalSearchBackgroundInert(true);
+    renderGlobalSearchResults();
+    window.requestAnimationFrame(() => els.globalSearchInput?.focus({ preventScroll: true }));
+  }
+
+  function closeGlobalSearch(options = {}) {
+    if (!isGlobalSearchOpen()) {
+      return;
+    }
+    els.globalSearchOverlay.hidden = true;
+    document.body.classList.remove("is-search-open");
+    setGlobalSearchBackgroundInert(false);
+    if (options.restoreFocus !== false && state.searchReturnFocus instanceof HTMLElement) {
+      state.searchReturnFocus.focus({ preventScroll: true });
+    }
+    state.searchReturnFocus = null;
+  }
+
+  function setGlobalSearchBackgroundInert(inert) {
+    [
+      els.siteHeader,
+      els.main,
+      els.mobileTabBar,
+      els.mobileGlobalSearchTrigger,
+      els.appUpdatePrompt,
+      els.mobileInstallPrompt
+    ].forEach((element) => {
+      if (element) element.inert = inert;
+    });
+  }
+
+  function updateGlobalSearchActiveResult(options = {}) {
+    if (!els.globalSearchResults || !els.globalSearchInput) {
+      return;
+    }
+    const optionsList = Array.from(els.globalSearchResults.querySelectorAll("[data-search-result-index]"));
+    optionsList.forEach((option, index) => {
+      const active = index === state.searchActiveIndex;
+      option.classList.toggle("is-active", active);
+      option.setAttribute("aria-selected", String(active));
+    });
+    const active = optionsList[state.searchActiveIndex];
+    if (active) {
+      els.globalSearchInput.setAttribute("aria-activedescendant", active.id);
+      if (options.scroll !== false) {
+        active.scrollIntoView({ block: "nearest" });
+      }
+    } else {
+      els.globalSearchInput.removeAttribute("aria-activedescendant");
+    }
+  }
+
+  function moveGlobalSearchSelection(delta) {
+    if (!state.searchResults.length) {
+      return;
+    }
+    state.searchActiveIndex = (state.searchActiveIndex + delta + state.searchResults.length) % state.searchResults.length;
+    updateGlobalSearchActiveResult();
+  }
+
+  function activateGlobalSearchResult(index = state.searchActiveIndex) {
+    const record = state.searchResults[index];
+    if (!record) {
+      return;
+    }
+    closeGlobalSearch({ restoreFocus: false });
+    saveCurrentSessionState();
+    if (record.targetKind === "aircraft") {
+      selectAircraft(record.targetId);
+    } else if (record.targetKind === "squadron") {
+      selectSquadron(record.targetId);
+    } else if (record.targetKind === "airshow") {
+      selectAirshow(record.targetId);
+    } else {
+      selectLocationPage(record.targetId);
+    }
+  }
+
   function indexPhotosByPin(pins, photos) {
     const photosByPinId = new Map(pins.map((pin) => [pin.id, []]));
     const pinIdsByLocation = new Map();
@@ -821,21 +1241,25 @@
         window.location.assign(els.viewSelect.value);
       });
     }
+    els.globalSearchTriggers?.forEach((trigger) => trigger.addEventListener("click", openGlobalSearch));
+    els.globalSearchOverlay?.querySelectorAll("[data-global-search-close]").forEach((button) => {
+      button.addEventListener("click", closeGlobalSearch);
+    });
+    els.globalSearchInput?.addEventListener("input", renderGlobalSearchResults);
+    els.globalSearchResults?.addEventListener("click", (event) => {
+      const result = event.target.closest("[data-search-result-index]");
+      if (result) {
+        activateGlobalSearchResult(Number(result.dataset.searchResultIndex));
+      }
+    });
+    els.appUpdateButton?.addEventListener("click", applyAppUpdate);
+    els.appUpdateDismiss?.addEventListener("click", dismissAppUpdate);
     document.getElementById("fitPinsButton")?.addEventListener("click", handleHeaderMapButton);
     document.getElementById("fitPinsPanelButton")?.addEventListener("click", fitMapToPins);
     els.mapPanelCoachDismiss?.addEventListener("click", dismissMapPanelCoach);
     els.worldMap?.addEventListener("pointerdown", handleMapDirectInteraction, { capture: true, passive: true });
 
     els.locationSearch?.addEventListener("input", renderLocations);
-    els.aircraftSearch?.addEventListener("input", () => {
-      state.dexVisibleCount = MOBILE_ARCHIVE_PAGE_SIZE;
-      renderDex();
-    });
-    els.squadronSearch?.addEventListener("input", () => {
-      state.squadronQuery = els.squadronSearch.value;
-      state.squadronVisibleCount = MOBILE_ARCHIVE_PAGE_SIZE;
-      renderSquadronsPage();
-    });
 
     document.addEventListener("click", handleDocumentClick);
     document.addEventListener("keydown", handleKeydown);
@@ -852,7 +1276,12 @@
     window.addEventListener("popstate", handleHistoryNavigation);
     window.addEventListener("hashchange", handleHistoryNavigation);
     window.addEventListener("pagehide", saveCurrentSessionState);
-    window.addEventListener("pageshow", scheduleScrollEdgeUpdate);
+    window.addEventListener("pageshow", (event) => {
+      scheduleScrollEdgeUpdate();
+      if (event.persisted) {
+        checkForServiceWorkerUpdate({ force: true });
+      }
+    });
     document.addEventListener("scroll", scheduleScrollEdgeUpdate, { passive: true, capture: true });
     window.addEventListener("scroll", scheduleScrollEdgeUpdate, { passive: true });
     window.addEventListener("online", () => updateConnectivityUi({ offline: false }));
@@ -998,7 +1427,7 @@
       state.dexVisibleCount = MOBILE_ARCHIVE_PAGE_SIZE;
       renderDex();
       clearDeepLink();
-      els.aircraftSearch?.focus({ preventScroll: true });
+      document.querySelector("[data-clear-dex-family-filter]")?.focus({ preventScroll: true });
       return;
     }
 
@@ -1162,6 +1591,43 @@
   }
 
   function handleKeydown(event) {
+    if ((event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "k") {
+      event.preventDefault();
+      if (isGlobalSearchOpen()) {
+        closeGlobalSearch();
+      } else {
+        openGlobalSearch();
+      }
+      return;
+    }
+    if (isGlobalSearchOpen()) {
+      if (event.key === "Tab") {
+        trapDialogFocus(els.globalSearchOverlay, event);
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        closeGlobalSearch();
+      } else if (event.key === "ArrowDown") {
+        event.preventDefault();
+        moveGlobalSearchSelection(1);
+      } else if (event.key === "ArrowUp") {
+        event.preventDefault();
+        moveGlobalSearchSelection(-1);
+      } else if (event.key === "Home" && document.activeElement === els.globalSearchInput) {
+        event.preventDefault();
+        state.searchActiveIndex = state.searchResults.length ? 0 : -1;
+        updateGlobalSearchActiveResult();
+      } else if (event.key === "End" && document.activeElement === els.globalSearchInput) {
+        event.preventDefault();
+        state.searchActiveIndex = state.searchResults.length - 1;
+        updateGlobalSearchActiveResult();
+      } else if (event.key === "Enter" && state.searchActiveIndex >= 0) {
+        event.preventDefault();
+        const focusedResult = document.activeElement?.closest?.("[data-search-result-index]");
+        const focusedIndex = focusedResult ? Number(focusedResult.dataset.searchResultIndex) : state.searchActiveIndex;
+        activateGlobalSearchResult(focusedIndex);
+      }
+      return;
+    }
     if (isViewerOpen()) {
       if (event.key === "Tab") {
         trapViewerFocus(event);
@@ -1194,7 +1660,11 @@
   }
 
   function trapViewerFocus(event) {
-    const focusable = Array.from(els.photoViewer.querySelectorAll(
+    trapDialogFocus(els.photoViewer, event);
+  }
+
+  function trapDialogFocus(container, event) {
+    const focusable = Array.from(container.querySelectorAll(
       'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
     )).filter((element) => !element.hidden && element.getClientRects().length);
     if (!focusable.length) {
@@ -1398,11 +1868,9 @@
       version: 1,
       url: window.location.href,
       scrollY: Math.max(0, Math.round(window.scrollY)),
-      aircraftQuery: els.aircraftSearch?.value || "",
       dexFamilyFilter: state.dexFamilyFilter,
       dexVisibleCount: state.dexVisibleCount,
       airshowVisibleCount: state.airshowVisibleCount,
-      squadronQuery: els.squadronSearch?.value || state.squadronQuery,
       squadronCountryFilter: state.squadronCountryFilter,
       squadronVisibleCount: state.squadronVisibleCount,
       statsSection: state.statsSection,
@@ -1427,12 +1895,9 @@
     state.dexFamilyFilter = normalizeAircraftFamily(snapshot.dexFamilyFilter) || "";
     state.dexVisibleCount = Math.max(MOBILE_ARCHIVE_PAGE_SIZE, Number(snapshot.dexVisibleCount) || MOBILE_ARCHIVE_PAGE_SIZE);
     state.airshowVisibleCount = Math.max(MOBILE_ARCHIVE_PAGE_SIZE, Number(snapshot.airshowVisibleCount) || MOBILE_ARCHIVE_PAGE_SIZE);
-    state.squadronQuery = String(snapshot.squadronQuery || "");
     state.squadronCountryFilter = String(snapshot.squadronCountryFilter || "");
     state.squadronVisibleCount = Math.max(MOBILE_ARCHIVE_PAGE_SIZE, Number(snapshot.squadronVisibleCount) || MOBILE_ARCHIVE_PAGE_SIZE);
     state.statsSection = normalizeStatsSection(snapshot.statsSection);
-    if (els.aircraftSearch) els.aircraftSearch.value = String(snapshot.aircraftQuery || "");
-    if (els.squadronSearch) els.squadronSearch.value = state.squadronQuery;
   }
 
   function restoreSessionSelections(snapshot) {
@@ -1583,6 +2048,9 @@
     };
     const isDetail = activeView !== navigationView && Boolean(detailTitles[activeView]);
     els.siteHeader?.classList.toggle("is-contextual", isDetail);
+    if (els.mobileGlobalSearchTrigger) {
+      els.mobileGlobalSearchTrigger.hidden = isDetail;
+    }
     const headerMapButton = document.getElementById("fitPinsButton");
     if (headerMapButton) {
       const label = activeView === "locationDetailView" ? "Back to World Map" : "Fit all map locations";
@@ -1620,7 +2088,7 @@
     } catch (error) {
       dismissed = false;
     }
-    if (!dismissed && els.mobileInstallPrompt) {
+    if (!dismissed && els.mobileInstallPrompt && els.appUpdatePrompt?.hidden !== false) {
       els.mobileInstallPrompt.hidden = false;
     }
   }
@@ -1686,13 +2154,175 @@
     }, 2400);
   }
 
-  function registerServiceWorker() {
+  async function registerServiceWorker() {
     if (!("serviceWorker" in navigator) || (window.location.protocol !== "https:" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1")) {
       return;
     }
-    navigator.serviceWorker.register(new URL("service-worker.js", document.baseURI), {
-      scope: new URL("./", document.baseURI).pathname
-    }).catch((error) => console.warn("SpotterDex service worker registration failed", error));
+    state.serviceWorkerHadController = Boolean(navigator.serviceWorker.controller);
+    setupServiceWorkerUpdateEvents();
+    try {
+      const registration = await navigator.serviceWorker.register(new URL("service-worker.js", document.baseURI), {
+        scope: new URL("./", document.baseURI).pathname
+      });
+      state.serviceWorkerRegistration = registration;
+      if (registration.waiting && state.serviceWorkerHadController) {
+        presentServiceWorkerUpdate(registration.waiting);
+      }
+      registration.addEventListener("updatefound", () => {
+        const installing = registration.installing;
+        if (!installing) {
+          return;
+        }
+        installing.addEventListener("statechange", () => {
+          if (installing.state === "installed" && state.serviceWorkerHadController) {
+            presentServiceWorkerUpdate(registration.waiting || installing);
+          }
+        });
+      });
+      checkForServiceWorkerUpdate({ force: true });
+    } catch (error) {
+      console.warn("SpotterDex service worker registration failed", error);
+    }
+  }
+
+  function setupServiceWorkerUpdateEvents() {
+    if (serviceWorkerEventsBound) {
+      return;
+    }
+    serviceWorkerEventsBound = true;
+    navigator.serviceWorker.addEventListener("controllerchange", handleServiceWorkerControllerChange);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        checkForServiceWorkerUpdate();
+      }
+    });
+    window.addEventListener("focus", () => checkForServiceWorkerUpdate());
+  }
+
+  async function checkForServiceWorkerUpdate(options = {}) {
+    const registration = state.serviceWorkerRegistration;
+    if (!registration) {
+      return;
+    }
+    const now = Date.now();
+    if (!options.force && now - state.updateCheckTime < 60000) {
+      return;
+    }
+    state.updateCheckTime = now;
+    try {
+      await registration.update();
+      if (registration.waiting && state.serviceWorkerHadController) {
+        await presentServiceWorkerUpdate(registration.waiting);
+      }
+    } catch (error) {
+      // Update checks are opportunistic and expected to fail while offline.
+    }
+  }
+
+  function serviceWorkerVersion(worker) {
+    if (!worker || typeof MessageChannel === "undefined") {
+      return Promise.resolve("");
+    }
+    return new Promise((resolve) => {
+      const channel = new MessageChannel();
+      let settled = false;
+      const finish = (version = "") => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timeout);
+        resolve(String(version || ""));
+      };
+      const timeout = window.setTimeout(() => finish(""), 1500);
+      channel.port1.onmessage = (event) => finish(event.data?.version);
+      try {
+        worker.postMessage({ type: "GET_VERSION" }, [channel.port2]);
+      } catch (error) {
+        finish("");
+      }
+    });
+  }
+
+  async function presentServiceWorkerUpdate(worker, options = {}) {
+    if (!worker || !els.appUpdatePrompt) {
+      return;
+    }
+    const version = await serviceWorkerVersion(worker);
+    let dismissedVersion = "";
+    try {
+      dismissedVersion = window.localStorage.getItem(UPDATE_DISMISSED_STORAGE_KEY) || "";
+    } catch (error) {
+      dismissedVersion = "";
+    }
+    state.waitingServiceWorker = worker;
+    state.updateVersion = version;
+    state.updateRequiresReloadOnly = options.requiresReload === true;
+    if (version && dismissedVersion === version) {
+      return;
+    }
+    if (els.mobileInstallPrompt) {
+      els.mobileInstallPrompt.hidden = true;
+    }
+    els.appUpdateButton.disabled = false;
+    els.appUpdateButton.textContent = state.updateRequiresReloadOnly ? "Reload" : "Update";
+    els.appUpdatePrompt.hidden = false;
+    document.body.classList.add("has-app-update");
+  }
+
+  function dismissAppUpdate() {
+    if (!els.appUpdatePrompt) {
+      return;
+    }
+    els.appUpdatePrompt.hidden = true;
+    document.body.classList.remove("has-app-update");
+    if (state.updateVersion) {
+      try {
+        window.localStorage.setItem(UPDATE_DISMISSED_STORAGE_KEY, state.updateVersion);
+      } catch (error) {
+        // Dismissal remains effective for the current page when storage is unavailable.
+      }
+    }
+  }
+
+  function applyAppUpdate() {
+    if (state.updateRequiresReloadOnly) {
+      window.location.reload();
+      return;
+    }
+    const worker = state.serviceWorkerRegistration?.waiting || state.waitingServiceWorker;
+    if (!worker) {
+      window.location.reload();
+      return;
+    }
+    state.updateReloadPending = true;
+    if (els.appUpdateButton) {
+      els.appUpdateButton.disabled = true;
+      els.appUpdateButton.textContent = "Updating…";
+    }
+    worker.postMessage({ type: "SKIP_WAITING" });
+    window.setTimeout(() => {
+      if (!state.updateReloadPending) {
+        return;
+      }
+      state.updateReloadPending = false;
+      if (els.appUpdateButton) {
+        els.appUpdateButton.disabled = false;
+        els.appUpdateButton.textContent = "Update";
+      }
+      showToast("Update is still preparing. Try again.");
+    }, 6000);
+  }
+
+  function handleServiceWorkerControllerChange() {
+    if (state.updateReloadPending) {
+      state.updateReloadPending = false;
+      window.location.reload();
+      return;
+    }
+    const controller = navigator.serviceWorker.controller;
+    if (state.serviceWorkerHadController && controller) {
+      presentServiceWorkerUpdate(controller, { requiresReload: true });
+    }
+    state.serviceWorkerHadController = Boolean(controller);
   }
 
   function projectMotion(initialVelocity, decelerationRate = MOTION_DECELERATION_RATE) {
@@ -4817,13 +5447,9 @@
   function squadronArchiveEntries() {
     const squadrons = collectSquadrons();
     const isMobile = isFocusedMobileLayout();
-    const query = normalizeText(state.squadronQuery);
     const filteredSquadrons = isMobile
       ? squadrons.filter((squadron) => {
-          if (state.squadronCountryFilter && squadron.country !== state.squadronCountryFilter) {
-            return false;
-          }
-          return !query || normalizeText(`${squadron.name} ${squadron.country} ${squadron.aircraftTypes.join(" ")}`).includes(query);
+          return !state.squadronCountryFilter || squadron.country === state.squadronCountryFilter;
         })
       : squadrons;
     const orderedSquadrons = isMobile
@@ -6376,7 +7002,7 @@
   }
 
   function renderDex() {
-    if (!els.aircraftSearch || !els.dexCount || !els.aircraftGrid) {
+    if (!els.dexCount || !els.aircraftGrid) {
       return;
     }
     const entries = filteredAircraftEntries();
@@ -6393,17 +7019,9 @@
   }
 
   function filteredAircraftEntries() {
-    const query = normalizeText(els.aircraftSearch?.value || "");
     const familyFilter = state.dexFamilyFilter;
     return state.data.aircraft.filter((entry) => {
-      if (familyFilter && aircraftFamilyIdForEntry(entry) !== familyFilter) {
-        return false;
-      }
-      if (!query) {
-        return true;
-      }
-      const squadronText = entry.squadrons.map((squadron) => `${squadron.name} ${squadron.unitLabel}`).join(" ");
-      return normalizeText(`${entry.typeName} ${entry.countries.join(" ")} ${squadronText}`).includes(query);
+      return !familyFilter || aircraftFamilyIdForEntry(entry) === familyFilter;
     });
   }
 
@@ -6420,13 +7038,10 @@
     state.dexFamilyFilter = family;
     state.dexVisibleCount = MOBILE_ARCHIVE_PAGE_SIZE;
     state.selectedAircraftId = null;
-    if (els.aircraftSearch) {
-      els.aircraftSearch.value = "";
-    }
     setActiveTab("dexView");
     updateDeepLink("family", family);
     renderDex();
-    window.requestAnimationFrame(() => els.aircraftSearch?.focus({ preventScroll: true }));
+    window.requestAnimationFrame(() => els.dexFamilyFilter?.querySelector(".is-active")?.focus({ preventScroll: true }));
   }
 
   function renderDexFamilyFilter() {
