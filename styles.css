@@ -7604,18 +7604,17 @@ button.location-unit-chip:focus-visible,
 }
 
 @media (max-width: 1040px) {
-  /* Lock map scrolling without position:fixed. A fixed body with an explicit
-     100dvh height is the map-only shell difference and, on iOS standalone,
-     stops short of the home indicator and leaves a black gap under the tabs. */
+  /* Lock map scrolling without position:fixed. The viewport variables switch
+     to 100vh in iOS standalone mode because WebKit under-reports dvh/svh there. */
   html:has(body[data-page-view="mapView"].is-map-canvas-active) {
-    height: 100%;
+    height: var(--mobile-map-viewport-height);
     overflow: hidden;
     overscroll-behavior: none;
   }
 
   body[data-page-view="mapView"].is-map-canvas-active {
-    height: 100%;
-    max-height: 100%;
+    height: var(--mobile-map-viewport-height);
+    max-height: var(--mobile-map-viewport-height);
     overflow: hidden;
     overscroll-behavior: none;
   }
@@ -9189,6 +9188,8 @@ button.location-unit-chip:focus-visible,
   :root {
     --mobile-bottom-inset: max(12px, env(safe-area-inset-bottom));
     --mobile-header-height: calc(55px + max(10px, env(safe-area-inset-top)));
+    --mobile-map-min-viewport-height: 100svh;
+    --mobile-map-viewport-height: 100dvh;
     --mobile-tab-height: calc(60px + var(--mobile-bottom-inset));
     --mobile-archive-hero-title-inset: max(var(--space-xs), env(safe-area-inset-top));
     --mobile-archive-hero-padding-top: calc(var(--space-md) + var(--mobile-archive-hero-title-inset));
@@ -9196,11 +9197,13 @@ button.location-unit-chip:focus-visible,
     --mobile-page-content-bottom-padding: var(--space-lg);
   }
 
-  /* Map no longer uses a position:fixed body, so it can share the same bottom
-     inset as the other pages. Keep bleed disabled so standalone lvh/dvh math
-     cannot reinflate the tab bar. */
-  body[data-page-view="mapView"] {
-    --mobile-standalone-bottom-bleed: 0px;
+  /* Installed iOS web apps report dvh/svh without the lower screen region.
+     In standalone mode, legacy vh covers the full edge-to-edge viewport. */
+  @media (display-mode: standalone) {
+    :root {
+      --mobile-map-min-viewport-height: 100vh;
+      --mobile-map-viewport-height: 100vh;
+    }
   }
 
   .site-header {
@@ -9277,8 +9280,8 @@ button.location-unit-chip:focus-visible,
 
   /* Map bottom sheets */
   #mapView .map-workspace {
-    height: calc(100dvh - var(--mobile-header-height));
-    min-height: calc(100svh - var(--mobile-header-height));
+    height: calc(var(--mobile-map-viewport-height) - var(--mobile-header-height));
+    min-height: calc(var(--mobile-map-min-viewport-height) - var(--mobile-header-height));
   }
 
   #mapView .map-panel-backdrop {
@@ -9699,8 +9702,8 @@ button.location-unit-chip:focus-visible,
   }
 
   body[data-page-view="mapView"] #mapView .map-workspace {
-    height: calc(100dvh - var(--mobile-header-height) - var(--mobile-tab-height));
-    min-height: calc(100svh - var(--mobile-header-height) - var(--mobile-tab-height));
+    height: calc(var(--mobile-map-viewport-height) - var(--mobile-header-height) - var(--mobile-tab-height));
+    min-height: calc(var(--mobile-map-min-viewport-height) - var(--mobile-header-height) - var(--mobile-tab-height));
   }
 
   body[data-page-view="mapView"] .mobile-map-location-nav {
@@ -10290,8 +10293,8 @@ button.location-unit-chip:focus-visible,
   }
 
   #mapView .map-workspace {
-    height: calc(100dvh - var(--mobile-header-height) - var(--mobile-tab-height));
-    min-height: calc(100svh - var(--mobile-header-height) - var(--mobile-tab-height));
+    height: calc(var(--mobile-map-viewport-height) - var(--mobile-header-height) - var(--mobile-tab-height));
+    min-height: calc(var(--mobile-map-min-viewport-height) - var(--mobile-header-height) - var(--mobile-tab-height));
   }
 
   #mapView .map-workspace > .map-panel-toggle,
@@ -10632,8 +10635,8 @@ button.location-unit-chip:focus-visible,
   #mapView #mapResults {
     top: 0;
     bottom: 0;
-    height: calc(100dvh - var(--mobile-header-height) - var(--mobile-tab-height));
-    max-height: calc(100dvh - var(--mobile-header-height) - var(--mobile-tab-height));
+    height: calc(var(--mobile-map-viewport-height) - var(--mobile-header-height) - var(--mobile-tab-height));
+    max-height: calc(var(--mobile-map-viewport-height) - var(--mobile-header-height) - var(--mobile-tab-height));
   }
 }
 
