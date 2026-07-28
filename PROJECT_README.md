@@ -48,6 +48,8 @@ The manager supports:
   quality queue when complete;
 - transactional database writes with automatic SQL snapshot export;
 - database integrity/snapshot status and local ignored backups;
+- tunable image output width and JPEG quality for builds, persisted locally in
+  `.spotterdex-manager-build-settings.json`;
 - builds and generated-file orphan detection.
 
 Set `LLM_API_KEY` only in the manager process environment or the local, ignored root `.env` file when using AI captions. Copy `.env.example` to `.env` and fill in the key if preferred. It is never sent to browser JavaScript or written to the catalog.
@@ -108,6 +110,8 @@ The builder reads SQLite in read-only mode, validates the catalog and SQL snapsh
 - `data/spotterdex-exif.js` — Stats-only EXIF payload;
 - processed photos, thumbnails, and unit logos;
 - share pages, `sitemap.xml`, and `robots.txt`.
+
+The published web profile favours fast page loads over archival-grade derivatives. Full JPEGs default to 2048 px wide at quality 60; thumbnails default to 768 px wide at quality 50, both at 4:2:0 chroma subsampling. Sources at or below 1920 px wide are not upscaled beyond 1920 px. `raw_assets/` originals are never modified. Manager builds pass the Build panel settings from `.spotterdex-manager-build-settings.json`; the CLI accepts `--width`, `--thumb-width`, `--jpeg-quality`, and `--thumb-jpeg-quality`.
 
 The normalized manifest contains `entities` maps for countries, aircraft, units, locations, events, and photos plus derived indexes such as `photoIdsByAircraft`, `photoIdsByUnit`, and `photoIdsByLocation`. Aircraft entities include `heroPhotoId` and nullable `doubleWidth`; `null` means the existing automatic archive layout remains active.
 

@@ -38,9 +38,9 @@ IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp"}
 AIRCRAFT_FAMILIES = {"fighter", "heavy", "helicopter", "light", "medium"}
 # The published site favors fast page loads over archival-grade derivatives. Source
 # images remain untouched in raw_assets; these settings only affect GitHub Pages output.
-FULL_JPEG_QUALITY = 70
+FULL_JPEG_QUALITY = 60
 FULL_JPEG_SUBSAMPLING = 2  # 4:2:0 provides a substantial reduction for web viewing.
-THUMB_JPEG_QUALITY = 55
+THUMB_JPEG_QUALITY = 50
 THUMB_JPEG_SUBSAMPLING = 2
 LOGO_PNG_COLORS = 256
 FULL_JPEG_PROFILE = f"spotterdex-full-jpeg-v4-q{FULL_JPEG_QUALITY}-s{FULL_JPEG_SUBSAMPLING}"
@@ -204,8 +204,8 @@ def parse_args() -> argparse.Namespace:
         default="https://tlkh.github.io/spotterdex/",
         help="Public site URL used in generated social preview metadata.",
     )
-    parser.add_argument("--width", type=int, default=2560, help="Processed JPEG width in pixels (default: 2560).")
-    parser.add_argument("--thumb-width", type=int, default=1024, help="Generated thumbnail width in pixels (default: 1024).")
+    parser.add_argument("--width", type=int, default=2048, help="Processed JPEG width in pixels (default: 2048).")
+    parser.add_argument("--thumb-width", type=int, default=768, help="Generated thumbnail width in pixels (default: 768).")
     parser.add_argument(
         "--jpeg-quality",
         type=int,
@@ -1711,7 +1711,7 @@ def full_output_width(source_width: int, configured_width: int) -> int:
     """Choose the full-size derivative width for a source image.
 
     Sources at or below 1920px are intentionally upscaled to no more than
-    1920px. Larger sources retain the existing configured 2560px target.
+    1920px. Larger sources use the configured output width target.
     """
     requested_width = max(1, int(configured_width))
     if int(source_width) <= SMALL_SOURCE_MAX_WIDTH:

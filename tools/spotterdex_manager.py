@@ -150,10 +150,10 @@ BUILD_SETTINGS_PATH = ROOT / ".spotterdex-manager-build-settings.json"
 # generated site so a reviewer can tune output size and compression without
 # changing source data.
 BUILD_SETTING_DEFAULTS: Dict[str, int] = {
-    "image_width": 2560,
-    "thumbnail_width": 1024,
-    "image_jpeg_quality": 70,
-    "thumbnail_jpeg_quality": 55,
+    "image_width": 2048,
+    "thumbnail_width": 768,
+    "image_jpeg_quality": 60,
+    "thumbnail_jpeg_quality": 50,
 }
 
 BUILD_SETTING_BOUNDS: Dict[str, Tuple[int, int]] = {

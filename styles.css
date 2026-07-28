@@ -9189,6 +9189,16 @@ button.location-unit-chip:focus-visible,
     --mobile-page-content-bottom-padding: var(--space-lg);
   }
 
+  /* The map is a non-scrolling full-screen canvas. In iOS standalone mode that
+     can inflate the lower safe-area inset and/or leave 100lvh > 100dvh, which
+     stacks into a visibly detached tab bar. Keep the map's bottom inset compact
+     and disable the standalone bleed that scrollable pages still use. */
+  body[data-page-view="mapView"] {
+    --mobile-bottom-inset: clamp(var(--space-xs), env(safe-area-inset-bottom), var(--space-md));
+    --mobile-tab-height: calc(60px + var(--mobile-bottom-inset));
+    --mobile-standalone-bottom-bleed: 0px;
+  }
+
   .site-header {
     min-height: var(--mobile-header-height);
     padding: max(10px, env(safe-area-inset-top)) 12px 10px;
@@ -10456,7 +10466,8 @@ button.location-unit-chip:focus-visible,
   /* In iOS standalone mode, the dynamic viewport can stop above the home
      indicator even though the page background paints behind it. Extend only
      the tab-bar material through that viewport shortfall; its controls retain
-     their safe-area position. */
+     their safe-area position. Scrollable pages usually report 100dvh ~= 100lvh,
+     so the bleed stays at 0 there. The map page zeros this variable above. */
   @supports (height: 100lvh) {
     @media (display-mode: standalone) {
       :root {

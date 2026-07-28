@@ -34,7 +34,7 @@ python3 tools/spotterdex_manager.py
 
 Open `http://127.0.0.1:8765/` and stop the process with `Ctrl+C` after use.
 
-The manager writes the database transactionally and automatically refreshes `content/spotterdex.sql`. It supports aircraft/unit/location creation, photo tagging and movement, events, aircraft-type/unit/location/event heroes, optional aircraft card widths, captions, bulk caption review, configurable quality checks, builds, database backups, and orphan cleanup. Quality thresholds are manager-local in the ignored `.spotterdex-manager-quality-settings.json`; the Quality view can save or reset them. Empty-space detection is an advisory composition check for large low-detail sky or background regions.
+The manager writes the database transactionally and automatically refreshes `content/spotterdex.sql`. It supports aircraft/unit/location creation, photo tagging and movement, events, aircraft-type/unit/location/event heroes, optional aircraft card widths, captions, bulk caption review, configurable quality checks, tunable image build settings, builds, database backups, and orphan cleanup. Quality thresholds are manager-local in the ignored `.spotterdex-manager-quality-settings.json`; the Quality view can save or reset them. Image width and JPEG quality for builds are manager-local in `.spotterdex-manager-build-settings.json`. Empty-space detection is an advisory composition check for large low-detail sky or background regions.
 
 Photo rules:
 
@@ -99,6 +99,8 @@ The builder opens the database read-only, validates relationships and raw paths,
 - generated photos, thumbnails, and unit logos;
 - share pages, sitemap, and robots file.
 
+The published web profile in `tools/build_spotterdex.py` favours fast page loads over archival-grade derivatives: full JPEGs default to 2048 px wide at quality 60, thumbnails to 768 px wide at quality 50, both at 4:2:0 chroma subsampling. Sources at or below 1920 px wide are not upscaled beyond 1920 px. `raw_assets/` sources are never modified. Manager builds pass width and quality settings from `.spotterdex-manager-build-settings.json`; the CLI accepts `--width`, `--thumb-width`, `--jpeg-quality`, and `--thumb-jpeg-quality`.
+
 Informational build notes, such as empty enabled locations, are acceptable. Strict mode must have no warnings or errors.
 
 ## Generated data contract
@@ -118,7 +120,7 @@ Aircraft entities may also contain `heroPhotoId` and nullable `doubleWidth` sett
 
 Indexes include photo IDs by aircraft, unit, location, and event plus unit IDs by aircraft. Public photo records hold ID references and media metadata rather than repeated display names. `script.js` resolves the normalized graph into page view models.
 
-Generated full JPEGs remain 2560 px wide at the configured web profile; thumbnails remain 1024 px wide. Generated files retain normalized EXIF orientation.
+Generated full JPEGs default to 2048 px wide at quality 60; thumbnails default to 768 px wide at quality 50. Generated files retain normalized EXIF orientation.
 
 ## Presentation layer
 
@@ -182,7 +184,7 @@ For catalog work, stage:
 - changed `assets/generated/` and `assets/logos/`
 - `service-worker.js` when the builder restamps its cache versions
 
-Never stage `raw_assets/`, manager caches, quality acknowledgements/settings, Playwright artifacts, or database backups.
+Never stage `raw_assets/`, manager caches, quality acknowledgements/settings, build settings, Playwright artifacts, or database backups.
 
 ## Editing principles
 
