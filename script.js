@@ -160,6 +160,8 @@
     scrollEdgeFrame: 0,
     installPromptEvent: null,
     connectivityOffline: false,
+    offlineMediaCoverageToken: 0,
+    offlineMediaRefreshFrame: 0,
     sessionRestore: null,
     toastTimer: null,
     searchIndex: [],
@@ -1262,6 +1264,8 @@
     els.locationSearch?.addEventListener("input", renderLocations);
 
     document.addEventListener("click", handleDocumentClick);
+    document.addEventListener("error", handlePhotoMediaError, true);
+    document.addEventListener("load", handlePhotoMediaLoad, true);
     document.addEventListener("keydown", handleKeydown);
     window.addEventListener("message", handleStoryPreviewMessage);
     document.addEventListener("pointerdown", handleSheetPointerDown);
@@ -1380,10 +1384,10 @@
       setViewerInfoOpen(false);
     }
 
-    const copyFieldGuideButton = event.target.closest("[data-copy-field-guide]");
-    if (copyFieldGuideButton) {
-      copyFieldGuideLink(copyFieldGuideButton).catch(() => {
-        copyFieldGuideButton.textContent = "Copy failed";
+    const fieldGuideShareButton = event.target.closest("[data-field-guide-share]");
+    if (fieldGuideShareButton) {
+      shareFieldGuide(fieldGuideShareButton).catch(() => {
+        fieldGuideShareButton.textContent = nativeShareAvailable() ? "Share failed" : "Copy failed";
       });
       return;
     }
@@ -2129,9 +2133,225 @@
         refreshMapLayout();
       }
     }
+    updatePhotoMediaFallbackCopy();
+    if (!offline) {
+      retryUnavailablePhotoMedia();
+    }
+    scheduleOfflineMediaCoverageRefresh();
     if (options.announce !== false) {
       showToast(offline ? "Offline · cached catalog available" : "Back online");
     }
+  }
+
+  function photoMediaFallbackCopy() {
+    return state.connectivityOffline
+      ? { kicker: "Not cached", hint: "Reconnect to load this photo." }
+      : { kicker: "Photo unavailable", hint: "Try again when the connection is stable." };
+  }
+
+  function renderPhotoMediaFallback(photo, label = "") {
+    const copy = photoMediaFallbackCopy();
+    const subject = photo ? photoSubjectLabel(photo) : label || "Aviation photo";
+    const metadata = photo
+      ? [photoContextLabel(photo), displayPhotoDate(photo)].filter(Boolean).join(" · ")
+      : "SpotterDex photo";
+    return `
+      <span class="photo-media-fallback" data-photo-media-fallback role="img" aria-label="${escapeAttr(`${copy.kicker}. ${subject}. ${metadata}. ${copy.hint}`)}">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M4 18V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12"></path>
+          <path d="m4 16 4.5-4.5 3 3 2-2L20 19H5a1 1 0 0 1-1-1Z"></path>
+          <circle cx="15.5" cy="8.5" r="1.5"></circle>
+        </svg>
+        <span class="photo-media-fallback-kicker">${escapeHtml(copy.kicker)}</span>
+        <strong>${escapeHtml(subject)}</strong>
+        <span class="photo-media-fallback-meta">${escapeHtml(metadata)}</span>
+        <small class="photo-media-fallback-hint">${escapeHtml(copy.hint)}</small>
+      </span>
+    `;
+  }
+
+  function photoMediaSurface(image) {
+    return image.closest(
+      ".photo-card, .detail-hero, .airshow-story-scene, .airshow-story-carousel-frame, .viewer-image-frame"
+    );
+  }
+
+  function handlePhotoMediaError(event) {
+    const image = event.target;
+    if (!(image instanceof HTMLImageElement) || !image.dataset.photoMedia) {
+      return;
+    }
+    const surface = photoMediaSurface(image);
+    if (!surface) {
+      image.hidden = true;
+      return;
+    }
+    const photo = state.photoById?.get(image.dataset.photoId) || null;
+    image.hidden = true;
+    image.dataset.mediaUnavailable = "true";
+    surface.classList.add("is-media-unavailable");
+    if (!surface.querySelector("[data-photo-media-fallback]")) {
+      surface.insertAdjacentHTML("beforeend", renderPhotoMediaFallback(photo, image.alt));
+    }
+    if (surface.matches(".photo-card")) {
+      if (!surface.dataset.originalAriaLabel) {
+        surface.dataset.originalAriaLabel = surface.getAttribute("aria-label") || "";
+      }
+      const copy = photoMediaFallbackCopy();
+      const subject = photo ? photoSubjectLabel(photo) : image.alt || "Photo";
+      surface.setAttribute("aria-label", `${copy.kicker}. ${subject}. ${copy.hint}`);
+    }
+  }
+
+  function handlePhotoMediaLoad(event) {
+    const image = event.target;
+    if (!(image instanceof HTMLImageElement) || !image.dataset.photoMedia) {
+      return;
+    }
+    image.hidden = false;
+    delete image.dataset.mediaUnavailable;
+    const surface = photoMediaSurface(image);
+    if (!surface) {
+      return;
+    }
+    const unavailable = Array.from(surface.querySelectorAll("img[data-photo-media]"))
+      .some((candidate) => candidate.dataset.mediaUnavailable === "true");
+    if (!unavailable) {
+      surface.classList.remove("is-media-unavailable");
+      surface.querySelector("[data-photo-media-fallback]")?.remove();
+      if (surface.dataset.originalAriaLabel !== undefined) {
+        const originalLabel = surface.dataset.originalAriaLabel;
+        if (originalLabel) surface.setAttribute("aria-label", originalLabel);
+        else surface.removeAttribute("aria-label");
+        delete surface.dataset.originalAriaLabel;
+      }
+    }
+  }
+
+  function updatePhotoMediaFallbackCopy() {
+    const copy = photoMediaFallbackCopy();
+    document.querySelectorAll("[data-photo-media-fallback]").forEach((fallback) => {
+      const kicker = fallback.querySelector(".photo-media-fallback-kicker");
+      const hint = fallback.querySelector(".photo-media-fallback-hint");
+      if (kicker) kicker.textContent = copy.kicker;
+      if (hint) hint.textContent = copy.hint;
+      const subject = fallback.querySelector("strong")?.textContent || "Aviation photo";
+      const metadata = fallback.querySelector(".photo-media-fallback-meta")?.textContent || "";
+      fallback.setAttribute("aria-label", [copy.kicker, subject, metadata, copy.hint].filter(Boolean).join(". "));
+    });
+  }
+
+  function retryUnavailablePhotoMedia() {
+    const images = Array.from(document.querySelectorAll('img[data-media-unavailable="true"]'));
+    if (!images.length) {
+      return;
+    }
+    images.forEach((image) => {
+      const source = image.getAttribute("src");
+      image.hidden = false;
+      if (source) image.removeAttribute("src");
+      window.requestAnimationFrame(() => {
+        if (source) image.setAttribute("src", source);
+      });
+    });
+  }
+
+  function renderOfflineMediaCoverage() {
+    return `
+      <aside class="offline-media-coverage" data-offline-media-coverage role="status" aria-live="polite" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M6.5 18.5h11a3.5 3.5 0 0 0 .8-6.9A6.5 6.5 0 0 0 5.7 10a4.3 4.3 0 0 0 .8 8.5Z"></path>
+          <path d="m9 13 6 6M15 13l-6 6"></path>
+        </svg>
+        <span>
+          <strong data-offline-media-count>Checking saved photos…</strong>
+          <small data-offline-media-hint>Only previously viewed media is available without a connection.</small>
+        </span>
+      </aside>
+    `;
+  }
+
+  function activeDetailPhotosForOffline() {
+    const activeView = document.querySelector("[data-view].is-active")?.id;
+    if (activeView === "aircraftDetailView") {
+      const aircraft = state.aircraftById?.get(state.selectedAircraftId);
+      return aircraft ? photosForAircraft(aircraft) : [];
+    }
+    if (activeView === "squadronDetailView") {
+      const squadron = collectSquadrons().find((item) => item.id === state.selectedSquadronId);
+      return squadron ? photosForSquadronRecord(squadron) : [];
+    }
+    if (activeView === "locationDetailView") {
+      const pin = state.pinById?.get(state.selectedPinId);
+      return pin ? photosForPin(pin) : [];
+    }
+    if (activeView === "airshowDetailView") {
+      const airshow = previewAirshow(state.airshowById?.get(state.selectedAirshowId));
+      return airshow ? photosForAirshow(airshow) : [];
+    }
+    return [];
+  }
+
+  function photoMediaSources(photo) {
+    return unique([photo?.thumbnail, photo?.image].filter(Boolean));
+  }
+
+  async function photoIsCachedForOffline(photo) {
+    if (!("caches" in window)) {
+      return document.querySelector(`img[data-photo-id="${CSS.escape(photo.id)}"]`)?.naturalWidth > 0;
+    }
+    for (const source of photoMediaSources(photo)) {
+      try {
+        const response = await window.caches.match(new URL(source, document.baseURI).href);
+        if (response) {
+          return true;
+        }
+      } catch (error) {
+        console.warn("Could not inspect offline photo cache", error);
+        return false;
+      }
+    }
+    return false;
+  }
+
+  async function refreshOfflineMediaCoverage() {
+    const panel = document.querySelector("[data-view].is-active [data-offline-media-coverage]");
+    if (!panel) {
+      return;
+    }
+    if (!state.connectivityOffline) {
+      panel.hidden = true;
+      return;
+    }
+
+    const photos = Array.from(
+      new Map(activeDetailPhotosForOffline().map((photo) => [photo.id, photo])).values()
+    );
+    const token = ++state.offlineMediaCoverageToken;
+    const count = panel.querySelector("[data-offline-media-count]");
+    const hint = panel.querySelector("[data-offline-media-hint]");
+    panel.hidden = false;
+    if (count) count.textContent = "Checking saved photos…";
+    if (hint) hint.textContent = "Only previously viewed media is available without a connection.";
+    const availability = await Promise.all(photos.map((photo) => photoIsCachedForOffline(photo)));
+    if (token !== state.offlineMediaCoverageToken || !panel.isConnected || !state.connectivityOffline) {
+      return;
+    }
+    const available = availability.filter(Boolean).length;
+    const total = photos.length;
+    if (count) count.textContent = `${available} of ${total} photo${total === 1 ? "" : "s"} available offline`;
+    if (hint) {
+      hint.textContent = available === total
+        ? "This field guide is ready to browse without a connection."
+        : `Reconnect to load the remaining ${total - available} photo${total - available === 1 ? "" : "s"}.`;
+    }
+  }
+
+  function scheduleOfflineMediaCoverageRefresh() {
+    window.cancelAnimationFrame(state.offlineMediaRefreshFrame);
+    state.offlineMediaRefreshFrame = window.requestAnimationFrame(() => {
+      refreshOfflineMediaCoverage().catch((error) => console.warn("Could not update offline media coverage", error));
+    });
   }
 
   function showToast(message) {
@@ -3013,14 +3233,46 @@
     if (els.canonical) els.canonical.href = canonicalUrl;
   }
 
-  async function copyFieldGuideLink(button) {
-    await copyText(shareUrlForCurrentState());
-    showToast("Field guide link copied");
-    const originalLabel = button.dataset.copyFieldGuide || "Copy link";
-    button.textContent = "Copied";
-    window.setTimeout(() => {
+  function nativeShareAvailable() {
+    return typeof navigator.share === "function";
+  }
+
+  function fieldGuideSharePayload() {
+    const title = document.title.replace(/\s*\|\s*SpotterDex\s*$/, "").trim() || "SpotterDex field guide";
+    const description = String(els.metaDescription?.content || "").trim();
+    return {
+      title,
+      text: description || `Open the ${title} field guide in SpotterDex.`,
+      url: shareUrlForCurrentState()
+    };
+  }
+
+  function showFieldGuideActionStatus(button, label) {
+    const originalLabel = button.dataset.fieldGuideShare || (nativeShareAvailable() ? "Share" : "Copy link");
+    button.textContent = label;
+    window.clearTimeout(Number(button.dataset.statusTimer) || 0);
+    button.dataset.statusTimer = String(window.setTimeout(() => {
       button.textContent = originalLabel;
-    }, 1800);
+    }, 1800));
+  }
+
+  async function shareFieldGuide(button) {
+    const payload = fieldGuideSharePayload();
+    if (nativeShareAvailable()) {
+      try {
+        await navigator.share(payload);
+        showToast("Field guide shared");
+        return;
+      } catch (error) {
+        if (error?.name === "AbortError") {
+          return;
+        }
+      }
+    }
+
+    await copyText(payload.url);
+    showFieldGuideActionStatus(button, "Copied");
+    showToast("Field guide link copied");
   }
 
   function shareUrlForCurrentState() {
@@ -5648,9 +5900,11 @@
           description: dateLabel,
           image: heroImage,
           alt: `${airshow.name} hero photo`,
+          photo: hero,
           actions: renderFieldGuideActions("Airshow actions"),
           className: "airshow-field-guide-hero"
         })}
+      ${renderOfflineMediaCoverage()}
       ${renderPageWriteUp(airshow.writeUp, "About this airshow")}
 
       <section class="detail-photo-section airshow-detail-archive">
@@ -5666,6 +5920,7 @@
     if (hasCinematicStory) {
       window.requestAnimationFrame(mountAirshowStory);
     }
+    scheduleOfflineMediaCoverageRefresh();
   }
 
   function previewAirshow(airshow) {
@@ -5772,7 +6027,7 @@
     const storyAttributes = options.backdrop
       ? ""
       : ` data-story-thumb="${escapeAttr(thumbnail)}"${full ? ` data-story-full="${escapeAttr(full)}"` : ""}`;
-    return `<img class="${className}" src="${escapeAttr(thumbnail)}"${storyAttributes} alt="" loading="${index < 2 ? "eager" : "lazy"}" decoding="async" style="object-position:${(config.focalX * 100).toFixed(2)}% ${(config.focalY * 100).toFixed(2)}%">`;
+    return `<img class="${className}" data-photo-media="story" data-photo-id="${escapeAttr(photo.id)}" src="${escapeAttr(thumbnail)}"${storyAttributes} alt="${escapeAttr(`${photoSubjectLabel(photo)} at ${photo.locationName}`)}" loading="${index < 2 ? "eager" : "lazy"}" decoding="async" style="object-position:${(config.focalX * 100).toFixed(2)}% ${(config.focalY * 100).toFixed(2)}%">`;
   }
 
   function renderAirshowStoryCarousel(segment, segmentIndex) {
@@ -5797,7 +6052,7 @@
             const source = photo.thumbnail || photo.image || "";
             return `
               <button class="airshow-story-carousel-frame" type="button" data-photo-id="${escapeAttr(photo.id)}" data-photo-context="airshow" data-story-segment-index="${segmentIndex}" aria-label="Open supporting photo ${index + 1} of ${supporting.length}: ${escapeAttr(subject)}">
-                ${source ? `<img src="${escapeAttr(source)}" loading="lazy" decoding="async" alt="">` : '<span class="airshow-story-media-fallback"></span>'}
+                ${source ? `<img data-photo-media="story" data-photo-id="${escapeAttr(photo.id)}" src="${escapeAttr(source)}" loading="lazy" decoding="async" alt="${escapeAttr(`${subject} at ${photo.locationName}`)}">` : '<span class="airshow-story-media-fallback"></span>'}
               </button>
             `;
           }).join("")}
@@ -6384,9 +6639,12 @@
           : "",
         image: heroImage,
         alt: `${squadron.name} hero photo`,
+        photo: hero,
         mark: logo,
+        actions: renderFieldGuideActions("Squadron field guide"),
         className: "squadron-field-guide-hero"
       })}
+      ${renderOfflineMediaCoverage()}
       ${renderPageWriteUp(squadron.writeUp, "About this squadron")}
       <section class="detail-photo-section squadron-unit-archive squadron-specific-photo-section${otherPhotos.length ? " has-other-sections" : ""}">
         <div class="detail-section-heading">
@@ -6410,6 +6668,7 @@
         ${renderAircraftTypePhotoGroups(otherPhotos, "squadron", "squadron-aircraft-types")}
       </section>
     `;
+    scheduleOfflineMediaCoverageRefresh();
   }
 
   function renderLocationPage() {
@@ -6444,9 +6703,11 @@
         description: "",
         image: heroImage,
         alt: `${pin.name} hero photo`,
+        photo: profile.heroPhoto,
         actions: renderFieldGuideActions("Location field guide"),
         className: "location-field-guide-hero"
       })}
+      ${renderOfflineMediaCoverage()}
       <section class="location-profile-card" aria-label="Location profile">
         <div class="location-profile-card-title">
           <p class="eyebrow">Location profile</p>
@@ -6477,12 +6738,14 @@
         ${renderAircraftTypePhotoGroups(otherPhotos, "location", "location-aircraft-types")}
       </section>
     `;
+    scheduleOfflineMediaCoverageRefresh();
   }
 
   function renderFieldGuideActions(label) {
+    const actionLabel = nativeShareAvailable() ? "Share" : "Copy link";
     return `
       <div class="detail-hero-actions" aria-label="${escapeAttr(label)} actions">
-        <button class="detail-hero-action" type="button" data-copy-field-guide="Copy link">Copy link</button>
+        <button class="detail-hero-action" type="button" data-field-guide-share="${actionLabel}">${actionLabel}</button>
       </div>
     `;
   }
@@ -6563,10 +6826,13 @@
     return html;
   }
 
-  function renderDetailHero({ backView, backLabel, eyebrow, title, description, image, alt, mark = "", actions = "", footer = "", className = "" }) {
+  function renderDetailHero({ backView, backLabel, eyebrow, title, description, image, alt, photo = null, mark = "", actions = "", footer = "", className = "" }) {
+    const photoAttributes = image
+      ? ` data-photo-media="hero"${photo?.id ? ` data-photo-id="${escapeAttr(photo.id)}"` : ""}`
+      : "";
     return `
       <section class="detail-hero${image ? " has-image" : ""}${className ? ` ${escapeAttr(className)}` : ""}">
-        ${image ? `<img src="${escapeAttr(image)}" alt="${escapeAttr(alt)}">` : ""}
+        ${image ? `<img src="${escapeAttr(image)}"${photoAttributes} alt="${escapeAttr(alt)}">` : ""}
         <div class="detail-hero-scrim" aria-hidden="true"></div>
         <button class="detail-back-button" type="button" data-detail-back="${escapeAttr(backView)}">← ${escapeHtml(backLabel)}</button>
         ${actions}
@@ -7502,9 +7768,11 @@
         description: `${unitCount} ${unitLabel}`,
         image: heroImage,
         alt: `${entry.typeName} hero photo`,
+        photo: cover,
         actions: renderFieldGuideActions("Aircraft field guide"),
         className: "aircraft-field-guide-hero"
       })}
+      ${renderOfflineMediaCoverage()}
       ${renderPageWriteUp(entry.writeUp, "About this aircraft")}
       <section class="detail-overview-card aircraft-archive-browser" aria-labelledby="aircraftArchiveHeading">
         <div class="detail-overview-toolbar">
@@ -7531,6 +7799,7 @@
         ${renderPhotoGroups(archivePhotos, state.dexGroupMode, "dex")}
       </section>
     `;
+    scheduleOfflineMediaCoverageRefresh();
   }
 
   function renderAircraftSquadronSection(entry) {
@@ -7835,7 +8104,7 @@
     const sizes = candidates.length > 1 && options.sizes ? ` sizes="${escapeAttr(options.sizes)}"` : "";
     const width = dimensions.width ? ` width="${dimensions.width}"` : "";
     const height = dimensions.height ? ` height="${dimensions.height}"` : "";
-    return `<img${className} src="${escapeAttr(source)}"${srcset}${sizes}${width}${height} loading="${loading}" decoding="async"${priority} alt="${escapeAttr(alt)}">`;
+    return `<img${className} data-photo-media="photo" data-photo-id="${escapeAttr(photo.id)}" src="${escapeAttr(source)}"${srcset}${sizes}${width}${height} loading="${loading}" decoding="async"${priority} alt="${escapeAttr(alt)}">`;
   }
 
   function parseImageSize(value) {
@@ -7844,9 +8113,10 @@
   }
 
   function renderPhotoCard(photo, context, options = {}) {
+    const label = `${photoSubjectLabel(photo)} at ${photo.locationName}`;
     return `
-      <button class="photo-card" type="button" data-photo-id="${escapeAttr(photo.id)}" data-photo-context="${escapeAttr(context)}">
-        ${renderResponsivePhotoImage(photo, `${photoSubjectLabel(photo)} at ${photo.locationName}`, {
+      <button class="photo-card" type="button" data-photo-id="${escapeAttr(photo.id)}" data-photo-context="${escapeAttr(context)}" aria-label="Open ${escapeAttr(label)}">
+        ${renderResponsivePhotoImage(photo, label, {
           sizes: options.fullResolution
             ? "100vw"
             : "(max-width: 520px) 100vw, (max-width: 1040px) 50vw, 360px",
@@ -8655,6 +8925,8 @@
       imageSource ? `url(${JSON.stringify(imageSource)})` : "none"
     );
     els.viewerImage.addEventListener("load", () => revealViewerPhoto(renderToken), { once: true });
+    els.viewerImage.dataset.photoMedia = "viewer";
+    els.viewerImage.dataset.photoId = photo.id;
     els.viewerImage.src = imageSource;
     renderViewerCarouselNeighbors(photo);
     if (els.viewerImage.complete && imageSource) {

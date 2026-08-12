@@ -10041,6 +10041,11 @@ button.location-unit-chip:focus-visible,
     text-transform: uppercase;
   }
 
+  .site-header.is-contextual > .mobile-connectivity {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
   .mobile-connectivity[hidden] {
     display: none;
   }
@@ -12449,6 +12454,195 @@ body {
   }
 }
 
+/* Intentional offline photo states and per-field-guide cache coverage. */
+.offline-media-coverage {
+  display: grid;
+  min-height: 72px;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: var(--space-xs);
+  align-items: center;
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-accent-active);
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--color-accent) 9%, var(--color-surface));
+  color: var(--color-ink);
+  box-shadow: var(--shadow-soft);
+}
+
+.offline-media-coverage[hidden] {
+  display: none;
+}
+
+.offline-media-coverage > svg {
+  width: 30px;
+  height: 30px;
+  fill: none;
+  stroke: var(--color-accent-strong);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+}
+
+.offline-media-coverage > span {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-3xs);
+}
+
+.offline-media-coverage strong,
+.offline-media-coverage small {
+  overflow-wrap: anywhere;
+}
+
+.offline-media-coverage strong {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+}
+
+.offline-media-coverage small {
+  color: var(--color-muted-strong);
+  font-size: var(--text-xs);
+}
+
+.photo-media-fallback {
+  display: grid;
+  min-width: 0;
+  place-content: center;
+  place-items: center;
+  gap: var(--space-3xs);
+  padding: var(--space-sm);
+  background:
+    radial-gradient(circle at 72% 20%, color-mix(in srgb, var(--color-accent) 12%, transparent), transparent 40%),
+    var(--color-surface-deep);
+  color: var(--color-ink);
+  pointer-events: none;
+  text-align: center;
+}
+
+img[data-media-unavailable="true"] {
+  display: none !important;
+}
+
+.photo-media-fallback > svg {
+  width: 30px;
+  height: 30px;
+  margin-bottom: var(--space-2xs);
+  fill: none;
+  stroke: var(--color-accent-strong);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.photo-media-fallback-kicker {
+  color: var(--color-accent-strong) !important;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs) !important;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.photo-media-fallback > strong {
+  display: -webkit-box;
+  overflow: hidden;
+  max-width: 28ch;
+  color: var(--color-ink) !important;
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  line-height: 1.2;
+  text-shadow: none !important;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.photo-media-fallback-meta,
+.photo-media-fallback-hint {
+  max-width: 34ch;
+  color: var(--color-muted-strong) !important;
+  font-size: var(--text-xs) !important;
+  line-height: 1.3;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+.photo-media-fallback-hint {
+  margin-top: var(--space-2xs);
+  color: var(--color-muted) !important;
+}
+
+.photo-card > .photo-media-fallback,
+.detail-hero > .photo-media-fallback,
+.airshow-story-scene > .photo-media-fallback,
+.airshow-story-carousel-frame > .photo-media-fallback {
+  position: absolute;
+  inset: 0;
+}
+
+.photo-card > .photo-media-fallback {
+  z-index: 2;
+}
+
+.photo-card.is-media-unavailable > .photo-body {
+  display: none;
+}
+
+.detail-hero > .photo-media-fallback {
+  z-index: 1;
+}
+
+.detail-hero > .photo-media-fallback > strong,
+.detail-hero > .photo-media-fallback > .photo-media-fallback-meta {
+  max-width: min(32ch, 52%);
+}
+
+.airshow-story-scene > .photo-media-fallback {
+  z-index: 2;
+}
+
+.airshow-story-carousel-frame > .photo-media-fallback {
+  z-index: 1;
+  padding: var(--space-2xs);
+}
+
+.airshow-story-carousel-frame > .photo-media-fallback > svg,
+.airshow-story-carousel-frame > .photo-media-fallback-meta,
+.airshow-story-carousel-frame > .photo-media-fallback-hint {
+  display: none;
+}
+
+.airshow-story-carousel-frame > .photo-media-fallback > strong {
+  font-size: var(--text-xs);
+}
+
+.viewer-image-frame > .photo-media-fallback {
+  position: absolute;
+  inset: 16% 12%;
+  z-index: 3;
+  border: 1px solid var(--color-white-14);
+  border-radius: var(--radius-card);
+}
+
+@media (max-width: 1040px) {
+  .offline-media-coverage {
+    margin-inline: var(--space-sm);
+  }
+
+  .detail-hero > .photo-media-fallback {
+    place-content: start center;
+    padding-top: var(--space-xl);
+  }
+
+  .detail-hero > .photo-media-fallback > strong,
+  .detail-hero > .photo-media-fallback > .photo-media-fallback-meta {
+    max-width: 72%;
+  }
+
+  .viewer-image-frame > .photo-media-fallback {
+    inset: 22% var(--space-sm);
+  }
+}
+
 /* Universal search and user-controlled app updates. */
 .header-global-search-trigger,
 .mobile-global-search-trigger,
@@ -12590,6 +12784,13 @@ body {
   background: transparent;
   color: var(--color-ink);
   font-size: var(--text-md);
+}
+
+.global-search-control input:focus,
+.global-search-control input:focus-visible {
+  outline: none !important;
+  outline-offset: 0;
+  box-shadow: none;
 }
 
 .global-search-control input::placeholder {

@@ -89,6 +89,72 @@ class ArchiveLayoutContractTests(unittest.TestCase):
         self.assertEqual(offenders, [])
 
 
+class MobileChromeLayoutContractTests(unittest.TestCase):
+    """Transient status UI must not inherit title-dependent header tracks."""
+
+    def test_contextual_offline_status_owns_a_compact_row(self) -> None:
+        matching_bodies = [
+            body
+            for selector, body in _css_rules()
+            if ".site-header.is-contextual > .mobile-connectivity" in selector
+        ]
+        self.assertTrue(matching_bodies, "expected a contextual offline-status layout rule")
+        declarations = "\n".join(matching_bodies)
+        self.assertRegex(declarations, r"grid-column\s*:\s*1\s*/\s*-1")
+        self.assertRegex(declarations, r"justify-self\s*:\s*start")
+
+
+class GlobalSearchPresentationContractTests(unittest.TestCase):
+    """The composite search field owns one intentional focus treatment."""
+
+    def test_search_input_does_not_draw_a_second_square_focus_outline(self) -> None:
+        rules = _css_rules()
+        wrapper_rules = [
+            body for selector, body in rules if ".global-search-control:focus-within" in selector
+        ]
+        input_rules = [
+            body for selector, body in rules if ".global-search-control input:focus-visible" in selector
+        ]
+        self.assertTrue(wrapper_rules, "expected the rounded search control to own the focus ring")
+        self.assertTrue(input_rules, "expected a focused-input outline reset")
+        self.assertRegex("\n".join(wrapper_rules), r"box-shadow\s*:\s*var\(--focus-ring\)")
+        self.assertRegex("\n".join(input_rules), r"outline\s*:\s*none\s*!important")
+        self.assertRegex("\n".join(input_rules), r"box-shadow\s*:\s*none")
+
+
+class OfflineMediaExperienceContractTests(unittest.TestCase):
+    """Offline photos degrade into useful archive records, not broken images."""
+
+    def setUp(self) -> None:
+        self.script = (ROOT / "script.js").read_text("utf-8")
+        self.styles = (ROOT / "styles.css").read_text("utf-8")
+
+    def test_photo_errors_render_metadata_fallbacks_and_cache_coverage(self) -> None:
+        for contract in (
+            'data-photo-media="photo"',
+            "handlePhotoMediaError",
+            "renderPhotoMediaFallback",
+            "data-offline-media-coverage",
+            "photoIsCachedForOffline",
+            "window.caches.match",
+        ):
+            with self.subTest(contract=contract):
+                self.assertIn(contract, self.script)
+        self.assertIn(".photo-card.is-media-unavailable", self.styles)
+        self.assertIn(".offline-media-coverage", self.styles)
+
+    def test_field_guides_prefer_native_share_with_copy_fallback(self) -> None:
+        share_handler = re.search(
+            r"async function shareFieldGuide\(button\) \{(.*?)\n  \}",
+            self.script,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(share_handler)
+        self.assertIn("await navigator.share(payload)", share_handler.group(1))
+        self.assertIn("await copyText(payload.url)", share_handler.group(1))
+        self.assertIn("data-field-guide-share", self.script)
+
+
 def _css_rules() -> list[tuple[str, str]]:
     """Return (selector list, declarations) for every rule in styles.css.
 
