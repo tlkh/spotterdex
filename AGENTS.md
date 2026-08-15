@@ -103,6 +103,21 @@ The published web profile in `tools/build_spotterdex.py` favours fast page loads
 
 Informational build notes, such as empty enabled locations, are acceptable. Strict mode must have no warnings or errors.
 
+## Deployment
+
+The production site is served from the `main` branch through GitHub Pages at `https://tlkh.github.io/spotterdex/`. The repository remote is `origin` (`https://github.com/tlkh/spotterdex`).
+
+When asked to deploy or push the latest work:
+
+1. Inspect `git status`, preserve unrelated user changes, and confirm the current branch and remote before staging anything.
+2. For catalog or source changes, run the full local build and verification sequence above. If `raw_assets/` is unavailable, use the repo-only CI validation command with `--skip-raw-assets` and say so in the handoff.
+3. Review the generated diff. Stage only the requested source changes and their generated outputs; never stage `raw_assets/`, ignored manager settings/caches, Playwright artifacts, or backups.
+4. Create a focused commit with a descriptive message.
+5. Push the commit to `origin` on the requested branch. For the normal production deployment, push `main` with `git push origin main`.
+6. Report the commit SHA, pushed branch, verification results, and any remaining GitHub Actions or Pages deployment status. Do not force-push, rewrite history, or use destructive Git commands unless explicitly requested.
+
+The GitHub Actions CI workflow runs on every push. A successful push to `main` is the deployment handoff; GitHub Pages may take a short time to publish the new commit. Do not claim the live site is updated until the Pages deployment has completed or the user confirms it.
+
 ## Generated data contract
 
 The v2 manifest has `schemaVersion: 2`, `generatedAt`, normalized `entities`, and derived `indexes`.
