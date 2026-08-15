@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-28T10:12:59+00:00",
+  "generatedAt": "2026-08-15T11:22:24+00:00",
   "entities": {
     "countries": {
       "au": {
@@ -55,6 +55,10 @@
         "id": "th",
         "name": "Thailand"
       },
+      "ukraine": {
+        "id": "ukraine",
+        "name": "Ukraine"
+      },
       "us": {
         "id": "us",
         "name": "United States"
@@ -102,6 +106,14 @@
         "name": "Airbus A330-200",
         "family": "heavy",
         "heroPhotoId": "2024-07-04-dsc08218-enhanced-nr",
+        "doubleWidth": null,
+        "writeUp": ""
+      },
+      "antonov-an-124-ruslan": {
+        "id": "antonov-an-124-ruslan",
+        "name": "Antonov An-124 Ruslan",
+        "family": "heavy",
+        "heroPhotoId": "",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -1151,6 +1163,15 @@
         "heroPhotoId": "2026-01-10-dsc05401",
         "writeUp": ""
       },
+      "ukraine-antonov-airlines": {
+        "id": "ukraine-antonov-airlines",
+        "name": "Antonov Airlines",
+        "countryId": "ukraine",
+        "kind": "organisation",
+        "logo": "",
+        "heroPhotoId": "",
+        "writeUp": ""
+      },
       "us-1st-airborne-command-control-squadron": {
         "id": "us-1st-airborne-command-control-squadron",
         "name": "1st Airborne Command Control Squadron",
@@ -1983,6 +2004,82 @@
       }
     },
     "photos": {
+      "2026-08-01-dsc02041": {
+        "id": "2026-08-01-dsc02041",
+        "locationId": "sg-changi-airport",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "antonov-an-124-ruslan",
+            "unitId": "ukraine-antonov-airlines",
+            "primary": true
+          }
+        ],
+        "year": "2026",
+        "date": "2026-08-01",
+        "sortDate": "2026-08-01",
+        "livery": "",
+        "title": "",
+        "caption": "AN-124 landing in Singapore Changi Airport",
+        "image": "assets/generated/photos/2026-08-01-dsc02041.jpg",
+        "thumbnail": "assets/generated/thumbs/2026-08-01-dsc02041.jpg",
+        "source": "raw_assets/DSC02041.jpg",
+        "originalSize": "5037 x 3778",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-6700",
+          "LensModel": "E 18-300mm F3.5-6.3 B061",
+          "FocalLength": "100mm",
+          "FocalLengthIn35mmFilm": "150mm",
+          "FNumber": "f/5.6",
+          "ExposureTime": "1/2000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "125",
+          "DateTimeOriginal": "2026:08:01 11:24:10",
+          "DateTimeDigitized": "2026:08:01 11:24:10",
+          "DateTime": "2026:08:09 12:18:39"
+        }
+      },
+      "2026-08-01-dsc02029": {
+        "id": "2026-08-01-dsc02029",
+        "locationId": "sg-changi-airport",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "antonov-an-124-ruslan",
+            "unitId": "ukraine-antonov-airlines",
+            "primary": true
+          }
+        ],
+        "year": "2026",
+        "date": "2026-08-01",
+        "sortDate": "2026-08-01",
+        "livery": "",
+        "title": "",
+        "caption": "AN-124 landing in Singapore Changi Airport",
+        "image": "assets/generated/photos/2026-08-01-dsc02029.jpg",
+        "thumbnail": "assets/generated/thumbs/2026-08-01-dsc02029.jpg",
+        "source": "raw_assets/DSC02029.jpg",
+        "originalSize": "4849 x 3637",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-6700",
+          "LensModel": "E 18-300mm F3.5-6.3 B061",
+          "FocalLength": "241mm",
+          "FocalLengthIn35mmFilm": "361mm",
+          "FNumber": "f/6.3",
+          "ExposureTime": "1/2000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2026:08:01 11:23:56",
+          "DateTimeDigitized": "2026:08:01 11:23:56",
+          "DateTime": "2026:08:09 12:18:38"
+        }
+      },
       "2026-04-08-xx8523": {
         "id": "2026-04-08-xx8523",
         "locationId": "jp-gifu-air-base",
@@ -21931,6 +22028,10 @@
         "2024-07-04-dsc08248-enhanced-nr",
         "2024-07-04-dsc08218-enhanced-nr"
       ],
+      "antonov-an-124-ruslan": [
+        "2026-08-01-dsc02041",
+        "2026-08-01-dsc02029"
+      ],
       "beechcraft-at-6th-wolverine": [
         "2026-01-10-dsc06434",
         "2026-01-10-dsc06402",
@@ -23082,6 +23183,10 @@
         "2026-01-10-dsc05209",
         "2026-01-10-dsc05150"
       ],
+      "ukraine-antonov-airlines": [
+        "2026-08-01-dsc02041",
+        "2026-08-01-dsc02029"
+      ],
       "us-1st-airborne-command-control-squadron": [
         "2025-05-29-dsc02905-enhanced-nr",
         "2025-05-29-dsc02902-enhanced-nr",
@@ -23556,6 +23661,8 @@
         "2024-12-25-dsc01140-enhanced-nr"
       ],
       "sg-changi-airport": [
+        "2026-08-01-dsc02041",
+        "2026-08-01-dsc02029",
         "2023-12-20-c2-vrc40",
         "2023-06-30-wsss-clipper-1",
         "2023-02-23-honeywell-2",
@@ -24119,6 +24226,9 @@
       ],
       "airbus-a330-200": [
         "fr-ervts-2-31-esterel"
+      ],
+      "antonov-an-124-ruslan": [
+        "ukraine-antonov-airlines"
       ],
       "beechcraft-at-6th-wolverine": [
         "th-411st-fighter-squadron"

@@ -1204,7 +1204,8 @@
   }
 
   function chooseInitialSelections() {
-    const mostRecentLocation = recentLocations()[0];
+    const recent = recentLocations();
+    const mostRecentLocation = recent.find(({ pin }) => normalizeKey(pin.country) !== "singapore") || recent[0];
     const firstEnabledPin = state.data.pins.find((pin) => pin.enabled);
     state.selectedPinId = isFocusedMobileLayout()
       ? null

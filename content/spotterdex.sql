@@ -138,6 +138,7 @@ INSERT INTO "countries" ("id", "name") VALUES ('my', 'Malaysia');
 INSERT INTO "countries" ("id", "name") VALUES ('nz', 'New Zealand');
 INSERT INTO "countries" ("id", "name") VALUES ('sg', 'Singapore');
 INSERT INTO "countries" ("id", "name") VALUES ('th', 'Thailand');
+INSERT INTO "countries" ("id", "name") VALUES ('ukraine', 'Ukraine');
 INSERT INTO "countries" ("id", "name") VALUES ('us', 'United States');
 INSERT INTO "countries" ("id", "name") VALUES ('vn', 'Vietnam');
 
@@ -145,6 +146,7 @@ INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "do
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('airbus-a320-200', 'Airbus A320-200', 'medium', NULL, '', NULL);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('airbus-a330-200', 'Airbus A330-200', 'heavy', '2024-07-04-dsc08218-enhanced-nr', '', NULL);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('airbus-a330-mrtt', 'Airbus A330 MRTT', 'heavy', '2023-08-29-dsc05206-enhanced-nr', '', 1);
+INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('antonov-an-124-ruslan', 'Antonov An-124 Ruslan', 'heavy', NULL, '', NULL);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('atr-72-500', 'ATR 72-500', 'medium', '2023-04-29-firefly-1', '', NULL);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('b-52h-stratofortress', 'Boeing B-52H Stratofortress', 'heavy', '2024-02-22-dsc06779-enhanced-nr', '', NULL);
 INSERT INTO "aircraft" ("id", "name", "family", "hero_photo_id", "write_up", "double_width") VALUES ('beechcraft-at-6th-wolverine', 'Beechcraft AT-6TH Wolverine', 'light', '2026-01-10-dsc06084', '', NULL);
@@ -270,6 +272,7 @@ INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_ph
 INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('th-403rd-fighter-squadron', '403rd Fighter Squadron', 'th', 'squadron', '', NULL, '');
 INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('th-411st-fighter-squadron', '411st Fighter Squadron', 'th', 'squadron', '', NULL, '');
 INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('th-701st-squadron', '701st Fighter Squadron', 'th', 'squadron', '', '2026-01-10-dsc05401', '');
+INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('ukraine-antonov-airlines', 'Antonov Airlines', 'ukraine', 'organisation', '', NULL, '');
 INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('us-1st-airborne-command-control-squadron', '1st Airborne Command Control Squadron', 'us', 'squadron', 'logos/1st_Command_&_Control_Squadron.png', '2024-06-05-dsc04786-enhanced-nr', '');
 INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('us-23rd-bomb-squadron', '23rd Bomb Squadron', 'us', 'squadron', '', NULL, '');
 INSERT INTO "units" ("id", "name", "country_id", "kind", "logo_source", "hero_photo_id", "write_up") VALUES ('us-355th-fighter-squadron', '355th Fighter Squadron', 'us', 'squadron', '', NULL, '');
@@ -337,6 +340,7 @@ INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('airbus-a320-200
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('airbus-a330-200', 'fr-ervts-2-31-esterel');
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('airbus-a330-mrtt', 'fr-ervts-2-31-esterel');
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('airbus-a330-mrtt', 'sg-112-squadron');
+INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('antonov-an-124-ruslan', 'ukraine-antonov-airlines');
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('atr-72-500', 'my-firefly');
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('b-52h-stratofortress', 'us-23rd-bomb-squadron');
 INSERT INTO "aircraft_units" ("aircraft_id", "unit_id") VALUES ('beechcraft-at-6th-wolverine', 'th-411st-fighter-squadron');
@@ -970,6 +974,8 @@ INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_over
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2026-04-08-dsc09026', 'DSC09026.jpg', 'jp-gifu-air-base', NULL, NULL, '', 'EC-2 landing after a test flight', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2026-04-08-xx5606', 'QC_xx5606.jpg', 'jp-gifu-air-base', NULL, NULL, '', 'Kawasaki T-4 from the Air Development and Test Wing landing at Gifu Air Base', '', 0);
 INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2026-04-08-xx8523', 'QC_xx8523.jpg', 'jp-gifu-air-base', NULL, NULL, '', 'Mitsubishi F-2A from ADTW landing at Gifu Air Base', '', 0);
+INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2026-08-01-dsc02029', 'DSC02029.jpg', 'sg-changi-airport', NULL, NULL, '', 'AN-124 landing in Singapore Changi Airport', '', 0);
+INSERT INTO "photos" ("id", "source_path", "location_id", "event_id", "date_override", "title", "caption", "livery", "caption_ai_assisted") VALUES ('2026-08-01-dsc02041', 'DSC02041.jpg', 'sg-changi-airport', NULL, NULL, '', 'AN-124 landing in Singapore Changi Airport', '', 0);
 
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2022-10-18-dsc04841-enhanced', 0, 'boeing-f-15sg-strike-eagle', 'sg-149-squadron', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2022-10-18-dsc05039-enhanced', 0, 'lockheed-p-3k2-orion', 'nz-no-5-squadron', 1);
@@ -1465,6 +1471,8 @@ INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", 
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2026-04-08-dsc09026', 0, 'kawasaki-ec-2', 'jp-electronic-warfare-squadron', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2026-04-08-xx5606', 0, 'kawasaki-t-4', 'jp-air-development-and-test-wing', 1);
 INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2026-04-08-xx8523', 0, 'mitsubishi-f-2a', 'jp-air-development-and-test-wing', 1);
+INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2026-08-01-dsc02029', 0, 'antonov-an-124-ruslan', 'ukraine-antonov-airlines', 1);
+INSERT INTO "photo_subjects" ("photo_id", "position", "aircraft_id", "unit_id", "is_primary") VALUES ('2026-08-01-dsc02041', 0, 'antonov-an-124-ruslan', 'ukraine-antonov-airlines', 1);
 
 INSERT INTO "event_story_moments" ("id", "event_id", "position", "label", "headline", "body", "scroll_weight", "overlay_side") VALUES ('jp-chitose-air-show-2024-rehearsal-203-tfs-commemorative-livery', 'jp-chitose-air-show-2024-rehearsal', 2, '21 Aug · 10:24', '203 TFS Commemorative Livery', '203 TFS 60th Anniversary Special Livery during an Airshow Rehearsal', 1.0, 'left');
 INSERT INTO "event_story_moments" ("id", "event_id", "position", "label", "headline", "body", "scroll_weight", "overlay_side") VALUES ('jp-chitose-air-show-2024-rehearsal-boeing-777-300er', 'jp-chitose-air-show-2024-rehearsal', 3, '21 Aug · 10:35', 'Boeing 777-300ER', 'Cygnus performing touch-and-go at Chitose Air Base', 1.0, 'right');

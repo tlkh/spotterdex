@@ -252,6 +252,23 @@ class ServiceWorkerClientContractTests(unittest.TestCase):
                 self.assertIn(contract, self.script)
 
 
+class MapSelectionContractTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.script = (ROOT / "script.js").read_text("utf-8")
+
+    def test_default_map_selection_prefers_latest_non_singapore_location(self) -> None:
+        selection = re.search(
+            r"function chooseInitialSelections\(\) \{(.*?)\n  \}",
+            self.script,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(selection)
+        self.assertIn(
+            'recent.find(({ pin }) => normalizeKey(pin.country) !== "singapore") || recent[0]',
+            selection.group(1),
+        )
+
+
 class ServiceWorkerStampingTests(unittest.TestCase):
     WORKER_TEMPLATE = (
         'const SHELL_CACHE_VERSION = "spotterdex-shell-0000000000000000";\n'
