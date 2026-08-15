@@ -122,6 +122,21 @@ class GlobalSearchPresentationContractTests(unittest.TestCase):
         self.assertRegex("\n".join(input_rules), r"box-shadow\s*:\s*none")
 
 
+class MobileViewerLayoutContractTests(unittest.TestCase):
+    def test_lightbox_top_controls_clear_the_ios_status_bar(self) -> None:
+        styles = (ROOT / "styles.css").read_text("utf-8")
+        controls = re.search(
+            r"\.viewer-telemetry,\s*\.viewer-button\.close,\s*\.viewer-button\.info-toggle\s*\{(.*?)\n  \}",
+            styles,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(controls)
+        self.assertRegex(
+            controls.group(1),
+            r"top\s*:\s*max\(18px,\s*calc\(env\(safe-area-inset-top\)\s*\+\s*12px\)\)",
+        )
+
+
 class OfflineMediaExperienceContractTests(unittest.TestCase):
     """Offline photos degrade into useful archive records, not broken images."""
 

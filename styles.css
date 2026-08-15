@@ -13155,3 +13155,12 @@ body.has-app-update .mobile-install-prompt {
     transition: none !important;
   }
 }
+
+/* Keep lightbox chrome below the iOS status bar in edge-to-edge viewports. */
+@media (max-width: 1040px) {
+  .viewer-telemetry,
+  .viewer-button.close,
+  .viewer-button.info-toggle {
+    top: max(18px, calc(env(safe-area-inset-top) + 12px));
+  }
+}
