@@ -12234,19 +12234,6 @@ body {
   white-space: nowrap;
 }
 
-.mobile-tab-bar a.is-active::after {
-  position: absolute;
-  right: 50%;
-  bottom: 3px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--color-accent);
-  content: "";
-  opacity: 1;
-  transform: translateX(50%);
-}
-
 .mobile-context-bar strong {
   min-width: 0;
   font-family: var(--font-display);
@@ -12315,6 +12302,28 @@ body {
 }
 
 @media (max-width: 1040px) {
+  .site-header.is-contextual {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .site-header.is-contextual > .mobile-context-bar {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .site-header.is-contextual > .header-actions {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  body[data-page-view="mapView"] .site-header.is-contextual > .mobile-context-bar {
+    padding-right: 112px;
+  }
+
+  #mapView #mapResults::after {
+    display: none;
+  }
+
   #dexView .dex-hero,
   #squadronsView .squadron-archive-hero,
   #airshowsView .airshow-archive-hero,
