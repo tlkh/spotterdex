@@ -66,48 +66,7 @@ html {
   overflow-x: clip;
 }
 
-html[data-view-transition-kind]::view-transition-old(root),
-html[data-view-transition-kind]::view-transition-new(root) {
-  animation: none;
-  mix-blend-mode: normal;
-}
-
-html[data-view-transition-kind]::view-transition-old(root) {
-  opacity: 0;
-}
-
-html[data-view-transition-kind]::view-transition-new(root) {
-  opacity: 1;
-}
-
-html[data-view-transition-kind="detail"]::view-transition-group(spotterdex-detail-image) {
-  animation-duration: var(--motion-duration-standard);
-  animation-timing-function: var(--motion-ease-in-out);
-}
-
-html[data-view-transition-kind="detail"]::view-transition-old(spotterdex-detail-image),
-html[data-view-transition-kind="detail"]::view-transition-new(spotterdex-detail-image) {
-  animation-duration: var(--motion-duration-standard);
-  animation-timing-function: var(--motion-ease-in-out);
-  mix-blend-mode: normal;
-}
-
-html[data-view-transition-kind="dex-hero"]::view-transition-old(spotterdex-context-hero),
-html[data-view-transition-kind="dex-hero"]::view-transition-new(spotterdex-context-hero),
-html[data-view-transition-kind="dex-hero"]::view-transition-old(spotterdex-context-copy),
-html[data-view-transition-kind="dex-hero"]::view-transition-new(spotterdex-context-copy) {
-  animation-duration: var(--motion-duration-fast);
-  animation-timing-function: var(--motion-ease-out);
-  mix-blend-mode: normal;
-}
-
-.detail-view :where(
-  .detail-hero > .detail-hero-content,
-  .detail-hero > .detail-hero-actions,
-  .detail-hero > .detail-back-button,
-  .airshow-story-copy,
-  .airshow-story-topbar
-) {
+.view {
   opacity: 1;
   transform: translateY(0);
   transition:
@@ -115,15 +74,9 @@ html[data-view-transition-kind="dex-hero"]::view-transition-new(spotterdex-conte
     transform var(--motion-duration-fast) var(--motion-ease-out);
 }
 
-.detail-view.is-detail-arriving :where(
-  .detail-hero > .detail-hero-content,
-  .detail-hero > .detail-hero-actions,
-  .detail-hero > .detail-back-button,
-  .airshow-story-copy,
-  .airshow-story-topbar
-) {
+.view.is-simple-arriving {
   opacity: 0;
-  transform: translateY(4px);
+  transform: translateY(6px);
 }
 
 body {
@@ -443,6 +396,19 @@ img {
   object-position: center 42%;
   filter: saturate(0.8) contrast(1.08);
   animation: dex-hero-reveal 1200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.dex-hero-media,
+.dex-hero-feature {
+  transition:
+    opacity var(--motion-duration-fast) var(--motion-ease-out),
+    transform var(--motion-duration-fast) var(--motion-ease-out);
+}
+
+.dex-hero-media.is-contextual-update,
+.dex-hero-feature.is-contextual-update {
+  opacity: 0;
+  transform: translateY(4px);
 }
 
 .dex-hero-media.is-contextual-update img {
@@ -11206,15 +11172,6 @@ button.location-unit-chip:focus-visible,
     scroll-behavior: auto !important;
   }
 
-  ::view-transition-old(root),
-  ::view-transition-new(root),
-  ::view-transition-group(spotterdex-detail-image),
-  ::view-transition-old(spotterdex-detail-image),
-  ::view-transition-new(spotterdex-detail-image),
-  ::view-transition-old(spotterdex-context-hero),
-  ::view-transition-new(spotterdex-context-hero),
-  ::view-transition-old(spotterdex-context-copy),
-  ::view-transition-new(spotterdex-context-copy),
   .dex-hero-media img,
   .squadron-archive-media img,
   .airshow-archive-media img,
@@ -11231,16 +11188,17 @@ button.location-unit-chip:focus-visible,
     animation: none !important;
   }
 
-  .detail-view :where(
-    .detail-hero > .detail-hero-content,
-    .detail-hero > .detail-hero-actions,
-    .detail-hero > .detail-back-button,
-    .airshow-story-copy,
-    .airshow-story-topbar
-  ) {
-    transform: none !important;
-    transition-property: opacity !important;
-    transition-duration: 160ms !important;
+  .view,
+  .dex-hero-media,
+  .dex-hero-feature {
+    transition: none !important;
+  }
+
+  .view.is-simple-arriving,
+  .dex-hero-media.is-contextual-update,
+  .dex-hero-feature.is-contextual-update {
+    opacity: 1;
+    transform: none;
   }
 
   .map-traffic-aircraft {

@@ -165,7 +165,7 @@ Rules:
 - `SHELL_CACHE_VERSION` and `MEDIA_CACHE_VERSION` are rewritten by the builder from a hash of the precached assets and the image profile. Never edit them by hand, and never treat them as meaningful in review.
 - `SHELL_PATHS` is the single source of truth for the precache list; the builder parses it to compute the shell hash. Adding a shell asset means adding it there, and a missing entry becomes a build warning.
 - Every generated payload name under `data/` must match `isCatalogData`. A catalog bundle that falls through to the shell strategy serves the previous deploy to returning visitors.
-- Updated workers remain waiting until the in-page update card sends `SKIP_WAITING`; do not restore unconditional install-time activation. `GET_VERSION` lets the client scope “Later” to one generated shell version, and reload occurs only after the user chooses Update.
+- Updated workers remain waiting in the iOS standalone app shell until the in-page update card sends `SKIP_WAITING`; normal browser pages activate a waiting worker automatically and reload after `controllerchange`. Do not restore unconditional install-time activation. `GET_VERSION` supports the iOS update prompt, where “Later” is temporary and the prompt may return on the next foreground check.
 
 ## Site behavior
 

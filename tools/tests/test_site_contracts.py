@@ -239,7 +239,7 @@ class ServiceWorkerClientContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.script = (ROOT / "script.js").read_text("utf-8")
 
-    def test_client_detects_waiting_workers_without_automatic_reload(self) -> None:
+    def test_client_detects_waiting_workers_and_reloads_after_activation(self) -> None:
         for hook in ("updatefound", "statechange", "controllerchange", "visibilitychange"):
             with self.subTest(hook=hook):
                 self.assertIn(f'"{hook}"', self.script)
@@ -266,6 +266,22 @@ class ServiceWorkerClientContractTests(unittest.TestCase):
             with self.subTest(contract=contract):
                 self.assertIn(contract, self.script)
 
+    def test_updates_are_prompted_only_in_ios_standalone(self) -> None:
+        self.assertIn("function isIosPwa()", self.script)
+        self.assertIn('window.navigator.standalone === true', self.script)
+        self.assertIn('"(display-mode: standalone)"', self.script)
+        waiting_handler = re.search(
+            r"async function handleWaitingServiceWorker\(worker\) \{(.*?)\n  \}",
+            self.script,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(waiting_handler)
+        handler = waiting_handler.group(1)
+        self.assertRegex(handler, r"if \(isIosPwa\(\)\)[\s\S]*presentServiceWorkerUpdate")
+        self.assertRegex(handler, r"activateWaitingServiceWorker\(worker\)")
+        self.assertIn("worker.postMessage({ type: \"SKIP_WAITING\" })", self.script)
+        self.assertNotIn("UPDATE_DISMISSED_STORAGE_KEY", self.script)
+
 
 class MapSelectionContractTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -291,20 +307,21 @@ class ConnectedFieldGuideContractTests(unittest.TestCase):
         self.script = (ROOT / "script.js").read_text("utf-8")
         self.styles = (ROOT / "styles.css").read_text("utf-8")
 
-    def test_detail_transitions_are_progressive_and_clean_up_shared_names(self) -> None:
+    def test_detail_transitions_use_simple_interruptible_entries(self) -> None:
         for contract in (
-            "document.startViewTransition",
-            "spotterdex-detail-image",
-            "skipActiveViewTransition",
-            "activeViewTransitionCleanup",
+            "runSimplePageTransition",
+            "cancelSimplePageAnimation",
+            "is-simple-arriving",
             "detailReturnContext",
             "preserveMapView",
         ):
             with self.subTest(contract=contract):
                 self.assertIn(contract, self.script)
-        self.assertGreaterEqual(self.script.count("!isReducedMotion()"), 2)
-        self.assertIn('html[data-view-transition-kind]::view-transition-old(root)', self.styles)
-        self.assertIn("animation: none", self.styles)
+        self.assertNotIn("document.startViewTransition", self.script)
+        self.assertNotIn("view-transition", self.script)
+        self.assertNotIn("view-transition", self.styles)
+        self.assertIn(".view.is-simple-arriving", self.styles)
+        self.assertRegex(self.styles, r"\.view\s*\{[\s\S]*?transition:[\s\S]*?opacity[\s\S]*?transform")
 
     def test_location_dossier_exposes_a_snapping_map_viewer_rail(self) -> None:
         for contract in (

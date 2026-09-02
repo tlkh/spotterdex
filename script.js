@@ -29,7 +29,6 @@
   const MAP_PANEL_COACH_STORAGE_KEY = "spotterdex-map-panel-coach-dismissed";
   const MOBILE_SESSION_KEY_PREFIX = "spotterdex-mobile-session-v1:";
   const INSTALL_DISMISSED_STORAGE_KEY = "spotterdex-install-dismissed-v1";
-  const UPDATE_DISMISSED_STORAGE_KEY = "spotterdex-update-dismissed-v1";
   const SEARCH_RESULT_LIMIT_PER_KIND = 6;
   const SEARCH_KIND_ORDER = ["aircraft", "squadron", "location", "airshow", "photo"];
   const SEARCH_KIND_LABELS = {
@@ -61,6 +60,7 @@
   let leafletLoadPromise = null;
   let openFreeMapLoadPromise = null;
   let statsExifLoadPromise = null;
+  let simplePageAnimationFrame = 0;
   let mobileShellEventsBound = false;
   let viewerEventsBound = false;
   let serviceWorkerEventsBound = false;
@@ -181,9 +181,6 @@
     mapControlPanelOpen: true,
     renderedViews: new Set(),
     fullDataPromise: null,
-    activeViewTransition: null,
-    activeViewTransitionCleanup: null,
-    viewTransitionSequence: 0,
     detailReturnContext: null,
     dexHeroSignature: "",
     lastHandledHistoryUrl: "",
@@ -1901,36 +1898,6 @@
     return document.querySelector("[data-view].is-active")?.id || currentPageViewId();
   }
 
-  function skipActiveViewTransition() {
-    const transition = state.activeViewTransition;
-    const cleanup = state.activeViewTransitionCleanup;
-    state.viewTransitionSequence += 1;
-    transition?.skipTransition?.();
-    cleanup?.();
-    state.activeViewTransition = null;
-    state.activeViewTransitionCleanup = null;
-  }
-
-  function transitionImageForElement(element) {
-    if (!(element instanceof Element)) {
-      return null;
-    }
-    if (element.matches("img[data-photo-id]")) {
-      return element;
-    }
-    const scope = element.closest(
-      ".aircraft-card, .squadron-logo-card, .airshow-timeline-card, .location-detail-page, .detail-hero, .airshow-story-slide"
-    ) || element;
-    return scope.querySelector("img[data-photo-id]");
-  }
-
-  function detailHeroImage(viewId) {
-    const view = document.getElementById(viewId);
-    return view?.querySelector(
-      ".detail-hero > img[data-photo-id], .airshow-story-slide.is-intro .airshow-story-scene-image[data-photo-id]"
-    ) || null;
-  }
-
   function detailTriggerSelector(kind, entityId) {
     const selectors = {
       aircraft: "data-aircraft-id",
@@ -1971,109 +1938,39 @@
     };
   }
 
-  function runDetailViewTransition({
-    sourceElement,
-    expectedPhotoId,
-    update,
-    targetViewId,
-    targetElement,
-    direction = "forward",
-    after
-  }) {
-    const sourceImage = transitionImageForElement(sourceElement);
-    const sourcePhotoId = sourceImage?.dataset.photoId || "";
-    const canTransition = Boolean(
-      sourceImage
-      && expectedPhotoId
-      && sourcePhotoId === String(expectedPhotoId)
-      && typeof document.startViewTransition === "function"
-      && !isReducedMotion()
-    );
-
-    if (!canTransition) {
-      update();
-      window.requestAnimationFrame(() => after?.());
-      return null;
-    }
-
-    skipActiveViewTransition();
-    const transitionSequence = ++state.viewTransitionSequence;
-    const root = document.documentElement;
-    const sourcePreviousName = sourceImage.style.viewTransitionName;
-    let targetImage = null;
-    let targetPreviousName = "";
-    let arrivingView = null;
-    let cleaned = false;
-
-    root.dataset.viewTransitionKind = "detail";
-    root.dataset.viewTransitionDirection = direction;
-    sourceImage.style.viewTransitionName = "spotterdex-detail-image";
-
-    let transition;
-    try {
-      transition = document.startViewTransition(() => {
-        if (transitionSequence !== state.viewTransitionSequence) {
-          return;
-        }
-        update();
-        const resolvedTarget = typeof targetElement === "function" ? targetElement() : targetElement;
-        targetImage = transitionImageForElement(resolvedTarget) || detailHeroImage(targetViewId);
-        if (targetImage?.dataset.photoId === sourcePhotoId) {
-          targetPreviousName = targetImage.style.viewTransitionName;
-          targetImage.style.viewTransitionName = "spotterdex-detail-image";
-        }
-        if (direction === "forward") {
-          arrivingView = document.getElementById(targetViewId);
-          arrivingView?.classList.add("is-detail-arriving");
-        }
-      });
-    } catch (error) {
-      sourceImage.style.viewTransitionName = sourcePreviousName;
-      delete root.dataset.viewTransitionKind;
-      delete root.dataset.viewTransitionDirection;
-      update();
-      window.requestAnimationFrame(() => after?.());
-      return null;
-    }
-
-    state.activeViewTransition = transition;
-    transition.ready.catch(() => {});
-
-    const cleanup = (complete = true) => {
-      if (cleaned) {
-        return;
-      }
-      cleaned = true;
-      sourceImage.style.viewTransitionName = sourcePreviousName;
-      if (targetImage) {
-        targetImage.style.viewTransitionName = targetPreviousName;
-      }
-      if (arrivingView) {
-        if (complete) {
-          window.requestAnimationFrame(() => arrivingView?.classList.remove("is-detail-arriving"));
-        } else {
-          arrivingView.classList.remove("is-detail-arriving");
-        }
-      }
-      delete root.dataset.viewTransitionKind;
-      delete root.dataset.viewTransitionDirection;
-      if (state.activeViewTransition === transition) {
-        state.activeViewTransition = null;
-      }
-      if (state.activeViewTransitionCleanup === cleanupWithoutCompletion) {
-        state.activeViewTransitionCleanup = null;
-      }
-      if (complete) {
-        after?.();
-      }
-    };
-    const cleanupWithoutCompletion = () => cleanup(false);
-    state.activeViewTransitionCleanup = cleanupWithoutCompletion;
-    transition.finished.then(() => cleanup(true), () => cleanup(true));
-    return transition;
+  function cancelSimplePageAnimation() {
+    window.cancelAnimationFrame(simplePageAnimationFrame);
+    simplePageAnimationFrame = 0;
+    document.querySelectorAll(".is-simple-arriving").forEach((view) => {
+      view.classList.remove("is-simple-arriving");
+    });
   }
 
-  function enterDetailView({ backView, detailView, kind, entityId, sourceElement, expectedPhotoId, update }) {
+  function runSimplePageTransition({
+    update,
+    targetViewId,
+    after
+  }) {
+    cancelSimplePageAnimation();
+    const arrivingView = document.getElementById(targetViewId);
+    const shouldAnimate = Boolean(arrivingView) && !isReducedMotion();
+    if (shouldAnimate) {
+      arrivingView.classList.add("is-simple-arriving");
+    }
+    update();
+    if (!shouldAnimate) {
+      window.requestAnimationFrame(() => after?.());
+      return null;
+    }
+    simplePageAnimationFrame = window.requestAnimationFrame(() => {
+      simplePageAnimationFrame = 0;
+      arrivingView?.classList.remove("is-simple-arriving");
+      after?.();
+    });
+    return null;
+  }
+
+  function enterDetailView({ backView, detailView, kind, entityId, sourceElement, update }) {
     const returnContext = captureDetailReturnContext(backView, sourceElement, kind, entityId);
     if (returnContext) {
       state.detailReturnContext = returnContext;
@@ -2084,12 +1981,9 @@
     ) {
       state.detailReturnContext = null;
     }
-    return runDetailViewTransition({
-      sourceElement,
-      expectedPhotoId,
+    return runSimplePageTransition({
       update,
-      targetViewId: detailView,
-      direction: "forward"
+      targetViewId: detailView
     });
   }
 
@@ -2113,15 +2007,9 @@
   }
 
   function returnFromDetail(backView, options = {}) {
-    const activeDetailView = activeViewId();
     const context = state.detailReturnContext?.backView === backView
       ? state.detailReturnContext
       : null;
-    const sourceImage = detailHeroImage(activeDetailView);
-    const sourcePhotoId = sourceImage?.dataset.photoId || "";
-    const triggerBefore = detailTransitionTrigger(context);
-    const targetImageBefore = transitionImageForElement(triggerBefore);
-    const matchingPhotoId = targetImageBefore?.dataset.photoId === sourcePhotoId ? sourcePhotoId : "";
     const update = () => {
       setActiveTab(backView, {
         updateHash: options.updateHash,
@@ -2147,13 +2035,9 @@
       state.detailReturnContext = null;
     };
 
-    return runDetailViewTransition({
-      sourceElement: sourceImage,
-      expectedPhotoId: matchingPhotoId,
+    return runSimplePageTransition({
       update,
       targetViewId: backView,
-      targetElement: () => detailTransitionTrigger(context),
-      direction: "back",
       after: focusReturnTarget
     });
   }
@@ -2675,6 +2559,19 @@
     }, 2400);
   }
 
+  function isIosPwa() {
+    const standalone = window.navigator.standalone === true
+      || Boolean(window.matchMedia?.("(display-mode: standalone)")?.matches);
+    if (!standalone) {
+      return false;
+    }
+    const userAgent = String(window.navigator.userAgent || "");
+    const isIosUserAgent = /iPad|iPhone|iPod/.test(userAgent);
+    const isIpadDesktopUserAgent = window.navigator.platform === "MacIntel"
+      && Number(window.navigator.maxTouchPoints || 0) > 1;
+    return isIosUserAgent || isIpadDesktopUserAgent;
+  }
+
   async function registerServiceWorker() {
     if (!("serviceWorker" in navigator) || (window.location.protocol !== "https:" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1")) {
       return;
@@ -2687,7 +2584,7 @@
       });
       state.serviceWorkerRegistration = registration;
       if (registration.waiting && state.serviceWorkerHadController) {
-        presentServiceWorkerUpdate(registration.waiting);
+        handleWaitingServiceWorker(registration.waiting);
       }
       registration.addEventListener("updatefound", () => {
         const installing = registration.installing;
@@ -2696,7 +2593,7 @@
         }
         installing.addEventListener("statechange", () => {
           if (installing.state === "installed" && state.serviceWorkerHadController) {
-            presentServiceWorkerUpdate(registration.waiting || installing);
+            handleWaitingServiceWorker(registration.waiting || installing);
           }
         });
       });
@@ -2733,10 +2630,37 @@
     try {
       await registration.update();
       if (registration.waiting && state.serviceWorkerHadController) {
-        await presentServiceWorkerUpdate(registration.waiting);
+        await handleWaitingServiceWorker(registration.waiting);
       }
     } catch (error) {
       // Update checks are opportunistic and expected to fail while offline.
+    }
+  }
+
+  async function handleWaitingServiceWorker(worker) {
+    if (!worker) {
+      return;
+    }
+    if (isIosPwa()) {
+      await presentServiceWorkerUpdate(worker);
+      return;
+    }
+    // Browser tabs should never make the user manage a service-worker update.
+    // Activating here lets controllerchange reload the page onto the new shell.
+    activateWaitingServiceWorker(worker);
+  }
+
+  function activateWaitingServiceWorker(worker) {
+    if (!worker || state.updateReloadPending) {
+      return;
+    }
+    state.waitingServiceWorker = worker;
+    state.updateReloadPending = true;
+    try {
+      worker.postMessage({ type: "SKIP_WAITING" });
+    } catch (error) {
+      state.updateReloadPending = false;
+      // A browser update is best-effort; the next registration check can retry.
     }
   }
 
@@ -2764,22 +2688,15 @@
   }
 
   async function presentServiceWorkerUpdate(worker, options = {}) {
-    if (!worker || !els.appUpdatePrompt) {
+    if (!worker || !els.appUpdatePrompt || !isIosPwa()) {
       return;
     }
     const version = await serviceWorkerVersion(worker);
-    let dismissedVersion = "";
-    try {
-      dismissedVersion = window.localStorage.getItem(UPDATE_DISMISSED_STORAGE_KEY) || "";
-    } catch (error) {
-      dismissedVersion = "";
-    }
+    // iOS standalone has no reliable background refresh UI of its own, so keep
+    // this prompt eligible on every launch/check instead of remembering Later.
     state.waitingServiceWorker = worker;
     state.updateVersion = version;
     state.updateRequiresReloadOnly = options.requiresReload === true;
-    if (version && dismissedVersion === version) {
-      return;
-    }
     if (els.mobileInstallPrompt) {
       els.mobileInstallPrompt.hidden = true;
     }
@@ -2795,13 +2712,9 @@
     }
     els.appUpdatePrompt.hidden = true;
     document.body.classList.remove("has-app-update");
-    if (state.updateVersion) {
-      try {
-        window.localStorage.setItem(UPDATE_DISMISSED_STORAGE_KEY, state.updateVersion);
-      } catch (error) {
-        // Dismissal remains effective for the current page when storage is unavailable.
-      }
-    }
+    // “Later” only dismisses this presentation. The next foreground check in
+    // the iOS app shell should be allowed to bring the prompt back.
+    state.updateCheckTime = 0;
   }
 
   function applyAppUpdate() {
@@ -2819,7 +2732,17 @@
       els.appUpdateButton.disabled = true;
       els.appUpdateButton.textContent = "Updating…";
     }
-    worker.postMessage({ type: "SKIP_WAITING" });
+    try {
+      worker.postMessage({ type: "SKIP_WAITING" });
+    } catch (error) {
+      state.updateReloadPending = false;
+      if (els.appUpdateButton) {
+        els.appUpdateButton.disabled = false;
+        els.appUpdateButton.textContent = "Update";
+      }
+      showToast("Update is still preparing. Try again.");
+      return;
+    }
     window.setTimeout(() => {
       if (!state.updateReloadPending) {
         return;
@@ -2841,7 +2764,11 @@
     }
     const controller = navigator.serviceWorker.controller;
     if (state.serviceWorkerHadController && controller) {
-      presentServiceWorkerUpdate(controller, { requiresReload: true });
+      if (isIosPwa()) {
+        presentServiceWorkerUpdate(controller, { requiresReload: true });
+      } else {
+        window.location.reload();
+      }
     }
     state.serviceWorkerHadController = Boolean(controller);
   }
@@ -5771,61 +5698,14 @@
   }
 
   function updateDexHeroWithTransition(update, shouldAnimate) {
-    const canTransition = shouldAnimate
-      && typeof document.startViewTransition === "function"
-      && !isReducedMotion();
-    if (!canTransition) {
-      els.dexHeroMedia.classList.toggle("is-contextual-update", shouldAnimate);
-      update();
-      window.requestAnimationFrame(() => els.dexHeroMedia?.classList.remove("is-contextual-update"));
-      return;
-    }
-
-    skipActiveViewTransition();
-    const transitionSequence = ++state.viewTransitionSequence;
-    els.dexHeroMedia.classList.add("is-contextual-update");
-    const root = document.documentElement;
-    const mediaPreviousName = els.dexHeroMedia.style.viewTransitionName;
-    const featurePreviousName = els.dexHeroFeature.style.viewTransitionName;
-    root.dataset.viewTransitionKind = "dex-hero";
-    els.dexHeroMedia.style.viewTransitionName = "spotterdex-context-hero";
-    els.dexHeroFeature.style.viewTransitionName = "spotterdex-context-copy";
-    let transition;
-    try {
-      transition = document.startViewTransition(() => {
-        if (transitionSequence === state.viewTransitionSequence) {
-          update();
-        }
-      });
-    } catch (error) {
-      els.dexHeroMedia.style.viewTransitionName = mediaPreviousName;
-      els.dexHeroFeature.style.viewTransitionName = featurePreviousName;
-      delete root.dataset.viewTransitionKind;
-      update();
-      window.requestAnimationFrame(() => els.dexHeroMedia?.classList.remove("is-contextual-update"));
-      return;
-    }
-    state.activeViewTransition = transition;
-    transition.ready.catch(() => {});
-    let cleaned = false;
-    const cleanup = () => {
-      if (cleaned) {
-        return;
-      }
-      cleaned = true;
-      els.dexHeroMedia.style.viewTransitionName = mediaPreviousName;
-      els.dexHeroFeature.style.viewTransitionName = featurePreviousName;
-      els.dexHeroMedia.classList.remove("is-contextual-update");
-      delete root.dataset.viewTransitionKind;
-      if (state.activeViewTransition === transition) {
-        state.activeViewTransition = null;
-      }
-      if (state.activeViewTransitionCleanup === cleanup) {
-        state.activeViewTransitionCleanup = null;
-      }
-    };
-    state.activeViewTransitionCleanup = cleanup;
-    transition.finished.then(cleanup, cleanup);
+    const animatedTargets = shouldAnimate && !isReducedMotion()
+      ? [els.dexHeroMedia, els.dexHeroFeature].filter(Boolean)
+      : [];
+    animatedTargets.forEach((target) => target.classList.add("is-contextual-update"));
+    update();
+    window.requestAnimationFrame(() => {
+      animatedTargets.forEach((target) => target.classList.remove("is-contextual-update"));
+    });
   }
 
   function renderDexHero() {
@@ -8715,15 +8595,12 @@
       navigateToViewPage("locationDetailView", `location=${encodeURIComponent(pin.id)}&detail=1`);
       return;
     }
-    const photos = photosForPin(pin);
-    const expectedPhotoId = locationProfile(pin, photos).heroPhoto?.id || "";
     enterDetailView({
       backView: "mapView",
       detailView: "locationDetailView",
       kind: "location",
       entityId: pin.id,
       sourceElement: options.transitionSource,
-      expectedPhotoId,
       update: () => {
         selectPin(pin.id, {
           updateHash: false,
@@ -8782,16 +8659,12 @@
       );
       return;
     }
-    const entry = state.aircraftById.get(aircraftId);
-    const photos = entry ? photosForAircraft(entry) : EMPTY_PHOTOS;
-    const expectedPhotoId = (entry && (state.photoById.get(entry.coverPhoto) || photos[0]))?.id || "";
     enterDetailView({
       backView: "dexView",
       detailView: "aircraftDetailView",
       kind: "aircraft",
       entityId: aircraftId,
       sourceElement: options.focusLocation ? null : options.transitionSource,
-      expectedPhotoId,
       update: () => {
         state.dexGroupMode = group;
         state.selectedAircraftId = aircraftId;
@@ -8822,15 +8695,12 @@
       navigateToViewPage("squadronDetailView", `squadron=${encodeURIComponent(squadronId)}`);
       return;
     }
-    const squadron = collectSquadrons().find((item) => item.id === squadronId);
-    const expectedPhotoId = squadron ? squadronCardHero(squadron)?.id || "" : "";
     enterDetailView({
       backView: "squadronsView",
       detailView: "squadronDetailView",
       kind: "squadron",
       entityId: squadronId,
       sourceElement: options.transitionSource,
-      expectedPhotoId,
       update: () => {
         state.selectedSquadronId = squadronId;
         setActiveTab("squadronDetailView", { updateHash: false });
@@ -8854,15 +8724,12 @@
       navigateToViewPage("airshowDetailView", `airshow=${encodeURIComponent(airshow.id)}`);
       return;
     }
-    const photos = photosForAirshow(airshow);
-    const expectedPhotoId = airshowHeroPhoto(airshow, photos)?.id || "";
     enterDetailView({
       backView: "airshowsView",
       detailView: "airshowDetailView",
       kind: "airshow",
       entityId: airshow.id,
       sourceElement: options.transitionSource,
-      expectedPhotoId,
       update: () => {
         state.selectedAirshowId = airshowId;
         setActiveTab("airshowDetailView", { updateHash: false });
