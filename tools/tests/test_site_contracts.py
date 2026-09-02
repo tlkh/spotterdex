@@ -284,6 +284,74 @@ class MapSelectionContractTests(unittest.TestCase):
         )
 
 
+class ConnectedFieldGuideContractTests(unittest.TestCase):
+    """Immersive navigation stays contextual, progressive, and layout-safe."""
+
+    def setUp(self) -> None:
+        self.script = (ROOT / "script.js").read_text("utf-8")
+        self.styles = (ROOT / "styles.css").read_text("utf-8")
+
+    def test_detail_transitions_are_progressive_and_clean_up_shared_names(self) -> None:
+        for contract in (
+            "document.startViewTransition",
+            "spotterdex-detail-image",
+            "skipActiveViewTransition",
+            "activeViewTransitionCleanup",
+            "detailReturnContext",
+            "preserveMapView",
+        ):
+            with self.subTest(contract=contract):
+                self.assertIn(contract, self.script)
+        self.assertGreaterEqual(self.script.count("!isReducedMotion()"), 2)
+        self.assertIn('html[data-view-transition-kind]::view-transition-old(root)', self.styles)
+        self.assertIn("animation: none", self.styles)
+
+    def test_location_dossier_exposes_a_snapping_map_viewer_rail(self) -> None:
+        for contract in (
+            "data-location-frame-rail",
+            'data-photo-context="map"',
+            "location-frame-card",
+        ):
+            with self.subTest(contract=contract):
+                self.assertIn(contract, self.script)
+        self.assertIn(".location-frame-rail", self.styles)
+        self.assertRegex(self.styles, r"scroll-snap-type\s*:\s*x\s+proximity")
+
+    def test_aircraft_hero_and_squadron_rail_follow_archive_context(self) -> None:
+        for contract in (
+            "dexHeroSignature",
+            "currentDexFamilyPhotoIds",
+            '"dex-family"',
+            "observeSquadronCountrySections",
+            "IntersectionObserver",
+            'aria-current="location"',
+        ):
+            with self.subTest(contract=contract):
+                self.assertIn(contract, self.script)
+        country_rail_rules = [
+            body
+            for selector, body in _css_rules()
+            if "#squadronsView .squadron-country-nav" in selector
+        ]
+        self.assertTrue(country_rail_rules)
+        declarations = "\n".join(country_rail_rules)
+        self.assertRegex(declarations, r"overflow-x\s*:\s*auto")
+        self.assertRegex(declarations, r"justify-content\s*:\s*flex-start")
+        self.assertRegex(
+            self.script,
+            r'if \(pageViewId === "dexView" && aircraftFamily\)[\s\S]*?renderDex\(\);',
+            "direct family hashes must re-render the contextual hero and archive",
+        )
+
+    def test_transitions_do_not_animate_width(self) -> None:
+        offenders = [
+            selector.strip()
+            for selector, body in _css_rules()
+            if re.search(r"transition(?:-property)?\s*:[^;]*\bwidth\b", body)
+        ]
+        self.assertEqual(offenders, [], "animate transforms or colour instead of width")
+
+
 class ServiceWorkerStampingTests(unittest.TestCase):
     WORKER_TEMPLATE = (
         'const SHELL_CACHE_VERSION = "spotterdex-shell-0000000000000000";\n'

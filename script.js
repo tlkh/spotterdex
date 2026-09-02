@@ -127,6 +127,8 @@
     archiveLoadObserver: null,
     archiveLoadFallbackHandler: null,
     archiveLoadPending: false,
+    squadronCountryObserver: null,
+    squadronCurrentCountry: "",
     mapRefreshHandle: null,
     mapRefreshTimer: null,
     mapCalloutRefreshHandle: null,
@@ -179,6 +181,11 @@
     mapControlPanelOpen: true,
     renderedViews: new Set(),
     fullDataPromise: null,
+    activeViewTransition: null,
+    activeViewTransitionCleanup: null,
+    viewTransitionSequence: 0,
+    detailReturnContext: null,
+    dexHeroSignature: "",
     lastHandledHistoryUrl: "",
     isApplyingHash: false
   };
@@ -1357,12 +1364,36 @@
       return;
     }
     state.lastHandledHistoryUrl = currentUrl;
+    const activeBefore = activeViewId();
+    const collectionView = navigationViewFor(activeBefore);
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const detailHashKeys = {
+      aircraftDetailView: hashParams.has("aircraft"),
+      squadronDetailView: hashParams.has("squadron"),
+      airshowDetailView: hashParams.has("airshow"),
+      locationDetailView: hashParams.get("detail") === "1"
+    };
+    if (
+      activeBefore !== collectionView
+      && state.detailReturnContext?.backView === collectionView
+      && !detailHashKeys[activeBefore]
+    ) {
+      if (isViewerOpen()) {
+        closeViewer({ updateHash: false, useHistory: false });
+      }
+      returnFromDetail(collectionView, { updateHash: false });
+      return;
+    }
     const routed = applyDeepLinkFromHash();
     if (!routed) {
       if (isViewerOpen()) {
         closeViewer({ updateHash: false, useHistory: false });
       }
-      setActiveTab(currentPageViewId(), { updateHash: false });
+      if (activeBefore !== collectionView && state.detailReturnContext?.backView === collectionView) {
+        returnFromDetail(collectionView, { updateHash: false });
+      } else {
+        setActiveTab(currentPageViewId(), { updateHash: false });
+      }
     }
   }
 
@@ -1421,7 +1452,8 @@
       }
       const target = document.getElementById(countryJump.dataset.squadronCountryJump || "");
       if (target) {
-        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        updateSquadronCurrentCountry(countryJump.dataset.squadronCountryFilter || "");
+        target.scrollIntoView({ behavior: isReducedMotion() ? "auto" : "smooth", block: "start" });
       }
       return;
     }
@@ -1497,10 +1529,13 @@
 
     const locationPageButton = event.target.closest("[data-location-page-id]");
     if (locationPageButton) {
-      if (isViewerOpen()) {
+      const viewerWasOpen = isViewerOpen();
+      if (viewerWasOpen) {
         closeViewer({ updateHash: false, useHistory: false, restoreFocus: false });
       }
-      selectLocationPage(locationPageButton.dataset.locationPageId);
+      selectLocationPage(locationPageButton.dataset.locationPageId, {
+        transitionSource: viewerWasOpen ? null : locationPageButton
+      });
       return;
     }
 
@@ -1531,7 +1566,7 @@
 
     const detailBackButton = event.target.closest("[data-detail-back]");
     if (detailBackButton) {
-      setActiveTab(detailBackButton.dataset.detailBack);
+      returnFromDetail(detailBackButton.dataset.detailBack);
       return;
     }
 
@@ -1543,7 +1578,8 @@
 
     const aircraftButton = event.target.closest("[data-aircraft-id]");
     if (aircraftButton) {
-      if (isViewerOpen()) {
+      const viewerWasOpen = isViewerOpen();
+      if (viewerWasOpen) {
         closeViewer({ updateHash: false, useHistory: false, restoreFocus: false });
       }
       const aircraftGroup = aircraftButton.dataset.aircraftGroup;
@@ -1554,6 +1590,7 @@
         aircraftOptions.locationId = aircraftLocationId;
         aircraftOptions.focusLocation = true;
       }
+      aircraftOptions.transitionSource = viewerWasOpen ? null : aircraftButton;
       selectAircraft(
         aircraftButton.dataset.aircraftId,
         aircraftOptions
@@ -1563,19 +1600,25 @@
 
     const squadronButton = event.target.closest("[data-squadron-id]");
     if (squadronButton) {
-      if (isViewerOpen()) {
+      const viewerWasOpen = isViewerOpen();
+      if (viewerWasOpen) {
         closeViewer({ updateHash: false, useHistory: false, restoreFocus: false });
       }
-      selectSquadron(squadronButton.dataset.squadronId);
+      selectSquadron(squadronButton.dataset.squadronId, {
+        transitionSource: viewerWasOpen ? null : squadronButton
+      });
       return;
     }
 
     const airshowButton = event.target.closest("[data-airshow-id]");
     if (airshowButton) {
-      if (isViewerOpen()) {
+      const viewerWasOpen = isViewerOpen();
+      if (viewerWasOpen) {
         closeViewer({ updateHash: false, useHistory: false, restoreFocus: false });
       }
-      selectAirshow(airshowButton.dataset.airshowId);
+      selectAirshow(airshowButton.dataset.airshowId, {
+        transitionSource: viewerWasOpen ? null : airshowButton
+      });
       return;
     }
 
@@ -1854,6 +1897,267 @@
     return window.matchMedia(REDUCED_MOTION_MEDIA_QUERY).matches;
   }
 
+  function activeViewId() {
+    return document.querySelector("[data-view].is-active")?.id || currentPageViewId();
+  }
+
+  function skipActiveViewTransition() {
+    const transition = state.activeViewTransition;
+    const cleanup = state.activeViewTransitionCleanup;
+    state.viewTransitionSequence += 1;
+    transition?.skipTransition?.();
+    cleanup?.();
+    state.activeViewTransition = null;
+    state.activeViewTransitionCleanup = null;
+  }
+
+  function transitionImageForElement(element) {
+    if (!(element instanceof Element)) {
+      return null;
+    }
+    if (element.matches("img[data-photo-id]")) {
+      return element;
+    }
+    const scope = element.closest(
+      ".aircraft-card, .squadron-logo-card, .airshow-timeline-card, .location-detail-page, .detail-hero, .airshow-story-slide"
+    ) || element;
+    return scope.querySelector("img[data-photo-id]");
+  }
+
+  function detailHeroImage(viewId) {
+    const view = document.getElementById(viewId);
+    return view?.querySelector(
+      ".detail-hero > img[data-photo-id], .airshow-story-slide.is-intro .airshow-story-scene-image[data-photo-id]"
+    ) || null;
+  }
+
+  function detailTriggerSelector(kind, entityId) {
+    const selectors = {
+      aircraft: "data-aircraft-id",
+      squadron: "data-squadron-id",
+      airshow: "data-airshow-id",
+      location: "data-location-page-id"
+    };
+    const attribute = selectors[kind];
+    return attribute && entityId
+      ? `[${attribute}="${CSS.escape(String(entityId))}"]`
+      : "";
+  }
+
+  function detailTransitionTrigger(context) {
+    if (!context) {
+      return null;
+    }
+    if (context.trigger?.isConnected) {
+      return context.trigger;
+    }
+    const selector = detailTriggerSelector(context.kind, context.entityId);
+    return selector ? document.querySelector(selector) : null;
+  }
+
+  function captureDetailReturnContext(backView, sourceElement, kind, entityId) {
+    if (!(sourceElement instanceof Element) || activeViewId() !== backView) {
+      return null;
+    }
+    return {
+      backView,
+      kind,
+      entityId: String(entityId || ""),
+      trigger: sourceElement,
+      scrollY: Math.max(0, Math.round(window.scrollY)),
+      mobileMapPanel: state.mobileMapPanel,
+      mapSheetSnap: state.mapSheetSnap,
+      mapDossierOpen: state.mapDossierOpen
+    };
+  }
+
+  function runDetailViewTransition({
+    sourceElement,
+    expectedPhotoId,
+    update,
+    targetViewId,
+    targetElement,
+    direction = "forward",
+    after
+  }) {
+    const sourceImage = transitionImageForElement(sourceElement);
+    const sourcePhotoId = sourceImage?.dataset.photoId || "";
+    const canTransition = Boolean(
+      sourceImage
+      && expectedPhotoId
+      && sourcePhotoId === String(expectedPhotoId)
+      && typeof document.startViewTransition === "function"
+      && !isReducedMotion()
+    );
+
+    if (!canTransition) {
+      update();
+      window.requestAnimationFrame(() => after?.());
+      return null;
+    }
+
+    skipActiveViewTransition();
+    const transitionSequence = ++state.viewTransitionSequence;
+    const root = document.documentElement;
+    const sourcePreviousName = sourceImage.style.viewTransitionName;
+    let targetImage = null;
+    let targetPreviousName = "";
+    let arrivingView = null;
+    let cleaned = false;
+
+    root.dataset.viewTransitionKind = "detail";
+    root.dataset.viewTransitionDirection = direction;
+    sourceImage.style.viewTransitionName = "spotterdex-detail-image";
+
+    let transition;
+    try {
+      transition = document.startViewTransition(() => {
+        if (transitionSequence !== state.viewTransitionSequence) {
+          return;
+        }
+        update();
+        const resolvedTarget = typeof targetElement === "function" ? targetElement() : targetElement;
+        targetImage = transitionImageForElement(resolvedTarget) || detailHeroImage(targetViewId);
+        if (targetImage?.dataset.photoId === sourcePhotoId) {
+          targetPreviousName = targetImage.style.viewTransitionName;
+          targetImage.style.viewTransitionName = "spotterdex-detail-image";
+        }
+        if (direction === "forward") {
+          arrivingView = document.getElementById(targetViewId);
+          arrivingView?.classList.add("is-detail-arriving");
+        }
+      });
+    } catch (error) {
+      sourceImage.style.viewTransitionName = sourcePreviousName;
+      delete root.dataset.viewTransitionKind;
+      delete root.dataset.viewTransitionDirection;
+      update();
+      window.requestAnimationFrame(() => after?.());
+      return null;
+    }
+
+    state.activeViewTransition = transition;
+    transition.ready.catch(() => {});
+
+    const cleanup = (complete = true) => {
+      if (cleaned) {
+        return;
+      }
+      cleaned = true;
+      sourceImage.style.viewTransitionName = sourcePreviousName;
+      if (targetImage) {
+        targetImage.style.viewTransitionName = targetPreviousName;
+      }
+      if (arrivingView) {
+        if (complete) {
+          window.requestAnimationFrame(() => arrivingView?.classList.remove("is-detail-arriving"));
+        } else {
+          arrivingView.classList.remove("is-detail-arriving");
+        }
+      }
+      delete root.dataset.viewTransitionKind;
+      delete root.dataset.viewTransitionDirection;
+      if (state.activeViewTransition === transition) {
+        state.activeViewTransition = null;
+      }
+      if (state.activeViewTransitionCleanup === cleanupWithoutCompletion) {
+        state.activeViewTransitionCleanup = null;
+      }
+      if (complete) {
+        after?.();
+      }
+    };
+    const cleanupWithoutCompletion = () => cleanup(false);
+    state.activeViewTransitionCleanup = cleanupWithoutCompletion;
+    transition.finished.then(() => cleanup(true), () => cleanup(true));
+    return transition;
+  }
+
+  function enterDetailView({ backView, detailView, kind, entityId, sourceElement, expectedPhotoId, update }) {
+    const returnContext = captureDetailReturnContext(backView, sourceElement, kind, entityId);
+    if (returnContext) {
+      state.detailReturnContext = returnContext;
+    } else if (
+      activeViewId() === backView
+      || state.detailReturnContext?.kind !== kind
+      || state.detailReturnContext?.entityId !== String(entityId || "")
+    ) {
+      state.detailReturnContext = null;
+    }
+    return runDetailViewTransition({
+      sourceElement,
+      expectedPhotoId,
+      update,
+      targetViewId: detailView,
+      direction: "forward"
+    });
+  }
+
+  function restoreDetailReturnState(context) {
+    if (!context) {
+      window.scrollTo({ top: 0, behavior: "auto" });
+      return;
+    }
+    window.scrollTo({ top: context.scrollY, behavior: "auto" });
+    if (context.backView === "mapView") {
+      state.mapDossierOpen = context.mapDossierOpen;
+      if (isMobileMapLayout()) {
+        setMapPanel(context.mobileMapPanel, {
+          snap: context.mapSheetSnap,
+          motion: false
+        });
+      } else {
+        setMapDossierOpen(context.mapDossierOpen);
+      }
+    }
+  }
+
+  function returnFromDetail(backView, options = {}) {
+    const activeDetailView = activeViewId();
+    const context = state.detailReturnContext?.backView === backView
+      ? state.detailReturnContext
+      : null;
+    const sourceImage = detailHeroImage(activeDetailView);
+    const sourcePhotoId = sourceImage?.dataset.photoId || "";
+    const triggerBefore = detailTransitionTrigger(context);
+    const targetImageBefore = transitionImageForElement(triggerBefore);
+    const matchingPhotoId = targetImageBefore?.dataset.photoId === sourcePhotoId ? sourcePhotoId : "";
+    const update = () => {
+      setActiveTab(backView, {
+        updateHash: options.updateHash,
+        preserveMapView: true
+      });
+      restoreDetailReturnState(context);
+    };
+    const focusReturnTarget = () => {
+      const trigger = detailTransitionTrigger(context);
+      if (trigger instanceof HTMLElement && trigger.isConnected) {
+        trigger.focus({ preventScroll: true });
+      } else {
+        const heading = document.querySelector(`#${CSS.escape(backView)} h1`);
+        if (heading instanceof HTMLElement) {
+          const hadTabIndex = heading.hasAttribute("tabindex");
+          heading.setAttribute("tabindex", "-1");
+          heading.focus({ preventScroll: true });
+          if (!hadTabIndex) {
+            heading.addEventListener("blur", () => heading.removeAttribute("tabindex"), { once: true });
+          }
+        }
+      }
+      state.detailReturnContext = null;
+    };
+
+    return runDetailViewTransition({
+      sourceElement: sourceImage,
+      expectedPhotoId: matchingPhotoId,
+      update,
+      targetViewId: backView,
+      targetElement: () => detailTransitionTrigger(context),
+      direction: "back",
+      after: focusReturnTarget
+    });
+  }
+
   function sessionKeyForView(viewId = currentPageViewId()) {
     return `${MOBILE_SESSION_KEY_PREFIX}${navigationViewFor(viewId)}`;
   }
@@ -1987,12 +2291,8 @@
       window.history.back();
       return;
     }
-    if (collectionView === "dexView") state.selectedAircraftId = null;
-    else if (collectionView === "squadronsView") state.selectedSquadronId = null;
-    else if (collectionView === "airshowsView") state.selectedAirshowId = null;
-    setActiveTab(collectionView, { updateHash: false });
+    returnFromDetail(collectionView, { updateHash: false });
     clearDeepLink({ replace: true });
-    window.scrollTo({ top: 0, behavior: "auto" });
   }
 
   function handleMapDirectInteraction() {
@@ -3071,6 +3371,9 @@
     if (viewId !== "airshowDetailView") {
       destroyAirshowStory();
     }
+    if (viewId !== "squadronsView") {
+      disconnectSquadronCountryObserver();
+    }
     const activeBefore = document.querySelector("[data-view].is-active");
     const navigationViewId = navigationViewFor(viewId);
     document.querySelectorAll("[data-view]").forEach((view) => {
@@ -3087,6 +3390,8 @@
     ensureViewRendered(viewId);
     if (viewId === "statsView") {
       updateStatsSectionNav();
+    } else if (viewId === "squadronsView") {
+      window.requestAnimationFrame(observeSquadronCountrySections);
     }
     updateMapPanelCoach();
     updateMobileAppChrome();
@@ -3099,7 +3404,7 @@
       window.requestAnimationFrame(() => {
         if (state.map) {
           refreshMapLayout();
-          if (!activeBefore || activeBefore.id !== viewId) {
+          if (!options.preserveMapView && (!activeBefore || activeBefore.id !== viewId)) {
             fitMapToPins();
           }
         }
@@ -3431,7 +3736,6 @@
       window.setTimeout(initializeMapWhenReady, 0);
       updateMapPanelCoach();
     } else if (directoryView === "dexView") {
-      renderDexHero();
       renderDex();
     } else if (directoryView === "squadronsView") {
       renderSquadronsPage();
@@ -5084,6 +5388,7 @@
             ${renderLocationIdentityMarks([], units, { includeFamilies: false })}
           </span>
         </div>
+        ${renderMapLocationFrameRail(photos)}
         <button class="location-page-button" type="button" data-location-page-id="${escapeAttr(pin.id)}">
           <span>Open location page</span>
           <span aria-hidden="true">→</span>
@@ -5092,6 +5397,45 @@
           ${squadronSection}
           ${typeSection}
           ${locationSection}
+        </div>
+      </section>
+    `;
+  }
+
+  function renderMapLocationFrameRail(photos) {
+    const frames = (photos || [])
+      .filter((photo) => photo && (photo.thumbnail || photo.image))
+      .slice()
+      .sort(sortPhotos)
+      .slice(0, 6);
+    if (!frames.length) {
+      return "";
+    }
+    return `
+      <section class="location-frame-rail-section" aria-labelledby="locationFrameRailHeading">
+        <div class="location-frame-rail-heading">
+          <h3 id="locationFrameRailHeading">Latest frames</h3>
+          <span>${frames.length}</span>
+        </div>
+        <div class="location-frame-rail" data-location-frame-rail tabindex="0" aria-label="Latest photographs from this location">
+          ${frames.map((photo) => `
+            <button
+              class="location-frame-card"
+              type="button"
+              data-photo-id="${escapeAttr(photo.id)}"
+              data-photo-context="map"
+              aria-label="Open ${escapeAttr(photoSubjectLabel(photo))}, ${escapeAttr(displayPhotoDate(photo))}"
+            >
+              ${renderResponsivePhotoImage(photo, `${photoSubjectLabel(photo)} at ${photo.locationName}`, {
+                className: "location-frame-image",
+                sizes: "(max-width: 1040px) 154px, 145px"
+              })}
+              <span class="location-frame-card-copy">
+                <strong>${escapeHtml(photoSubjectLabel(photo))}</strong>
+                <small>${escapeHtml(displayPhotoDate(photo))}</small>
+              </span>
+            </button>
+          `).join("")}
         </div>
       </section>
     `;
@@ -5419,39 +5763,129 @@
       .slice(0, 8);
   }
 
+  function dexHeroPhotos(entries = filteredAircraftEntries()) {
+    const photoIds = new Set(entries.flatMap((entry) => entry.photoIds || []));
+    return state.data.photos
+      .filter((photo) => photoIds.has(photo.id))
+      .sort(sortPhotos);
+  }
+
+  function updateDexHeroWithTransition(update, shouldAnimate) {
+    const canTransition = shouldAnimate
+      && typeof document.startViewTransition === "function"
+      && !isReducedMotion();
+    if (!canTransition) {
+      els.dexHeroMedia.classList.toggle("is-contextual-update", shouldAnimate);
+      update();
+      window.requestAnimationFrame(() => els.dexHeroMedia?.classList.remove("is-contextual-update"));
+      return;
+    }
+
+    skipActiveViewTransition();
+    const transitionSequence = ++state.viewTransitionSequence;
+    els.dexHeroMedia.classList.add("is-contextual-update");
+    const root = document.documentElement;
+    const mediaPreviousName = els.dexHeroMedia.style.viewTransitionName;
+    const featurePreviousName = els.dexHeroFeature.style.viewTransitionName;
+    root.dataset.viewTransitionKind = "dex-hero";
+    els.dexHeroMedia.style.viewTransitionName = "spotterdex-context-hero";
+    els.dexHeroFeature.style.viewTransitionName = "spotterdex-context-copy";
+    let transition;
+    try {
+      transition = document.startViewTransition(() => {
+        if (transitionSequence === state.viewTransitionSequence) {
+          update();
+        }
+      });
+    } catch (error) {
+      els.dexHeroMedia.style.viewTransitionName = mediaPreviousName;
+      els.dexHeroFeature.style.viewTransitionName = featurePreviousName;
+      delete root.dataset.viewTransitionKind;
+      update();
+      window.requestAnimationFrame(() => els.dexHeroMedia?.classList.remove("is-contextual-update"));
+      return;
+    }
+    state.activeViewTransition = transition;
+    transition.ready.catch(() => {});
+    let cleaned = false;
+    const cleanup = () => {
+      if (cleaned) {
+        return;
+      }
+      cleaned = true;
+      els.dexHeroMedia.style.viewTransitionName = mediaPreviousName;
+      els.dexHeroFeature.style.viewTransitionName = featurePreviousName;
+      els.dexHeroMedia.classList.remove("is-contextual-update");
+      delete root.dataset.viewTransitionKind;
+      if (state.activeViewTransition === transition) {
+        state.activeViewTransition = null;
+      }
+      if (state.activeViewTransitionCleanup === cleanup) {
+        state.activeViewTransitionCleanup = null;
+      }
+    };
+    state.activeViewTransitionCleanup = cleanup;
+    transition.finished.then(cleanup, cleanup);
+  }
+
   function renderDexHero() {
     if (!els.dexHeroMedia || !els.dexHeroFeature) {
       return;
     }
 
-    const latest = recentPhotos(1)[0] || null;
-    const countryCount = unique(state.data.aircraft.flatMap((entry) => entry.countries || [])).length;
-    els.dexHeroAircraftCount.textContent = String(state.data.aircraft.length);
-    els.dexHeroPhotoCount.textContent = String(state.data.photos.length);
-    els.dexHeroCountryCount.textContent = String(countryCount);
-
-    if (!latest) {
-      els.dexHeroMedia.innerHTML = '<span class="dex-hero-media-fallback"></span>';
-      els.dexHeroFeature.innerHTML = '<p>No dated frames yet</p>';
-      els.dexHeroAction.hidden = true;
+    const familyId = state.dexFamilyFilter;
+    const entries = filteredAircraftEntries();
+    const familyPhotos = dexHeroPhotos(entries);
+    const photos = familyId ? familyPhotos : state.data.photos.slice().sort(sortPhotos);
+    const latest = photos.find((photo) => photo.image || photo.thumbnail) || null;
+    const familyLabel = familyId ? AIRCRAFT_FAMILY_LABELS.get(familyId) || "Selected family" : "";
+    const aircraftCount = familyId ? entries.length : state.data.aircraft.length;
+    const photoCount = familyId ? familyPhotos.length : state.data.photos.length;
+    const countryCount = unique(entries.flatMap((entry) => entry.countries || [])).length;
+    const signature = [familyId || "all", latest?.id || "none", aircraftCount, photoCount, countryCount].join(":");
+    if (state.dexHeroSignature === signature) {
       return;
     }
+    const shouldAnimate = Boolean(state.dexHeroSignature);
 
-    els.dexHeroMedia.innerHTML = renderResponsivePhotoImage(latest, "", {
-      sizes: "100vw",
-      eager: true,
-      fullResolution: true
-    });
-    els.dexHeroFeature.innerHTML = `
-      <span>Newest in the archive</span>
-      <strong>${escapeHtml(photoSubjectLabel(latest))}</strong>
-      <small>${escapeHtml(latest.locationName)} · ${escapeHtml(displayPhotoDate(latest))}</small>
-    `;
-    els.dexHeroAction.hidden = false;
-    els.dexHeroAction.dataset.photoId = latest.id;
-    els.dexHeroAction.dataset.photoContext = "recent";
-    els.dexHeroAction.innerHTML = 'View latest frame <span aria-hidden="true">↗</span>';
-    els.dexHeroAction.setAttribute("aria-label", `Open latest frame: ${photoSubjectLabel(latest)} at ${latest.locationName}`);
+    updateDexHeroWithTransition(() => {
+      if (state.dexFamilyFilter !== familyId) {
+        return;
+      }
+      els.dexHeroAircraftCount.textContent = String(aircraftCount);
+      els.dexHeroPhotoCount.textContent = String(photoCount);
+      els.dexHeroCountryCount.textContent = String(countryCount);
+
+      if (!latest) {
+        els.dexHeroMedia.innerHTML = '<span class="dex-hero-media-fallback"></span>';
+        els.dexHeroFeature.innerHTML = `<p>No ${familyId ? `${escapeHtml(familyLabel.toLowerCase())} ` : ""}frames yet</p>`;
+        els.dexHeroAction.hidden = true;
+        delete els.dexHeroAction.dataset.photoId;
+        delete els.dexHeroAction.dataset.photoContext;
+        state.dexHeroSignature = signature;
+        return;
+      }
+
+      els.dexHeroMedia.innerHTML = renderResponsivePhotoImage(latest, "", {
+        sizes: "100vw",
+        eager: true,
+        fullResolution: true
+      });
+      els.dexHeroFeature.innerHTML = `
+        <span>${familyId ? `Newest ${escapeHtml(familyLabel.toLowerCase())} frame` : "Newest in the archive"}</span>
+        <strong>${escapeHtml(photoSubjectLabel(latest))}</strong>
+        <small>${escapeHtml(latest.locationName)} · ${escapeHtml(displayPhotoDate(latest))}</small>
+      `;
+      els.dexHeroAction.hidden = false;
+      els.dexHeroAction.dataset.photoId = latest.id;
+      els.dexHeroAction.dataset.photoContext = familyId ? "dex-family" : "recent";
+      els.dexHeroAction.innerHTML = `${familyId ? `View latest ${escapeHtml(familyLabel.toLowerCase())} frame` : "View latest frame"} <span aria-hidden="true">↗</span>`;
+      els.dexHeroAction.setAttribute(
+        "aria-label",
+        `Open latest ${familyId ? `${familyLabel.toLowerCase()} ` : ""}frame: ${photoSubjectLabel(latest)} at ${latest.locationName}`
+      );
+      state.dexHeroSignature = signature;
+    }, shouldAnimate);
   }
 
   function renderStatsDashboard() {
@@ -5695,6 +6129,7 @@
       "squadrons"
     );
     scrollActiveFilterChip(els.squadronCountryRail);
+    window.requestAnimationFrame(observeSquadronCountrySections);
   }
 
   function squadronArchiveEntries() {
@@ -6421,24 +6856,111 @@
       return;
     }
     const groups = groupSquadronsByCountry(squadrons);
+    const isMobile = isFocusedMobileLayout();
+    const allActive = isMobile ? !state.squadronCountryFilter : !state.squadronCurrentCountry;
     els.squadronCountryRail.innerHTML = groups.length
       ? `
-          <button class="squadron-country-filter-all${state.squadronCountryFilter ? "" : " is-active"}" type="button" data-squadron-country-jump="squadronsView" data-squadron-country-filter="" aria-pressed="${state.squadronCountryFilter ? "false" : "true"}">
+          <button class="squadron-country-filter-all${allActive ? " is-active" : ""}" type="button" data-squadron-country-jump="squadronsView" data-squadron-country-filter=""${isMobile ? ` aria-pressed="${String(!state.squadronCountryFilter)}"` : allActive ? ' aria-current="location"' : ""}>
             <span class="squadron-country-nav-label">All</span>
             <span class="squadron-country-count">${squadrons.length}</span>
           </button>
           ${groups
           .map(
-            (group) => `
-              <button class="${state.squadronCountryFilter === group.country ? "is-active" : ""}" type="button" data-squadron-country-jump="${escapeAttr(squadronCountryId(group.country))}" data-squadron-country-filter="${escapeAttr(group.country)}" aria-pressed="${state.squadronCountryFilter === group.country ? "true" : "false"}">
+            (group) => {
+              const active = isMobile
+                ? state.squadronCountryFilter === group.country
+                : state.squadronCurrentCountry === group.country;
+              return `
+              <button class="${active ? "is-active" : ""}" type="button" data-squadron-country-jump="${escapeAttr(squadronCountryId(group.country))}" data-squadron-country-filter="${escapeAttr(group.country)}"${isMobile ? ` aria-pressed="${String(active)}"` : active ? ' aria-current="location"' : ""}>
                 ${renderCountryLabel(group.country, "squadron-country-nav-label")}
                 <span class="squadron-country-count">${group.squadrons.length}</span>
               </button>
-            `
+            `;
+            }
           )
           .join("")}
         `
       : '<span class="muted">No countries</span>';
+  }
+
+  function disconnectSquadronCountryObserver() {
+    state.squadronCountryObserver?.disconnect();
+    state.squadronCountryObserver = null;
+  }
+
+  function updateSquadronCurrentCountry(country) {
+    if (!els.squadronCountryRail || isFocusedMobileLayout()) {
+      return;
+    }
+    const nextCountry = String(country || "");
+    state.squadronCurrentCountry = nextCountry;
+    let currentButton = null;
+    els.squadronCountryRail.querySelectorAll("[data-squadron-country-jump]").forEach((button) => {
+      const isCurrent = (button.dataset.squadronCountryFilter || "") === nextCountry;
+      button.classList.toggle("is-active", isCurrent);
+      if (isCurrent) {
+        button.setAttribute("aria-current", "location");
+        currentButton = button;
+      } else {
+        button.removeAttribute("aria-current");
+      }
+    });
+    revealSquadronCountryChip(currentButton);
+    scheduleScrollEdgeUpdate();
+  }
+
+  function revealSquadronCountryChip(button) {
+    const rail = els.squadronCountryRail;
+    if (!(button instanceof HTMLElement) || !rail) {
+      return;
+    }
+    const railRect = rail.getBoundingClientRect();
+    const buttonRect = button.getBoundingClientRect();
+    let nextScrollLeft = rail.scrollLeft;
+    if (buttonRect.left < railRect.left) {
+      nextScrollLeft += buttonRect.left - railRect.left;
+    } else if (buttonRect.right > railRect.right) {
+      nextScrollLeft += buttonRect.right - railRect.right;
+    } else {
+      return;
+    }
+    rail.scrollTo({ left: Math.max(0, nextScrollLeft), behavior: "auto" });
+  }
+
+  function currentSquadronCountryFromSections(sections) {
+    const activationTop = 150;
+    const candidates = sections
+      .map((section) => ({ section, rect: section.getBoundingClientRect() }))
+      .filter(({ rect }) => rect.bottom > activationTop);
+    if (!candidates.length || candidates[0].rect.top > activationTop + 32) {
+      return "";
+    }
+    candidates.sort((a, b) => Math.abs(a.rect.top - activationTop) - Math.abs(b.rect.top - activationTop));
+    const id = candidates[0].section.id.replace(/^squadron-country-/, "");
+    const button = els.squadronCountryRail?.querySelector(`[data-squadron-country-jump="${CSS.escape(candidates[0].section.id)}"]`);
+    return button?.dataset.squadronCountryFilter || id;
+  }
+
+  function observeSquadronCountrySections() {
+    disconnectSquadronCountryObserver();
+    if (isFocusedMobileLayout() || activeViewId() !== "squadronsView" || !("IntersectionObserver" in window)) {
+      return;
+    }
+    const sections = Array.from(els.squadronLogoGrid?.querySelectorAll(".squadron-country-section") || []);
+    if (!sections.length) {
+      updateSquadronCurrentCountry("");
+      return;
+    }
+    const updateCurrent = () => updateSquadronCurrentCountry(currentSquadronCountryFromSections(sections));
+    const activationTop = 150;
+    const activationLineHeight = 2;
+    const bottomMargin = -Math.max(0, window.innerHeight - activationTop - activationLineHeight);
+    state.squadronCountryObserver = new IntersectionObserver(updateCurrent, {
+      rootMargin: `-${activationTop}px 0px ${bottomMargin}px 0px`,
+      threshold: 0
+    });
+    sections.forEach((section) => state.squadronCountryObserver.observe(section));
+    updateCurrent();
   }
 
   function renderSquadronCountrySections(squadrons, totalSquadrons = squadrons) {
@@ -7275,6 +7797,7 @@
     const entries = filteredAircraftEntries();
     const familyFilter = state.dexFamilyFilter;
 
+    renderDexHero();
     renderDexFamilyFilter();
     scrollActiveFilterChip(els.dexFamilyFilter);
     els.dexCount.textContent = `${entries.length} entr${entries.length === 1 ? "y" : "ies"}${familyFilter ? ` in ${AIRCRAFT_FAMILY_LABELS.get(familyFilter) || "selected family"}` : ""}`;
@@ -8192,20 +8715,32 @@
       navigateToViewPage("locationDetailView", `location=${encodeURIComponent(pin.id)}&detail=1`);
       return;
     }
-    selectPin(pin.id, {
-      updateHash: false,
-      pan: false,
-      openPanel: false,
-      openDossier: false
+    const photos = photosForPin(pin);
+    const expectedPhotoId = locationProfile(pin, photos).heroPhoto?.id || "";
+    enterDetailView({
+      backView: "mapView",
+      detailView: "locationDetailView",
+      kind: "location",
+      entityId: pin.id,
+      sourceElement: options.transitionSource,
+      expectedPhotoId,
+      update: () => {
+        selectPin(pin.id, {
+          updateHash: false,
+          pan: false,
+          openPanel: false,
+          openDossier: false
+        });
+        setActiveTab("locationDetailView", { updateHash: false });
+        renderLocationPage();
+        if (options.updateHash !== false) {
+          updateLocationDetailLink(pin.id);
+        }
+        if (options.scroll !== false) {
+          window.scrollTo({ top: 0, behavior: "auto" });
+        }
+      }
     });
-    setActiveTab("locationDetailView", { updateHash: false });
-    renderLocationPage();
-    if (options.updateHash !== false) {
-      updateLocationDetailLink(pin.id);
-    }
-    if (options.scroll !== false) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
   }
 
   function updateActiveMapMarker(previousPinId, nextPinId) {
@@ -8247,26 +8782,39 @@
       );
       return;
     }
-    state.dexGroupMode = group;
-    state.selectedAircraftId = aircraftId;
-    setActiveTab("aircraftDetailView", { updateHash: false });
-    renderAircraftDetail();
-    if (options.updateHash !== false) {
-      updateAircraftDetailLink(aircraftId, { group });
-    }
-    if (options.scroll !== false) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-    if (options.focusLocation && state.selectedAircraftLocationId) {
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => {
-          document.getElementById("aircraftPhotoArchive")?.scrollIntoView({
-            block: "start",
-            behavior: options.initial ? "auto" : "smooth"
+    const entry = state.aircraftById.get(aircraftId);
+    const photos = entry ? photosForAircraft(entry) : EMPTY_PHOTOS;
+    const expectedPhotoId = (entry && (state.photoById.get(entry.coverPhoto) || photos[0]))?.id || "";
+    enterDetailView({
+      backView: "dexView",
+      detailView: "aircraftDetailView",
+      kind: "aircraft",
+      entityId: aircraftId,
+      sourceElement: options.focusLocation ? null : options.transitionSource,
+      expectedPhotoId,
+      update: () => {
+        state.dexGroupMode = group;
+        state.selectedAircraftId = aircraftId;
+        setActiveTab("aircraftDetailView", { updateHash: false });
+        renderAircraftDetail();
+        if (options.updateHash !== false) {
+          updateAircraftDetailLink(aircraftId, { group });
+        }
+        if (options.scroll !== false) {
+          window.scrollTo({ top: 0, behavior: "auto" });
+        }
+        if (options.focusLocation && state.selectedAircraftLocationId) {
+          window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => {
+              document.getElementById("aircraftPhotoArchive")?.scrollIntoView({
+                block: "start",
+                behavior: options.initial || isReducedMotion() ? "auto" : "smooth"
+              });
+            });
           });
-        });
-      });
-    }
+        }
+      }
+    });
   }
 
   function selectSquadron(squadronId, options = {}) {
@@ -8274,15 +8822,27 @@
       navigateToViewPage("squadronDetailView", `squadron=${encodeURIComponent(squadronId)}`);
       return;
     }
-    state.selectedSquadronId = squadronId;
-    setActiveTab("squadronDetailView", { updateHash: false });
-    renderSquadronDetail();
-    if (options.updateHash !== false) {
-      updateDeepLink("squadron", squadronId);
-    }
-    if (options.scroll !== false) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+    const squadron = collectSquadrons().find((item) => item.id === squadronId);
+    const expectedPhotoId = squadron ? squadronCardHero(squadron)?.id || "" : "";
+    enterDetailView({
+      backView: "squadronsView",
+      detailView: "squadronDetailView",
+      kind: "squadron",
+      entityId: squadronId,
+      sourceElement: options.transitionSource,
+      expectedPhotoId,
+      update: () => {
+        state.selectedSquadronId = squadronId;
+        setActiveTab("squadronDetailView", { updateHash: false });
+        renderSquadronDetail();
+        if (options.updateHash !== false) {
+          updateDeepLink("squadron", squadronId);
+        }
+        if (options.scroll !== false) {
+          window.scrollTo({ top: 0, behavior: "auto" });
+        }
+      }
+    });
   }
 
   function selectAirshow(airshowId, options = {}) {
@@ -8294,17 +8854,29 @@
       navigateToViewPage("airshowDetailView", `airshow=${encodeURIComponent(airshow.id)}`);
       return;
     }
-    state.selectedAirshowId = airshowId;
-    setActiveTab("airshowDetailView", { updateHash: false });
-    renderAirshowDetail();
+    const photos = photosForAirshow(airshow);
+    const expectedPhotoId = airshowHeroPhoto(airshow, photos)?.id || "";
+    enterDetailView({
+      backView: "airshowsView",
+      detailView: "airshowDetailView",
+      kind: "airshow",
+      entityId: airshow.id,
+      sourceElement: options.transitionSource,
+      expectedPhotoId,
+      update: () => {
+        state.selectedAirshowId = airshowId;
+        setActiveTab("airshowDetailView", { updateHash: false });
+        renderAirshowDetail();
 
-    if (options.updateHash !== false) {
-      updateDeepLink("airshow", airshowId);
-    }
+        if (options.updateHash !== false) {
+          updateDeepLink("airshow", airshowId);
+        }
 
-    if (options.scroll !== false) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+        if (options.scroll !== false) {
+          window.scrollTo({ top: 0, behavior: "auto" });
+        }
+      }
+    });
   }
 
   function selectStatsSection(section, options = {}) {
@@ -8683,6 +9255,8 @@
     const viewerContext = context || "map";
     const collection = viewerContext === "dex"
       ? currentDexPhotoIds()
+      : viewerContext === "dex-family"
+        ? currentDexFamilyPhotoIds()
       : viewerContext === "recent"
         ? currentRecentPhotoIds()
         : viewerContext === "stats"
@@ -9774,6 +10348,10 @@
     return entry ? photosForAircraft(entry).map((photo) => photo.id) : [];
   }
 
+  function currentDexFamilyPhotoIds() {
+    return dexHeroPhotos().map((photo) => photo.id);
+  }
+
   function currentRecentPhotoIds() {
     return recentPhotos(RECENT_PHOTO_LIMIT).map((photo) => photo.id);
   }
@@ -9872,6 +10450,7 @@
       if (pageViewId === "dexView" && aircraftFamily) {
         state.dexFamilyFilter = aircraftFamily;
         openDirectoryView("dexView");
+        renderDex();
         return true;
       }
 
