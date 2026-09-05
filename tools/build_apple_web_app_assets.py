@@ -114,6 +114,26 @@ def _write_if_changed(path: Path, payload: bytes) -> bool:
     return True
 
 
+def _png_pixels_match(actual: bytes, expected: bytes) -> bool:
+    """Compare decoded PNG content without depending on zlib's byte stream."""
+    if actual == expected:
+        return True
+    try:
+        with Image.open(io.BytesIO(actual)) as actual_image, Image.open(
+            io.BytesIO(expected)
+        ) as expected_image:
+            actual_image.load()
+            expected_image.load()
+            return (
+                actual_image.format == expected_image.format == "PNG"
+                and actual_image.mode == expected_image.mode
+                and actual_image.size == expected_image.size
+                and actual_image.tobytes() == expected_image.tobytes()
+            )
+    except (OSError, ValueError):
+        return False
+
+
 def _resized(image: Image.Image, size: Tuple[int, int]) -> Image.Image:
     resized = image.resize(size, Image.Resampling.LANCZOS).convert("RGB")
     pixels = resized.load()
@@ -202,7 +222,7 @@ def check_apple_web_app_assets(root: Path) -> Tuple[bool, Tuple[str, ...]]:
             errors.append(f"Missing generated Apple asset: {path.relative_to(root)}")
             continue
         actual = path.read_bytes()
-        if actual != expected:
+        if not _png_pixels_match(actual, expected):
             errors.append(f"Stale generated Apple asset: {path.relative_to(root)}")
 
     return not errors, tuple(errors)

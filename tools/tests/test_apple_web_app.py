@@ -1,3 +1,4 @@
+import io
 import json
 import re
 import unittest
@@ -10,6 +11,7 @@ from tools.build_apple_web_app_assets import (
     LAUNCH_BACKGROUND,
     LAUNCH_BACKGROUND_RGB,
     STARTUP_ASSET_VERSION,
+    _png_pixels_match,
     check_apple_web_app_assets,
     startup_assets,
 )
@@ -26,6 +28,15 @@ class AppleWebAppAssetTests(unittest.TestCase):
         self.assertEqual(44, len(startup_assets()))
         current, errors = check_apple_web_app_assets(ROOT)
         self.assertTrue(current, "\n".join(errors))
+
+    def test_asset_check_ignores_equivalent_png_compression(self):
+        image = Image.new("RGB", (12, 12), LAUNCH_BACKGROUND_RGB)
+        optimized = io.BytesIO()
+        uncompressed = io.BytesIO()
+        image.save(optimized, format="PNG", optimize=True, compress_level=9)
+        image.save(uncompressed, format="PNG", optimize=False, compress_level=0)
+        self.assertNotEqual(optimized.getvalue(), uncompressed.getvalue())
+        self.assertTrue(_png_pixels_match(optimized.getvalue(), uncompressed.getvalue()))
 
     def test_every_page_has_exact_startup_matrix(self):
         expected = [
