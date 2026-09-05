@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-05T15:31:30+00:00",
+  "generatedAt": "2026-09-05T15:45:22+00:00",
   "entities": {
     "countries": {
       "au": {
@@ -223,7 +223,7 @@
       },
       "boeing-e-3g-sentry": {
         "id": "boeing-e-3g-sentry",
-        "name": "Boeing E-3G Sentry",
+        "name": "Boeing E-3 Sentry",
         "family": "heavy",
         "heroPhotoId": "",
         "doubleWidth": true,
@@ -485,14 +485,6 @@
         "doubleWidth": null,
         "writeUp": ""
       },
-      "kawasaki-uh-60ja": {
-        "id": "kawasaki-uh-60ja",
-        "name": "Kawasaki UH-60JA",
-        "family": "helicopter",
-        "heroPhotoId": "",
-        "doubleWidth": null,
-        "writeUp": ""
-      },
       "kawasaki-up-1": {
         "id": "kawasaki-up-1",
         "name": "Kawasaki UP-1",
@@ -549,14 +541,6 @@
         "doubleWidth": null,
         "writeUp": ""
       },
-      "lockheed-martin-f-35-lightning-ii": {
-        "id": "lockheed-martin-f-35-lightning-ii",
-        "name": "Lockheed Martin F-35 Lightning II",
-        "family": "fighter",
-        "heroPhotoId": "",
-        "doubleWidth": null,
-        "writeUp": ""
-      },
       "lockheed-martin-f-35a-lightning-ii": {
         "id": "lockheed-martin-f-35a-lightning-ii",
         "name": "Lockheed Martin F-35A Lightning II",
@@ -578,14 +562,6 @@
         "name": "Mitsubishi F-15DJ Eagle",
         "family": "fighter",
         "heroPhotoId": "2023-10-07-dsc03743-enhanced-nr",
-        "doubleWidth": null,
-        "writeUp": ""
-      },
-      "mitsubishi-f-15j": {
-        "id": "mitsubishi-f-15j",
-        "name": "Mitsubishi F-15J",
-        "family": "fighter",
-        "heroPhotoId": "",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -626,6 +602,14 @@
         "name": "Mitsubishi UH-60J",
         "family": "helicopter",
         "heroPhotoId": "2025-11-30-dsc04333",
+        "doubleWidth": null,
+        "writeUp": ""
+      },
+      "kawasaki-uh-60ja": {
+        "id": "kawasaki-uh-60ja",
+        "name": "Mitsubishi UH-60JA",
+        "family": "helicopter",
+        "heroPhotoId": "",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -802,7 +786,7 @@
         "id": "jp-15th-brigade",
         "name": "15th Brigade",
         "countryId": "jp",
-        "kind": "squadron",
+        "kind": "organisation",
         "logo": "",
         "heroPhotoId": "",
         "writeUp": ""
@@ -5226,44 +5210,6 @@
           "DateTime": "2026:09:05 22:58:41"
         }
       },
-      "2025-12-10-dsc03360": {
-        "id": "2025-12-10-dsc03360",
-        "locationId": "jp-naha-air-base",
-        "eventId": "",
-        "subjects": [
-          {
-            "aircraftId": "kawasaki-rc-2",
-            "unitId": "jp-electronic-warfare-squadron",
-            "primary": true
-          }
-        ],
-        "year": "2025",
-        "date": "2025-12-10",
-        "sortDate": "2025-12-10",
-        "livery": "",
-        "title": "",
-        "caption": "RC-2 at Naha Air Base",
-        "image": "assets/generated/photos/2025-12-10-dsc03360.jpg",
-        "thumbnail": "assets/generated/thumbs/2025-12-10-dsc03360.jpg",
-        "source": "raw_assets/DSC03360.jpg",
-        "originalSize": "6842 x 5132",
-        "processedSize": "2048 x 1536",
-        "thumbnailSize": "768 x 576",
-        "exif": {
-          "Make": "SONY",
-          "Model": "ILCE-1M2",
-          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
-          "FocalLength": "391mm",
-          "FocalLengthIn35mmFilm": "391mm",
-          "FNumber": "f/8.0",
-          "ExposureTime": "1/1000s",
-          "ExposureBiasValue": "0.0",
-          "ISO": "125",
-          "DateTimeOriginal": "2025:12:10 09:41:43",
-          "DateTimeDigitized": "2025:12:10 09:41:43",
-          "DateTime": "2026:09:05 22:58:40"
-        }
-      },
       "2025-12-10-181202": {
         "id": "2025-12-10-181202",
         "locationId": "jp-naha-air-base",
@@ -5878,7 +5824,7 @@
         "eventId": "",
         "subjects": [
           {
-            "aircraftId": "lockheed-martin-f-35-lightning-ii",
+            "aircraftId": "lockheed-martin-f-35a-lightning-ii",
             "unitId": "jp-303rd-tactical-fighter-squadron",
             "primary": true
           }
@@ -5916,7 +5862,7 @@
         "eventId": "",
         "subjects": [
           {
-            "aircraftId": "lockheed-martin-f-35-lightning-ii",
+            "aircraftId": "lockheed-martin-f-35a-lightning-ii",
             "unitId": "jp-303rd-tactical-fighter-squadron",
             "primary": true
           }
@@ -5954,7 +5900,7 @@
         "eventId": "",
         "subjects": [
           {
-            "aircraftId": "lockheed-martin-f-35-lightning-ii",
+            "aircraftId": "lockheed-martin-f-35a-lightning-ii",
             "unitId": "jp-303rd-tactical-fighter-squadron",
             "primary": true
           }
@@ -5992,7 +5938,7 @@
         "eventId": "",
         "subjects": [
           {
-            "aircraftId": "lockheed-martin-f-35-lightning-ii",
+            "aircraftId": "lockheed-martin-f-35a-lightning-ii",
             "unitId": "jp-303rd-tactical-fighter-squadron",
             "primary": true
           }
@@ -6030,7 +5976,7 @@
         "eventId": "",
         "subjects": [
           {
-            "aircraftId": "lockheed-martin-f-35-lightning-ii",
+            "aircraftId": "lockheed-martin-f-35a-lightning-ii",
             "unitId": "jp-303rd-tactical-fighter-squadron",
             "primary": true
           }
@@ -6144,7 +6090,7 @@
         "eventId": "",
         "subjects": [
           {
-            "aircraftId": "lockheed-martin-f-35-lightning-ii",
+            "aircraftId": "lockheed-martin-f-35a-lightning-ii",
             "unitId": "jp-303rd-tactical-fighter-squadron",
             "primary": true
           }
@@ -11274,7 +11220,7 @@
         "eventId": "jp-tsuiki-air-show-2023",
         "subjects": [
           {
-            "aircraftId": "mitsubishi-f-15j",
+            "aircraftId": "mitsubishi-f-15j-eagle",
             "unitId": "jp-305th-tactical-fighter-squadron",
             "primary": true
           }
@@ -11312,7 +11258,7 @@
         "eventId": "jp-tsuiki-air-show-2023",
         "subjects": [
           {
-            "aircraftId": "mitsubishi-f-15j",
+            "aircraftId": "mitsubishi-f-15j-eagle",
             "unitId": "jp-305th-tactical-fighter-squadron",
             "primary": true
           }
@@ -11350,7 +11296,7 @@
         "eventId": "jp-tsuiki-air-show-2023",
         "subjects": [
           {
-            "aircraftId": "mitsubishi-f-15j",
+            "aircraftId": "mitsubishi-f-15j-eagle",
             "unitId": "jp-305th-tactical-fighter-squadron",
             "primary": true
           }
@@ -24072,7 +24018,6 @@
       ],
       "kawasaki-rc-2": [
         "2025-12-10-dsc03396",
-        "2025-12-10-dsc03360",
         "2025-12-10-181202",
         "2025-12-09-dsc00253"
       ],
@@ -24095,10 +24040,6 @@
         "2023-11-26-dsc06297",
         "2023-11-26-dsc06273",
         "2023-11-11-dsc08070-enhanced-nr"
-      ],
-      "kawasaki-uh-60ja": [
-        "2025-12-09-dsc01511",
-        "2025-12-09-dsc01403"
       ],
       "kawasaki-up-1": [
         "2023-10-21-dsc00638-enhanced-nr"
@@ -24141,19 +24082,17 @@
       "lockheed-kc-130j-hercules": [
         "2023-08-04-italy-c130"
       ],
-      "lockheed-martin-f-35-lightning-ii": [
-        "2025-12-03-dsc02333-2",
-        "2025-12-03-dsc02270",
-        "2025-12-03-dsc02238",
-        "2025-12-03-dsc02059",
-        "2025-12-03-dsc02040",
-        "2025-12-03-dsc01766"
-      ],
       "lockheed-martin-f-35a-lightning-ii": [
         "2026-02-03-raaf-f35a-2",
         "2026-02-03-raaf-f35a-1",
         "2026-01-31-raaf-f35a-4",
         "2026-01-31-raaf-f35a-3",
+        "2025-12-03-dsc02333-2",
+        "2025-12-03-dsc02270",
+        "2025-12-03-dsc02238",
+        "2025-12-03-dsc02059",
+        "2025-12-03-dsc02040",
+        "2025-12-03-dsc01766",
         "2024-03-04-usaf-ak-f35a-2",
         "2024-03-04-usaf-ak-f35a-1",
         "2023-08-10-italy-f35-4",
@@ -24194,11 +24133,6 @@
         "2023-10-06-dsc00543-enhanced-nr",
         "2023-10-06-dsc00151-enhanced-nr"
       ],
-      "mitsubishi-f-15j": [
-        "2023-11-26-qc-dsc05157-enhanced-nr",
-        "2023-11-26-qc-dsc05145-enhanced-nr",
-        "2023-11-26-qc-dsc05008-enhanced-nr"
-      ],
       "mitsubishi-f-15j-eagle": [
         "2026-04-08-128928",
         "2025-12-12-128925",
@@ -24220,6 +24154,9 @@
         "2024-08-21-dsc06371-enhanced-nr",
         "2024-08-21-dsc05993-enhanced-nr",
         "2024-08-20-dsc05504-enhanced-nr",
+        "2023-11-26-qc-dsc05157-enhanced-nr",
+        "2023-11-26-qc-dsc05145-enhanced-nr",
+        "2023-11-26-qc-dsc05008-enhanced-nr",
         "2023-11-12-dsc00354-enhanced-nr",
         "2023-11-11-dsc07575-enhanced-nr",
         "2023-11-11-dsc07295-enhanced-nr",
@@ -24343,6 +24280,10 @@
         "2023-10-07-dsc03063-enhanced-nr",
         "2023-10-01-dsc09035-enhanced-nr",
         "2023-10-01-dsc08902-enhanced-nr"
+      ],
+      "kawasaki-uh-60ja": [
+        "2025-12-09-dsc01511",
+        "2025-12-09-dsc01403"
       ],
       "saab-gripen-c": [
         "2026-01-10-dsc05725",
@@ -24774,7 +24715,6 @@
         "2026-04-08-dsc08967",
         "2026-04-08-681203",
         "2025-12-10-dsc03396",
-        "2025-12-10-dsc03360",
         "2025-12-10-181202",
         "2025-12-09-dsc00253"
       ],
@@ -25365,7 +25305,6 @@
         "2025-12-11-dsc04372",
         "2025-12-11-dsc04209",
         "2025-12-10-dsc03396",
-        "2025-12-10-dsc03360",
         "2025-12-10-181202",
         "2025-12-09-dsc09234",
         "2025-12-09-dsc09228",
@@ -26247,9 +26186,6 @@
         "jp-air-development-and-test-wing",
         "jp-blue-impulse"
       ],
-      "kawasaki-uh-60ja": [
-        "jp-15th-brigade"
-      ],
       "kawasaki-up-1": [
         "jp-vx-51"
       ],
@@ -26271,13 +26207,11 @@
       "lockheed-kc-130j-hercules": [
         "it-46-brigata-aerea"
       ],
-      "lockheed-martin-f-35-lightning-ii": [
-        "jp-303rd-tactical-fighter-squadron"
-      ],
       "lockheed-martin-f-35a-lightning-ii": [
         "au-75-squadron",
         "it-32-stormo",
         "it-6-stormo",
+        "jp-303rd-tactical-fighter-squadron",
         "us-355th-fighter-squadron",
         "us-356th-fighter-squadron"
       ],
@@ -26287,15 +26221,13 @@
       "mitsubishi-f-15dj-eagle": [
         "jp-tactical-fighter-training-group"
       ],
-      "mitsubishi-f-15j": [
-        "jp-305th-tactical-fighter-squadron"
-      ],
       "mitsubishi-f-15j-eagle": [
         "jp-201st-tactical-fighter-squadron",
         "jp-203rd-tactical-fighter-squadron",
         "jp-204th-tactical-fighter-squadron",
         "jp-303rd-tactical-fighter-squadron",
         "jp-304th-tactical-fighter-squadron",
+        "jp-305th-tactical-fighter-squadron",
         "jp-306th-tactical-fighter-squadron",
         "jp-air-development-and-test-wing"
       ],
@@ -26312,6 +26244,9 @@
       ],
       "mitsubishi-uh-60j": [
         "jp-air-rescue-wing"
+      ],
+      "kawasaki-uh-60ja": [
+        "jp-15th-brigade"
       ],
       "saab-gripen-c": [
         "th-701st-squadron"
