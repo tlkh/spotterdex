@@ -29,6 +29,8 @@
   const MAP_PANEL_COACH_STORAGE_KEY = "spotterdex-map-panel-coach-dismissed";
   const MOBILE_SESSION_KEY_PREFIX = "spotterdex-mobile-session-v1:";
   const INSTALL_DISMISSED_STORAGE_KEY = "spotterdex-install-dismissed-v1";
+  const IOS_INSTALL_HINT_VISITS_STORAGE_KEY = "spotterdex-ios-install-hint-visits-v1";
+  const IOS_INSTALL_HINT_DISMISSED_STORAGE_KEY = "spotterdex-ios-install-hint-dismissed-v1";
   const SEARCH_RESULT_LIMIT_PER_KIND = 6;
   const SEARCH_KIND_ORDER = ["aircraft", "squadron", "location", "airshow", "photo"];
   const SEARCH_KIND_LABELS = {
@@ -161,6 +163,11 @@
     suppressMapLocationClickUntil: 0,
     scrollEdgeFrame: 0,
     installPromptEvent: null,
+    iosInstallHintVisitRecorded: false,
+    iosInstallHintVisitCount: 0,
+    iosInstallHintEligible: false,
+    iosInstallHintDismissed: false,
+    overlayViewportCleanup: null,
     connectivityOffline: false,
     offlineMediaCoverageToken: 0,
     offlineMediaRefreshFrame: 0,
@@ -195,11 +202,14 @@
     ensureAppToast();
     ensureGlobalSearch();
     ensureAppUpdatePrompt();
+    ensureIosInstallHint();
     ensureMobileAppShell();
     cacheElements();
     state.sessionRestore = readPageSessionState();
     restoreSessionFilters(state.sessionRestore);
     setupEvents();
+    state.iosInstallHintVisitCount = recordIosInstallHintVisit();
+    maybeShowIosInstallHint();
 
     state.data = prepareData(await loadData());
     state.searchIndex = buildGlobalSearchIndex();
@@ -295,7 +305,8 @@
     document.body.insertAdjacentHTML("beforeend", `
       <div class="photo-viewer" id="photoViewer" role="dialog" aria-modal="true" aria-label="Photo viewer" hidden>
         <div class="viewer-ambient" aria-hidden="true"></div>
-        <div class="viewer-stage">
+        <div class="viewer-viewport">
+          <div class="viewer-stage">
           <button class="viewer-button close" type="button" id="closeViewerButton" aria-label="Close viewer" title="Close viewer">
             <svg class="viewer-control-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="m6 6 12 12M18 6 6 18"></path>
@@ -327,22 +338,23 @@
             </div>
             <button class="viewer-button next" type="button" id="nextPhotoButton" aria-label="Next photo">▶</button>
           </div>
-          <div class="viewer-filmstrip" id="viewerFilmstrip" aria-label="Photo thumbnails"></div>
-        </div>
-        <aside class="viewer-info" id="viewerInfo">
-          <div class="viewer-info-sheet-bar">
-            <button class="viewer-info-sheet-handle" type="button" data-sheet-handle="viewer" aria-label="Collapse photo information" aria-expanded="true"></button>
-            <button class="viewer-info-close" type="button" id="viewerInfoCloseButton" aria-label="Close photo information" title="Close photo information">
-              <svg class="viewer-control-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="m6 6 12 12M18 6 6 18"></path>
-              </svg>
-            </button>
+            <div class="viewer-filmstrip" id="viewerFilmstrip" aria-label="Photo thumbnails"></div>
           </div>
-          <p class="eyebrow" id="viewerKicker">Photo</p>
-          <h2 id="viewerTitle">Photo details</h2>
-          <p class="viewer-caption" id="viewerCaption"></p>
-          <div class="metadata-panel" id="viewerMetadata"></div>
-        </aside>
+          <aside class="viewer-info" id="viewerInfo">
+            <div class="viewer-info-sheet-bar">
+              <button class="viewer-info-sheet-handle" type="button" data-sheet-handle="viewer" aria-label="Collapse photo information" aria-expanded="true"></button>
+              <button class="viewer-info-close" type="button" id="viewerInfoCloseButton" aria-label="Close photo information" title="Close photo information">
+                <svg class="viewer-control-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="m6 6 12 12M18 6 6 18"></path>
+                </svg>
+              </button>
+            </div>
+            <p class="eyebrow" id="viewerKicker">Photo</p>
+            <h2 id="viewerTitle">Photo details</h2>
+            <p class="viewer-caption" id="viewerCaption"></p>
+            <div class="metadata-panel" id="viewerMetadata"></div>
+          </aside>
+        </div>
       </div>
     `);
     cacheViewerElements();
@@ -415,6 +427,21 @@
         </span>
         <button class="app-update-action" type="button" id="appUpdateButton">Update</button>
         <button class="app-update-dismiss" type="button" id="appUpdateDismiss" aria-label="Update later">Later</button>
+      </section>
+    `);
+  }
+
+  function ensureIosInstallHint() {
+    if (document.getElementById("iosInstallHint")) {
+      return;
+    }
+    document.body.insertAdjacentHTML("beforeend", `
+      <section class="ios-install-hint" id="iosInstallHint" role="region" aria-label="Install SpotterDex on iPhone or iPad" hidden>
+        <img src="assets/icons/spotterdex-apple-touch-icon-v4.png" alt="">
+        <p>Add SpotterDex to your Home Screen for a full-screen field guide. Tap <span class="ios-install-share-glyph" role="img" aria-label="Share">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 16V3"></path><path d="m7 8 5-5 5 5"></path><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"></path></svg>
+        </span>, then <strong>Add to Home Screen</strong>.</p>
+        <button class="ios-install-hint-dismiss" type="button" id="iosInstallHintDismiss" aria-label="Dismiss installation hint">×</button>
       </section>
     `);
   }
@@ -492,6 +519,8 @@
     els.appUpdatePrompt = document.getElementById("appUpdatePrompt");
     els.appUpdateButton = document.getElementById("appUpdateButton");
     els.appUpdateDismiss = document.getElementById("appUpdateDismiss");
+    els.iosInstallHint = document.getElementById("iosInstallHint");
+    els.iosInstallHintDismiss = document.getElementById("iosInstallHintDismiss");
     const viewId = currentPageViewId();
     if (viewId === "mapView") {
       els.aircraftCount = document.getElementById("aircraftCount");
@@ -595,6 +624,98 @@
 
   function isViewerOpen() {
     return Boolean(els.photoViewer && !els.photoViewer.hidden);
+  }
+
+  function willOpenKeyboard(element) {
+    if (!(element instanceof HTMLElement)) {
+      return false;
+    }
+    if (element instanceof HTMLTextAreaElement || element.isContentEditable) {
+      return true;
+    }
+    if (!(element instanceof HTMLInputElement)) {
+      return false;
+    }
+    return !new Set(["button", "checkbox", "color", "file", "hidden", "image", "radio", "range", "reset", "submit"])
+      .has(element.type);
+  }
+
+  function syncOverlayPageSize() {
+    const root = document.documentElement;
+    const body = document.body;
+    const width = Math.max(root.scrollWidth, body?.scrollWidth || 0, window.innerWidth);
+    const height = Math.max(root.scrollHeight, body?.scrollHeight || 0, window.innerHeight);
+    root.style.setProperty("--overlay-page-width", `${Math.ceil(width)}px`);
+    root.style.setProperty("--overlay-page-height", `${Math.ceil(height)}px`);
+  }
+
+  function syncOverlayViewport() {
+    const viewport = window.visualViewport;
+    if (viewport && viewport.scale > 1.01) {
+      return;
+    }
+    const scale = viewport?.scale || 1;
+    const height = (viewport?.height || window.innerHeight) * scale;
+    const offsetTop = viewport?.offsetTop || 0;
+    const root = document.documentElement;
+    root.style.setProperty("--overlay-viewport-height", `${Math.max(1, Math.round(height))}px`);
+    root.style.setProperty("--overlay-viewport-offset-top", `${Math.max(0, Math.round(offsetTop))}px`);
+  }
+
+  function startOverlayViewportSync() {
+    let keyboardSettleTimer = 0;
+    const sync = () => {
+      syncOverlayPageSize();
+      syncOverlayViewport();
+    };
+    const scheduleKeyboardSettle = () => {
+      window.clearTimeout(keyboardSettleTimer);
+      keyboardSettleTimer = window.setTimeout(sync, 360);
+    };
+    const handleViewportChange = () => {
+      if (window.visualViewport && window.visualViewport.scale > 1.01) {
+        return;
+      }
+      sync();
+      if (!willOpenKeyboard(document.activeElement)) {
+        scheduleKeyboardSettle();
+      }
+    };
+    const handleFocusChange = (event) => {
+      window.requestAnimationFrame(sync);
+      if (event.type === "focusout" || !willOpenKeyboard(event.target)) {
+        scheduleKeyboardSettle();
+      }
+    };
+
+    sync();
+    window.addEventListener("resize", handleViewportChange, { passive: true });
+    window.visualViewport?.addEventListener("resize", handleViewportChange, { passive: true });
+    window.visualViewport?.addEventListener("scroll", handleViewportChange, { passive: true });
+    document.addEventListener("focusin", handleFocusChange, true);
+    document.addEventListener("focusout", handleFocusChange, true);
+
+    return () => {
+      window.clearTimeout(keyboardSettleTimer);
+      window.removeEventListener("resize", handleViewportChange);
+      window.visualViewport?.removeEventListener("resize", handleViewportChange);
+      window.visualViewport?.removeEventListener("scroll", handleViewportChange);
+      document.removeEventListener("focusin", handleFocusChange, true);
+      document.removeEventListener("focusout", handleFocusChange, true);
+    };
+  }
+
+  function activateOverlayViewportSync() {
+    state.overlayViewportCleanup?.();
+    state.overlayViewportCleanup = startOverlayViewportSync();
+  }
+
+  function deactivateOverlayViewportSync() {
+    if (isGlobalSearchOpen() || isViewerOpen()) {
+      return;
+    }
+    state.overlayViewportCleanup?.();
+    state.overlayViewportCleanup = null;
   }
 
   function bindMobileShellEvents() {
@@ -1107,8 +1228,10 @@
     }
     els.globalSearchOverlay.hidden = false;
     document.body.classList.add("is-search-open");
+    activateOverlayViewportSync();
     setGlobalSearchBackgroundInert(true);
     renderGlobalSearchResults();
+    noteMeaningfulIosInstallInteraction();
     window.requestAnimationFrame(() => els.globalSearchInput?.focus({ preventScroll: true }));
   }
 
@@ -1118,7 +1241,9 @@
     }
     els.globalSearchOverlay.hidden = true;
     document.body.classList.remove("is-search-open");
+    deactivateOverlayViewportSync();
     setGlobalSearchBackgroundInert(false);
+    syncIosInstallHintVisibility();
     if (options.restoreFocus !== false && state.searchReturnFocus instanceof HTMLElement) {
       state.searchReturnFocus.focus({ preventScroll: true });
     }
@@ -1132,7 +1257,8 @@
       els.mobileTabBar,
       els.mobileGlobalSearchTrigger,
       els.appUpdatePrompt,
-      els.mobileInstallPrompt
+      els.mobileInstallPrompt,
+      els.iosInstallHint
     ].forEach((element) => {
       if (element) element.inert = inert;
     });
@@ -1261,6 +1387,7 @@
     });
     els.appUpdateButton?.addEventListener("click", applyAppUpdate);
     els.appUpdateDismiss?.addEventListener("click", dismissAppUpdate);
+    els.iosInstallHintDismiss?.addEventListener("click", dismissIosInstallHint);
     document.getElementById("fitPinsButton")?.addEventListener("click", handleHeaderMapButton);
     document.getElementById("fitPinsPanelButton")?.addEventListener("click", fitMapToPins);
     els.mapPanelCoachDismiss?.addEventListener("click", dismissMapPanelCoach);
@@ -1299,6 +1426,8 @@
     window.addEventListener("appinstalled", () => {
       state.installPromptEvent = null;
       if (els.mobileInstallPrompt) els.mobileInstallPrompt.hidden = true;
+      state.iosInstallHintEligible = false;
+      syncIosInstallHintVisibility();
       showToast("SpotterDex installed");
     });
     document.addEventListener("fullscreenchange", updateViewerFullscreenButton);
@@ -2268,6 +2397,89 @@
     fitMapToPins();
   }
 
+  function isIosSafariBrowser() {
+    const userAgent = navigator.userAgent || "";
+    const isIosDevice = /iPad|iPhone|iPod/i.test(userAgent)
+      || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const isWebKit = /WebKit/i.test(userAgent);
+    const isSafari = /Version\/[^ ]+.*Safari/i.test(userAgent);
+    const isExcludedBrowser = /CriOS|FxiOS|EdgiOS|OPiOS|DuckDuckGo|Ddg|GSA|FBAN|FBAV|Instagram|Line|MicroMessenger|LinkedInApp|Twitter|Snapchat|Pinterest/i
+      .test(userAgent);
+    return isIosDevice && isWebKit && isSafari && !isExcludedBrowser;
+  }
+
+  function isStandaloneWebApp() {
+    return navigator.standalone === true
+      || window.matchMedia("(display-mode: standalone)").matches
+      || window.matchMedia("(display-mode: fullscreen)").matches;
+  }
+
+  function recordIosInstallHintVisit() {
+    if (state.iosInstallHintVisitRecorded) {
+      return state.iosInstallHintVisitCount;
+    }
+    state.iosInstallHintVisitRecorded = true;
+    let nextCount = 1;
+    try {
+      const previous = Number.parseInt(window.localStorage.getItem(IOS_INSTALL_HINT_VISITS_STORAGE_KEY) || "0", 10);
+      nextCount = Math.max(0, Number.isFinite(previous) ? previous : 0) + 1;
+      window.localStorage.setItem(IOS_INSTALL_HINT_VISITS_STORAGE_KEY, String(nextCount));
+    } catch (error) {
+      // A meaningful interaction can still reveal the in-memory hint when
+      // private browsing or storage policy makes visit persistence unavailable.
+    }
+    state.iosInstallHintVisitCount = nextCount;
+    return nextCount;
+  }
+
+  function hasDismissedIosInstallHint() {
+    if (state.iosInstallHintDismissed) {
+      return true;
+    }
+    try {
+      return window.localStorage.getItem(IOS_INSTALL_HINT_DISMISSED_STORAGE_KEY) === "1";
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function syncIosInstallHintVisibility() {
+    if (!els.iosInstallHint) {
+      return;
+    }
+    const isSuppressed = isGlobalSearchOpen()
+      || isViewerOpen()
+      || els.appUpdatePrompt?.hidden === false;
+    els.iosInstallHint.hidden = !state.iosInstallHintEligible || isSuppressed;
+  }
+
+  function maybeShowIosInstallHint(options = {}) {
+    const hasMeaningfulInteraction = options.meaningfulInteraction === true;
+    const meetsTiming = state.iosInstallHintVisitCount >= 2 || hasMeaningfulInteraction;
+    state.iosInstallHintEligible = Boolean(
+      isIosSafariBrowser()
+      && !isStandaloneWebApp()
+      && !hasDismissedIosInstallHint()
+      && (state.iosInstallHintEligible || meetsTiming)
+    );
+    syncIosInstallHintVisibility();
+  }
+
+  function noteMeaningfulIosInstallInteraction() {
+    maybeShowIosInstallHint({ meaningfulInteraction: true });
+  }
+
+  function dismissIosInstallHint() {
+    state.iosInstallHintDismissed = true;
+    state.iosInstallHintEligible = false;
+    syncIosInstallHintVisibility();
+    try {
+      window.localStorage.setItem(IOS_INSTALL_HINT_DISMISSED_STORAGE_KEY, "1");
+    } catch (error) {
+      // The dismissal remains effective for this document when storage fails.
+    }
+  }
+
   function handleInstallPrompt(event) {
     event.preventDefault();
     state.installPromptEvent = event;
@@ -2704,6 +2916,7 @@
     els.appUpdateButton.textContent = state.updateRequiresReloadOnly ? "Reload" : "Update";
     els.appUpdatePrompt.hidden = false;
     document.body.classList.add("has-app-update");
+    syncIosInstallHintVisibility();
   }
 
   function dismissAppUpdate() {
@@ -2712,6 +2925,7 @@
     }
     els.appUpdatePrompt.hidden = true;
     document.body.classList.remove("has-app-update");
+    syncIosInstallHintVisibility();
     // “Later” only dismisses this presentation. The next foreground check in
     // the iOS app shell should be allowed to bring the prompt back.
     state.updateCheckTime = 0;
@@ -8645,6 +8859,7 @@
   }
 
   function selectAircraft(aircraftId, options = {}) {
+    noteMeaningfulIosInstallInteraction();
     const group = normalizeAircraftDetailGroup(options.group ?? state.dexGroupMode);
     const aircraftChanged = state.selectedAircraftId !== aircraftId;
     if (options.locationId !== undefined) {
@@ -9155,8 +9370,10 @@
     }
     els.photoViewer.hidden = false;
     document.body.classList.add("is-viewer-open");
+    activateOverlayViewportSync();
     document.body.style.overflow = "hidden";
     setViewerBackgroundInert(true);
+    noteMeaningfulIosInstallInteraction();
     updateViewerInfoState();
     updateMapPanelCoach();
     renderViewerPhoto();
@@ -9283,8 +9500,10 @@
       && new URLSearchParams(window.location.hash.replace(/^#/, "")).has("photo");
     els.photoViewer.hidden = true;
     document.body.classList.remove("is-viewer-open");
+    deactivateOverlayViewportSync();
     document.body.style.overflow = "";
     setViewerBackgroundInert(false);
+    syncIosInstallHintVisibility();
     setViewerInfoOpen(false, { motion: false });
     resetViewerTransform();
     state.viewerHistoryPushed = false;
@@ -9323,7 +9542,15 @@
   }
 
   function setViewerBackgroundInert(isInert) {
-    [els.siteHeader, els.main, els.mobileTabBar].forEach((element) => {
+    [
+      els.siteHeader,
+      els.main,
+      els.mobileTabBar,
+      els.mobileGlobalSearchTrigger,
+      els.appUpdatePrompt,
+      els.mobileInstallPrompt,
+      els.iosInstallHint
+    ].forEach((element) => {
       if (element) {
         element.inert = Boolean(isInert);
       }

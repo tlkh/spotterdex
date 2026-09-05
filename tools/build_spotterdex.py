@@ -33,6 +33,11 @@ try:
 except ImportError:  # Support importing as tools.build_spotterdex.
     from tools.build_pages import build_pages
 
+try:
+    from build_apple_web_app_assets import build_apple_web_app_assets
+except ImportError:  # Support importing as tools.build_spotterdex.
+    from tools.build_apple_web_app_assets import build_apple_web_app_assets
+
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp"}
 AIRCRAFT_FAMILIES = {"fighter", "heavy", "helicopter", "light", "medium"}
@@ -581,6 +586,7 @@ def build_database_catalog(args: argparse.Namespace, root: Path, warnings: Build
         sitemap_output=sitemap_output,
         robots_output=robots_output,
     )
+    apple_assets_changed, apple_assets_total = build_apple_web_app_assets(root)
     build_pages(root)
     # Stamped last so the hash covers the freshly written pages and catalog bundle.
     worker_path = stamp_service_worker(
@@ -603,6 +609,7 @@ def build_database_catalog(args: argparse.Namespace, root: Path, warnings: Build
     print(f"Wrote {share_count} social preview pages under {relative_posix(share_output_dir, root)}")
     print(f"Wrote {relative_posix(sitemap_path, root)} ({sitemap_count} URLs)")
     print(f"Wrote {relative_posix(robots_path, root)}")
+    print(f"Built {apple_assets_total} Apple web-app assets ({apple_assets_changed} changed)")
     if worker_path is not None:
         print(f"Restamped {relative_posix(worker_path, root)} cache versions")
     if args.strict and warnings.has_warnings():

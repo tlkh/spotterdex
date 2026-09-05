@@ -2,7 +2,7 @@
 :root {
   color-scheme: dark;
 
-  --color-paper: oklch(17.38% 0.0026 67.7);
+  --color-paper: #11100f;
   --color-surface: oklch(21.06% 0.0050 67.6);
   --color-surface-strong: oklch(25% 0.0072 67.5);
   --color-surface-deep: oklch(16.66% 0.0039 229.1);

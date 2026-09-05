@@ -44,6 +44,9 @@ jobs:
       - name: Check Python syntax
         run: python3 -m compileall -q tools
 
+      - name: Confirm Apple web-app assets are current
+        run: python3 tools/build_apple_web_app_assets.py --check
+
       - name: Confirm generated pages match the generator
         run: |
           python3 tools/build_pages.py

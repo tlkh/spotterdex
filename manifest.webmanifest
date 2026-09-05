@@ -7,8 +7,8 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#080a0b",
-  "theme_color": "#111416",
+  "background_color": "#11100f",
+  "theme_color": "#11100f",
   "icons": [
     {
       "src": "assets/icons/spotterdex-app-icon-192.png",
@@ -19,6 +19,12 @@
     {
       "src": "assets/icons/spotterdex-app-icon.png",
       "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icons/spotterdex-app-icon-1024.png",
+      "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
     },

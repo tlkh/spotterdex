@@ -7,6 +7,11 @@ import html
 from pathlib import Path
 from typing import Dict
 
+try:
+    from build_apple_web_app_assets import LAUNCH_BACKGROUND, render_startup_links
+except ImportError:  # Support importing as tools.build_pages.
+    from tools.build_apple_web_app_assets import LAUNCH_BACKGROUND, render_startup_links
+
 
 SITE_URL = "https://tlkh.github.io/spotterdex"
 SHARED_IMAGE = f"{SITE_URL}/assets/generated/photos/location-hero-gifu-air-base.jpg"
@@ -199,10 +204,11 @@ def render_head(filename: str, definition: Dict[str, str]) -> str:
     <meta property="og:image:height" content="1707">
     <meta property="og:image:alt" content="Aircraft formation over Gifu Air Base in Japan">'''
     map_twitter_alt = "" if filename != "index.html" else '\n    <meta name="twitter:image:alt" content="Aircraft formation over Gifu Air Base in Japan">'
+    startup_links = render_startup_links()
     return f'''    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="color-scheme" content="dark">
-    <meta name="theme-color" content="#111416">
+    <meta name="theme-color" content="{LAUNCH_BACKGROUND}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="SpotterDex">
@@ -221,7 +227,8 @@ def render_head(filename: str, definition: Dict[str, str]) -> str:
     <meta name="twitter:image" content="{SHARED_IMAGE}">{map_twitter_alt}
     <link rel="canonical" href="{canonical}">{map_assets}
     <link rel="icon" type="image/png" href="assets/icons/spotterdex-app-icon.png">
-    <link rel="apple-touch-icon" sizes="180x180" type="image/png" href="assets/icons/spotterdex-apple-touch-icon-v3.png">
+    <link rel="apple-touch-icon" sizes="180x180" type="image/png" href="assets/icons/spotterdex-apple-touch-icon-v4.png">
+{startup_links}
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="stylesheet" href="tokens.css">
     <link rel="stylesheet" href="styles.css">

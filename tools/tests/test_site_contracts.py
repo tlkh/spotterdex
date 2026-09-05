@@ -133,7 +133,7 @@ class MobileViewerLayoutContractTests(unittest.TestCase):
         self.assertIsNotNone(controls)
         self.assertRegex(
             controls.group(1),
-            r"top\s*:\s*max\(18px,\s*calc\(env\(safe-area-inset-top\)\s*\+\s*12px\)\)",
+            r"top\s*:\s*max\(18px,\s*calc\(var\(--safe-area-inset-top\)\s*\+\s*12px\)\)",
         )
 
 

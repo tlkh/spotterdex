@@ -55,6 +55,12 @@
   --motion-duration-fast: 180ms;
   --motion-duration-standard: 240ms;
   --font: var(--font-body);
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  --safe-inline-left: max(12px, var(--safe-area-inset-left));
+  --safe-inline-right: max(12px, var(--safe-area-inset-right));
 }
 
 * {
@@ -141,7 +147,10 @@ img {
   grid-template-columns: minmax(220px, 1fr) auto auto;
   gap: 16px;
   align-items: center;
-  padding: 14px clamp(16px, 4vw, 40px);
+  padding-top: 14px;
+  padding-right: max(clamp(16px, 4vw, 40px), var(--safe-area-inset-right));
+  padding-bottom: 14px;
+  padding-left: max(clamp(16px, 4vw, 40px), var(--safe-area-inset-left));
   border-bottom: 1px solid var(--line);
   background: color-mix(in srgb, var(--surface) 92%, transparent);
   backdrop-filter: blur(18px);
@@ -333,7 +342,10 @@ img {
 .app-shell {
   width: min(1480px, 100%);
   margin: 0 auto;
-  padding: 22px clamp(14px, 3vw, 34px) 34px;
+  padding-top: 22px;
+  padding-right: max(clamp(14px, 3vw, 34px), var(--safe-area-inset-right));
+  padding-bottom: 34px;
+  padding-left: max(clamp(14px, 3vw, 34px), var(--safe-area-inset-left));
 }
 
 .view[hidden] {
@@ -6410,11 +6422,16 @@ button.location-unit-chip:focus-visible,
 }
 
 .photo-viewer {
-  position: fixed;
-  inset: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
   z-index: 30;
   display: block;
+  width: var(--overlay-page-width, 100%);
+  height: var(--overlay-page-height, 100%);
+  min-height: 100%;
   isolation: isolate;
+  overflow: clip;
   background: #050505;
   color: #f8fafc;
 }
@@ -6438,9 +6455,21 @@ button.location-unit-chip:focus-visible,
   transform: scale(1.08);
 }
 
+.viewer-viewport {
+  position: sticky;
+  top: var(--overlay-viewport-offset-top, 0px);
+  z-index: 1;
+  width: 100vw;
+  max-width: 100%;
+  height: var(--overlay-viewport-height, 100vh);
+  min-height: 1px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
 .viewer-stage {
   --viewer-filmstrip-height: 84px;
-  --viewer-filmstrip-gap: max(18px, env(safe-area-inset-bottom));
+  --viewer-filmstrip-gap: max(18px, var(--safe-area-inset-bottom));
   position: absolute;
   top: 0;
   right: min(420px, 34vw);
@@ -6449,8 +6478,8 @@ button.location-unit-chip:focus-visible,
   z-index: 1;
   display: block;
   min-width: 0;
-  height: 100vh;
-  min-height: 100vh;
+  height: 100%;
+  min-height: 100%;
   align-items: stretch;
   justify-items: stretch;
   overflow: hidden;
@@ -8373,7 +8402,7 @@ button.location-unit-chip:focus-visible,
     overflow: hidden;
   }
 
-  .photo-viewer::before {
+  .viewer-viewport::before {
     position: absolute;
     inset: 0;
     z-index: 3;
@@ -8384,17 +8413,17 @@ button.location-unit-chip:focus-visible,
     transition: opacity 220ms var(--ease-out);
   }
 
-  .photo-viewer.is-info-open::before {
+  .photo-viewer.is-info-open .viewer-viewport::before {
     opacity: 1;
   }
 
   .viewer-stage {
     --viewer-filmstrip-height: 76px;
-    --viewer-filmstrip-gap: max(12px, env(safe-area-inset-bottom));
+    --viewer-filmstrip-gap: max(12px, var(--safe-area-inset-bottom));
     right: 0;
     display: block;
-    height: 100svh;
-    min-height: 100svh;
+    height: 100%;
+    min-height: 100%;
     padding: 0;
   }
 
@@ -9288,12 +9317,12 @@ button.location-unit-chip:focus-visible,
 
 @media (max-width: 1040px) {
   :root {
-    --mobile-bottom-inset: max(12px, env(safe-area-inset-bottom));
-    --mobile-header-height: calc(55px + max(10px, env(safe-area-inset-top)));
+    --mobile-bottom-inset: max(12px, var(--safe-area-inset-bottom));
+    --mobile-header-height: calc(55px + max(10px, var(--safe-area-inset-top)));
     --mobile-map-min-viewport-height: 100svh;
     --mobile-map-viewport-height: 100dvh;
     --mobile-tab-height: calc(60px + var(--mobile-bottom-inset));
-    --mobile-archive-hero-title-inset: max(var(--space-xs), env(safe-area-inset-top));
+    --mobile-archive-hero-title-inset: max(var(--space-xs), var(--safe-area-inset-top));
     --mobile-archive-hero-padding-top: calc(var(--space-md) + var(--mobile-archive-hero-title-inset));
     --mobile-archive-hero-padding-bottom: var(--space-lg);
     --mobile-page-content-bottom-padding: var(--space-lg);
@@ -9310,7 +9339,10 @@ button.location-unit-chip:focus-visible,
 
   .site-header {
     min-height: var(--mobile-header-height);
-    padding: max(10px, env(safe-area-inset-top)) 12px 10px;
+    padding-top: max(10px, var(--safe-area-inset-top));
+    padding-right: var(--safe-inline-right);
+    padding-bottom: 10px;
+    padding-left: var(--safe-inline-left);
   }
 
   .nav-select,
@@ -9404,9 +9436,9 @@ button.location-unit-chip:focus-visible,
   #mapView .control-panel,
   #mapView #mapResults {
     top: auto;
-    right: 10px;
-    bottom: calc(68px + env(safe-area-inset-bottom));
-    left: 10px;
+    right: var(--safe-inline-right);
+    bottom: calc(68px + var(--safe-area-inset-bottom));
+    left: var(--safe-inline-left);
     width: auto;
     height: auto;
     max-height: min(68dvh, 620px);
@@ -9469,7 +9501,7 @@ button.location-unit-chip:focus-visible,
   }
 
   #mapView .map-panel-toggle {
-    bottom: calc(12px + env(safe-area-inset-bottom));
+    bottom: calc(12px + var(--safe-area-inset-bottom));
     width: 124px;
     padding-inline: 12px;
   }
@@ -9484,7 +9516,7 @@ button.location-unit-chip:focus-visible,
   }
 
   #mapView .map-panel-coach {
-    bottom: calc(64px + env(safe-area-inset-bottom));
+    bottom: calc(64px + var(--safe-area-inset-bottom));
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 8px;
     width: min(340px, calc(100% - 28px));
@@ -9616,8 +9648,8 @@ button.location-unit-chip:focus-visible,
 
   /* Portrait viewer information bottom sheet */
   .viewer-stage {
-    height: 100dvh;
-    min-height: 100svh;
+    height: 100%;
+    min-height: 100%;
   }
 
   .viewer-info {
@@ -9628,7 +9660,7 @@ button.location-unit-chip:focus-visible,
     width: 100%;
     min-width: 0;
     max-height: min(70dvh, 680px);
-    padding: 58px 20px calc(24px + env(safe-area-inset-bottom));
+    padding: 58px var(--safe-inline-right) calc(24px + var(--safe-area-inset-bottom)) var(--safe-inline-left);
     border-top: 1px solid rgba(255, 255, 255, 0.16);
     border-left: 0;
     border-radius: 18px 18px 0 0;
@@ -9704,8 +9736,8 @@ button.location-unit-chip:focus-visible,
 
   body[data-page-view="mapView"] .site-header > .header-actions {
     position: absolute;
-    top: max(8px, env(safe-area-inset-top));
-    right: 10px;
+    top: max(8px, var(--safe-area-inset-top));
+    right: var(--safe-inline-right);
     z-index: 2;
     display: inline-flex;
   }
@@ -9885,7 +9917,8 @@ button.location-unit-chip:focus-visible,
 .mobile-context-bar,
 .mobile-connectivity,
 .mobile-tab-bar,
-.mobile-install-prompt {
+.mobile-install-prompt,
+.ios-install-hint {
   display: none;
 }
 
@@ -9946,7 +9979,10 @@ button.location-unit-chip:focus-visible,
   body[data-page-view="mapView"] .site-header {
     display: block;
     min-height: var(--mobile-header-height);
-    padding: max(8px, env(safe-area-inset-top)) 10px 8px;
+    padding-top: max(8px, var(--safe-area-inset-top));
+    padding-right: var(--safe-inline-right);
+    padding-bottom: 8px;
+    padding-left: var(--safe-inline-left);
     border-bottom-color: rgba(255, 255, 255, 0.12);
     background: rgba(13, 15, 16, 0.96);
     background: color-mix(in srgb, #0d0f10 84%, transparent);
@@ -10045,7 +10081,7 @@ button.location-unit-chip:focus-visible,
 
   .mobile-map-photos-card {
     position: fixed;
-    right: 12px;
+    right: var(--safe-inline-right);
     bottom: calc(var(--mobile-tab-height) + 12px);
     z-index: 14;
     width: auto;
@@ -10212,7 +10248,7 @@ button.location-unit-chip:focus-visible,
     min-height: var(--mobile-tab-height);
     grid-template-columns: repeat(5, minmax(0, 1fr));
     align-items: end;
-    padding: 5px 4px max(5px, env(safe-area-inset-bottom));
+    padding: 5px max(4px, var(--safe-area-inset-right)) max(5px, var(--safe-area-inset-bottom)) max(4px, var(--safe-area-inset-left));
     border-top: 1px solid rgba(255, 255, 255, 0.12);
     background: rgba(13, 15, 16, 0.985);
     background: color-mix(in srgb, #0d0f10 82%, transparent);
@@ -10313,9 +10349,9 @@ button.location-unit-chip:focus-visible,
 
   .mobile-install-prompt {
     position: fixed;
-    right: 12px;
+    right: var(--safe-inline-right);
     bottom: calc(var(--mobile-tab-height) + 12px);
-    left: 12px;
+    left: var(--safe-inline-left);
     z-index: 27;
     display: grid;
     min-height: 72px;
@@ -10380,7 +10416,7 @@ button.location-unit-chip:focus-visible,
   }
 
   body.is-viewer-open .app-toast {
-    bottom: max(18px, env(safe-area-inset-bottom));
+    bottom: max(18px, var(--safe-area-inset-bottom));
   }
 
   #mapView .map-workspace {
@@ -11919,7 +11955,7 @@ body {
 
 @media (max-width: 1040px) {
   .viewer-info {
-    padding: 72px 16px calc(28px + env(safe-area-inset-bottom));
+    padding: 72px var(--safe-inline-right) calc(28px + var(--safe-area-inset-bottom)) var(--safe-inline-left);
     border: 1px solid var(--material-edge);
     border-bottom: 0;
     border-radius: 22px 22px 0 0;
@@ -12500,7 +12536,10 @@ body {
     min-height: 0;
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
-    padding: var(--mobile-archive-hero-padding-top) 20px var(--mobile-archive-hero-padding-bottom);
+    padding-top: var(--mobile-archive-hero-padding-top);
+    padding-right: max(20px, var(--safe-area-inset-right));
+    padding-bottom: var(--mobile-archive-hero-padding-bottom);
+    padding-left: max(20px, var(--safe-area-inset-left));
   }
 
   #squadronsView .squadron-archive-copy,
@@ -12531,8 +12570,13 @@ body {
   #squadronsView .squadron-directory,
   #airshowsView .airshow-directory,
   #statsView .stats-directory {
-    width: calc(100% - 2rem);
+    width: calc(100% - max(1rem, var(--safe-area-inset-left)) - max(1rem, var(--safe-area-inset-right)));
     padding-top: var(--space-sm);
+  }
+
+  #dexView .dex-command-bar,
+  #dexView .dex-browser {
+    width: calc(100% - max(1rem, var(--safe-area-inset-left)) - max(1rem, var(--safe-area-inset-right)));
   }
 
   #dexView .dex-browser,
@@ -12868,13 +12912,15 @@ img[data-media-unavailable="true"] {
 }
 
 .global-search-overlay {
-  position: fixed;
-  inset: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
   z-index: 2147482000;
-  display: grid;
-  place-items: start center;
-  overflow: hidden;
-  padding: max(var(--space-lg), env(safe-area-inset-top)) var(--space-sm) max(var(--space-lg), env(safe-area-inset-bottom));
+  display: block;
+  width: var(--overlay-page-width, 100%);
+  height: var(--overlay-page-height, 100%);
+  min-height: 100%;
+  overflow: clip;
 }
 
 .global-search-overlay[hidden] {
@@ -12890,12 +12936,15 @@ img[data-media-unavailable="true"] {
 }
 
 .global-search-panel {
-  position: relative;
+  position: sticky;
+  top: calc(var(--overlay-viewport-offset-top, 0px) + max(var(--space-lg), var(--safe-area-inset-top)));
   z-index: 1;
   display: flex;
-  width: min(760px, 100%);
-  max-height: calc(100dvh - max(var(--space-lg), env(safe-area-inset-top)) - max(var(--space-lg), env(safe-area-inset-bottom)));
+  width: min(760px, calc(100% - var(--safe-inline-left) - var(--safe-inline-right)));
+  max-height: calc(var(--overlay-viewport-height, 100vh) - max(var(--space-lg), var(--safe-area-inset-top)) - max(var(--space-lg), var(--safe-area-inset-bottom)));
   flex-direction: column;
+  margin-right: auto;
+  margin-left: auto;
   overflow: hidden;
   border: 1px solid var(--color-white-16);
   border-radius: var(--radius-sheet);
@@ -13124,13 +13173,102 @@ body.is-search-open {
   overflow: hidden;
 }
 
+html:has(body.is-search-open),
+html:has(body.is-viewer-open),
+body.is-search-open,
+body.is-viewer-open {
+  overscroll-behavior: contain;
+}
+
+.ios-install-hint {
+  position: fixed;
+  right: var(--safe-inline-right);
+  bottom: max(var(--space-sm), var(--safe-area-inset-bottom));
+  z-index: 2147480500;
+  display: grid;
+  width: min(560px, calc(100vw - var(--safe-inline-left) - var(--safe-inline-right)));
+  min-height: 84px;
+  grid-template-columns: 52px minmax(0, 1fr) 44px;
+  gap: var(--space-xs);
+  align-items: center;
+  padding: var(--space-xs);
+  border: 1px solid var(--color-white-16);
+  border-radius: var(--radius-card);
+  background: var(--color-glass-strong);
+  color: var(--color-ink);
+  box-shadow: var(--shadow-elevated);
+  -webkit-backdrop-filter: blur(22px) saturate(1.18);
+  backdrop-filter: blur(22px) saturate(1.18);
+}
+
+.ios-install-hint[hidden],
+body.is-viewer-open .ios-install-hint,
+body.is-search-open .ios-install-hint,
+body.has-app-update .ios-install-hint {
+  display: none;
+}
+
+.ios-install-hint > img {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-control);
+}
+
+.ios-install-hint p {
+  margin: 0;
+  color: var(--color-muted-strong);
+  font-size: var(--text-sm);
+  line-height: 1.42;
+}
+
+.ios-install-hint strong {
+  color: var(--color-ink);
+}
+
+.ios-install-share-glyph {
+  display: inline-grid;
+  width: 1.55em;
+  height: 1.55em;
+  place-items: center;
+  vertical-align: -0.4em;
+  color: var(--color-accent-strong);
+}
+
+.ios-install-share-glyph svg {
+  width: 1.25em;
+  height: 1.25em;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.ios-install-hint-dismiss {
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-white-06);
+  color: var(--color-muted-strong);
+  cursor: pointer;
+  font-size: var(--text-lg);
+}
+
+.ios-install-hint-dismiss:hover,
+.ios-install-hint-dismiss:focus-visible {
+  background: var(--color-white-12);
+  color: var(--color-ink);
+}
+
 .app-update-prompt {
   position: fixed;
-  bottom: max(var(--space-sm), env(safe-area-inset-bottom));
+  bottom: max(var(--space-sm), var(--safe-area-inset-bottom));
   left: 50%;
   z-index: 2147481000;
   display: grid;
-  width: min(620px, calc(100vw - 32px));
+  width: min(620px, calc(100vw - var(--safe-inline-left) - var(--safe-inline-right)));
   min-height: 76px;
   grid-template-columns: 48px minmax(0, 1fr) auto auto;
   gap: var(--space-xs);
@@ -13212,13 +13350,13 @@ body.has-app-update .mobile-install-prompt {
   }
 
   body[data-page-view="mapView"] .mobile-map-header {
-    padding-right: 112px;
+    padding-right: calc(100px + var(--safe-area-inset-right));
   }
 
   body:not([data-page-view="mapView"]) .mobile-global-search-trigger {
     position: fixed;
-    top: max(10px, env(safe-area-inset-top));
-    right: 12px;
+    top: max(10px, var(--safe-area-inset-top));
+    right: var(--safe-inline-right);
     z-index: 25;
     display: grid;
     width: 46px;
@@ -13242,11 +13380,15 @@ body.has-app-update .mobile-install-prompt {
   }
 
   .global-search-panel {
+    top: var(--overlay-viewport-offset-top, 0px);
     width: 100%;
-    max-height: var(--mobile-map-viewport-height);
-    height: var(--mobile-map-viewport-height);
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
+    max-height: var(--overlay-viewport-height, 100vh);
+    height: var(--overlay-viewport-height, 100vh);
+    margin: 0;
+    padding-top: var(--safe-area-inset-top);
+    padding-right: var(--safe-area-inset-right);
+    padding-bottom: var(--safe-area-inset-bottom);
+    padding-left: var(--safe-area-inset-left);
     border: 0;
     border-radius: 0;
   }
@@ -13296,12 +13438,19 @@ body.has-app-update .mobile-install-prompt {
   }
 
   .app-update-prompt {
-    right: 12px;
+    right: var(--safe-inline-right);
     bottom: calc(var(--mobile-tab-height) + 12px);
-    left: 12px;
+    left: var(--safe-inline-left);
     width: auto;
     grid-template-columns: 44px minmax(0, 1fr) auto auto;
     transform: none;
+  }
+
+  .ios-install-hint {
+    right: var(--safe-inline-right);
+    bottom: calc(var(--mobile-tab-height) + 12px);
+    left: var(--safe-inline-left);
+    width: auto;
   }
 
   .app-update-prompt img {
@@ -13311,6 +13460,19 @@ body.has-app-update .mobile-install-prompt {
 }
 
 @media (max-width: 520px) {
+  .ios-install-hint {
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+  }
+
+  .ios-install-hint > img {
+    width: 44px;
+    height: 44px;
+  }
+
+  .ios-install-hint p {
+    font-size: var(--text-xs);
+  }
+
   .app-update-prompt {
     grid-template-columns: 44px minmax(0, 1fr) auto;
   }
@@ -13339,6 +13501,30 @@ body.has-app-update .mobile-install-prompt {
   .viewer-telemetry,
   .viewer-button.close,
   .viewer-button.info-toggle {
-    top: max(18px, calc(env(safe-area-inset-top) + 12px));
+    top: max(18px, calc(var(--safe-area-inset-top) + 12px));
+  }
+
+  .viewer-button.close,
+  .viewer-button.next {
+    right: var(--safe-inline-right);
+  }
+
+  .viewer-button.info-toggle,
+  .viewer-button.previous {
+    left: var(--safe-inline-left);
+  }
+
+  .viewer-telemetry {
+    left: calc(var(--safe-inline-left) + 54px);
+    max-width: calc(100vw - var(--safe-inline-left) - var(--safe-inline-right) - 118px);
+  }
+
+  .viewer-filmstrip {
+    right: var(--safe-inline-right);
+    left: var(--safe-inline-left);
+  }
+
+  .viewer-zoom-controls {
+    max-width: calc(100vw - var(--safe-inline-left) - var(--safe-inline-right));
   }
 }
