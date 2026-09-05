@@ -25,6 +25,7 @@
   const MAP_LEADER_MAXIMUM_COMPACT = 140;
   const MAP_PANEL_GAP = 10;
   const MAP_TRAFFIC_FAMILY_ROTATION_MS = 24000;
+  const DESKTOP_MAP_TRAFFIC_PIN_LIMIT = 16;
   const MOBILE_MAP_TRAFFIC_PIN_LIMIT = 10;
   const MAP_PANEL_COACH_STORAGE_KEY = "spotterdex-map-panel-coach-dismissed";
   const MOBILE_SESSION_KEY_PREFIX = "spotterdex-mobile-session-v1:";
@@ -5265,7 +5266,7 @@
 
     const trafficPins = mobileLayout
       ? mobileMapTrafficPins()
-      : state.enabledPins;
+      : desktopMapTrafficPins();
     trafficPins.forEach((pin) => {
       const families = mapLocationPreview([pin]).families;
       if (!families.length) {
@@ -5287,6 +5288,16 @@
     startMapTrafficFamilyRotation();
     state.mapTrafficMobileLayout = mobileLayout;
     state.mapTrafficInitialized = true;
+  }
+
+  function desktopMapTrafficPins() {
+    // Keep the desktop map atmospheric without animating every enabled pin.
+    // Hashing the IDs gives a stable, catalog-order-independent sample.
+    return state.enabledPins
+      .filter((pin) => mapLocationPreview([pin]).families.length)
+      .slice()
+      .sort((a, b) => stableHash(a.id) - stableHash(b.id) || a.id.localeCompare(b.id))
+      .slice(0, DESKTOP_MAP_TRAFFIC_PIN_LIMIT);
   }
 
   function mobileMapTrafficPins() {
