@@ -3833,10 +3833,28 @@
           submit.disabled = true;
           try {
             const entry = entryByTargetKey(editForm.dataset.entryEdit);
+            const requestedAircraftType = String(values.aircraftType || "").trim();
+            const existingAircraft = entry?.sourceScope === "aircraft"
+              ? (state.data?.aircraftCatalog || []).find((item) => (
+                item.id !== entry.aircraftId
+                && String(item.name || "").trim().toLowerCase() === requestedAircraftType.toLowerCase()
+              ))
+              : null;
+            let mergeExistingAircraft = false;
+            if (existingAircraft) {
+              mergeExistingAircraft = window.confirm(
+                `Aircraft type "${requestedAircraftType}" already exists.\n\n` +
+                `Saving will merge this aircraft type's relationships and photo tags into "${existingAircraft.name}". ` +
+                `The existing type's hero, write-up, and card-width settings are kept when already configured.\n\n` +
+                "Continue?"
+              );
+              if (!mergeExistingAircraft) return;
+            }
             const result = await api("/api/update-entry", {
               entryPath: editForm.dataset.entryEdit,
               unitId: entry?.unitId || "",
               scope: entry.sourceScope,
+              mergeExistingAircraft,
               ...values
             });
             await loadState(true);

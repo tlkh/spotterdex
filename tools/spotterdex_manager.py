@@ -1412,6 +1412,111 @@ class SpotterDexManager:
             return None, None, parts[2]
         raise ValueError("Database target is invalid.")
 
+    @staticmethod
+    def _database_merge_aircraft(
+        connection: sqlite3.Connection,
+        source_id: str,
+        destination_id: str,
+    ) -> str:
+        source = connection.execute(
+            "SELECT name,hero_photo_id,write_up,double_width FROM aircraft WHERE id=?",
+            (source_id,),
+        ).fetchone()
+        destination = connection.execute(
+            "SELECT name,hero_photo_id,write_up,double_width FROM aircraft WHERE id=?",
+            (destination_id,),
+        ).fetchone()
+        if not source or not destination:
+            raise ValueError("The aircraft type to merge no longer exists.")
+
+        # Keep metadata already configured on the existing destination. Fill
+        # only unset fields from the source so a rename cannot discard an
+        # existing hero, write-up, or card-width choice.
+        if not destination[1] and source[1]:
+            connection.execute(
+                "UPDATE aircraft SET hero_photo_id=? WHERE id=?",
+                (source[1], destination_id),
+            )
+        if not destination[2] and source[2]:
+            connection.execute(
+                "UPDATE aircraft SET write_up=? WHERE id=?",
+                (source[2], destination_id),
+            )
+        if destination[3] is None and source[3] is not None:
+            connection.execute(
+                "UPDATE aircraft SET double_width=? WHERE id=?",
+                (source[3], destination_id),
+            )
+
+        for row in connection.execute(
+            "SELECT unit_id FROM aircraft_units WHERE aircraft_id=?",
+            (source_id,),
+        ).fetchall():
+            connection.execute(
+                "INSERT OR IGNORE INTO aircraft_units(aircraft_id,unit_id) VALUES(?,?)",
+                (destination_id, str(row[0])),
+            )
+
+        affected_photo_ids = [
+            str(row[0])
+            for row in connection.execute(
+                "SELECT DISTINCT photo_id FROM photo_subjects WHERE aircraft_id=?",
+                (source_id,),
+            ).fetchall()
+        ]
+        for photo_id in affected_photo_ids:
+            subjects = [
+                dict(row)
+                for row in connection.execute(
+                    "SELECT position,aircraft_id,unit_id,is_primary "
+                    "FROM photo_subjects WHERE photo_id=? ORDER BY position",
+                    (photo_id,),
+                ).fetchall()
+            ]
+            merged_subjects: List[Dict[str, Any]] = []
+            subject_indexes: Dict[Tuple[Optional[str], Optional[str]], int] = {}
+            for subject in subjects:
+                mapped_aircraft_id = (
+                    destination_id
+                    if subject.get("aircraft_id") == source_id
+                    else subject.get("aircraft_id")
+                )
+                key = (mapped_aircraft_id, subject.get("unit_id"))
+                existing_index = subject_indexes.get(key)
+                if existing_index is None:
+                    subject_indexes[key] = len(merged_subjects)
+                    merged_subjects.append(
+                        {
+                            "aircraft_id": mapped_aircraft_id,
+                            "unit_id": subject.get("unit_id"),
+                            "is_primary": int(bool(subject.get("is_primary"))),
+                        }
+                    )
+                else:
+                    merged_subjects[existing_index]["is_primary"] = int(
+                        bool(
+                            merged_subjects[existing_index]["is_primary"]
+                            or subject.get("is_primary")
+                        )
+                    )
+
+            connection.execute("DELETE FROM photo_subjects WHERE photo_id=?", (photo_id,))
+            for position, subject in enumerate(merged_subjects):
+                connection.execute(
+                    "INSERT INTO photo_subjects(photo_id,position,aircraft_id,unit_id,is_primary) "
+                    "VALUES(?,?,?,?,?)",
+                    (
+                        photo_id,
+                        position,
+                        subject["aircraft_id"],
+                        subject["unit_id"],
+                        subject["is_primary"],
+                    ),
+                )
+
+        connection.execute("DELETE FROM aircraft WHERE id=?", (source_id,))
+        return str(source[0])
+
     def _database_append_photos(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         asset_paths = payload.get("assetPaths") or []
         if not isinstance(asset_paths, list) or not asset_paths:
@@ -2034,6 +2139,7 @@ class SpotterDexManager:
         requested_unit_id = clean_text(payload.get("unitId"))
 
         def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            merged_aircraft_name = ""
             if parts[1] == "aircraft":
                 if len(parts) != 4:
                     raise ValueError("Database aircraft entry reference is invalid.")
@@ -2049,7 +2155,23 @@ class SpotterDexManager:
                 if not relationship:
                     raise ValueError("The selected aircraft entry no longer exists.")
                 if name:
-                    connection.execute("UPDATE aircraft SET name=? WHERE id=?", (name, aircraft_id))
+                    duplicate = connection.execute(
+                        "SELECT id FROM aircraft WHERE lower(name)=lower(?) AND id<>?",
+                        (name, aircraft_id),
+                    ).fetchone()
+                    if duplicate:
+                        if payload.get("mergeExistingAircraft") is not True:
+                            raise ValueError(
+                                f"Aircraft type '{name}' already exists. Confirm the merge in the edit dialog or choose a unique name."
+                            )
+                        merged_aircraft_name = self._database_merge_aircraft(
+                            connection,
+                            aircraft_id,
+                            str(duplicate[0]),
+                        )
+                        aircraft_id = str(duplicate[0])
+                    else:
+                        connection.execute("UPDATE aircraft SET name=? WHERE id=?", (name, aircraft_id))
                 if family:
                     connection.execute("UPDATE aircraft SET family=? WHERE id=?", (family, aircraft_id))
                 if "aircraftDoubleWidth" in payload:
@@ -2098,7 +2220,20 @@ class SpotterDexManager:
                     "UPDATE units SET logo_source=? WHERE id=?",
                     (clean_text(payload.get("squadronLogo")), unit_id),
                 )
-            return {"ok": True, "unitId": unit_id, "unitName": unit_name, "message": f"Entry metadata updated for {unit_name}."}
+            if merged_aircraft_name:
+                message = (
+                    f"Merged aircraft type {merged_aircraft_name} into {name} and "
+                    f"updated the entry for {unit_name}."
+                )
+            else:
+                message = f"Entry metadata updated for {unit_name}."
+            return {
+                "ok": True,
+                "aircraftId": aircraft_id if parts[1] == "aircraft" else "",
+                "unitId": unit_id,
+                "unitName": unit_name,
+                "message": message,
+            }
 
         return self._database_write(operation)
 

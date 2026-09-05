@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-15T11:22:24+00:00",
+  "generatedAt": "2026-09-05T15:31:30+00:00",
   "entities": {
     "countries": {
       "au": {
@@ -293,6 +293,14 @@
         "doubleWidth": null,
         "writeUp": ""
       },
+      "boeing-p-8a-poseidon": {
+        "id": "boeing-p-8a-poseidon",
+        "name": "Boeing P-8A Poseidon",
+        "family": "medium",
+        "heroPhotoId": "",
+        "doubleWidth": null,
+        "writeUp": ""
+      },
       "cessna-uc-35-citation": {
         "id": "cessna-uc-35-citation",
         "name": "Cessna UC-35 Citation",
@@ -453,6 +461,14 @@
         "doubleWidth": null,
         "writeUp": ""
       },
+      "kawasaki-p-3c-orion": {
+        "id": "kawasaki-p-3c-orion",
+        "name": "Kawasaki P-3C Orion",
+        "family": "heavy",
+        "heroPhotoId": "",
+        "doubleWidth": null,
+        "writeUp": ""
+      },
       "kawasaki-rc-2": {
         "id": "kawasaki-rc-2",
         "name": "Kawasaki RC-2",
@@ -466,6 +482,14 @@
         "name": "Kawasaki T-4",
         "family": "fighter",
         "heroPhotoId": "2025-11-30-dsc03282",
+        "doubleWidth": null,
+        "writeUp": ""
+      },
+      "kawasaki-uh-60ja": {
+        "id": "kawasaki-uh-60ja",
+        "name": "Kawasaki UH-60JA",
+        "family": "helicopter",
+        "heroPhotoId": "",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -525,6 +549,14 @@
         "doubleWidth": null,
         "writeUp": ""
       },
+      "lockheed-martin-f-35-lightning-ii": {
+        "id": "lockheed-martin-f-35-lightning-ii",
+        "name": "Lockheed Martin F-35 Lightning II",
+        "family": "fighter",
+        "heroPhotoId": "",
+        "doubleWidth": null,
+        "writeUp": ""
+      },
       "lockheed-martin-f-35a-lightning-ii": {
         "id": "lockheed-martin-f-35a-lightning-ii",
         "name": "Lockheed Martin F-35A Lightning II",
@@ -546,6 +578,14 @@
         "name": "Mitsubishi F-15DJ Eagle",
         "family": "fighter",
         "heroPhotoId": "2023-10-07-dsc03743-enhanced-nr",
+        "doubleWidth": null,
+        "writeUp": ""
+      },
+      "mitsubishi-f-15j": {
+        "id": "mitsubishi-f-15j",
+        "name": "Mitsubishi F-15J",
+        "family": "fighter",
+        "heroPhotoId": "",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -758,6 +798,15 @@
         "heroPhotoId": "2023-08-04-italy-kc767-3",
         "writeUp": ""
       },
+      "jp-15th-brigade": {
+        "id": "jp-15th-brigade",
+        "name": "15th Brigade",
+        "countryId": "jp",
+        "kind": "squadron",
+        "logo": "",
+        "heroPhotoId": "",
+        "writeUp": ""
+      },
       "jp-1st-attack-helicopter-squadron": {
         "id": "jp-1st-attack-helicopter-squadron",
         "name": "1st Attack Helicopter Squadron",
@@ -809,6 +858,15 @@
         "countryId": "jp",
         "kind": "squadron",
         "logo": "assets/logos/jp-304th-tactical-fighter-squadron.png",
+        "heroPhotoId": "",
+        "writeUp": ""
+      },
+      "jp-305th-tactical-fighter-squadron": {
+        "id": "jp-305th-tactical-fighter-squadron",
+        "name": "305th Tactical Fighter Squadron",
+        "countryId": "jp",
+        "kind": "squadron",
+        "logo": "",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1004,6 +1062,15 @@
       "jp-fleet-air-wing-23": {
         "id": "jp-fleet-air-wing-23",
         "name": "Fleet Air Wing 23",
+        "countryId": "jp",
+        "kind": "squadron",
+        "logo": "",
+        "heroPhotoId": "",
+        "writeUp": ""
+      },
+      "jp-fleet-air-wing-5": {
+        "id": "jp-fleet-air-wing-5",
+        "name": "Fleet Air Wing 5",
         "countryId": "jp",
         "kind": "squadron",
         "logo": "",
@@ -1226,9 +1293,27 @@
         "heroPhotoId": "2023-09-18-usaf-huey-3",
         "writeUp": ""
       },
+      "us-77th-air-refueling-squadron-77-ars": {
+        "id": "us-77th-air-refueling-squadron-77-ars",
+        "name": "77th Air Refueling Squadron (77 ARS)",
+        "countryId": "us",
+        "kind": "squadron",
+        "logo": "",
+        "heroPhotoId": "",
+        "writeUp": ""
+      },
       "us-89th-airlift-wing": {
         "id": "us-89th-airlift-wing",
         "name": "89th Airlift Wing",
+        "countryId": "us",
+        "kind": "squadron",
+        "logo": "",
+        "heroPhotoId": "",
+        "writeUp": ""
+      },
+      "us-909th-air-refueling-squadron": {
+        "id": "us-909th-air-refueling-squadron",
+        "name": "909th Air Refueling Squadron",
         "countryId": "us",
         "kind": "squadron",
         "logo": "",
@@ -1330,6 +1415,33 @@
         "name": "Metrea",
         "countryId": "us",
         "kind": "organisation",
+        "logo": "",
+        "heroPhotoId": "",
+        "writeUp": ""
+      },
+      "us-patrol-squadron-16-vp-16": {
+        "id": "us-patrol-squadron-16-vp-16",
+        "name": "Patrol Squadron 16 (VP-16)",
+        "countryId": "us",
+        "kind": "squadron",
+        "logo": "",
+        "heroPhotoId": "",
+        "writeUp": ""
+      },
+      "us-patrol-squadron-30-vp-30": {
+        "id": "us-patrol-squadron-30-vp-30",
+        "name": "Patrol Squadron 30 (VP-30)",
+        "countryId": "us",
+        "kind": "squadron",
+        "logo": "",
+        "heroPhotoId": "",
+        "writeUp": ""
+      },
+      "us-patrol-squadron-4-vp-4": {
+        "id": "us-patrol-squadron-4-vp-4",
+        "name": "Patrol Squadron 4 (VP-4)",
+        "countryId": "us",
+        "kind": "squadron",
         "logo": "",
         "heroPhotoId": "",
         "writeUp": ""
@@ -4620,6 +4732,538 @@
           "DateTime": "2026:07:04 19:52:09"
         }
       },
+      "2025-12-10-dsc03804": {
+        "id": "2025-12-10-dsc03804",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-kc-135-stratotanker",
+            "unitId": "us-909th-air-refueling-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-10",
+        "sortDate": "2025-12-10",
+        "livery": "",
+        "title": "",
+        "caption": "KC-135R taking off from Kadena Air Base at sunset",
+        "image": "assets/generated/photos/2025-12-10-dsc03804.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-10-dsc03804.jpg",
+        "source": "raw_assets/DSC03804.jpg",
+        "originalSize": "6496 x 4872",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "840mm",
+          "FocalLengthIn35mmFilm": "840mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "1250",
+          "DateTimeOriginal": "2025:12:10 16:16:37",
+          "DateTimeDigitized": "2025:12:10 16:16:37",
+          "DateTime": "2026:09:05 22:59:02"
+        }
+      },
+      "2025-12-10-dsc03723": {
+        "id": "2025-12-10-dsc03723",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-p-8a-poseidon",
+            "unitId": "us-patrol-squadron-4-vp-4",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-10",
+        "sortDate": "2025-12-10",
+        "livery": "",
+        "title": "",
+        "caption": "P-8 from VP-4 \"Skinny Dragons\" taking off from Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-10-dsc03723.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-10-dsc03723.jpg",
+        "source": "raw_assets/DSC03723.jpg",
+        "originalSize": "6535 x 4901",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "543mm",
+          "FocalLengthIn35mmFilm": "543mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "400",
+          "DateTimeOriginal": "2025:12:10 15:54:44",
+          "DateTimeDigitized": "2025:12:10 15:54:44",
+          "DateTime": "2026:09:05 22:59:00"
+        }
+      },
+      "2025-12-10-dsc03716": {
+        "id": "2025-12-10-dsc03716",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-p-8a-poseidon",
+            "unitId": "us-patrol-squadron-4-vp-4",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-10",
+        "sortDate": "2025-12-10",
+        "livery": "",
+        "title": "",
+        "caption": "P-8 from VP-4 \"Skinny Dragons\" taking off from Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-10-dsc03716.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-10-dsc03716.jpg",
+        "source": "raw_assets/DSC03716.jpg",
+        "originalSize": "6372 x 4248",
+        "processedSize": "2048 x 1365",
+        "thumbnailSize": "768 x 512",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "648mm",
+          "FocalLengthIn35mmFilm": "648mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "400",
+          "DateTimeOriginal": "2025:12:10 15:54:36",
+          "DateTimeDigitized": "2025:12:10 15:54:36",
+          "DateTime": "2026:09:05 22:58:59"
+        }
+      },
+      "2025-12-10-dsc03681": {
+        "id": "2025-12-10-dsc03681",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-p-8a-poseidon",
+            "unitId": "us-patrol-squadron-4-vp-4",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-10",
+        "sortDate": "2025-12-10",
+        "livery": "",
+        "title": "",
+        "caption": "P-8 from VP-4 \"Skinny Dragons\" taking off from Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-10-dsc03681.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-10-dsc03681.jpg",
+        "source": "raw_assets/DSC03681.jpg",
+        "originalSize": "6378 x 4784",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "515mm",
+          "FocalLengthIn35mmFilm": "515mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "320",
+          "DateTimeOriginal": "2025:12:10 15:50:20",
+          "DateTimeDigitized": "2025:12:10 15:50:20",
+          "DateTime": "2026:09:05 22:58:57"
+        }
+      },
+      "2025-12-10-dsc03665": {
+        "id": "2025-12-10-dsc03665",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-p-8a-poseidon",
+            "unitId": "us-patrol-squadron-30-vp-30",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-10",
+        "sortDate": "2025-12-10",
+        "livery": "",
+        "title": "",
+        "caption": "P-8 equipped with AAS pod from VP-30 \"Pro's Nest\" taxiing after landing at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-10-dsc03665.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-10-dsc03665.jpg",
+        "source": "raw_assets/DSC03665.jpg",
+        "originalSize": "6681 x 5011",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "840mm",
+          "FocalLengthIn35mmFilm": "840mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "800",
+          "DateTimeOriginal": "2025:12:10 15:48:31",
+          "DateTimeDigitized": "2025:12:10 15:48:31",
+          "DateTime": "2026:09:05 22:58:56"
+        }
+      },
+      "2025-12-10-dsc03635": {
+        "id": "2025-12-10-dsc03635",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-e-3g-sentry",
+            "unitId": "us-961st-airborne-air-control-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-10",
+        "sortDate": "2025-12-10",
+        "livery": "",
+        "title": "",
+        "caption": "E-3 Sentry at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-10-dsc03635.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-10-dsc03635.jpg",
+        "source": "raw_assets/DSC03635.jpg",
+        "originalSize": "7424 x 5568",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "347mm",
+          "FocalLengthIn35mmFilm": "347mm",
+          "FNumber": "f/8.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "400",
+          "DateTimeOriginal": "2025:12:10 15:41:47",
+          "DateTimeDigitized": "2025:12:10 15:41:47",
+          "DateTime": "2026:09:05 22:58:54"
+        }
+      },
+      "2025-12-10-dsc03620": {
+        "id": "2025-12-10-dsc03620",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-e-3g-sentry",
+            "unitId": "us-961st-airborne-air-control-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-10",
+        "sortDate": "2025-12-10",
+        "livery": "",
+        "title": "",
+        "caption": "E-3 Sentry at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-10-dsc03620.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-10-dsc03620.jpg",
+        "source": "raw_assets/DSC03620.jpg",
+        "originalSize": "6963 x 5222",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "347mm",
+          "FocalLengthIn35mmFilm": "347mm",
+          "FNumber": "f/8.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "320",
+          "DateTimeOriginal": "2025:12:10 15:41:44",
+          "DateTimeDigitized": "2025:12:10 15:41:44",
+          "DateTime": "2026:09:05 22:58:52"
+        }
+      },
+      "2025-12-10-dsc03615": {
+        "id": "2025-12-10-dsc03615",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-e-3g-sentry",
+            "unitId": "us-961st-airborne-air-control-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-10",
+        "sortDate": "2025-12-10",
+        "livery": "",
+        "title": "",
+        "caption": "E-3 Sentry at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-10-dsc03615.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-10-dsc03615.jpg",
+        "source": "raw_assets/DSC03615.jpg",
+        "originalSize": "7217 x 5413",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "400mm",
+          "FocalLengthIn35mmFilm": "400mm",
+          "FNumber": "f/8.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "320",
+          "DateTimeOriginal": "2025:12:10 15:41:33",
+          "DateTimeDigitized": "2025:12:10 15:41:33",
+          "DateTime": "2026:09:05 22:58:50"
+        }
+      },
+      "2025-12-10-dsc03599": {
+        "id": "2025-12-10-dsc03599",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-e-3g-sentry",
+            "unitId": "us-961st-airborne-air-control-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-10",
+        "sortDate": "2025-12-10",
+        "livery": "",
+        "title": "",
+        "caption": "E-3 Sentry at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-10-dsc03599.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-10-dsc03599.jpg",
+        "source": "raw_assets/DSC03599.jpg",
+        "originalSize": "6413 x 4810",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "840mm",
+          "FocalLengthIn35mmFilm": "840mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2025:12:10 15:40:48",
+          "DateTimeDigitized": "2025:12:10 15:40:48",
+          "DateTime": "2026:09:05 22:58:48"
+        }
+      },
+      "2025-12-10-dsc03553": {
+        "id": "2025-12-10-dsc03553",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-e-3g-sentry",
+            "unitId": "us-961st-airborne-air-control-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-10",
+        "sortDate": "2025-12-10",
+        "livery": "",
+        "title": "",
+        "caption": "E-3 Sentry at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-10-dsc03553.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-10-dsc03553.jpg",
+        "source": "raw_assets/DSC03553.jpg",
+        "originalSize": "7643 x 5095",
+        "processedSize": "2048 x 1365",
+        "thumbnailSize": "768 x 512",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "469mm",
+          "FocalLengthIn35mmFilm": "469mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/2000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "640",
+          "DateTimeOriginal": "2025:12:10 15:36:32",
+          "DateTimeDigitized": "2025:12:10 15:36:32",
+          "DateTime": "2026:09:05 22:58:46"
+        }
+      },
+      "2025-12-10-dsc03541": {
+        "id": "2025-12-10-dsc03541",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-e-3g-sentry",
+            "unitId": "us-961st-airborne-air-control-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-10",
+        "sortDate": "2025-12-10",
+        "livery": "",
+        "title": "",
+        "caption": "E-3 Sentry at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-10-dsc03541.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-10-dsc03541.jpg",
+        "source": "raw_assets/QC_DSC03541.jpg",
+        "originalSize": "6797 x 5098",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "840mm",
+          "FocalLengthIn35mmFilm": "840mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/2000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "320",
+          "DateTimeOriginal": "2025:12:10 15:36:21",
+          "DateTimeDigitized": "2025:12:10 15:36:21",
+          "DateTime": "2026:09:05 22:58:45"
+        }
+      },
+      "2025-12-10-dsc03538": {
+        "id": "2025-12-10-dsc03538",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-e-3g-sentry",
+            "unitId": "us-961st-airborne-air-control-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-10",
+        "sortDate": "2025-12-10",
+        "livery": "",
+        "title": "",
+        "caption": "E-3 Sentry at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-10-dsc03538.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-10-dsc03538.jpg",
+        "source": "raw_assets/DSC03538.jpg",
+        "originalSize": "6223 x 4667",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "840mm",
+          "FocalLengthIn35mmFilm": "840mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/2000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "250",
+          "DateTimeOriginal": "2025:12:10 15:36:16",
+          "DateTimeDigitized": "2025:12:10 15:36:16",
+          "DateTime": "2026:09:05 22:58:43"
+        }
+      },
+      "2025-12-10-dsc03396": {
+        "id": "2025-12-10-dsc03396",
+        "locationId": "jp-naha-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "kawasaki-rc-2",
+            "unitId": "jp-electronic-warfare-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-10",
+        "sortDate": "2025-12-10",
+        "livery": "",
+        "title": "",
+        "caption": "RC-2 at Naha Air Base",
+        "image": "assets/generated/photos/2025-12-10-dsc03396.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-10-dsc03396.jpg",
+        "source": "raw_assets/DSC03396.jpg",
+        "originalSize": "5230 x 3923",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "600mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/8.0",
+          "ExposureTime": "1/2000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "200",
+          "DateTimeOriginal": "2025:12:10 09:44:59",
+          "DateTimeDigitized": "2025:12:10 09:44:59",
+          "DateTime": "2026:09:05 22:58:41"
+        }
+      },
+      "2025-12-10-dsc03360": {
+        "id": "2025-12-10-dsc03360",
+        "locationId": "jp-naha-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "kawasaki-rc-2",
+            "unitId": "jp-electronic-warfare-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-10",
+        "sortDate": "2025-12-10",
+        "livery": "",
+        "title": "",
+        "caption": "RC-2 at Naha Air Base",
+        "image": "assets/generated/photos/2025-12-10-dsc03360.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-10-dsc03360.jpg",
+        "source": "raw_assets/DSC03360.jpg",
+        "originalSize": "6842 x 5132",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "391mm",
+          "FocalLengthIn35mmFilm": "391mm",
+          "FNumber": "f/8.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "125",
+          "DateTimeOriginal": "2025:12:10 09:41:43",
+          "DateTimeDigitized": "2025:12:10 09:41:43",
+          "DateTime": "2026:09:05 22:58:40"
+        }
+      },
       "2025-12-10-181202": {
         "id": "2025-12-10-181202",
         "locationId": "jp-naha-air-base",
@@ -4658,6 +5302,234 @@
           "DateTime": "2026:07:04 19:47:35"
         }
       },
+      "2025-12-09-dsc09234": {
+        "id": "2025-12-09-dsc09234",
+        "locationId": "jp-naha-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "kawasaki-p-3c-orion",
+            "unitId": "jp-fleet-air-wing-5",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-09",
+        "sortDate": "2025-12-09",
+        "livery": "",
+        "title": "",
+        "caption": "P-3C taking off for routine patrol at Naha Air Base",
+        "image": "assets/generated/photos/2025-12-09-dsc09234.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-09-dsc09234.jpg",
+        "source": "raw_assets/DSC09234.jpg",
+        "originalSize": "8010 x 5340",
+        "processedSize": "2048 x 1365",
+        "thumbnailSize": "768 x 512",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "420mm",
+          "FocalLengthIn35mmFilm": "420mm",
+          "FNumber": "f/8.0",
+          "ExposureTime": "1/80s",
+          "ExposureBiasValue": "2.0",
+          "ISO": "125",
+          "DateTimeOriginal": "2025:12:09 07:50:27",
+          "DateTimeDigitized": "2025:12:09 07:50:27",
+          "DateTime": "2026:09:05 22:59:07"
+        }
+      },
+      "2025-12-09-dsc09228": {
+        "id": "2025-12-09-dsc09228",
+        "locationId": "jp-naha-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "kawasaki-p-3c-orion",
+            "unitId": "jp-fleet-air-wing-5",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-09",
+        "sortDate": "2025-12-09",
+        "livery": "",
+        "title": "",
+        "caption": "P-3C taking off for routine patrol at Naha Air Base",
+        "image": "assets/generated/photos/2025-12-09-dsc09228.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-09-dsc09228.jpg",
+        "source": "raw_assets/DSC09228.jpg",
+        "originalSize": "6560 x 4920",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "486mm",
+          "FocalLengthIn35mmFilm": "486mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/80s",
+          "ExposureBiasValue": "2.0",
+          "ISO": "125",
+          "DateTimeOriginal": "2025:12:09 07:50:26",
+          "DateTimeDigitized": "2025:12:09 07:50:26",
+          "DateTime": "2026:09:05 22:59:05"
+        }
+      },
+      "2025-12-09-dsc01511": {
+        "id": "2025-12-09-dsc01511",
+        "locationId": "jp-naha-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "kawasaki-uh-60ja",
+            "unitId": "jp-15th-brigade",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-09",
+        "sortDate": "2025-12-09",
+        "livery": "",
+        "title": "",
+        "caption": "JGSDF UH-60JA at Naha Air Base",
+        "image": "assets/generated/photos/2025-12-09-dsc01511.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-09-dsc01511.jpg",
+        "source": "raw_assets/DSC01511.jpg",
+        "originalSize": "5280 x 3960",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "840mm",
+          "FocalLengthIn35mmFilm": "840mm",
+          "FNumber": "f/11.0",
+          "ExposureTime": "1/80s",
+          "ExposureBiasValue": "2.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2025:12:09 15:33:04",
+          "DateTimeDigitized": "2025:12:09 15:33:04",
+          "DateTime": "2026:09:05 22:58:38"
+        }
+      },
+      "2025-12-09-dsc01403": {
+        "id": "2025-12-09-dsc01403",
+        "locationId": "jp-naha-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "kawasaki-uh-60ja",
+            "unitId": "jp-15th-brigade",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-09",
+        "sortDate": "2025-12-09",
+        "livery": "",
+        "title": "",
+        "caption": "JGSDF UH-60JA at Naha Air Base",
+        "image": "assets/generated/photos/2025-12-09-dsc01403.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-09-dsc01403.jpg",
+        "source": "raw_assets/DSC01403.jpg",
+        "originalSize": "3251 x 2438",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "840mm",
+          "FocalLengthIn35mmFilm": "840mm",
+          "FNumber": "f/13.0",
+          "ExposureTime": "1/80s",
+          "ExposureBiasValue": "2.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2025:12:09 15:32:50",
+          "DateTimeDigitized": "2025:12:09 15:32:50",
+          "DateTime": "2026:09:05 22:58:37"
+        }
+      },
+      "2025-12-09-dsc00749": {
+        "id": "2025-12-09-dsc00749",
+        "locationId": "jp-naha-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "kawasaki-p-3c-orion",
+            "unitId": "jp-fleet-air-wing-5",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-09",
+        "sortDate": "2025-12-09",
+        "livery": "",
+        "title": "",
+        "caption": "P-3C at Naha Air Base",
+        "image": "assets/generated/photos/2025-12-09-dsc00749.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-09-dsc00749.jpg",
+        "source": "raw_assets/DSC00749.jpg",
+        "originalSize": "7033 x 5275",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "840mm",
+          "FocalLengthIn35mmFilm": "840mm",
+          "FNumber": "f/11.0",
+          "ExposureTime": "1/80s",
+          "ExposureBiasValue": "2.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2025:12:09 14:27:05",
+          "DateTimeDigitized": "2025:12:09 14:27:05",
+          "DateTime": "2026:09:05 22:58:36"
+        }
+      },
+      "2025-12-09-dsc00253": {
+        "id": "2025-12-09-dsc00253",
+        "locationId": "jp-naha-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "kawasaki-rc-2",
+            "unitId": "jp-electronic-warfare-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-09",
+        "sortDate": "2025-12-09",
+        "livery": "",
+        "title": "",
+        "caption": "RC-2 at Naha Air Base",
+        "image": "assets/generated/photos/2025-12-09-dsc00253.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-09-dsc00253.jpg",
+        "source": "raw_assets/DSC00253.jpg",
+        "originalSize": "6474 x 4855",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "840mm",
+          "FocalLengthIn35mmFilm": "840mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/2000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "640",
+          "DateTimeOriginal": "2025:12:09 09:46:48",
+          "DateTimeDigitized": "2025:12:09 09:46:48",
+          "DateTime": "2026:09:05 22:58:34"
+        }
+      },
       "2025-12-09-204-sunset": {
         "id": "2025-12-09-204-sunset",
         "locationId": "jp-naha-air-base",
@@ -4694,6 +5566,82 @@
           "DateTimeOriginal": "2025:12:09 16:26:19",
           "DateTimeDigitized": "2025:12:09 16:26:19",
           "DateTime": "2026:07:04 19:47:36"
+        }
+      },
+      "2025-12-08-dsc08038": {
+        "id": "2025-12-08-dsc08038",
+        "locationId": "jp-naha-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "mitsubishi-f-15j-eagle",
+            "unitId": "jp-204th-tactical-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-08",
+        "sortDate": "2025-12-08",
+        "livery": "",
+        "title": "",
+        "caption": "F-15J from 204 TFS taking off from Naha Air Base",
+        "image": "assets/generated/photos/2025-12-08-dsc08038.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-08-dsc08038.jpg",
+        "source": "raw_assets/DSC08038.jpg",
+        "originalSize": "3524 x 2643",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "600mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/6.3",
+          "ExposureTime": "1/500s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "800",
+          "DateTimeOriginal": "2025:12:08 16:22:21",
+          "DateTimeDigitized": "2025:12:08 16:22:21",
+          "DateTime": "2026:09:05 22:59:04"
+        }
+      },
+      "2025-12-08-dsc08009": {
+        "id": "2025-12-08-dsc08009",
+        "locationId": "jp-naha-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "mitsubishi-f-15j-eagle",
+            "unitId": "jp-204th-tactical-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-08",
+        "sortDate": "2025-12-08",
+        "livery": "",
+        "title": "",
+        "caption": "F-15J from 204 TFS taking off from Naha Air Base",
+        "image": "assets/generated/photos/2025-12-08-dsc08009.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-08-dsc08009.jpg",
+        "source": "raw_assets/DSC08009.jpg",
+        "originalSize": "4006 x 3005",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "600mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/6.3",
+          "ExposureTime": "1/500s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "1000",
+          "DateTimeOriginal": "2025:12:08 16:22:14",
+          "DateTimeDigitized": "2025:12:08 16:22:14",
+          "DateTime": "2026:09:05 22:59:03"
         }
       },
       "2025-12-07-dsc05101": {
@@ -4884,6 +5832,348 @@
           "DateTimeOriginal": "2025:12:04 12:02:10",
           "DateTimeDigitized": "2025:12:04 12:02:10",
           "DateTime": "2026:07:04 19:47:40"
+        }
+      },
+      "2025-12-03-dsc02464": {
+        "id": "2025-12-03-dsc02464",
+        "locationId": "jp-komatsu-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "mitsubishi-f-15j-eagle",
+            "unitId": "jp-303rd-tactical-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-03",
+        "sortDate": "2025-12-03",
+        "livery": "",
+        "title": "",
+        "caption": "F-15J from 303 TFS at Komatsu Air Base",
+        "image": "assets/generated/photos/2025-12-03-dsc02464.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-03-dsc02464.jpg",
+        "source": "raw_assets/DSC02464.jpg",
+        "originalSize": "5532 x 4149",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "600mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/6.3",
+          "ExposureTime": "1/640s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "800",
+          "DateTimeOriginal": "2025:12:03 11:37:08",
+          "DateTimeDigitized": "2025:12:03 11:37:08",
+          "DateTime": "2026:09:05 20:10:44"
+        }
+      },
+      "2025-12-03-dsc02333-2": {
+        "id": "2025-12-03-dsc02333-2",
+        "locationId": "jp-komatsu-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "lockheed-martin-f-35-lightning-ii",
+            "unitId": "jp-303rd-tactical-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-03",
+        "sortDate": "2025-12-03",
+        "livery": "",
+        "title": "",
+        "caption": "F-35A from 303 TFS at Komatsu Air Base",
+        "image": "assets/generated/photos/2025-12-03-dsc02333-2.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-03-dsc02333-2.jpg",
+        "source": "raw_assets/DSC02333-2.jpg",
+        "originalSize": "5185 x 3889",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "600mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/6.3",
+          "ExposureTime": "1/640s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "1000",
+          "DateTimeOriginal": "2025:12:03 11:31:33",
+          "DateTimeDigitized": "2025:12:03 11:31:33",
+          "DateTime": "2026:09:05 20:10:43"
+        }
+      },
+      "2025-12-03-dsc02270": {
+        "id": "2025-12-03-dsc02270",
+        "locationId": "jp-komatsu-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "lockheed-martin-f-35-lightning-ii",
+            "unitId": "jp-303rd-tactical-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-03",
+        "sortDate": "2025-12-03",
+        "livery": "",
+        "title": "",
+        "caption": "F-35A from 303 TFS at Komatsu Air Base",
+        "image": "assets/generated/photos/2025-12-03-dsc02270.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-03-dsc02270.jpg",
+        "source": "raw_assets/DSC02270.jpg",
+        "originalSize": "6479 x 4319",
+        "processedSize": "2048 x 1365",
+        "thumbnailSize": "768 x 512",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "474mm",
+          "FocalLengthIn35mmFilm": "474mm",
+          "FNumber": "f/6.3",
+          "ExposureTime": "1/640s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "1000",
+          "DateTimeOriginal": "2025:12:03 11:30:52",
+          "DateTimeDigitized": "2025:12:03 11:30:52",
+          "DateTime": "2026:09:05 20:10:42"
+        }
+      },
+      "2025-12-03-dsc02238": {
+        "id": "2025-12-03-dsc02238",
+        "locationId": "jp-komatsu-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "lockheed-martin-f-35-lightning-ii",
+            "unitId": "jp-303rd-tactical-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-03",
+        "sortDate": "2025-12-03",
+        "livery": "",
+        "title": "",
+        "caption": "F-35A from 303 TFS at Komatsu Air Base",
+        "image": "assets/generated/photos/2025-12-03-dsc02238.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-03-dsc02238.jpg",
+        "source": "raw_assets/DSC02238.jpg",
+        "originalSize": "5844 x 4383",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "600mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/6.3",
+          "ExposureTime": "1/640s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "1250",
+          "DateTimeOriginal": "2025:12:03 11:30:47",
+          "DateTimeDigitized": "2025:12:03 11:30:47",
+          "DateTime": "2026:09:05 20:10:40"
+        }
+      },
+      "2025-12-03-dsc02059": {
+        "id": "2025-12-03-dsc02059",
+        "locationId": "jp-komatsu-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "lockheed-martin-f-35-lightning-ii",
+            "unitId": "jp-303rd-tactical-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-03",
+        "sortDate": "2025-12-03",
+        "livery": "",
+        "title": "",
+        "caption": "F-35A from 303 TFS at Komatsu Air Base",
+        "image": "assets/generated/photos/2025-12-03-dsc02059.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-03-dsc02059.jpg",
+        "source": "raw_assets/DSC02059.jpg",
+        "originalSize": "6377 x 4783",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "600mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/6.3",
+          "ExposureTime": "1/640s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "1600",
+          "DateTimeOriginal": "2025:12:03 10:40:16",
+          "DateTimeDigitized": "2025:12:03 10:40:16",
+          "DateTime": "2026:09:05 20:10:39"
+        }
+      },
+      "2025-12-03-dsc02040": {
+        "id": "2025-12-03-dsc02040",
+        "locationId": "jp-komatsu-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "lockheed-martin-f-35-lightning-ii",
+            "unitId": "jp-303rd-tactical-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-03",
+        "sortDate": "2025-12-03",
+        "livery": "",
+        "title": "",
+        "caption": "F-35A from 303 TFS at Komatsu Air Base",
+        "image": "assets/generated/photos/2025-12-03-dsc02040.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-03-dsc02040.jpg",
+        "source": "raw_assets/DSC02040.jpg",
+        "originalSize": "5026 x 3769",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "600mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/6.3",
+          "ExposureTime": "1/640s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "1600",
+          "DateTimeOriginal": "2025:12:03 10:38:35",
+          "DateTimeDigitized": "2025:12:03 10:38:35",
+          "DateTime": "2026:09:05 20:10:37"
+        }
+      },
+      "2025-12-03-dsc01944": {
+        "id": "2025-12-03-dsc01944",
+        "locationId": "jp-komatsu-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "mitsubishi-f-15j-eagle",
+            "unitId": "jp-303rd-tactical-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-03",
+        "sortDate": "2025-12-03",
+        "livery": "",
+        "title": "",
+        "caption": "F-15J from 303 TFS at Komatsu Air Base",
+        "image": "assets/generated/photos/2025-12-03-dsc01944.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-03-dsc01944.jpg",
+        "source": "raw_assets/DSC01944.jpg",
+        "originalSize": "6993 x 4662",
+        "processedSize": "2048 x 1365",
+        "thumbnailSize": "768 x 512",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "600mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/6.3",
+          "ExposureTime": "1/640s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "1250",
+          "DateTimeOriginal": "2025:12:03 10:35:59",
+          "DateTimeDigitized": "2025:12:03 10:35:59",
+          "DateTime": "2026:09:05 20:10:36"
+        }
+      },
+      "2025-12-03-dsc01877": {
+        "id": "2025-12-03-dsc01877",
+        "locationId": "jp-komatsu-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "mitsubishi-f-15j-eagle",
+            "unitId": "jp-303rd-tactical-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-03",
+        "sortDate": "2025-12-03",
+        "livery": "",
+        "title": "",
+        "caption": "F-15J from 303 TFS at Komatsu Air Base",
+        "image": "assets/generated/photos/2025-12-03-dsc01877.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-03-dsc01877.jpg",
+        "source": "raw_assets/DSC01877.jpg",
+        "originalSize": "7488 x 5616",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "600mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/6.3",
+          "ExposureTime": "1/640s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "1250",
+          "DateTimeOriginal": "2025:12:03 10:35:43",
+          "DateTimeDigitized": "2025:12:03 10:35:43",
+          "DateTime": "2026:09:05 20:10:34"
+        }
+      },
+      "2025-12-03-dsc01766": {
+        "id": "2025-12-03-dsc01766",
+        "locationId": "jp-komatsu-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "lockheed-martin-f-35-lightning-ii",
+            "unitId": "jp-303rd-tactical-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-03",
+        "sortDate": "2025-12-03",
+        "livery": "",
+        "title": "",
+        "caption": "F-35A from 303 TFS at Komatsu Air Base",
+        "image": "assets/generated/photos/2025-12-03-dsc01766.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-03-dsc01766.jpg",
+        "source": "raw_assets/DSC01766.jpg",
+        "originalSize": "7512 x 5634",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "600mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/6.3",
+          "ExposureTime": "1/640s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "1600",
+          "DateTimeOriginal": "2025:12:03 10:34:15",
+          "DateTimeDigitized": "2025:12:03 10:34:15",
+          "DateTime": "2026:09:05 20:10:32"
         }
       },
       "2025-12-03-728893": {
@@ -9978,6 +11268,120 @@
           "DateTime": "2026:07:04 19:50:46"
         }
       },
+      "2023-11-26-qc-dsc05157-enhanced-nr": {
+        "id": "2023-11-26-qc-dsc05157-enhanced-nr",
+        "locationId": "jp-tsuiki-air-base",
+        "eventId": "jp-tsuiki-air-show-2023",
+        "subjects": [
+          {
+            "aircraftId": "mitsubishi-f-15j",
+            "unitId": "jp-305th-tactical-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2023",
+        "date": "2023-11-26",
+        "sortDate": "2023-11-26",
+        "livery": "",
+        "title": "",
+        "caption": "F-15J from 305 TFS performing at Tsuiki Air Base during Tsuiki Air Show 2023",
+        "image": "assets/generated/photos/2023-11-26-qc-dsc05157-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2023-11-26-qc-dsc05157-enhanced-nr.jpg",
+        "source": "raw_assets/QC_DSC05157-Enhanced-NR.jpeg",
+        "originalSize": "2928 x 1952",
+        "processedSize": "2048 x 1365",
+        "thumbnailSize": "768 x 512",
+        "exif": {
+          "Make": "SONY",
+          "Model": "DSC-RX10M4",
+          "LensModel": "24-600mm F2.4-4.0",
+          "FocalLength": "220mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/5.6",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2023:11:26 08:01:49",
+          "DateTimeDigitized": "2023:11:26 08:01:49",
+          "DateTime": "2026:07:04 19:49:39"
+        }
+      },
+      "2023-11-26-qc-dsc05145-enhanced-nr": {
+        "id": "2023-11-26-qc-dsc05145-enhanced-nr",
+        "locationId": "jp-tsuiki-air-base",
+        "eventId": "jp-tsuiki-air-show-2023",
+        "subjects": [
+          {
+            "aircraftId": "mitsubishi-f-15j",
+            "unitId": "jp-305th-tactical-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2023",
+        "date": "2023-11-26",
+        "sortDate": "2023-11-26",
+        "livery": "",
+        "title": "",
+        "caption": "F-15J from 305 TFS performing at Tsuiki Air Base during Tsuiki Air Show 2023",
+        "image": "assets/generated/photos/2023-11-26-qc-dsc05145-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2023-11-26-qc-dsc05145-enhanced-nr.jpg",
+        "source": "raw_assets/QC_DSC05145-Enhanced-NR.jpeg",
+        "originalSize": "2455 x 1637",
+        "processedSize": "2048 x 1366",
+        "thumbnailSize": "768 x 512",
+        "exif": {
+          "Make": "SONY",
+          "Model": "DSC-RX10M4",
+          "LensModel": "24-600mm F2.4-4.0",
+          "FocalLength": "220mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/5.6",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2023:11:26 08:01:46",
+          "DateTimeDigitized": "2023:11:26 08:01:46",
+          "DateTime": "2026:07:04 19:49:38"
+        }
+      },
+      "2023-11-26-qc-dsc05008-enhanced-nr": {
+        "id": "2023-11-26-qc-dsc05008-enhanced-nr",
+        "locationId": "jp-tsuiki-air-base",
+        "eventId": "jp-tsuiki-air-show-2023",
+        "subjects": [
+          {
+            "aircraftId": "mitsubishi-f-15j",
+            "unitId": "jp-305th-tactical-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2023",
+        "date": "2023-11-26",
+        "sortDate": "2023-11-26",
+        "livery": "",
+        "title": "",
+        "caption": "F-15J from 305 TFS performing at Tsuiki Air Base during Tsuiki Air Show 2023",
+        "image": "assets/generated/photos/2023-11-26-qc-dsc05008-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2023-11-26-qc-dsc05008-enhanced-nr.jpg",
+        "source": "raw_assets/QC_DSC05008-Enhanced-NR.jpeg",
+        "originalSize": "3117 x 2078",
+        "processedSize": "2048 x 1365",
+        "thumbnailSize": "768 x 512",
+        "exif": {
+          "Make": "SONY",
+          "Model": "DSC-RX10M4",
+          "LensModel": "24-600mm F2.4-4.0",
+          "FocalLength": "67.5mm",
+          "FocalLengthIn35mmFilm": "184mm",
+          "FNumber": "f/5.6",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2023:11:26 07:59:01",
+          "DateTimeDigitized": "2023:11:26 07:59:01",
+          "DateTime": "2026:07:04 19:49:38"
+        }
+      },
       "2023-11-26-dsc07531-enhanced-nr-2": {
         "id": "2023-11-26-dsc07531-enhanced-nr-2",
         "locationId": "jp-tsuiki-air-base",
@@ -13600,6 +15004,234 @@
           "DateTime": "2026:07:08 15:12:09"
         }
       },
+      "2023-10-21-dsc01364-enhanced-nr": {
+        "id": "2023-10-21-dsc01364-enhanced-nr",
+        "locationId": "jp-atsugi-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-p-8a-poseidon",
+            "unitId": "us-patrol-squadron-16-vp-16",
+            "primary": true
+          }
+        ],
+        "year": "2023",
+        "date": "2023-10-21",
+        "sortDate": "2023-10-21",
+        "livery": "",
+        "title": "",
+        "caption": "P-8A from VP-16 \"War Eagles\" doing touch-and-go at Atsugi Air Base",
+        "image": "assets/generated/photos/2023-10-21-dsc01364-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2023-10-21-dsc01364-enhanced-nr.jpg",
+        "source": "raw_assets/DSC01364-Enhanced-NR.jpg",
+        "originalSize": "5472 x 3648",
+        "processedSize": "2048 x 1365",
+        "thumbnailSize": "768 x 512",
+        "exif": {
+          "Make": "SONY",
+          "Model": "DSC-RX10M4",
+          "LensModel": "24-600mm F2.4-4.0",
+          "FocalLength": "27.2mm",
+          "FocalLengthIn35mmFilm": "74mm",
+          "FNumber": "f/3.5",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2023:10:21 12:44:28",
+          "DateTimeDigitized": "2023:10:21 12:44:28",
+          "DateTime": "2026:07:11 09:41:48"
+        }
+      },
+      "2023-10-21-dsc01353-enhanced-nr": {
+        "id": "2023-10-21-dsc01353-enhanced-nr",
+        "locationId": "jp-atsugi-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-p-8a-poseidon",
+            "unitId": "us-patrol-squadron-16-vp-16",
+            "primary": true
+          }
+        ],
+        "year": "2023",
+        "date": "2023-10-21",
+        "sortDate": "2023-10-21",
+        "livery": "",
+        "title": "",
+        "caption": "P-8A from VP-16 \"War Eagles\" doing touch-and-go at Atsugi Air Base",
+        "image": "assets/generated/photos/2023-10-21-dsc01353-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2023-10-21-dsc01353-enhanced-nr.jpg",
+        "source": "raw_assets/DSC01353-Enhanced-NR.jpg",
+        "originalSize": "4594 x 3445",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "DSC-RX10M4",
+          "LensModel": "24-600mm F2.4-4.0",
+          "FocalLength": "128.6mm",
+          "FocalLengthIn35mmFilm": "351mm",
+          "FNumber": "f/4.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2023:10:21 12:44:22",
+          "DateTimeDigitized": "2023:10:21 12:44:22",
+          "DateTime": "2026:07:11 09:41:47"
+        }
+      },
+      "2023-10-21-dsc01348-enhanced-nr": {
+        "id": "2023-10-21-dsc01348-enhanced-nr",
+        "locationId": "jp-atsugi-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-p-8a-poseidon",
+            "unitId": "us-patrol-squadron-16-vp-16",
+            "primary": true
+          }
+        ],
+        "year": "2023",
+        "date": "2023-10-21",
+        "sortDate": "2023-10-21",
+        "livery": "",
+        "title": "",
+        "caption": "P-8A from VP-16 \"War Eagles\" doing touch-and-go at Atsugi Air Base",
+        "image": "assets/generated/photos/2023-10-21-dsc01348-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2023-10-21-dsc01348-enhanced-nr.jpg",
+        "source": "raw_assets/DSC01348-Enhanced-NR.jpg",
+        "originalSize": "5204 x 3469",
+        "processedSize": "2048 x 1365",
+        "thumbnailSize": "768 x 512",
+        "exif": {
+          "Make": "SONY",
+          "Model": "DSC-RX10M4",
+          "LensModel": "24-600mm F2.4-4.0",
+          "FocalLength": "220mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/4.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2023:10:21 12:44:20",
+          "DateTimeDigitized": "2023:10:21 12:44:20",
+          "DateTime": "2026:07:11 09:41:46"
+        }
+      },
+      "2023-10-21-dsc01330-enhanced-nr": {
+        "id": "2023-10-21-dsc01330-enhanced-nr",
+        "locationId": "jp-atsugi-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-p-8a-poseidon",
+            "unitId": "us-patrol-squadron-16-vp-16",
+            "primary": true
+          }
+        ],
+        "year": "2023",
+        "date": "2023-10-21",
+        "sortDate": "2023-10-21",
+        "livery": "",
+        "title": "",
+        "caption": "P-8A from VP-16 \"War Eagles\" doing touch-and-go at Atsugi Air Base",
+        "image": "assets/generated/photos/2023-10-21-dsc01330-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2023-10-21-dsc01330-enhanced-nr.jpg",
+        "source": "raw_assets/DSC01330-Enhanced-NR.jpg",
+        "originalSize": "5145 x 3430",
+        "processedSize": "2048 x 1365",
+        "thumbnailSize": "768 x 512",
+        "exif": {
+          "Make": "SONY",
+          "Model": "DSC-RX10M4",
+          "LensModel": "24-600mm F2.4-4.0",
+          "FocalLength": "34.7mm",
+          "FocalLengthIn35mmFilm": "95mm",
+          "FNumber": "f/8.0",
+          "ExposureTime": "1/2000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "250",
+          "DateTimeOriginal": "2023:10:21 12:27:32",
+          "DateTimeDigitized": "2023:10:21 12:27:32",
+          "DateTime": "2026:07:11 09:41:45"
+        }
+      },
+      "2023-10-21-dsc01287-enhanced-nr": {
+        "id": "2023-10-21-dsc01287-enhanced-nr",
+        "locationId": "jp-atsugi-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-p-8a-poseidon",
+            "unitId": "us-patrol-squadron-16-vp-16",
+            "primary": true
+          }
+        ],
+        "year": "2023",
+        "date": "2023-10-21",
+        "sortDate": "2023-10-21",
+        "livery": "",
+        "title": "",
+        "caption": "P-8A from VP-16 \"War Eagles\" doing touch-and-go at Atsugi Air Base",
+        "image": "assets/generated/photos/2023-10-21-dsc01287-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2023-10-21-dsc01287-enhanced-nr.jpg",
+        "source": "raw_assets/DSC01287-Enhanced-NR.jpg",
+        "originalSize": "4775 x 3581",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "DSC-RX10M4",
+          "LensModel": "24-600mm F2.4-4.0",
+          "FocalLength": "220mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/4.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2023:10:21 12:09:54",
+          "DateTimeDigitized": "2023:10:21 12:09:54",
+          "DateTime": "2026:07:11 09:41:44"
+        }
+      },
+      "2023-10-21-dsc01257-enhanced-nr": {
+        "id": "2023-10-21-dsc01257-enhanced-nr",
+        "locationId": "jp-atsugi-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-p-8a-poseidon",
+            "unitId": "us-patrol-squadron-16-vp-16",
+            "primary": true
+          }
+        ],
+        "year": "2023",
+        "date": "2023-10-21",
+        "sortDate": "2023-10-21",
+        "livery": "",
+        "title": "",
+        "caption": "P-8A from VP-16 \"War Eagles\" doing touch-and-go at Atsugi Air Base",
+        "image": "assets/generated/photos/2023-10-21-dsc01257-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2023-10-21-dsc01257-enhanced-nr.jpg",
+        "source": "raw_assets/DSC01257-Enhanced-NR.jpg",
+        "originalSize": "4643 x 3482",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "DSC-RX10M4",
+          "LensModel": "24-600mm F2.4-4.0",
+          "FocalLength": "25.6mm",
+          "FocalLengthIn35mmFilm": "70mm",
+          "FNumber": "f/3.5",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2023:10:21 12:09:43",
+          "DateTimeDigitized": "2023:10:21 12:09:43",
+          "DateTime": "2026:07:11 09:41:42"
+        }
+      },
       "2023-10-21-dsc00638-enhanced-nr": {
         "id": "2023-10-21-dsc00638-enhanced-nr",
         "locationId": "jp-atsugi-air-base",
@@ -16388,6 +18020,44 @@
           "DateTime": "2026:07:04 19:48:14"
         }
       },
+      "2023-10-06-dsc01408-enhanced-nr": {
+        "id": "2023-10-06-dsc01408-enhanced-nr",
+        "locationId": "jp-komatsu-air-base",
+        "eventId": "jp-komatsu-air-show-2023",
+        "subjects": [
+          {
+            "aircraftId": "kawasaki-p-3c-orion",
+            "unitId": "jp-air-patrol-squadron-1",
+            "primary": true
+          }
+        ],
+        "year": "2023",
+        "date": "2023-10-06",
+        "sortDate": "2023-10-06",
+        "livery": "",
+        "title": "",
+        "caption": "P-3C at Komatsu Air Base",
+        "image": "assets/generated/photos/2023-10-06-dsc01408-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2023-10-06-dsc01408-enhanced-nr.jpg",
+        "source": "raw_assets/DSC01408-Enhanced-NR.jpeg",
+        "originalSize": "5126 x 3417",
+        "processedSize": "2048 x 1365",
+        "thumbnailSize": "768 x 512",
+        "exif": {
+          "Make": "SONY",
+          "Model": "DSC-RX10M4",
+          "LensModel": "24-600mm F2.4-4.0",
+          "FocalLength": "132.2mm",
+          "FocalLengthIn35mmFilm": "361mm",
+          "FNumber": "f/4.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "200",
+          "DateTimeOriginal": "2023:10:06 14:39:49",
+          "DateTimeDigitized": "2023:10:06 14:39:49",
+          "DateTime": "2026:07:04 19:48:13"
+        }
+      },
       "2023-10-06-dsc01185-enhanced-nr": {
         "id": "2023-10-06-dsc01185-enhanced-nr",
         "locationId": "jp-komatsu-air-base",
@@ -16950,6 +18620,44 @@
           "DateTimeOriginal": "2023:10:01 06:49:30",
           "DateTimeDigitized": "2023:10:01 06:49:30",
           "DateTime": "2026:07:04 19:49:02"
+        }
+      },
+      "2023-09-24-dsc03571-enhanced-nr": {
+        "id": "2023-09-24-dsc03571-enhanced-nr",
+        "locationId": "jp-yokota-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-kc-135-stratotanker",
+            "unitId": "us-77th-air-refueling-squadron-77-ars",
+            "primary": true
+          }
+        ],
+        "year": "2023",
+        "date": "2023-09-24",
+        "sortDate": "2023-09-24",
+        "livery": "",
+        "title": "",
+        "caption": "KC-135R landing at Yokota Air Base",
+        "image": "assets/generated/photos/2023-09-24-dsc03571-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2023-09-24-dsc03571-enhanced-nr.jpg",
+        "source": "raw_assets/DSC03571-Enhanced-NR.jpeg",
+        "originalSize": "4898 x 3265",
+        "processedSize": "2048 x 1365",
+        "thumbnailSize": "768 x 512",
+        "exif": {
+          "Make": "SONY",
+          "Model": "DSC-RX10M4",
+          "LensModel": "24-600mm F2.4-4.0",
+          "FocalLength": "83.9mm",
+          "FocalLengthIn35mmFilm": "229mm",
+          "FNumber": "f/5.6",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2023:09:24 14:06:12",
+          "DateTimeDigitized": "2023:09:24 14:06:12",
+          "DateTime": "2026:07:04 19:48:56"
         }
       },
       "2023-09-23-usn-seahawk-2": {
@@ -22104,7 +23812,14 @@
         "2023-06-30-wsss-clipper-1"
       ],
       "boeing-e-3g-sentry": [
-        "2025-12-10-zz-0007"
+        "2025-12-10-zz-0007",
+        "2025-12-10-dsc03635",
+        "2025-12-10-dsc03620",
+        "2025-12-10-dsc03615",
+        "2025-12-10-dsc03599",
+        "2025-12-10-dsc03553",
+        "2025-12-10-dsc03541",
+        "2025-12-10-dsc03538"
       ],
       "boeing-e-4b-nightwatch": [
         "2025-05-29-dsc02905-enhanced-nr",
@@ -22168,9 +23883,11 @@
         "2022-10-18-dsc04841-enhanced"
       ],
       "boeing-kc-135-stratotanker": [
+        "2025-12-10-dsc03804",
         "2024-01-11-metrea-kc135-3",
         "2024-01-11-metrea-kc135-2",
-        "2024-01-11-metrea-kc135-1"
+        "2024-01-11-metrea-kc135-1",
+        "2023-09-24-dsc03571-enhanced-nr"
       ],
       "boeing-kc-46-pegasus": [
         "2025-11-30-dsc05061",
@@ -22187,6 +23904,18 @@
         "2023-11-26-dsc07517-enhanced-nr",
         "2023-11-12-dsc09753-enhanced-nr",
         "2023-11-12-dsc09722-enhanced-nr"
+      ],
+      "boeing-p-8a-poseidon": [
+        "2025-12-10-dsc03723",
+        "2025-12-10-dsc03716",
+        "2025-12-10-dsc03681",
+        "2025-12-10-dsc03665",
+        "2023-10-21-dsc01364-enhanced-nr",
+        "2023-10-21-dsc01353-enhanced-nr",
+        "2023-10-21-dsc01348-enhanced-nr",
+        "2023-10-21-dsc01330-enhanced-nr",
+        "2023-10-21-dsc01287-enhanced-nr",
+        "2023-10-21-dsc01257-enhanced-nr"
       ],
       "cessna-uc-35-citation": [
         "2025-12-12-dsc00765",
@@ -22335,8 +24064,17 @@
         "2023-09-09-p1-2",
         "2023-09-09-p1-1"
       ],
+      "kawasaki-p-3c-orion": [
+        "2025-12-09-dsc09234",
+        "2025-12-09-dsc09228",
+        "2025-12-09-dsc00749",
+        "2023-10-06-dsc01408-enhanced-nr"
+      ],
       "kawasaki-rc-2": [
-        "2025-12-10-181202"
+        "2025-12-10-dsc03396",
+        "2025-12-10-dsc03360",
+        "2025-12-10-181202",
+        "2025-12-09-dsc00253"
       ],
       "kawasaki-t-4": [
         "2026-04-08-xx5606",
@@ -22357,6 +24095,10 @@
         "2023-11-26-dsc06297",
         "2023-11-26-dsc06273",
         "2023-11-11-dsc08070-enhanced-nr"
+      ],
+      "kawasaki-uh-60ja": [
+        "2025-12-09-dsc01511",
+        "2025-12-09-dsc01403"
       ],
       "kawasaki-up-1": [
         "2023-10-21-dsc00638-enhanced-nr"
@@ -22398,6 +24140,14 @@
       ],
       "lockheed-kc-130j-hercules": [
         "2023-08-04-italy-c130"
+      ],
+      "lockheed-martin-f-35-lightning-ii": [
+        "2025-12-03-dsc02333-2",
+        "2025-12-03-dsc02270",
+        "2025-12-03-dsc02238",
+        "2025-12-03-dsc02059",
+        "2025-12-03-dsc02040",
+        "2025-12-03-dsc01766"
       ],
       "lockheed-martin-f-35a-lightning-ii": [
         "2026-02-03-raaf-f35a-2",
@@ -22444,11 +24194,21 @@
         "2023-10-06-dsc00543-enhanced-nr",
         "2023-10-06-dsc00151-enhanced-nr"
       ],
+      "mitsubishi-f-15j": [
+        "2023-11-26-qc-dsc05157-enhanced-nr",
+        "2023-11-26-qc-dsc05145-enhanced-nr",
+        "2023-11-26-qc-dsc05008-enhanced-nr"
+      ],
       "mitsubishi-f-15j-eagle": [
         "2026-04-08-128928",
         "2025-12-12-128925",
         "2025-12-09-204-sunset",
+        "2025-12-08-dsc08038",
+        "2025-12-08-dsc08009",
         "2025-12-04-928907",
+        "2025-12-03-dsc02464",
+        "2025-12-03-dsc01944",
+        "2025-12-03-dsc01877",
         "2025-12-03-728893",
         "2024-08-21-dsc08215-enhanced-nr",
         "2024-08-21-dsc08164-enhanced-nr",
@@ -22681,6 +24441,10 @@
         "2023-08-04-italy-kc767-2",
         "2023-08-04-italy-kc767-1"
       ],
+      "jp-15th-brigade": [
+        "2025-12-09-dsc01511",
+        "2025-12-09-dsc01403"
+      ],
       "jp-1st-attack-helicopter-squadron": [
         "2025-11-30-dsc05935",
         "2025-11-30-dsc05868",
@@ -22717,9 +24481,20 @@
         "2024-08-20-dsc05504-enhanced-nr"
       ],
       "jp-204th-tactical-fighter-squadron": [
-        "2025-12-09-204-sunset"
+        "2025-12-09-204-sunset",
+        "2025-12-08-dsc08038",
+        "2025-12-08-dsc08009"
       ],
       "jp-303rd-tactical-fighter-squadron": [
+        "2025-12-03-dsc02464",
+        "2025-12-03-dsc02333-2",
+        "2025-12-03-dsc02270",
+        "2025-12-03-dsc02238",
+        "2025-12-03-dsc02059",
+        "2025-12-03-dsc02040",
+        "2025-12-03-dsc01944",
+        "2025-12-03-dsc01877",
+        "2025-12-03-dsc01766",
         "2025-12-03-728893",
         "2023-10-07-dsc04079-enhanced-nr",
         "2023-10-07-dsc04048-enhanced-nr",
@@ -22740,6 +24515,11 @@
       ],
       "jp-304th-tactical-fighter-squadron": [
         "2025-12-12-128925"
+      ],
+      "jp-305th-tactical-fighter-squadron": [
+        "2023-11-26-qc-dsc05157-enhanced-nr",
+        "2023-11-26-qc-dsc05145-enhanced-nr",
+        "2023-11-26-qc-dsc05008-enhanced-nr"
       ],
       "jp-306th-tactical-fighter-squadron": [
         "2025-12-04-928907",
@@ -22913,7 +24693,8 @@
         "2023-10-06-dsc01453-enhanced-nr"
       ],
       "jp-air-patrol-squadron-1": [
-        "2023-11-26-dsc07531-enhanced-nr-2"
+        "2023-11-26-dsc07531-enhanced-nr-2",
+        "2023-10-06-dsc01408-enhanced-nr"
       ],
       "jp-air-patrol-squadron-3": [
         "2023-10-21-dsc00528-enhanced-nr-1",
@@ -22992,13 +24773,21 @@
         "2026-04-08-dsc08980",
         "2026-04-08-dsc08967",
         "2026-04-08-681203",
-        "2025-12-10-181202"
+        "2025-12-10-dsc03396",
+        "2025-12-10-dsc03360",
+        "2025-12-10-181202",
+        "2025-12-09-dsc00253"
       ],
       "jp-fleet-air-wing-23": [
         "2026-04-07-dsc06143",
         "2026-04-07-dsc06006",
         "2026-04-07-dsc05993",
         "2023-10-01-dsc08517-enhanced-nr"
+      ],
+      "jp-fleet-air-wing-5": [
+        "2025-12-09-dsc09234",
+        "2025-12-09-dsc09228",
+        "2025-12-09-dsc00749"
       ],
       "jp-new-central-air-service": [
         "2023-09-16-dsc08683-enhanced-nr",
@@ -23221,12 +25010,25 @@
         "2023-09-18-usaf-huey-2",
         "2023-09-18-usaf-huey-1"
       ],
+      "us-77th-air-refueling-squadron-77-ars": [
+        "2023-09-24-dsc03571-enhanced-nr"
+      ],
       "us-89th-airlift-wing": [
         "2025-05-29-dsc02838-enhanced-nr",
         "2025-05-29-dsc02836-enhanced-nr"
       ],
+      "us-909th-air-refueling-squadron": [
+        "2025-12-10-dsc03804"
+      ],
       "us-961st-airborne-air-control-squadron": [
-        "2025-12-10-zz-0007"
+        "2025-12-10-zz-0007",
+        "2025-12-10-dsc03635",
+        "2025-12-10-dsc03620",
+        "2025-12-10-dsc03615",
+        "2025-12-10-dsc03599",
+        "2025-12-10-dsc03553",
+        "2025-12-10-dsc03541",
+        "2025-12-10-dsc03538"
       ],
       "us-vrc-30": [
         "2023-02-07-c2-vrc30"
@@ -23266,6 +25068,22 @@
         "2024-01-11-metrea-kc135-2",
         "2024-01-11-metrea-kc135-1"
       ],
+      "us-patrol-squadron-16-vp-16": [
+        "2023-10-21-dsc01364-enhanced-nr",
+        "2023-10-21-dsc01353-enhanced-nr",
+        "2023-10-21-dsc01348-enhanced-nr",
+        "2023-10-21-dsc01330-enhanced-nr",
+        "2023-10-21-dsc01287-enhanced-nr",
+        "2023-10-21-dsc01257-enhanced-nr"
+      ],
+      "us-patrol-squadron-30-vp-30": [
+        "2025-12-10-dsc03665"
+      ],
+      "us-patrol-squadron-4-vp-4": [
+        "2025-12-10-dsc03723",
+        "2025-12-10-dsc03716",
+        "2025-12-10-dsc03681"
+      ],
       "us-usaf-special-operations-command": [
         "2023-05-16-wolfhound-1"
       ],
@@ -23282,6 +25100,12 @@
         "2025-04-17-dsc02499-enhanced-nr"
       ],
       "jp-atsugi-air-base": [
+        "2023-10-21-dsc01364-enhanced-nr",
+        "2023-10-21-dsc01353-enhanced-nr",
+        "2023-10-21-dsc01348-enhanced-nr",
+        "2023-10-21-dsc01330-enhanced-nr",
+        "2023-10-21-dsc01287-enhanced-nr",
+        "2023-10-21-dsc01257-enhanced-nr",
         "2023-10-21-dsc00638-enhanced-nr",
         "2023-10-21-dsc00528-enhanced-nr-1",
         "2023-10-21-dsc00503-enhanced-nr",
@@ -23401,7 +25225,19 @@
         "2023-11-04-dsc06871-enhanced-nr"
       ],
       "jp-kadena-air-base": [
-        "2025-12-10-zz-0007"
+        "2025-12-10-zz-0007",
+        "2025-12-10-dsc03804",
+        "2025-12-10-dsc03723",
+        "2025-12-10-dsc03716",
+        "2025-12-10-dsc03681",
+        "2025-12-10-dsc03665",
+        "2025-12-10-dsc03635",
+        "2025-12-10-dsc03620",
+        "2025-12-10-dsc03615",
+        "2025-12-10-dsc03599",
+        "2025-12-10-dsc03553",
+        "2025-12-10-dsc03541",
+        "2025-12-10-dsc03538"
       ],
       "jp-kisarazu-airfield": [
         "2023-10-01-dsc09035-enhanced-nr",
@@ -23432,6 +25268,15 @@
         "2025-12-07-dsc05029",
         "2025-12-07-dsc05020",
         "2025-12-04-928907",
+        "2025-12-03-dsc02464",
+        "2025-12-03-dsc02333-2",
+        "2025-12-03-dsc02270",
+        "2025-12-03-dsc02238",
+        "2025-12-03-dsc02059",
+        "2025-12-03-dsc02040",
+        "2025-12-03-dsc01944",
+        "2025-12-03-dsc01877",
+        "2025-12-03-dsc01766",
         "2025-12-03-728893",
         "2023-11-12-dsc09892-enhanced-nr",
         "2023-10-07-dsc04612-enhanced-nr",
@@ -23505,6 +25350,7 @@
         "2023-10-06-dsc01581-enhanced-nr",
         "2023-10-06-dsc01454-enhanced-nr",
         "2023-10-06-dsc01453-enhanced-nr",
+        "2023-10-06-dsc01408-enhanced-nr",
         "2023-10-06-dsc01185-enhanced-nr",
         "2023-10-06-dsc00968-enhanced-nr-1",
         "2023-10-06-dsc00945-enhanced-nr",
@@ -23518,8 +25364,18 @@
         "2025-12-12-128925",
         "2025-12-11-dsc04372",
         "2025-12-11-dsc04209",
+        "2025-12-10-dsc03396",
+        "2025-12-10-dsc03360",
         "2025-12-10-181202",
-        "2025-12-09-204-sunset"
+        "2025-12-09-dsc09234",
+        "2025-12-09-dsc09228",
+        "2025-12-09-dsc01511",
+        "2025-12-09-dsc01403",
+        "2025-12-09-dsc00749",
+        "2025-12-09-dsc00253",
+        "2025-12-09-204-sunset",
+        "2025-12-08-dsc08038",
+        "2025-12-08-dsc08009"
       ],
       "jp-narita-international-airport": [
         "2023-10-01-dsc03885-enhanced-nr",
@@ -23584,6 +25440,9 @@
         "2025-11-29-dsc01315",
         "2025-11-29-dsc01142",
         "2025-11-29-dsc00991",
+        "2023-11-26-qc-dsc05157-enhanced-nr",
+        "2023-11-26-qc-dsc05145-enhanced-nr",
+        "2023-11-26-qc-dsc05008-enhanced-nr",
         "2023-11-26-dsc07531-enhanced-nr-2",
         "2023-11-26-dsc07517-enhanced-nr",
         "2023-11-26-dsc07469-enhanced-nr",
@@ -23644,6 +25503,7 @@
       "jp-yokota-air-base": [
         "2023-11-29-dsc09870-enhanced-nr",
         "2023-11-29-dsc08863-enhanced-nr",
+        "2023-09-24-dsc03571-enhanced-nr",
         "2023-09-18-usaf-huey-3",
         "2023-09-18-usaf-huey-2",
         "2023-09-18-usaf-huey-1",
@@ -23967,6 +25827,7 @@
         "2023-10-06-dsc01581-enhanced-nr",
         "2023-10-06-dsc01454-enhanced-nr",
         "2023-10-06-dsc01453-enhanced-nr",
+        "2023-10-06-dsc01408-enhanced-nr",
         "2023-10-06-dsc01185-enhanced-nr",
         "2023-10-06-dsc00968-enhanced-nr-1",
         "2023-10-06-dsc00945-enhanced-nr",
@@ -24018,6 +25879,9 @@
         "2023-11-11-dsc07202-enhanced-nr"
       ],
       "jp-tsuiki-air-show-2023": [
+        "2023-11-26-qc-dsc05157-enhanced-nr",
+        "2023-11-26-qc-dsc05145-enhanced-nr",
+        "2023-11-26-qc-dsc05008-enhanced-nr",
         "2023-11-26-dsc07531-enhanced-nr-2",
         "2023-11-26-dsc07517-enhanced-nr",
         "2023-11-26-dsc07469-enhanced-nr",
@@ -24287,6 +26151,8 @@
         "sg-149-squadron"
       ],
       "boeing-kc-135-stratotanker": [
+        "us-77th-air-refueling-squadron-77-ars",
+        "us-909th-air-refueling-squadron",
         "us-metrea"
       ],
       "boeing-kc-46-pegasus": [
@@ -24297,6 +26163,11 @@
       ],
       "boeing-kc-767j": [
         "jp-404th-tactical-airlift-tanker-squadron"
+      ],
+      "boeing-p-8a-poseidon": [
+        "us-patrol-squadron-16-vp-16",
+        "us-patrol-squadron-30-vp-30",
+        "us-patrol-squadron-4-vp-4"
       ],
       "cessna-uc-35-citation": [
         "us-usmc-operational-support-airlift"
@@ -24364,6 +26235,10 @@
         "jp-air-patrol-squadron-1",
         "jp-air-patrol-squadron-3"
       ],
+      "kawasaki-p-3c-orion": [
+        "jp-air-patrol-squadron-1",
+        "jp-fleet-air-wing-5"
+      ],
       "kawasaki-rc-2": [
         "jp-electronic-warfare-squadron"
       ],
@@ -24371,6 +26246,9 @@
         "jp-8th-tactical-fighter-squadron",
         "jp-air-development-and-test-wing",
         "jp-blue-impulse"
+      ],
+      "kawasaki-uh-60ja": [
+        "jp-15th-brigade"
       ],
       "kawasaki-up-1": [
         "jp-vx-51"
@@ -24393,6 +26271,9 @@
       "lockheed-kc-130j-hercules": [
         "it-46-brigata-aerea"
       ],
+      "lockheed-martin-f-35-lightning-ii": [
+        "jp-303rd-tactical-fighter-squadron"
+      ],
       "lockheed-martin-f-35a-lightning-ii": [
         "au-75-squadron",
         "it-32-stormo",
@@ -24405,6 +26286,9 @@
       ],
       "mitsubishi-f-15dj-eagle": [
         "jp-tactical-fighter-training-group"
+      ],
+      "mitsubishi-f-15j": [
+        "jp-305th-tactical-fighter-squadron"
       ],
       "mitsubishi-f-15j-eagle": [
         "jp-201st-tactical-fighter-squadron",

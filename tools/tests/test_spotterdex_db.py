@@ -269,7 +269,7 @@ class DatabaseTests(unittest.TestCase):
                     "entryPath": "db:aircraft:kawasaki-t-4:jp-test-unit",
                     "unitId": "jp-test-unit",
                     "scope": "aircraft",
-                    "aircraftType": "Kawasaki T-4",
+                    "aircraftType": "Kawasaki T-4 Renamed",
                     "aircraftFamily": "light",
                     "squadronName": "Renamed Test Unit",
                     "country": "Japan",
@@ -279,6 +279,8 @@ class DatabaseTests(unittest.TestCase):
             self.assertEqual(rename_result["unitId"], "jp-test-unit")
             self.assertEqual(rename_result["unitName"], "Renamed Test Unit")
             state = manager.get_state()
+            self.assertEqual(state["aircraft"][0]["aircraftType"], "Kawasaki T-4 Renamed")
+            self.assertEqual(state["aircraft"][0]["aircraftId"], "kawasaki-t-4")
             self.assertEqual(
                 {entry["squadronName"] for entry in state["entries"] if entry.get("unitId") == "jp-test-unit"},
                 {"Renamed Test Unit"},
@@ -346,6 +348,153 @@ class DatabaseTests(unittest.TestCase):
             state = manager.get_state()
             self.assertFalse(any(entry["targetKey"] == destination["entryPath"] for entry in state["aircraft"]))
             self.assertEqual(state["masterPhotos"][0]["subjects"], [])
+
+    def test_manager_rejects_duplicate_aircraft_name_without_integrity_error(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "content").mkdir()
+            (root / "raw_assets").mkdir()
+            database = root / "content" / "spotterdex.sqlite3"
+            seed_minimal_catalog(database)
+            connection = connect_database(database)
+            try:
+                connection.execute(
+                    "INSERT INTO aircraft(id,name,family) VALUES('boeing-kc-135-stratotanker','Boeing KC-135 Stratotanker','heavy')"
+                )
+                connection.execute(
+                    "INSERT INTO units(id,name,country_id,kind) VALUES('jp-destination-unit','Destination Unit','jp','squadron')"
+                )
+                connection.execute(
+                    "INSERT INTO aircraft_units(aircraft_id,unit_id) VALUES('boeing-kc-135-stratotanker','jp-destination-unit')"
+                )
+                connection.commit()
+            finally:
+                connection.close()
+
+            connection = connect_database(database, read_only=True)
+            try:
+                export_snapshot(connection, root / "content" / "spotterdex.sql")
+            finally:
+                connection.close()
+
+            manager = SpotterDexManager(root)
+            with self.assertRaisesRegex(ValueError, "already exists"):
+                manager.update_entry(
+                    {
+                        "entryPath": "db:aircraft:kawasaki-t-4:jp-test-unit",
+                        "unitId": "jp-test-unit",
+                        "scope": "aircraft",
+                        "aircraftType": "Boeing KC-135 Stratotanker",
+                        "aircraftFamily": "heavy",
+                        "squadronName": "Test Unit",
+                        "country": "Japan",
+                        "unitType": "squadron",
+                    }
+                )
+
+            connection = connect_database(database, read_only=True)
+            try:
+                self.assertEqual(
+                    connection.execute("SELECT name FROM aircraft WHERE id='kawasaki-t-4'").fetchone()[0],
+                    "Kawasaki T-4",
+                )
+                self.assertTrue(snapshot_is_current(connection, root / "content" / "spotterdex.sql"))
+            finally:
+                connection.close()
+
+    def test_manager_merges_duplicate_aircraft_name_after_confirmation(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "content").mkdir()
+            raw = root / "raw_assets"
+            raw.mkdir()
+            Image.new("RGB", (32, 24), "navy").save(raw / "source.jpg")
+            Image.new("RGB", (32, 24), "gold").save(raw / "destination.jpg")
+            database = root / "content" / "spotterdex.sqlite3"
+            seed_minimal_catalog(database)
+            connection = connect_database(database)
+            try:
+                connection.execute(
+                    "INSERT INTO aircraft(id,name,family,hero_photo_id,write_up,double_width) "
+                    "VALUES('boeing-kc-135-stratotanker','Boeing KC-135 Stratotanker','heavy',"
+                    "'destination-photo','Existing write-up',1)"
+                )
+                connection.execute(
+                    "INSERT INTO units(id,name,country_id,kind) VALUES('jp-destination-unit','Destination Unit','jp','squadron')"
+                )
+                connection.execute(
+                    "INSERT INTO aircraft_units(aircraft_id,unit_id) VALUES('boeing-kc-135-stratotanker','jp-destination-unit')"
+                )
+                connection.execute(
+                    "INSERT INTO photos(id,source_path,location_id) VALUES"
+                    "('source-photo','source.jpg','jp-test-base'),"
+                    "('destination-photo','destination.jpg','jp-test-base')"
+                )
+                connection.execute(
+                    "INSERT INTO photo_subjects(photo_id,position,aircraft_id,unit_id,is_primary) "
+                    "VALUES('source-photo',0,'kawasaki-t-4','jp-test-unit',1)"
+                )
+                connection.execute(
+                    "INSERT INTO photo_subjects(photo_id,position,aircraft_id,unit_id,is_primary) "
+                    "VALUES('destination-photo',0,'boeing-kc-135-stratotanker','jp-destination-unit',1)"
+                )
+                connection.commit()
+            finally:
+                connection.close()
+
+            connection = connect_database(database, read_only=True)
+            try:
+                export_snapshot(connection, root / "content" / "spotterdex.sql")
+            finally:
+                connection.close()
+
+            manager = SpotterDexManager(root)
+            result = manager.update_entry(
+                {
+                    "entryPath": "db:aircraft:kawasaki-t-4:jp-test-unit",
+                    "unitId": "jp-test-unit",
+                    "scope": "aircraft",
+                    "aircraftType": "Boeing KC-135 Stratotanker",
+                    "aircraftFamily": "heavy",
+                    "squadronName": "Test Unit",
+                    "country": "Japan",
+                    "unitType": "squadron",
+                    "mergeExistingAircraft": True,
+                }
+            )
+            self.assertEqual(result["aircraftId"], "boeing-kc-135-stratotanker")
+            self.assertIn("Merged aircraft type Kawasaki T-4", result["message"])
+
+            connection = connect_database(database, read_only=True)
+            try:
+                self.assertIsNone(
+                    connection.execute("SELECT id FROM aircraft WHERE id='kawasaki-t-4'").fetchone()
+                )
+                self.assertEqual(
+                    connection.execute(
+                        "SELECT aircraft_id FROM photo_subjects WHERE photo_id='source-photo'"
+                    ).fetchone()[0],
+                    "boeing-kc-135-stratotanker",
+                )
+                self.assertEqual(
+                    {
+                        row[0]
+                        for row in connection.execute(
+                            "SELECT unit_id FROM aircraft_units WHERE aircraft_id='boeing-kc-135-stratotanker'"
+                        )
+                    },
+                    {"jp-test-unit", "jp-destination-unit"},
+                )
+                self.assertEqual(
+                    tuple(connection.execute(
+                        "SELECT hero_photo_id,write_up,double_width FROM aircraft "
+                        "WHERE id='boeing-kc-135-stratotanker'"
+                    ).fetchone()),
+                    ("destination-photo", "Existing write-up", 1),
+                )
+                self.assertTrue(snapshot_is_current(connection, root / "content" / "spotterdex.sql"))
+            finally:
+                connection.close()
 
     def test_manager_creates_country_for_new_database_entry(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
