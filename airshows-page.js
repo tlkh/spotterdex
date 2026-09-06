@@ -639,36 +639,3 @@ function renderAirshowsPage() {
       unitLimit: 6
     });
   }
-
-  function sortPhotosOldest(a, b) {
-    const timeDiff = (a.sortTime || 0) - (b.sortTime || 0);
-    if (timeDiff) {
-      return timeDiff;
-    }
-    return `${photoSubjectLabel(a)} ${a.locationName}`.localeCompare(`${photoSubjectLabel(b)} ${b.locationName}`);
-  }
-
-  function chronologicalGroupSorter(a, b) {
-    const firstA = firstChronologicalPhoto(a.photos);
-    const firstB = firstChronologicalPhoto(b.photos);
-    const timeDiff = (firstA?.sortTime || 0) - (firstB?.sortTime || 0);
-    if (timeDiff) {
-      return timeDiff;
-    }
-    const firstLabelA = firstA ? `${photoSubjectLabel(firstA)} ${firstA.locationName}` : a.title;
-    const firstLabelB = firstB ? `${photoSubjectLabel(firstB)} ${firstB.locationName}` : b.title;
-    return firstLabelA.localeCompare(firstLabelB) || a.title.localeCompare(b.title);
-  }
-
-  function reverseChronologicalGroupSorter(a, b) {
-    return chronologicalGroupSorter(b, a);
-  }
-
-  function firstChronologicalPhoto(photos) {
-    return (photos || []).reduce((first, photo) => {
-      if (!first || sortPhotosOldest(photo, first) < 0) {
-        return photo;
-      }
-      return first;
-    }, null);
-  }

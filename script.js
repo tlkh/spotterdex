@@ -5379,6 +5379,65 @@
     `;
   }
 
+  function groupPhotoRecords(photos, descriptorForPhoto, photoSorter, groupSorter) {
+    const groups = new Map();
+    photos.forEach((photo) => {
+      const descriptor = descriptorForPhoto(photo);
+      if (!descriptor) {
+        return;
+      }
+      const { key, ...details } = descriptor;
+      if (!groups.has(key)) {
+        groups.set(key, { ...details, key, photos: [] });
+      }
+      const group = groups.get(key);
+      if (!group.logo && details.logo) {
+        group.logo = details.logo;
+      }
+      if (!group.aircraftId && details.aircraftId) {
+        group.aircraftId = details.aircraftId;
+      }
+      group.photos.push(photo);
+    });
+
+    return Array.from(groups.values())
+      .map((group) => ({ ...group, photos: group.photos.sort(photoSorter) }))
+      .sort(groupSorter);
+  }
+
+  function sortPhotosOldest(a, b) {
+    const timeDiff = (a.sortTime || 0) - (b.sortTime || 0);
+    if (timeDiff) {
+      return timeDiff;
+    }
+    return `${photoSubjectLabel(a)} ${a.locationName}`.localeCompare(`${photoSubjectLabel(b)} ${b.locationName}`);
+  }
+
+  function chronologicalGroupSorter(a, b) {
+    const firstA = firstChronologicalPhoto(a.photos);
+    const firstB = firstChronologicalPhoto(b.photos);
+    const timeDiff = (firstA?.sortTime || 0) - (firstB?.sortTime || 0);
+    if (timeDiff) {
+      return timeDiff;
+    }
+    const firstLabelA = firstA ? `${photoSubjectLabel(firstA)} ${firstA.locationName}` : a.title;
+    const firstLabelB = firstB ? `${photoSubjectLabel(firstB)} ${firstB.locationName}` : b.title;
+    return firstLabelA.localeCompare(firstLabelB) || a.title.localeCompare(b.title);
+  }
+
+  function reverseChronologicalGroupSorter(a, b) {
+    return chronologicalGroupSorter(b, a);
+  }
+
+  function firstChronologicalPhoto(photos) {
+    return (photos || []).reduce((first, photo) => {
+      if (!first || sortPhotosOldest(photo, first) < 0) {
+        return photo;
+      }
+      return first;
+    }, null);
+  }
+
   function aircraftArchiveGroupSorter(a, b) {
     const kindA = a.groupKind === "unit" ? 0 : 1;
     const kindB = b.groupKind === "unit" ? 0 : 1;

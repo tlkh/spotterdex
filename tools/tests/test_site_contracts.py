@@ -101,6 +101,24 @@ class GeneratedPageContractTests(unittest.TestCase):
                 self.assertNotIn(declaration, shared)
                 self.assertIn(declaration, (ROOT / filename).read_text("utf-8"))
 
+    def test_cross_route_photo_grouping_helpers_stay_in_shared_runtime(self) -> None:
+        shared = (ROOT / "script.js").read_text("utf-8")
+        route_scripts = "\n".join(
+            (ROOT / filename).read_text("utf-8")
+            for filename in ("map-page.js", "stats-page.js", "airshows-page.js")
+        )
+        for helper in (
+            "groupPhotoRecords",
+            "sortPhotosOldest",
+            "chronologicalGroupSorter",
+            "reverseChronologicalGroupSorter",
+            "firstChronologicalPhoto",
+        ):
+            with self.subTest(helper=helper):
+                declaration = f"function {helper}("
+                self.assertIn(declaration, shared)
+                self.assertNotIn(declaration, route_scripts)
+
 
 class ArchiveLayoutContractTests(unittest.TestCase):
     """Country sections are a vertical stack, not a card grid."""

@@ -1753,32 +1753,6 @@ function renderLocations() {
     });
   }
 
-  function groupPhotoRecords(photos, descriptorForPhoto, photoSorter, groupSorter) {
-    const groups = new Map();
-    photos.forEach((photo) => {
-      const descriptor = descriptorForPhoto(photo);
-      if (!descriptor) {
-        return;
-      }
-      const { key, ...details } = descriptor;
-      if (!groups.has(key)) {
-        groups.set(key, { ...details, key, photos: [] });
-      }
-      const group = groups.get(key);
-      if (!group.logo && details.logo) {
-        group.logo = details.logo;
-      }
-      if (!group.aircraftId && details.aircraftId) {
-        group.aircraftId = details.aircraftId;
-      }
-      group.photos.push(photo);
-    });
-
-    return Array.from(groups.values())
-      .map((group) => ({ ...group, photos: group.photos.sort(photoSorter) }))
-      .sort(groupSorter);
-  }
-
   function locationPhotoGroups(pin, photos, kind) {
     return groupPhotoRecords(photos, (photo) => {
       if (kind === "location") {
