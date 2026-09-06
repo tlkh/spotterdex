@@ -132,7 +132,7 @@ def render_header(active_file: str, is_map: bool) -> str:
         return f'''    <header class="site-header">
       <div class="brand">
         <button class="brand-mark" id="fitPinsIconButton" type="button" aria-label="Fit all map locations" title="Fit all map locations">
-          <img src="assets/icons/spotterdex-app-icon.png" alt="">
+          <img src="assets/icons/spotterdex-ui-icon-64.png" alt="">
         </button>
         <a class="brand-copy" href="index.html" aria-label="SpotterDex home">
           <span class="brand-title">SpotterDex</span>
@@ -157,25 +157,31 @@ def render_header(active_file: str, is_map: bool) -> str:
       <div class="mobile-map-header" aria-label="Map location controls">
         <button class="mobile-map-brand" type="button" id="mobileMapFitButton" aria-label="Fit all map locations" title="Fit all map locations">
           <span class="mobile-map-location-mark" aria-hidden="true">
-            <img src="assets/icons/spotterdex-app-icon.png" alt="">
+            <img src="assets/icons/spotterdex-ui-icon-64.png" alt="">
           </span>
           <span class="mobile-map-brand-copy">
             <strong>SpotterDex</strong>
             <small>Timothy's Logbook</small>
           </span>
         </button>
-        <button class="mobile-map-location-card" type="button" data-map-panel-toggle="locations" aria-controls="mapControlPanel" aria-expanded="false">
-          <span class="mobile-map-location-copy">
-            <span>Locations</span>
-            <strong id="mobileMapLocationTitle">Browse locations</strong>
-          </span>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg>
-        </button>
+        <div class="mobile-map-control-group">
+          <button class="mobile-map-location-card" type="button" data-map-panel-toggle="locations" aria-controls="mapControlPanel" aria-expanded="false">
+            <span class="mobile-map-location-copy">
+              <span>Locations</span>
+              <strong id="mobileMapLocationTitle">Browse locations</strong>
+            </span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg>
+          </button>
+          {search_button}
+          <button class="header-fit-button mobile-map-fit-button" type="button" id="mobileMapHeaderFitButton" aria-label="Fit all map locations" title="Fit all map locations">
+            {map_globe_icon()}
+          </button>
+        </div>
       </div>
     </header>'''
     return f'''    <header class="site-header">
       <a class="brand" href="index.html" aria-label="SpotterDex home">
-        <span class="brand-mark" aria-hidden="true"><img src="assets/icons/spotterdex-app-icon.png" alt=""></span>
+        <span class="brand-mark" aria-hidden="true"><img src="assets/icons/spotterdex-ui-icon-64.png" alt=""></span>
         <span><span class="brand-title">SpotterDex</span><span class="brand-subtitle">Timothy's Logbook</span></span>
       </a>
       <nav class="tab-nav" aria-label="Main views">
@@ -205,6 +211,12 @@ def render_head(filename: str, definition: Dict[str, str]) -> str:
     <meta property="og:image:alt" content="Aircraft formation over Gifu Air Base in Japan">'''
     map_twitter_alt = "" if filename != "index.html" else '\n    <meta name="twitter:image:alt" content="Aircraft formation over Gifu Air Base in Japan">'
     startup_links = render_startup_links()
+    route_script = {
+        "index.html": "map-page.js",
+        "airshows.html": "airshows-page.js",
+        "stats.html": "stats-page.js",
+    }.get(filename)
+    route_script_tag = f'\n    <script src="{route_script}" defer></script>' if route_script else ""
     return f'''    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="color-scheme" content="dark">
@@ -226,13 +238,13 @@ def render_head(filename: str, definition: Dict[str, str]) -> str:
     <meta name="twitter:description" content="{html.escape(definition['og_description'])}">
     <meta name="twitter:image" content="{SHARED_IMAGE}">{map_twitter_alt}
     <link rel="canonical" href="{canonical}">{map_assets}
-    <link rel="icon" type="image/png" href="assets/icons/spotterdex-app-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/spotterdex-favicon-32.png">
     <link rel="apple-touch-icon" sizes="180x180" type="image/png" href="assets/icons/spotterdex-apple-touch-icon-v4.png">
 {startup_links}
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="stylesheet" href="tokens.css">
     <link rel="stylesheet" href="styles.css">
-    <script src="data/spotterdex-core.js" defer></script>
+    <script src="data/spotterdex-core.js" defer></script>{route_script_tag}
     <script src="script.js" defer></script>'''
 
 

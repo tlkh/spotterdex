@@ -166,6 +166,9 @@ def _render_startup(master: Image.Image, asset: StartupAsset) -> Image.Image:
 
 def _expected_outputs(root: Path, master: Image.Image) -> Iterable[Tuple[Path, bytes]]:
     icon_dir = root / "assets" / "icons"
+    # Runtime chrome should never decode the much larger install artwork.
+    yield icon_dir / "spotterdex-favicon-32.png", _png_bytes(_resized(master, (32, 32)))
+    yield icon_dir / "spotterdex-ui-icon-64.png", _png_bytes(_resized(master, (64, 64)))
     yield icon_dir / "spotterdex-app-icon.png", _png_bytes(_resized(master, (512, 512)))
     yield icon_dir / "spotterdex-app-icon-192.png", _png_bytes(_resized(master, (192, 192)))
     yield icon_dir / "spotterdex-apple-touch-icon-v4.png", _png_bytes(_resized(master, (180, 180)))
@@ -244,7 +247,7 @@ def main() -> int:
             for error in errors:
                 print(error, file=sys.stderr)
             return 1
-        print("Apple web-app assets are current (4 install icons, 44 startup images).")
+        print("Apple web-app assets are current (2 UI icons, 4 install icons, 44 startup images).")
         return 0
 
     changed, total = build_apple_web_app_assets(root)

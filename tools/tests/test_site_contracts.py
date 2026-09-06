@@ -73,6 +73,34 @@ class GeneratedPageContractTests(unittest.TestCase):
                     f"{filename} differs from tools/build_pages.py output; a rebuild would revert it.",
                 )
 
+    def test_route_only_scripts_load_before_the_shared_runtime(self) -> None:
+        expected = {
+            "index.html": "map-page.js",
+            "airshows.html": "airshows-page.js",
+            "stats.html": "stats-page.js",
+        }
+        for filename in build_pages.PAGE_DEFINITIONS:
+            with self.subTest(page=filename):
+                document = build_pages.render_page(filename, ROOT)
+                route_script = expected.get(filename)
+                if route_script:
+                    self.assertIn(f'<script src="{route_script}" defer></script>', document)
+                    self.assertLess(document.index(route_script), document.index("script.js"))
+                for other_script in set(expected.values()) - {route_script}:
+                    self.assertNotIn(f'<script src="{other_script}" defer></script>', document)
+
+    def test_route_renderers_are_not_shipped_in_the_shared_script(self) -> None:
+        shared = (ROOT / "script.js").read_text("utf-8")
+        route_contracts = {
+            "map-page.js": "function renderLocations()",
+            "stats-page.js": "function renderStatsDashboard()",
+            "airshows-page.js": "function renderAirshowsPage()",
+        }
+        for filename, declaration in route_contracts.items():
+            with self.subTest(script=filename):
+                self.assertNotIn(declaration, shared)
+                self.assertIn(declaration, (ROOT / filename).read_text("utf-8"))
+
 
 class ArchiveLayoutContractTests(unittest.TestCase):
     """Country sections are a vertical stack, not a card grid."""
@@ -123,6 +151,16 @@ class GlobalSearchPresentationContractTests(unittest.TestCase):
 
 
 class MobileViewerLayoutContractTests(unittest.TestCase):
+    def test_lightbox_tracks_the_visual_viewport_at_the_current_page_offset(self) -> None:
+        script = (ROOT / "script.js").read_text("utf-8")
+        styles = (ROOT / "styles.css").read_text("utf-8")
+        self.assertIn("viewport?.pageTop ?? window.scrollY + offsetTop", script)
+        self.assertRegex(
+            styles,
+            r"\.viewer-viewport\s*\{[^}]*position:\s*absolute;[^}]*"
+            r"top:\s*var\(--overlay-viewport-page-top,\s*0px\);",
+        )
+
     def test_lightbox_top_controls_clear_the_ios_status_bar(self) -> None:
         styles = (ROOT / "styles.css").read_text("utf-8")
         controls = re.search(
@@ -135,6 +173,88 @@ class MobileViewerLayoutContractTests(unittest.TestCase):
             controls.group(1),
             r"top\s*:\s*max\(18px,\s*calc\(var\(--safe-area-inset-top\)\s*\+\s*12px\)\)",
         )
+
+    def test_mobile_fixed_controls_are_not_trapped_by_view_transforms(self) -> None:
+        styles = (ROOT / "styles.css").read_text("utf-8")
+        self.assertRegex(
+            styles,
+            r'body\[data-page-view="mapView"\]\s+#mapView,\s*'
+            r'body\[data-page-view="statsView"\]\s+#statsView\s*\{\s*transform:\s*none;',
+        )
+        self.assertRegex(
+            styles,
+            r"body\.is-viewer-open\s+\.mobile-tab-bar,\s*"
+            r"body\.is-viewer-open\s+\.stats-section-nav,",
+        )
+
+    def test_mobile_map_header_groups_location_search_and_fit_controls(self) -> None:
+        document = build_pages.render_page("index.html", ROOT)
+        group = re.search(r'<div class="mobile-map-control-group">(.*?)</div>', document, re.DOTALL)
+        self.assertIsNotNone(group)
+        controls = group.group(1)
+        self.assertIn('class="mobile-map-location-card"', controls)
+        self.assertIn("data-global-search-trigger", controls)
+        self.assertIn('id="mobileMapHeaderFitButton"', controls)
+
+    def test_compact_map_and_stats_controls_keep_44px_touch_targets(self) -> None:
+        styles = (ROOT / "styles.css").read_text("utf-8")
+        self.assertRegex(styles, r'@media \(max-width: 360px\)[\s\S]*?grid-template-columns:\s*44px minmax\(0, 1fr\)')
+        self.assertRegex(styles, r'#mapView \.leaflet-control-zoom a\s*\{[\s\S]*?width:\s*44px;[\s\S]*?height:\s*44px;')
+        self.assertIn("repeat(18, minmax(44px, 1fr))", styles)
+
+
+class InitialRenderPerformanceContractTests(unittest.TestCase):
+    def test_service_worker_registration_does_not_duplicate_shell_prefetches(self) -> None:
+        shared = (ROOT / "script.js").read_text("utf-8")
+        self.assertIn("scheduleServiceWorkerRegistration();", shared)
+        self.assertNotIn("prefetchPageShells", shared)
+        self.assertNotIn('link.rel = "prefetch"', shared)
+
+    def test_stats_exif_is_observed_instead_of_blocking_initial_data(self) -> None:
+        shared = (ROOT / "script.js").read_text("utf-8")
+        stats = (ROOT / "stats-page.js").read_text("utf-8")
+        load_data = re.search(r"async function loadData\(\) \{(.*?)\n  \}", shared, re.DOTALL)
+        self.assertIsNotNone(load_data)
+        self.assertNotIn("loadStatsExifBundle", load_data.group(1))
+        self.assertIn("observeStatsExifSection();", shared)
+        self.assertIn("IntersectionObserver", stats)
+        self.assertIn("ensureStatsExifRendered", stats)
+        self.assertIn("asset.darkIcon", stats)
+
+    def test_full_resolution_heroes_offer_thumbnail_and_processed_candidates(self) -> None:
+        script = (ROOT / "script.js").read_text("utf-8")
+        renderer = re.search(
+            r"function renderResponsivePhotoImage\(photo, alt, options = \{\}\) \{(.*?)\n  \}",
+            script,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(renderer)
+        full_branch = re.search(r"if \(fullResolution\) \{(.*?)\n    \} else", renderer.group(1), re.DOTALL)
+        self.assertIsNotNone(full_branch)
+        self.assertIn("photo.thumbnail", full_branch.group(1))
+        self.assertIn("photo.image", full_branch.group(1))
+
+    def test_core_payload_keeps_dimensions_needed_for_responsive_heroes(self) -> None:
+        core = (ROOT / "data" / "spotterdex-core.js").read_text("utf-8")
+        self.assertIn('"processedSize"', core)
+
+    def test_viewer_uses_a_thumbnail_for_its_lower_cost_mobile_backdrop(self) -> None:
+        shared = (ROOT / "script.js").read_text("utf-8")
+        styles = (ROOT / "styles.css").read_text("utf-8")
+        self.assertIn("const backdropSource = photo.thumbnail || imageSource;", shared)
+        self.assertRegex(
+            styles,
+            r'@media \(max-width: 1040px\)[\s\S]*?\.viewer-ambient\s*\{'
+            r'[^}]*top:\s*calc\(var\(--overlay-viewport-page-top, 0px\) - 32px\);'
+            r'[^}]*height:\s*calc\(var\(--overlay-viewport-height, 100vh\) \+ 64px\);'
+            r'[^}]*filter:\s*blur\(28px\)',
+        )
+
+    def test_map_supplies_the_missing_openfreemap_circle_sprite(self) -> None:
+        map_script = (ROOT / "map-page.js").read_text("utf-8")
+        self.assertIn('vectorMap.on("styleimagemissing"', map_script)
+        self.assertIn('id !== "circle-11"', map_script)
+        self.assertIn("vectorMap.addImage(id, createMapCircleSprite());", map_script)
 
 
 class OfflineMediaExperienceContractTests(unittest.TestCase):
@@ -211,6 +331,25 @@ class ServiceWorkerContractTests(unittest.TestCase):
         # styles.css is precached, so tokens.css must be too or an offline load
         # renders with every semantic colour undefined.
         self.assertIn("tokens.css", self._shell_paths())
+
+    def test_shell_caches_runtime_icons_and_route_scripts_not_install_artwork(self) -> None:
+        paths = self._shell_paths()
+        for runtime_asset in (
+            "map-page.js",
+            "stats-page.js",
+            "airshows-page.js",
+            "assets/icons/spotterdex-favicon-32.png",
+            "assets/icons/spotterdex-ui-icon-64.png",
+        ):
+            self.assertIn(runtime_asset, paths)
+        for install_asset in (
+            "assets/icons/spotterdex-app-icon.png",
+            "assets/icons/spotterdex-app-icon-192.png",
+            "assets/icons/spotterdex-app-icon-1024.png",
+            "assets/icons/spotterdex-app-icon-maskable-512.png",
+            "assets/icons/spotterdex-apple-touch-icon-v4.png",
+        ):
+            self.assertNotIn(install_asset, paths)
 
     def test_cache_versions_are_content_stamped(self) -> None:
         for constant in ("SHELL_CACHE_VERSION", "MEDIA_CACHE_VERSION"):
@@ -304,7 +443,10 @@ class ConnectedFieldGuideContractTests(unittest.TestCase):
     """Immersive navigation stays contextual, progressive, and layout-safe."""
 
     def setUp(self) -> None:
-        self.script = (ROOT / "script.js").read_text("utf-8")
+        self.script = "\n".join(
+            (ROOT / filename).read_text("utf-8")
+            for filename in ("script.js", "map-page.js", "stats-page.js", "airshows-page.js")
+        )
         self.styles = (ROOT / "styles.css").read_text("utf-8")
 
     def test_detail_transitions_use_simple_interruptible_entries(self) -> None:

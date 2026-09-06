@@ -793,7 +793,7 @@ def normalized_core_manifest(manifest: Dict[str, Any]) -> Dict[str, Any]:
         photo_id: {
             key: value
             for key, value in photo.items()
-            if key not in {"source", "originalSize", "processedSize", "exif"}
+            if key not in {"source", "originalSize", "exif"}
         }
         for photo_id, photo in manifest["entities"]["photos"].items()
     }

@@ -32,7 +32,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""></noscript>
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css" media="print" onload="this.media='all'">
-    <link rel="icon" type="image/png" href="assets/icons/spotterdex-app-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/spotterdex-favicon-32.png">
     <link rel="apple-touch-icon" sizes="180x180" type="image/png" href="assets/icons/spotterdex-apple-touch-icon-v4.png">
     <link rel="apple-touch-startup-image" href="assets/generated/startup/spotterdex-startup-320x568@2x-portrait.png?v1" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
     <link rel="apple-touch-startup-image" href="assets/generated/startup/spotterdex-startup-320x568@2x-landscape.png?v1" media="(device-width: 568px) and (device-height: 320px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
@@ -82,6 +82,7 @@
     <link rel="stylesheet" href="tokens.css">
     <link rel="stylesheet" href="styles.css">
     <script src="data/spotterdex-core.js" defer></script>
+    <script src="map-page.js" defer></script>
     <script src="script.js" defer></script>
   </head>
   <body data-page-view="mapView">
@@ -90,7 +91,7 @@
     <header class="site-header">
       <div class="brand">
         <button class="brand-mark" id="fitPinsIconButton" type="button" aria-label="Fit all map locations" title="Fit all map locations">
-          <img src="assets/icons/spotterdex-app-icon.png" alt="">
+          <img src="assets/icons/spotterdex-ui-icon-64.png" alt="">
         </button>
         <a class="brand-copy" href="index.html" aria-label="SpotterDex home">
           <span class="brand-title">SpotterDex</span>
@@ -123,20 +124,26 @@
       <div class="mobile-map-header" aria-label="Map location controls">
         <button class="mobile-map-brand" type="button" id="mobileMapFitButton" aria-label="Fit all map locations" title="Fit all map locations">
           <span class="mobile-map-location-mark" aria-hidden="true">
-            <img src="assets/icons/spotterdex-app-icon.png" alt="">
+            <img src="assets/icons/spotterdex-ui-icon-64.png" alt="">
           </span>
           <span class="mobile-map-brand-copy">
             <strong>SpotterDex</strong>
             <small>Timothy's Logbook</small>
           </span>
         </button>
-        <button class="mobile-map-location-card" type="button" data-map-panel-toggle="locations" aria-controls="mapControlPanel" aria-expanded="false">
-          <span class="mobile-map-location-copy">
-            <span>Locations</span>
-            <strong id="mobileMapLocationTitle">Browse locations</strong>
-          </span>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg>
-        </button>
+        <div class="mobile-map-control-group">
+          <button class="mobile-map-location-card" type="button" data-map-panel-toggle="locations" aria-controls="mapControlPanel" aria-expanded="false">
+            <span class="mobile-map-location-copy">
+              <span>Locations</span>
+              <strong id="mobileMapLocationTitle">Browse locations</strong>
+            </span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg>
+          </button>
+          <button class="header-global-search-trigger" type="button" data-global-search-trigger aria-label="Search SpotterDex" title="Search SpotterDex" aria-keyshortcuts="Control+K Meta+K"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="m16.5 16.5 4 4"></path></svg></button>
+          <button class="header-fit-button mobile-map-fit-button" type="button" id="mobileMapHeaderFitButton" aria-label="Fit all map locations" title="Fit all map locations">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="globe-earth-land" d="M21.54 15H17a2 2 0 0 0-2 2v4.54"></path><path class="globe-earth-land" d="M7 3.34V5a3 3 0 0 0 3 3 2 2 0 0 1 2 2c0 1.1.9 2 2 2a2 2 0 0 0 2-2c0-1.1.9-2 2-2h3.17"></path><path class="globe-earth-land" d="M11 21.95V18a2 2 0 0 0-2-2 2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2H2.05"></path><circle class="globe-earth-outline" cx="12" cy="12" r="10"></circle></svg>
+          </button>
+        </div>
       </div>
     </header>
 

@@ -84,6 +84,8 @@ class AppleWebAppAssetTests(unittest.TestCase):
     def test_install_icons_are_opaque_square_canvases(self):
         icon_dir = ROOT / "assets" / "icons"
         expected = {
+            "spotterdex-favicon-32.png": (32, 32),
+            "spotterdex-ui-icon-64.png": (64, 64),
             "spotterdex-apple-touch-icon-v4.png": (180, 180),
             "spotterdex-app-icon-192.png": (192, 192),
             "spotterdex-app-icon.png": (512, 512),
@@ -106,6 +108,13 @@ class AppleWebAppAssetTests(unittest.TestCase):
             self.assertGreaterEqual(artwork_bounds[1], 80)
             self.assertLessEqual(artwork_bounds[2], 432)
             self.assertLessEqual(artwork_bounds[3], 432)
+
+    def test_runtime_chrome_uses_small_dedicated_icons(self):
+        for filename in PAGE_DEFINITIONS:
+            page = (ROOT / filename).read_text(encoding="utf-8")
+            self.assertIn("spotterdex-favicon-32.png", page)
+            self.assertIn("spotterdex-ui-icon-64.png", page)
+            self.assertNotIn('rel="icon" type="image/png" href="assets/icons/spotterdex-app-icon.png"', page)
 
     def test_manifest_and_theme_share_launch_background(self):
         manifest = json.loads((ROOT / "manifest.webmanifest").read_text(encoding="utf-8"))
@@ -169,17 +178,29 @@ class AppleWebAppInteractionContractTests(unittest.TestCase):
             "--overlay-page-height",
             "--overlay-viewport-height",
             "--overlay-viewport-offset-top",
+            "--overlay-viewport-page-top",
             "willOpenKeyboard",
             "viewport.scale > 1.01",
             'window.visualViewport?.addEventListener("resize"',
             'window.visualViewport?.removeEventListener("resize"',
+            'window.addEventListener("scroll"',
+            'window.removeEventListener("scroll"',
             'document.addEventListener("focusout"',
             'document.removeEventListener("focusout"',
+            "pageSizeSyncPending",
+            "window.requestAnimationFrame(flushOverlaySync)",
+            "window.cancelAnimationFrame(syncFrame)",
+            "scheduleOverlaySync({ pageSize: true })",
         ):
             self.assertIn(token, self.script)
+        self.assertIn("keyboardSettleTimer = window.setTimeout(scheduleOverlaySync, 360);", self.script)
         self.assertIn("position: absolute;", self.styles)
         self.assertIn("position: sticky;", self.styles)
         self.assertIn(".viewer-viewport", self.styles)
+
+    def test_viewer_preserves_the_document_scroll_position_for_viewport_anchoring(self):
+        self.assertNotIn('document.body.style.overflow = "hidden";', self.script)
+        self.assertNotIn('document.body.style.overflow = "";', self.script)
 
 
 if __name__ == "__main__":
