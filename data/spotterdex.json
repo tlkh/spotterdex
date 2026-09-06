@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-05T15:45:22+00:00",
+  "generatedAt": "2026-09-06T13:21:11+00:00",
   "entities": {
     "countries": {
       "au": {
@@ -113,7 +113,7 @@
         "id": "antonov-an-124-ruslan",
         "name": "Antonov An-124 Ruslan",
         "family": "heavy",
-        "heroPhotoId": "",
+        "heroPhotoId": "2026-08-01-dsc02041",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -122,6 +122,14 @@
         "name": "Beechcraft AT-6TH Wolverine",
         "family": "light",
         "heroPhotoId": "2026-01-10-dsc06084",
+        "doubleWidth": null,
+        "writeUp": ""
+      },
+      "mv-22-osprey": {
+        "id": "mv-22-osprey",
+        "name": "Bell Boeing MV-22 Osprey",
+        "family": "helicopter",
+        "heroPhotoId": "2025-12-11-dsc09383",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -225,7 +233,7 @@
         "id": "boeing-e-3g-sentry",
         "name": "Boeing E-3 Sentry",
         "family": "heavy",
-        "heroPhotoId": "",
+        "heroPhotoId": "2025-12-10-zz-0007",
         "doubleWidth": true,
         "writeUp": ""
       },
@@ -265,7 +273,7 @@
         "id": "boeing-kc-135-stratotanker",
         "name": "Boeing KC-135 Stratotanker",
         "family": "heavy",
-        "heroPhotoId": "2024-01-11-metrea-kc135-3",
+        "heroPhotoId": "2025-12-11-dsc08977",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -297,6 +305,22 @@
         "id": "boeing-p-8a-poseidon",
         "name": "Boeing P-8A Poseidon",
         "family": "medium",
+        "heroPhotoId": "2025-12-10-dsc03665",
+        "doubleWidth": null,
+        "writeUp": ""
+      },
+      "boeing-rc-135-rivet-joint": {
+        "id": "boeing-rc-135-rivet-joint",
+        "name": "Boeing RC-135 Rivet Joint",
+        "family": "heavy",
+        "heroPhotoId": "",
+        "doubleWidth": null,
+        "writeUp": ""
+      },
+      "boeing-wc-135-constant-phoenix": {
+        "id": "boeing-wc-135-constant-phoenix",
+        "name": "Boeing WC-135 Constant Phoenix",
+        "family": "heavy",
         "heroPhotoId": "",
         "doubleWidth": null,
         "writeUp": ""
@@ -441,7 +465,7 @@
         "id": "kawasaki-ec-2",
         "name": "Kawasaki EC-2",
         "family": "heavy",
-        "heroPhotoId": "",
+        "heroPhotoId": "2026-04-08-dsc08967",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -465,7 +489,7 @@
         "id": "kawasaki-p-3c-orion",
         "name": "Kawasaki P-3C Orion",
         "family": "heavy",
-        "heroPhotoId": "",
+        "heroPhotoId": "2025-12-09-dsc00749",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -473,7 +497,7 @@
         "id": "kawasaki-rc-2",
         "name": "Kawasaki RC-2",
         "family": "heavy",
-        "heroPhotoId": "",
+        "heroPhotoId": "2025-12-10-dsc03360",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -481,7 +505,7 @@
         "id": "kawasaki-t-4",
         "name": "Kawasaki T-4",
         "family": "fighter",
-        "heroPhotoId": "2025-11-30-dsc03282",
+        "heroPhotoId": "2025-11-29-dsc01808",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -561,7 +585,7 @@
         "id": "mitsubishi-f-15dj-eagle",
         "name": "Mitsubishi F-15DJ Eagle",
         "family": "fighter",
-        "heroPhotoId": "2023-10-07-dsc03743-enhanced-nr",
+        "heroPhotoId": "2023-10-07-dsc02632-enhanced-nr",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -585,7 +609,7 @@
         "id": "mitsubishi-f-2b",
         "name": "Mitsubishi F-2B",
         "family": "fighter",
-        "heroPhotoId": "2026-04-07-dsc05913",
+        "heroPhotoId": "2026-04-07-dsc05905",
         "doubleWidth": true,
         "writeUp": ""
       },
@@ -593,7 +617,7 @@
         "id": "mitsubishi-sh-60k",
         "name": "Mitsubishi SH-60K",
         "family": "helicopter",
-        "heroPhotoId": "",
+        "heroPhotoId": "2026-04-07-dsc05993",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -601,7 +625,7 @@
         "id": "mitsubishi-uh-60j",
         "name": "Mitsubishi UH-60J",
         "family": "helicopter",
-        "heroPhotoId": "2025-11-30-dsc04333",
+        "heroPhotoId": "2025-11-30-dsc04463",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -609,7 +633,7 @@
         "id": "kawasaki-uh-60ja",
         "name": "Mitsubishi UH-60JA",
         "family": "helicopter",
-        "heroPhotoId": "",
+        "heroPhotoId": "2025-12-09-dsc01511",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -641,7 +665,7 @@
         "id": "sikorsky-mh-60r-seahawk",
         "name": "Sikorsky MH-60R Seahawk",
         "family": "helicopter",
-        "heroPhotoId": "",
+        "heroPhotoId": "2023-09-23-usn-seahawk-1",
         "doubleWidth": null,
         "writeUp": ""
       }
@@ -1277,6 +1301,24 @@
         "heroPhotoId": "2023-09-18-usaf-huey-3",
         "writeUp": ""
       },
+      "us-45th-reconnaissance-squadron": {
+        "id": "us-45th-reconnaissance-squadron",
+        "name": "45th Reconnaissance Squadron",
+        "countryId": "us",
+        "kind": "squadron",
+        "logo": "",
+        "heroPhotoId": "",
+        "writeUp": ""
+      },
+      "us-55th-wing": {
+        "id": "us-55th-wing",
+        "name": "55th Wing",
+        "countryId": "us",
+        "kind": "squadron",
+        "logo": "",
+        "heroPhotoId": "",
+        "writeUp": ""
+      },
       "us-77th-air-refueling-squadron-77-ars": {
         "id": "us-77th-air-refueling-squadron-77-ars",
         "name": "77th Air Refueling Squadron (77 ARS)",
@@ -1388,6 +1430,15 @@
       "us-marine-light-attack-helicopter-squadron-169-hmla-169": {
         "id": "us-marine-light-attack-helicopter-squadron-169-hmla-169",
         "name": "Marine Light Attack Helicopter Squadron 169 (HMLA-169)",
+        "countryId": "us",
+        "kind": "squadron",
+        "logo": "",
+        "heroPhotoId": "",
+        "writeUp": ""
+      },
+      "us-marine-medium-tiltrotor-squadron-265-vmm-265": {
+        "id": "us-marine-medium-tiltrotor-squadron-265-vmm-265",
+        "name": "Marine Medium Tiltrotor Squadron 265 (VMM-265)",
         "countryId": "us",
         "kind": "squadron",
         "logo": "",
@@ -4602,6 +4653,538 @@
           "DateTime": "2026:07:04 19:47:34"
         }
       },
+      "2025-12-11-dsc09423": {
+        "id": "2025-12-11-dsc09423",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "mv-22-osprey",
+            "unitId": "us-marine-medium-tiltrotor-squadron-265-vmm-265",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-11",
+        "sortDate": "2025-12-11",
+        "livery": "",
+        "title": "",
+        "caption": "MV-22 Osprey from Marine Medium Tiltrotor Squadron 265 (VMM-265) \"Dragons\" landing at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-11-dsc09423.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-11-dsc09423.jpg",
+        "source": "raw_assets/DSC09423.jpg",
+        "originalSize": "7455 x 5591",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "560mm",
+          "FocalLengthIn35mmFilm": "560mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/80s",
+          "ExposureBiasValue": "2.0",
+          "ISO": "1000",
+          "DateTimeOriginal": "2025:12:11 15:33:46",
+          "DateTimeDigitized": "2025:12:11 15:33:46",
+          "DateTime": "2026:09:06 10:49:02"
+        }
+      },
+      "2025-12-11-dsc09403": {
+        "id": "2025-12-11-dsc09403",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "mv-22-osprey",
+            "unitId": "us-marine-medium-tiltrotor-squadron-265-vmm-265",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-11",
+        "sortDate": "2025-12-11",
+        "livery": "",
+        "title": "",
+        "caption": "MV-22 Osprey from Marine Medium Tiltrotor Squadron 265 (VMM-265) \"Dragons\" landing at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-11-dsc09403.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-11-dsc09403.jpg",
+        "source": "raw_assets/DSC09403.jpg",
+        "originalSize": "7392 x 5544",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "581mm",
+          "FocalLengthIn35mmFilm": "581mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/80s",
+          "ExposureBiasValue": "2.0",
+          "ISO": "500",
+          "DateTimeOriginal": "2025:12:11 15:33:38",
+          "DateTimeDigitized": "2025:12:11 15:33:38",
+          "DateTime": "2026:09:06 10:49:00"
+        }
+      },
+      "2025-12-11-dsc09383": {
+        "id": "2025-12-11-dsc09383",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "mv-22-osprey",
+            "unitId": "us-marine-medium-tiltrotor-squadron-265-vmm-265",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-11",
+        "sortDate": "2025-12-11",
+        "livery": "",
+        "title": "",
+        "caption": "MV-22 Osprey from Marine Medium Tiltrotor Squadron 265 (VMM-265) \"Dragons\" landing at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-11-dsc09383.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-11-dsc09383.jpg",
+        "source": "raw_assets/DSC09383.jpg",
+        "originalSize": "7454 x 5590",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "627mm",
+          "FocalLengthIn35mmFilm": "627mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/80s",
+          "ExposureBiasValue": "2.0",
+          "ISO": "400",
+          "DateTimeOriginal": "2025:12:11 15:33:34",
+          "DateTimeDigitized": "2025:12:11 15:33:34",
+          "DateTime": "2026:09:06 10:48:59"
+        }
+      },
+      "2025-12-11-dsc08977": {
+        "id": "2025-12-11-dsc08977",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-kc-135-stratotanker",
+            "unitId": "us-909th-air-refueling-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-11",
+        "sortDate": "2025-12-11",
+        "livery": "",
+        "title": "",
+        "caption": "KC-135R landing at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-11-dsc08977.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-11-dsc08977.jpg",
+        "source": "raw_assets/DSC08977.jpg",
+        "originalSize": "7680 x 5760",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "280mm",
+          "FocalLengthIn35mmFilm": "280mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/320s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "800",
+          "DateTimeOriginal": "2025:12:11 15:20:01",
+          "DateTimeDigitized": "2025:12:11 15:20:01",
+          "DateTime": "2026:09:06 10:48:57"
+        }
+      },
+      "2025-12-11-dsc08965": {
+        "id": "2025-12-11-dsc08965",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-kc-135-stratotanker",
+            "unitId": "us-909th-air-refueling-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-11",
+        "sortDate": "2025-12-11",
+        "livery": "",
+        "title": "",
+        "caption": "KC-135R landing at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-11-dsc08965.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-11-dsc08965.jpg",
+        "source": "raw_assets/DSC08965.jpg",
+        "originalSize": "7012 x 5259",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "280mm",
+          "FocalLengthIn35mmFilm": "280mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/320s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "500",
+          "DateTimeOriginal": "2025:12:11 15:19:57",
+          "DateTimeDigitized": "2025:12:11 15:19:57",
+          "DateTime": "2026:09:06 10:48:55"
+        }
+      },
+      "2025-12-11-dsc08963": {
+        "id": "2025-12-11-dsc08963",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-kc-135-stratotanker",
+            "unitId": "us-909th-air-refueling-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-11",
+        "sortDate": "2025-12-11",
+        "livery": "",
+        "title": "",
+        "caption": "KC-135R landing at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-11-dsc08963.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-11-dsc08963.jpg",
+        "source": "raw_assets/DSC08963.jpg",
+        "originalSize": "6791 x 5093",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "280mm",
+          "FocalLengthIn35mmFilm": "280mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/320s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "500",
+          "DateTimeOriginal": "2025:12:11 15:19:56",
+          "DateTimeDigitized": "2025:12:11 15:19:56",
+          "DateTime": "2026:09:06 10:48:53"
+        }
+      },
+      "2025-12-11-dsc08774": {
+        "id": "2025-12-11-dsc08774",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-wc-135-constant-phoenix",
+            "unitId": "us-45th-reconnaissance-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-11",
+        "sortDate": "2025-12-11",
+        "livery": "",
+        "title": "",
+        "caption": "WC-135R Constant Phoenix landing at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-11-dsc08774.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-11-dsc08774.jpg",
+        "source": "raw_assets/DSC08774.jpg",
+        "originalSize": "5380 x 4035",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "840mm",
+          "FocalLengthIn35mmFilm": "840mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "640",
+          "DateTimeOriginal": "2025:12:11 14:44:22",
+          "DateTimeDigitized": "2025:12:11 14:44:22",
+          "DateTime": "2026:09:06 10:48:51"
+        }
+      },
+      "2025-12-11-dsc08735": {
+        "id": "2025-12-11-dsc08735",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-wc-135-constant-phoenix",
+            "unitId": "us-45th-reconnaissance-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-11",
+        "sortDate": "2025-12-11",
+        "livery": "",
+        "title": "",
+        "caption": "WC-135R Constant Phoenix landing at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-11-dsc08735.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-11-dsc08735.jpg",
+        "source": "raw_assets/DSC08735.jpg",
+        "originalSize": "6282 x 4711",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "515mm",
+          "FocalLengthIn35mmFilm": "515mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/80s",
+          "ExposureBiasValue": "2.0",
+          "ISO": "250",
+          "DateTimeOriginal": "2025:12:11 14:42:11",
+          "DateTimeDigitized": "2025:12:11 14:42:11",
+          "DateTime": "2026:09:06 10:48:50"
+        }
+      },
+      "2025-12-11-dsc08691": {
+        "id": "2025-12-11-dsc08691",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-wc-135-constant-phoenix",
+            "unitId": "us-45th-reconnaissance-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-11",
+        "sortDate": "2025-12-11",
+        "livery": "",
+        "title": "",
+        "caption": "WC-135R Constant Phoenix landing at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-11-dsc08691.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-11-dsc08691.jpg",
+        "source": "raw_assets/DSC08691.jpg",
+        "originalSize": "6824 x 5118",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "515mm",
+          "FocalLengthIn35mmFilm": "515mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/80s",
+          "ExposureBiasValue": "2.0",
+          "ISO": "500",
+          "DateTimeOriginal": "2025:12:11 14:42:07",
+          "DateTimeDigitized": "2025:12:11 14:42:07",
+          "DateTime": "2026:09:06 10:48:48"
+        }
+      },
+      "2025-12-11-dsc08660": {
+        "id": "2025-12-11-dsc08660",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-wc-135-constant-phoenix",
+            "unitId": "us-45th-reconnaissance-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-11",
+        "sortDate": "2025-12-11",
+        "livery": "",
+        "title": "",
+        "caption": "WC-135R Constant Phoenix landing at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-11-dsc08660.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-11-dsc08660.jpg",
+        "source": "raw_assets/DSC08660.jpg",
+        "originalSize": "7680 x 5760",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "511mm",
+          "FocalLengthIn35mmFilm": "511mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/80s",
+          "ExposureBiasValue": "2.0",
+          "ISO": "500",
+          "DateTimeOriginal": "2025:12:11 14:42:04",
+          "DateTimeDigitized": "2025:12:11 14:42:04",
+          "DateTime": "2026:09:06 10:48:47"
+        }
+      },
+      "2025-12-11-dsc08653": {
+        "id": "2025-12-11-dsc08653",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-wc-135-constant-phoenix",
+            "unitId": "us-45th-reconnaissance-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-11",
+        "sortDate": "2025-12-11",
+        "livery": "",
+        "title": "",
+        "caption": "WC-135R Constant Phoenix landing at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-11-dsc08653.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-11-dsc08653.jpg",
+        "source": "raw_assets/DSC08653.jpg",
+        "originalSize": "6860 x 5145",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "511mm",
+          "FocalLengthIn35mmFilm": "511mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/80s",
+          "ExposureBiasValue": "2.0",
+          "ISO": "500",
+          "DateTimeOriginal": "2025:12:11 14:42:04",
+          "DateTimeDigitized": "2025:12:11 14:42:04",
+          "DateTime": "2026:09:06 10:48:45"
+        }
+      },
+      "2025-12-11-dsc08609": {
+        "id": "2025-12-11-dsc08609",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-wc-135-constant-phoenix",
+            "unitId": "us-45th-reconnaissance-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-11",
+        "sortDate": "2025-12-11",
+        "livery": "",
+        "title": "",
+        "caption": "WC-135R Constant Phoenix landing at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-11-dsc08609.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-11-dsc08609.jpg",
+        "source": "raw_assets/DSC08609.jpg",
+        "originalSize": "7065 x 5299",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "511mm",
+          "FocalLengthIn35mmFilm": "511mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/80s",
+          "ExposureBiasValue": "2.0",
+          "ISO": "400",
+          "DateTimeOriginal": "2025:12:11 14:42:00",
+          "DateTimeDigitized": "2025:12:11 14:42:00",
+          "DateTime": "2026:09:06 10:48:43"
+        }
+      },
+      "2025-12-11-dsc08080": {
+        "id": "2025-12-11-dsc08080",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-rc-135-rivet-joint",
+            "unitId": "us-55th-wing",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-11",
+        "sortDate": "2025-12-11",
+        "livery": "",
+        "title": "",
+        "caption": "R-135W Rivet Joint landing at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-11-dsc08080.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-11-dsc08080.jpg",
+        "source": "raw_assets/DSC08080.jpg",
+        "originalSize": "7329 x 5497",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "511mm",
+          "FocalLengthIn35mmFilm": "511mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/80s",
+          "ExposureBiasValue": "2.0",
+          "ISO": "320",
+          "DateTimeOriginal": "2025:12:11 14:20:31",
+          "DateTimeDigitized": "2025:12:11 14:20:31",
+          "DateTime": "2026:09:06 21:16:48"
+        }
+      },
+      "2025-12-11-dsc08013": {
+        "id": "2025-12-11-dsc08013",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-rc-135-rivet-joint",
+            "unitId": "us-55th-wing",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-11",
+        "sortDate": "2025-12-11",
+        "livery": "",
+        "title": "",
+        "caption": "R-135W Rivet Joint landing at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-11-dsc08013.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-11-dsc08013.jpg",
+        "source": "raw_assets/DSC08013.jpg",
+        "originalSize": "7405 x 5554",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "511mm",
+          "FocalLengthIn35mmFilm": "511mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/80s",
+          "ExposureBiasValue": "2.0",
+          "ISO": "125",
+          "DateTimeOriginal": "2025:12:11 14:20:26",
+          "DateTimeDigitized": "2025:12:11 14:20:26",
+          "DateTime": "2026:09:06 21:16:53"
+        }
+      },
       "2025-12-11-dsc04372": {
         "id": "2025-12-11-dsc04372",
         "locationId": "jp-naha-air-base",
@@ -5207,11 +5790,11 @@
           "ISO": "200",
           "DateTimeOriginal": "2025:12:10 09:44:59",
           "DateTimeDigitized": "2025:12:10 09:44:59",
-          "DateTime": "2026:09:05 22:58:41"
+          "DateTime": "2026:09:06 10:49:57"
         }
       },
-      "2025-12-10-181202": {
-        "id": "2025-12-10-181202",
+      "2025-12-10-dsc03372": {
+        "id": "2025-12-10-dsc03372",
         "locationId": "jp-naha-air-base",
         "eventId": "",
         "subjects": [
@@ -5226,10 +5809,48 @@
         "sortDate": "2025-12-10",
         "livery": "",
         "title": "",
-        "caption": "Kawasaki RC-2 (18-1202) landing at Naha Air Base",
-        "image": "assets/generated/photos/2025-12-10-181202.jpg",
-        "thumbnail": "assets/generated/thumbs/2025-12-10-181202.jpg",
-        "source": "raw_assets/181202.jpg",
+        "caption": "RC-2 landing at Naha Air Base",
+        "image": "assets/generated/photos/2025-12-10-dsc03372.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-10-dsc03372.jpg",
+        "source": "raw_assets/DSC03372.jpg",
+        "originalSize": "6768 x 5076",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "600mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/8.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "125",
+          "DateTimeOriginal": "2025:12:10 09:41:53",
+          "DateTimeDigitized": "2025:12:10 09:41:53",
+          "DateTime": "2026:09:06 10:48:40"
+        }
+      },
+      "2025-12-10-dsc03360": {
+        "id": "2025-12-10-dsc03360",
+        "locationId": "jp-naha-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "kawasaki-rc-2",
+            "unitId": "jp-electronic-warfare-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-10",
+        "sortDate": "2025-12-10",
+        "livery": "",
+        "title": "",
+        "caption": "RC-2 landing at Naha Air Base",
+        "image": "assets/generated/photos/2025-12-10-dsc03360.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-10-dsc03360.jpg",
+        "source": "raw_assets/DSC03360.jpg",
         "originalSize": "6842 x 5132",
         "processedSize": "2048 x 1536",
         "thumbnailSize": "768 x 576",
@@ -5245,7 +5866,45 @@
           "ISO": "125",
           "DateTimeOriginal": "2025:12:10 09:41:43",
           "DateTimeDigitized": "2025:12:10 09:41:43",
-          "DateTime": "2026:07:04 19:47:35"
+          "DateTime": "2026:09:06 10:48:38"
+        }
+      },
+      "2025-12-10-dsc03336": {
+        "id": "2025-12-10-dsc03336",
+        "locationId": "jp-naha-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "kawasaki-rc-2",
+            "unitId": "jp-electronic-warfare-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-10",
+        "sortDate": "2025-12-10",
+        "livery": "",
+        "title": "",
+        "caption": "RC-2 landing at Naha Air Base",
+        "image": "assets/generated/photos/2025-12-10-dsc03336.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-10-dsc03336.jpg",
+        "source": "raw_assets/DSC03336.jpg",
+        "originalSize": "6656 x 4992",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "391mm",
+          "FocalLengthIn35mmFilm": "391mm",
+          "FNumber": "f/8.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "125",
+          "DateTimeOriginal": "2025:12:10 09:41:37",
+          "DateTimeDigitized": "2025:12:10 09:41:37",
+          "DateTime": "2026:09:06 10:48:36"
         }
       },
       "2025-12-09-dsc09234": {
@@ -23697,6 +24356,11 @@
         "2026-01-10-dsc05983",
         "2026-01-10-dsc05813"
       ],
+      "mv-22-osprey": [
+        "2025-12-11-dsc09423",
+        "2025-12-11-dsc09403",
+        "2025-12-11-dsc09383"
+      ],
       "bell-uh-1-iroquois": [
         "2023-09-18-usaf-huey-3",
         "2023-09-18-usaf-huey-2",
@@ -23829,6 +24493,9 @@
         "2022-10-18-dsc04841-enhanced"
       ],
       "boeing-kc-135-stratotanker": [
+        "2025-12-11-dsc08977",
+        "2025-12-11-dsc08965",
+        "2025-12-11-dsc08963",
         "2025-12-10-dsc03804",
         "2024-01-11-metrea-kc135-3",
         "2024-01-11-metrea-kc135-2",
@@ -23862,6 +24529,18 @@
         "2023-10-21-dsc01330-enhanced-nr",
         "2023-10-21-dsc01287-enhanced-nr",
         "2023-10-21-dsc01257-enhanced-nr"
+      ],
+      "boeing-rc-135-rivet-joint": [
+        "2025-12-11-dsc08080",
+        "2025-12-11-dsc08013"
+      ],
+      "boeing-wc-135-constant-phoenix": [
+        "2025-12-11-dsc08774",
+        "2025-12-11-dsc08735",
+        "2025-12-11-dsc08691",
+        "2025-12-11-dsc08660",
+        "2025-12-11-dsc08653",
+        "2025-12-11-dsc08609"
       ],
       "cessna-uc-35-citation": [
         "2025-12-12-dsc00765",
@@ -24018,7 +24697,9 @@
       ],
       "kawasaki-rc-2": [
         "2025-12-10-dsc03396",
-        "2025-12-10-181202",
+        "2025-12-10-dsc03372",
+        "2025-12-10-dsc03360",
+        "2025-12-10-dsc03336",
         "2025-12-09-dsc00253"
       ],
       "kawasaki-t-4": [
@@ -24715,7 +25396,9 @@
         "2026-04-08-dsc08967",
         "2026-04-08-681203",
         "2025-12-10-dsc03396",
-        "2025-12-10-181202",
+        "2025-12-10-dsc03372",
+        "2025-12-10-dsc03360",
+        "2025-12-10-dsc03336",
         "2025-12-09-dsc00253"
       ],
       "jp-fleet-air-wing-23": [
@@ -24950,6 +25633,18 @@
         "2023-09-18-usaf-huey-2",
         "2023-09-18-usaf-huey-1"
       ],
+      "us-45th-reconnaissance-squadron": [
+        "2025-12-11-dsc08774",
+        "2025-12-11-dsc08735",
+        "2025-12-11-dsc08691",
+        "2025-12-11-dsc08660",
+        "2025-12-11-dsc08653",
+        "2025-12-11-dsc08609"
+      ],
+      "us-55th-wing": [
+        "2025-12-11-dsc08080",
+        "2025-12-11-dsc08013"
+      ],
       "us-77th-air-refueling-squadron-77-ars": [
         "2023-09-24-dsc03571-enhanced-nr"
       ],
@@ -24958,6 +25653,9 @@
         "2025-05-29-dsc02836-enhanced-nr"
       ],
       "us-909th-air-refueling-squadron": [
+        "2025-12-11-dsc08977",
+        "2025-12-11-dsc08965",
+        "2025-12-11-dsc08963",
         "2025-12-10-dsc03804"
       ],
       "us-961st-airborne-air-control-squadron": [
@@ -25002,6 +25700,11 @@
       "us-marine-light-attack-helicopter-squadron-169-hmla-169": [
         "2025-12-12-dsc00879",
         "2025-12-12-dsc00737"
+      ],
+      "us-marine-medium-tiltrotor-squadron-265-vmm-265": [
+        "2025-12-11-dsc09423",
+        "2025-12-11-dsc09403",
+        "2025-12-11-dsc09383"
       ],
       "us-metrea": [
         "2024-01-11-metrea-kc135-3",
@@ -25165,6 +25868,20 @@
         "2023-11-04-dsc06871-enhanced-nr"
       ],
       "jp-kadena-air-base": [
+        "2025-12-11-dsc09423",
+        "2025-12-11-dsc09403",
+        "2025-12-11-dsc09383",
+        "2025-12-11-dsc08977",
+        "2025-12-11-dsc08965",
+        "2025-12-11-dsc08963",
+        "2025-12-11-dsc08774",
+        "2025-12-11-dsc08735",
+        "2025-12-11-dsc08691",
+        "2025-12-11-dsc08660",
+        "2025-12-11-dsc08653",
+        "2025-12-11-dsc08609",
+        "2025-12-11-dsc08080",
+        "2025-12-11-dsc08013",
         "2025-12-10-zz-0007",
         "2025-12-10-dsc03804",
         "2025-12-10-dsc03723",
@@ -25305,7 +26022,9 @@
         "2025-12-11-dsc04372",
         "2025-12-11-dsc04209",
         "2025-12-10-dsc03396",
-        "2025-12-10-181202",
+        "2025-12-10-dsc03372",
+        "2025-12-10-dsc03360",
+        "2025-12-10-dsc03336",
         "2025-12-09-dsc09234",
         "2025-12-09-dsc09228",
         "2025-12-09-dsc01511",
@@ -26036,6 +26755,9 @@
       "beechcraft-at-6th-wolverine": [
         "th-411st-fighter-squadron"
       ],
+      "mv-22-osprey": [
+        "us-marine-medium-tiltrotor-squadron-265-vmm-265"
+      ],
       "bell-uh-1-iroquois": [
         "us-459th-airlift-squadron"
       ],
@@ -26107,6 +26829,12 @@
         "us-patrol-squadron-16-vp-16",
         "us-patrol-squadron-30-vp-30",
         "us-patrol-squadron-4-vp-4"
+      ],
+      "boeing-rc-135-rivet-joint": [
+        "us-55th-wing"
+      ],
+      "boeing-wc-135-constant-phoenix": [
+        "us-45th-reconnaissance-squadron"
       ],
       "cessna-uc-35-citation": [
         "us-usmc-operational-support-airlift"
