@@ -46,16 +46,28 @@ function ensureStatsExifRendered() {
   els.exifDashboard.innerHTML = '<div class="empty-state compact stats-exif-placeholder">Loading camera data…</div>';
   statsExifRenderPromise = loadStatsExifBundle().then((bundle) => {
     if (!bundle) {
-      els.exifDashboard.innerHTML = '<div class="empty-state compact">Camera data is unavailable right now.</div>';
+      renderStatsExifError();
       return;
     }
     mergeStatsExif(bundle);
     renderStatsArchiveHero();
     renderExifDashboard();
+  }).catch(() => {
+    renderStatsExifError();
   }).finally(() => {
+    statsExifRenderPromise = null;
     els.exifDashboard.removeAttribute("aria-busy");
   });
   return statsExifRenderPromise;
+}
+
+function renderStatsExifError() {
+  els.exifDashboard.innerHTML = '<div class="empty-state compact"><p>Camera data couldn’t load. Check your connection and try again.</p><button class="plain-button" type="button" data-retry-exif>Retry camera data</button></div>';
+  els.exifDashboard.querySelector("[data-retry-exif]").addEventListener("click", () => {
+    els.exifDashboard.tabIndex = -1;
+    els.exifDashboard.focus({ preventScroll: true });
+    ensureStatsExifRendered();
+  });
 }
 
 function renderStatsDashboard() {
@@ -101,7 +113,6 @@ function renderStatsDashboard() {
       return;
     }
 
-    const collectionStats = collectionStatsSummary();
     const exifHero = statsAtLimitsRecords(state.data.photos.filter(hasCameraExif))
       .flatMap((record) => record.photos || [record.photo])
       .filter((photo) => photo && (photo.image || photo.thumbnail))
@@ -111,9 +122,6 @@ function renderStatsDashboard() {
       .slice()
       .sort(sortPhotos)[0] || null;
 
-    els.statsHeroPhotoCount.textContent = String(collectionStats.photoCount);
-    els.statsHeroAircraftCount.textContent = String(collectionStats.aircraftTypeCount);
-    els.statsHeroLocationCount.textContent = String(collectionStats.locationCount);
     els.statsHeroMedia.innerHTML = heroPhoto
       ? renderResponsivePhotoImage(heroPhoto, "", { sizes: "100vw", eager: true, fullResolution: true })
       : '<span class="stats-archive-media-fallback"></span>';
@@ -187,7 +195,7 @@ function renderStatsDashboard() {
         <div class="stats-visual-heading">
           <div>
             <p class="eyebrow">World coverage</p>
-            <h2>Frames by country</h2>
+            <h2>Photos by country</h2>
           </div>
           <span>Open a country</span>
         </div>
@@ -202,7 +210,7 @@ function renderStatsDashboard() {
                         type="button"
                         data-stats-filter-kind="country"
                         data-stats-filter-value="${escapeAttr(item.label)}"
-                        data-stats-filter-label="${escapeAttr(`${item.label} frames`)}"
+                        data-stats-filter-label="${escapeAttr(`${item.label} photos`)}"
                         aria-label="Open ${item.count} photo${item.count === 1 ? "" : "s"} from ${escapeAttr(item.label)}"
                       >
                         <span>${escapeHtml(item.label)}</span>

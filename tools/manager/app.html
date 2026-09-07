@@ -17,33 +17,34 @@
         </div>
       </div>
       <div class="view-context" aria-live="polite">
-        <strong id="viewTitle">Attach Photos</strong>
-        <span id="viewDescription">Tag new raw images and maintain their catalog metadata.</span>
+        <strong id="viewTitle">New images</strong>
+        <span id="viewDescription">Select raw images, assign shared metadata, then review and attach.</span>
       </div>
       <div class="actions">
         <button class="btn ghost assets-toggle" id="toggleAssetsBtn" type="button" aria-controls="assetPanel" aria-expanded="true">
           Assets <span class="button-count" id="assetSelectionBadge">0</span>
         </button>
         <button class="btn ghost" id="reloadBtn" type="button">Reload</button>
-        <button class="btn primary" id="buildBtn" type="button">Build</button>
+        <button class="btn primary" id="buildBtn" type="button">Build locally</button>
       </div>
     </header>
 
     <div class="app-body">
       <nav class="manager-nav" aria-label="Manager views">
         <div class="nav-group">
-          <span class="nav-group-label">Attach</span>
+          <span class="nav-group-label">Photos</span>
           <button class="tab active" data-tab="attach" type="button" aria-current="page">
-            <span>Photos</span><span class="nav-badge" id="newAssetNavBadge">0</span>
+            <span>New images</span><span class="nav-badge" id="newAssetNavBadge">0</span>
           </button>
+          <button class="tab" data-tab="master" type="button">Photo library</button>
         </div>
         <div class="nav-group">
           <span class="nav-group-label">Catalog</span>
-          <button class="tab" data-tab="master" type="button">Master List</button>
-          <button class="tab" data-tab="squadron-database" type="button">Squadron Database</button>
-          <button class="tab" data-tab="aircraft-database" type="button">Aircraft Database</button>
+          <button class="tab" data-tab="aircraft-database" type="button">Aircraft</button>
+          <button class="tab" data-tab="squadron-database" type="button">Units</button>
           <button class="tab" data-tab="locations-database" type="button">Locations</button>
-          <button class="tab" data-tab="writeups" type="button">Write-ups</button>
+          <button class="tab" data-tab="airshows" type="button">Events</button>
+          <button class="tab" data-tab="writeups" type="button">Page write-ups</button>
         </div>
         <div class="nav-group">
           <span class="nav-group-label">Review</span>
@@ -56,15 +57,8 @@
           </button>
         </div>
         <div class="nav-group">
-          <span class="nav-group-label">Display Settings</span>
-          <button class="tab" data-tab="airshows" type="button">Airshows</button>
-          <button class="tab" data-tab="squadrons" type="button">Squadrons</button>
-          <button class="tab" data-tab="location-heroes" type="button">Location Heroes</button>
-          <button class="tab" data-tab="aircraft" type="button">Aircraft</button>
-        </div>
-        <div class="nav-group">
-          <span class="nav-group-label">Publish</span>
-          <button class="tab" data-tab="build" type="button">Build</button>
+          <span class="nav-group-label">Output</span>
+          <button class="tab" data-tab="build" type="button">Build &amp; verify</button>
         </div>
         <div class="stats" id="stats"></div>
       </nav>
@@ -87,11 +81,11 @@
             <input id="assetSearch" type="search" placeholder="filename, folder, tag">
           </div>
           <div class="field">
-            <label>Filter</label>
-            <div class="segmented" id="assetFilter">
-              <button type="button" data-filter="untagged" class="active">New</button>
-              <button type="button" data-filter="all">All</button>
-              <button type="button" data-filter="tagged">Used</button>
+            <span id="assetFilterLabel">Filter</span>
+            <div class="segmented" id="assetFilter" role="group" aria-labelledby="assetFilterLabel">
+              <button type="button" data-filter="untagged" class="active" aria-pressed="true">New</button>
+              <button type="button" data-filter="all" aria-pressed="false">All</button>
+              <button type="button" data-filter="tagged" aria-pressed="false">Used</button>
             </div>
           </div>
         </div>
@@ -99,23 +93,28 @@
       </aside>
 
       <main class="manager-main">
+      <nav class="workspace-nav" id="workspaceNav" aria-label="Workspace sections" hidden></nav>
       <section class="workspace">
         <section class="view active" id="attachView">
+          <div class="bar">
+            <div><h2 class="panel-title">Attach new images</h2><p class="subtle">Select raw images, assign shared metadata, then review and attach. Edit existing records in the Photo library.</p></div>
+            <button class="btn ghost" type="button" data-workspace-view="master">Open Photo library</button>
+          </div>
           <div class="form-grid">
             <div class="field wide">
               <label for="entrySearch">Photo Source Search</label>
               <input id="entrySearch" type="search" placeholder="aircraft, unit, location, country">
             </div>
             <div class="field wide">
-              <div class="field-label-row"><label for="entrySelect">Tag Images To</label><span><button class="text-action" id="createSourceInlineBtn" type="button">New</button><button class="text-action" id="inspectSourceBtn" type="button">Inspect</button></span></div>
+              <div class="field-label-row"><label for="entrySelect">Tag images to</label><span><button class="text-action" id="createSourceInlineBtn" type="button" aria-label="Create photo source">New</button><button class="text-action" id="inspectSourceBtn" type="button" aria-label="Inspect photo source">Inspect</button></span></div>
               <select id="entrySelect"></select>
             </div>
             <div class="field">
-              <div class="field-label-row"><label for="pinSelect">Location</label><span><button class="text-action" id="createLocationInlineBtn" type="button">New</button><button class="text-action" id="inspectLocationBtn" type="button">Inspect</button></span></div>
+              <div class="field-label-row"><label for="pinSelect">Location</label><span><button class="text-action" id="createLocationInlineBtn" type="button" aria-label="Create location">New</button><button class="text-action" id="inspectLocationBtn" type="button" aria-label="Inspect location">Inspect</button></span></div>
               <select id="pinSelect"></select>
             </div>
             <div class="field wide">
-              <div class="field-label-row"><label for="airshowInput">Airshow Event (optional)</label><span><button class="text-action" id="createEventInlineBtn" type="button">New</button><button class="text-action" id="inspectEventBtn" type="button">Inspect</button></span></div>
+              <div class="field-label-row"><label for="airshowInput">Airshow event (optional)</label><span><button class="text-action" id="createEventInlineBtn" type="button" aria-label="Create event">New</button><button class="text-action" id="inspectEventBtn" type="button" aria-label="Inspect event">Inspect</button></span></div>
               <input id="airshowInput" type="text" placeholder="Singapore Airshow 2026">
             </div>
             <div class="field wide">
@@ -128,7 +127,8 @@
             </div>
             <div class="field">
               <label for="photoDate">Date</label>
-              <input id="photoDate" type="date">
+              <input id="photoDate" type="date" aria-describedby="photoDateHelp">
+              <div class="subtle" id="photoDateHelp">Fallback date only; EXIF capture date takes precedence.</div>
             </div>
             <div class="field">
               <label for="dedupeSelect">Duplicate Paths</label>
@@ -138,7 +138,7 @@
               </select>
             </div>
             <div class="field wide">
-              <label for="captionInput">Caption</label>
+              <label for="captionInput">Shared caption (all selected images)</label>
               <textarea id="captionInput" placeholder="Caption for attached photos"></textarea>
               <div class="caption-actions">
                 <span class="subtle">Uses the one selected image; review before attaching.</span>
@@ -154,8 +154,15 @@
             <button class="btn primary" id="attachBtn" type="button">Attach Selected</button>
           </div>
           <div class="selected-strip" id="selectedStrip"></div>
+        </section>
+
+        <section class="view" id="source-photosView">
+          <div class="field">
+            <label for="sourcePhotoSelect">Photo source</label>
+            <select id="sourcePhotoSelect"></select>
+          </div>
           <div class="bar">
-            <h2 class="panel-title">Tagged Photos</h2>
+            <h2 class="panel-title">Photos by source</h2>
             <button class="btn ghost" id="clearEditorBtn" type="button">Clear Editor</button>
           </div>
           <div id="taggedBulkEditor"></div>
@@ -211,7 +218,7 @@
         <section class="view" id="masterView">
           <div class="bar">
             <div>
-              <h2 class="panel-title">Master Photo List</h2>
+              <h2 class="panel-title">Photo library</h2>
               <div class="subtle" id="masterSummary">Every current database photo appears once, regardless of how many subjects it has.</div>
             </div>
           </div>
@@ -221,27 +228,42 @@
               <input id="masterSearch" type="search" placeholder="path, aircraft, unit, location, event, caption">
             </div>
           </div>
-          <div class="subtle master-note">Save changes per row. “Detach raw image” removes only the catalog record; the original file stays in <code>raw_assets/</code>.</div>
+          <div class="bar">
+            <div class="subtle master-note">Save changes per row. Select photos to review their captions. “Detach raw image” removes only the catalog record; the original file stays in <code>raw_assets/</code>.</div>
+            <button class="btn ghost" id="reviewLibraryCaptionsBtn" type="button">Review selected captions</button>
+          </div>
           <div id="masterBulkEditor"></div>
           <div class="master-list" id="masterList"></div>
-          <div class="pagination" id="masterPagination" aria-label="Master photo pages"></div>
+          <div class="pagination" id="masterPagination" aria-label="Photo library pages"></div>
         </section>
 
         <section class="view" id="bulk-captionsView">
           <div class="bar">
             <div>
-              <h2 class="panel-title">Bulk Update Captions</h2>
-              <div class="subtle" id="bulkCaptionSummary">Select existing photo assets to build a review queue.</div>
+              <h2 class="panel-title">Caption review queue</h2>
+              <div class="subtle" id="bulkCaptionSummary" role="status" aria-live="polite">Choose a scope to build a review queue.</div>
             </div>
             <div class="card-actions">
-              <button class="btn ghost" id="refreshBulkCaptionsBtn" type="button">Refresh Selection</button>
-              <button class="btn primary" id="runBulkCaptionsBtn" type="button">Propose Captions</button>
+              <button class="btn ghost" id="refreshBulkCaptionsBtn" type="button">Reset queue</button>
+              <button class="btn ghost" id="retryBulkCaptionsBtn" type="button" disabled>Retry failed</button>
+              <button class="btn ghost" id="stopBulkCaptionsBtn" type="button" disabled>Stop after current photo</button>
+              <button class="btn primary" id="runBulkCaptionsBtn" type="button">Propose captions</button>
             </div>
           </div>
           <div class="form-grid">
             <div class="field wide">
+              <label for="bulkCaptionScope">Queue scope</label>
+              <select id="bulkCaptionScope" aria-describedby="bulkCaptionScopeHelp">
+                <option value="selected">Selected library photos</option>
+                <option value="filtered">All matching library search results</option>
+                <option value="all">All eligible photos</option>
+              </select>
+              <div class="subtle" id="bulkCaptionScopeHelp">Selection and search come from the Photo library, across all pages. Raw asset selection is separate. The queue is fixed when generation starts; suggestions never save automatically.</div>
+              <button class="text-action" type="button" data-workspace-view="master">Choose photos in the library</button>
+            </div>
+            <div class="field wide">
               <label><input id="bulkExcludeAiCaptions" type="checkbox" checked> Exclude captions already assisted by AI</label>
-              <div class="subtle">All existing source images linked to a human-written caption are populated automatically. Suggestions run one at a time with a 0.5 second pause between images.</div>
+              <div class="subtle">Photos without captions are eligible. AI-assisted is provenance, not review status. Review, edit, and accept each suggestion individually.</div>
             </div>
           </div>
           <div class="bulk-caption-list" id="bulkCaptionList"></div>
@@ -395,10 +417,10 @@
             </div>
             <div class="subtle" id="qualitySettingsStatus" aria-live="polite"></div>
           </section>
-          <div class="segmented quality-filters" id="qualityFilters" role="tablist" aria-label="Quality issue severity">
-            <button class="active" type="button" role="tab" aria-selected="true" data-quality-filter="hard">Hard failures <span id="qualityHardCount">0</span></button>
-            <button type="button" role="tab" aria-selected="false" data-quality-filter="warnings">Warnings <span id="qualityWarningCount">0</span></button>
-            <button type="button" role="tab" aria-selected="false" data-quality-filter="passed">QC_ edits passed <span id="qualityPassedCount">0</span></button>
+          <div class="segmented quality-filters" id="qualityFilters" role="group" aria-label="Quality issue severity">
+            <button class="active" type="button" aria-pressed="true" data-quality-filter="hard">Hard failures <span id="qualityHardCount">0</span></button>
+            <button type="button" aria-pressed="false" data-quality-filter="warnings">Warnings <span id="qualityWarningCount">0</span></button>
+            <button type="button" aria-pressed="false" data-quality-filter="passed">QC_ edits passed <span id="qualityPassedCount">0</span></button>
           </div>
           <div class="quality-list" id="qualityList"></div>
         </section>
@@ -406,7 +428,7 @@
         <section class="view" id="squadron-databaseView">
           <div class="split">
             <div class="section">
-              <h2>Create Squadron Record</h2>
+              <h2>Create Unit Record</h2>
               <div class="subtle">Create a unit-level photo source for squadron or organisation photos without assigning an aircraft type.</div>
               <div class="field">
                 <label for="newSquadronSourceName">Unit Name</label>
@@ -423,10 +445,10 @@
                   <option value="organisation">Organisation</option>
                 </select>
               </div>
-              <button class="btn primary" id="createSquadronSourceBtn" type="button">+ Squadron Record</button>
+              <button class="btn primary" id="createSquadronSourceBtn" type="button">+ Unit Record</button>
             </div>
             <div class="section">
-              <h2>Squadron Database</h2>
+              <h2>Unit photo sources</h2>
               <div class="field">
                 <label for="squadronSourceSearch">Search</label>
                 <input id="squadronSourceSearch" type="search" placeholder="unit or country">
@@ -623,13 +645,14 @@
         <section class="view" id="buildView">
           <div class="bar">
             <div>
-              <h2 class="panel-title">Build Output</h2>
-              <div class="subtle" id="buildStatus">Ready</div>
+              <h2 class="panel-title">Build &amp; verify</h2>
+              <p class="subtle">Build updates local generated files only. Publishing to GitHub Pages requires reviewing, committing, and pushing the output separately.</p>
+              <div class="subtle" id="buildStatus" role="status" aria-live="polite">Ready for a local build</div>
             </div>
             <div class="card-actions">
               <button class="btn ghost" id="backupDatabaseBtn" type="button">Backup Database</button>
               <button class="btn ghost" id="clearBuildCacheBtn" type="button">Clear Build Cache</button>
-              <button class="btn primary" id="buildBtn2" type="button">Build</button>
+              <button class="btn primary" id="buildBtn2" type="button">Build locally</button>
             </div>
           </div>
           <section class="build-settings panel-section" aria-labelledby="buildSettingsHeading">
@@ -684,18 +707,18 @@
       </div>
     </div>
   </div>
-  <div class="toast" id="toast"></div>
-  <div class="utility-scrim" id="utilityScrim" hidden></div>
-  <aside class="utility-drawer" id="utilityDrawer" aria-hidden="true" aria-labelledby="utilityDrawerTitle">
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <dialog class="utility-drawer" id="utilityDrawer" aria-labelledby="utilityDrawerTitle">
     <div class="utility-drawer-head">
       <div>
         <div class="subtle" id="utilityDrawerEyebrow">Manager tool</div>
         <h2 id="utilityDrawerTitle">Details</h2>
+        <div class="subtle" id="utilityDrawerStatus" role="status" aria-live="polite"></div>
       </div>
       <button class="btn ghost" id="closeUtilityDrawerBtn" type="button">Close</button>
     </div>
     <div class="utility-drawer-body" id="utilityDrawerBody"></div>
-  </aside>
+  </dialog>
   <dialog class="asset-preview-modal" id="assetPreviewModal" aria-labelledby="assetPreviewTitle">
     <div class="asset-preview-dialog">
       <div class="bar">

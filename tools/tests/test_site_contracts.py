@@ -123,6 +123,25 @@ class GeneratedPageContractTests(unittest.TestCase):
 class ArchiveLayoutContractTests(unittest.TestCase):
     """Country sections are a vertical stack, not a card grid."""
 
+    def test_mobile_archive_bars_stick_without_scroll_container_ancestors(self) -> None:
+        styles = (ROOT / "styles.css").read_text("utf-8")
+        self.assertRegex(
+            styles,
+            r"#dexView \.dex-command-bar,\s*#squadronsView \.squadron-command-bar,\s*"
+            r"#airshowsView \.airshow-command-bar\s*\{\s*position: sticky;\s*top: 0;",
+        )
+        for surface in ("dex-experience", "squadrons-experience", "airshows-experience"):
+            self.assertRegex(styles, rf"\.{surface}\s*\{{[^}}]*overflow: clip;")
+
+    def test_airshow_year_filter_is_labelled_and_stats_totals_are_not_duplicated(self) -> None:
+        airshows = build_pages.render_page("airshows.html", ROOT)
+        self.assertIn('for="airshowYearFilter"', airshows)
+        self.assertIn('id="airshowYearFilter" aria-describedby="airshowYearRange"', airshows)
+        stats = build_pages.render_page("stats.html", ROOT)
+        self.assertNotIn('id="statsHeroPhotoCount"', stats)
+        for filename in ("aircraft-dex.html", "squadrons.html", "airshows.html"):
+            self.assertNotIn("<dt>Frames</dt>", build_pages.render_page(filename, ROOT))
+
     def test_country_list_never_gets_column_tracks(self) -> None:
         # .squadron-country-list holds one section per country, each with its own
         # heading and card grid. Giving the list columns halves every section and
@@ -190,6 +209,25 @@ class MobileViewerLayoutContractTests(unittest.TestCase):
         self.assertRegex(
             controls.group(1),
             r"top\s*:\s*max\(18px,\s*calc\(var\(--safe-area-inset-top\)\s*\+\s*12px\)\)",
+        )
+
+    def test_mobile_lightbox_controls_match_height_and_hide_fullscreen(self) -> None:
+        styles = (ROOT / "styles.css").read_text("utf-8")
+        self.assertRegex(
+            styles,
+            r"\.viewer-telemetry,\s*\.viewer-button\.close,\s*"
+            r"\.viewer-button\.info-toggle\s*\{[^}]*height:\s*46px;[^}]*min-height:\s*46px;",
+        )
+        self.assertRegex(styles, r"#viewerFullscreenButton\s*\{\s*display:\s*none;")
+
+    def test_mobile_lightbox_navigation_tracks_below_rendered_image(self) -> None:
+        script = (ROOT / "script.js").read_text("utf-8")
+        styles = (ROOT / "styles.css").read_text("utf-8")
+        self.assertIn('style.setProperty("--viewer-image-bottom"', script)
+        self.assertRegex(
+            styles,
+            r"\.viewer-button\.previous,\s*\.viewer-button\.next,[^{]*\{[^}]*"
+            r"top:\s*min\([^}]*var\(--viewer-image-bottom,\s*50%\)",
         )
 
     def test_mobile_fixed_controls_are_not_trapped_by_view_transforms(self) -> None:

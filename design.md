@@ -54,11 +54,50 @@ minimum touch targets, and safe-area-aware padding.
 ## Mobile interaction stance
 
 - Five-item fixed bottom tab bar is the primary navigation.
-- Compact contextual title bar appears on collection and detail views.
+- Collection views open with a compact title and inline totals; detail views use
+  a contextual title/back bar. Do not add a second persistent collection title
+  above the sticky working controls.
 - Map controls and photo information use draggable bottom sheets.
 - Viewer opens as a focused full-screen surface and temporarily hides the tab
   bar.
 - Success is silent when the visible UI already confirms the action.
+
+## Archive hierarchy and controls
+
+- Retain a restrained photographic masthead on desktop, but prioritize filters
+  and the working index over introductory copy. Mobile removes repeated lead
+  copy and presents collection totals on one compact, wrapping line.
+- Stats totals appear in the dashboard rather than a duplicate masthead. Use
+  Photos consistently for photographs and Types for aircraft types.
+- Family, country, and year controls remain available while the archive scrolls.
+  Desktop sticky offsets track the visible header; mobile controls account for
+  safe areas and the floating search trigger. Avoid ancestor overflow rules
+  that silently disable sticky positioning.
+- Squadron country selection means filtering at every width, with a visible
+  All option and an explicit selected state. Airshows remain chronological,
+  with year selection and event counts rather than a second competing index.
+- Mobile progressive loading must retain access to controls and respect the
+  active filter. Empty filtered collections provide a nearby Show all action.
+
+## Search, feedback, and accessibility
+
+- Search is a focused app surface, not another archive landing page. Preserve
+  grouped results and distinguish shown counts from full matching totals.
+  Category selection and Show more must remain discoverable and keyboard usable.
+- Label photo results with their context destination; do not imply they open
+  directly in the full-screen photo viewer.
+- Do not interrupt text composition with search navigation. Keep active-result
+  styling, keyboard focus, and assistive-technology state synchronized.
+- Loading failure is not an empty collection. Blocking catalog and camera-data
+  failures use inline explanations with retry controls, not only transient
+  toasts. Do not imply unavailable images are all available offline.
+- Search and viewer overlays isolate the background, contain keyboard focus,
+  and restore focus on close. A visually collapsed information panel must also
+  be excluded from keyboard interaction; opacity or transforms alone are not
+  sufficient. Preserve this across viewport and orientation changes.
+- Verify reduced motion, keyboard operation, zoom/reflow, and actual browser
+  layouts. Static contracts and mocked behavior tests are safeguards, not proof
+  of screen-reader or physical iOS behavior.
 
 ## Invariants
 

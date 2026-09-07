@@ -372,7 +372,7 @@ img {
   --dex-line: var(--archive-line);
   position: relative;
   min-height: calc(100svh - 72px);
-  overflow: hidden;
+  overflow: clip;
   background: var(--archive-bg);
   color: var(--dex-ink);
 }
@@ -380,7 +380,7 @@ img {
 .dex-hero {
   position: relative;
   display: grid;
-  min-height: clamp(230px, 24vw, 320px);
+  min-height: 160px;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   isolation: isolate;
@@ -456,7 +456,7 @@ img {
   max-width: none;
   margin: 0;
   color: #fff;
-  font-size: clamp(3.4rem, 6vw, 6rem);
+  font-size: clamp(2rem, 3.5vw, 3rem);
   font-weight: 760;
   letter-spacing: -0.065em;
   line-height: 0.86;
@@ -767,7 +767,7 @@ img {
   --squadron-line: var(--archive-line);
   position: relative;
   min-height: calc(100svh - 72px);
-  overflow: hidden;
+  overflow: clip;
   background: var(--archive-bg);
   color: var(--squadron-ink);
 }
@@ -889,7 +889,7 @@ img {
   --airshow-line: var(--archive-line);
   position: relative;
   min-height: calc(100svh - 72px);
-  overflow: hidden;
+  overflow: clip;
   background: var(--archive-bg);
   color: var(--airshow-ink);
 }
@@ -8745,7 +8745,7 @@ button.location-unit-chip:focus-visible,
   --stats-accent: var(--accent-brass);
   position: relative;
   min-height: calc(100svh - 72px);
-  overflow: hidden;
+  overflow: clip;
   background: var(--archive-bg);
   color: var(--stats-ink);
 }
@@ -12352,10 +12352,10 @@ h3 {
 #squadronsView .squadron-archive-hero,
 #airshowsView .airshow-archive-hero,
 #statsView .stats-archive-hero {
-  min-height: clamp(230px, 24vw, 320px);
+  min-height: 160px;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--space-xl);
-  padding-block: clamp(2rem, 4vw, 3.5rem);
+  gap: var(--space-lg);
+  padding-block: var(--space-md);
   background: var(--archive-bg);
 }
 
@@ -12409,7 +12409,7 @@ h3 {
 #statsView .stats-archive-copy h1 {
   color: var(--archive-ink);
   font-family: var(--font-display);
-  font-size: clamp(2.75rem, 6vw, 5.5rem);
+  font-size: clamp(2rem, 3.5vw, 3rem);
   font-style: normal;
   letter-spacing: -0.055em;
   line-height: 0.9;
@@ -13064,6 +13064,69 @@ img[data-media-unavailable="true"] {
   white-space: nowrap;
 }
 
+.global-search-category {
+  display: flex;
+  min-width: 0;
+  gap: var(--space-xs);
+  align-items: center;
+  padding: var(--space-xs) var(--space-md) 0;
+  color: var(--color-muted-strong);
+  font-size: var(--text-sm);
+}
+
+.global-search-category select {
+  min-width: 0;
+  min-height: 44px;
+  max-width: 100%;
+  flex: 1;
+  padding: var(--space-2xs) var(--space-xs);
+  border: 1px solid var(--color-rule-strong);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 1rem;
+}
+
+.global-search-options {
+  display: grid;
+  gap: var(--space-3xs);
+}
+
+.global-search-group-count {
+  margin-left: var(--space-2xs);
+  color: var(--color-muted);
+  letter-spacing: normal;
+  text-transform: none;
+  font-weight: 400;
+}
+
+.global-search-show-more,
+.empty-state-reset {
+  min-height: 44px;
+  padding: var(--space-2xs) var(--space-sm);
+  border: 1px solid var(--color-rule-strong);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-accent-strong);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.global-search-show-more:hover,
+.empty-state-reset:hover {
+  background: var(--color-surface-strong);
+}
+
+.catalog-load-error {
+  position: relative;
+  z-index: 2;
+  margin-bottom: var(--space-lg);
+  border: 1px solid var(--color-accent);
+  background: var(--color-surface);
+}
+
 .global-search-summary {
   margin: 0;
   padding: var(--space-xs) var(--space-md);
@@ -13540,6 +13603,38 @@ body.has-app-update .mobile-install-prompt {
     top: max(18px, calc(var(--safe-area-inset-top) + 12px));
   }
 
+  .viewer-telemetry,
+  .viewer-button.close,
+  .viewer-button.info-toggle {
+    box-sizing: border-box;
+    height: 46px;
+    min-height: 46px;
+  }
+
+  .viewer-telemetry {
+    align-items: stretch;
+  }
+
+  .viewer-telemetry span {
+    display: flex;
+    align-items: center;
+  }
+
+  #viewerFullscreenButton {
+    display: none;
+  }
+
+  .viewer-button.previous,
+  .viewer-button.next,
+  .viewer-button.previous:hover,
+  .viewer-button.next:hover {
+    top: min(
+      calc(var(--viewer-image-bottom, 50%) + var(--space-xs)),
+      calc(100% - var(--viewer-filmstrip-height) - var(--viewer-filmstrip-gap) - 58px)
+    );
+    transform: none;
+  }
+
   .viewer-button.close,
   .viewer-button.next {
     right: var(--safe-inline-right);
@@ -13600,5 +13695,185 @@ body.has-app-update .mobile-install-prompt {
   body[data-page-view="mapView"] .header-fit-button {
     height: 44px;
     min-height: 44px;
+  }
+}
+
+#dexView .dex-command-bar,
+#squadronsView .squadron-command-bar,
+#airshowsView .airshow-command-bar {
+  top: var(--archive-sticky-top, 82px);
+  z-index: 9;
+}
+
+.archive-year-control {
+  display: flex;
+  min-width: 0;
+  gap: var(--space-xs);
+  align-items: center;
+  color: var(--color-muted-strong);
+  font-size: var(--text-sm);
+}
+
+.archive-year-control select {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
+  padding: var(--space-2xs) var(--space-xs);
+  border: 1px solid var(--color-rule-strong);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+}
+
+#squadronsView .squadron-country-nav .squadron-country-filter-all {
+  display: inline-flex;
+}
+
+#dexView .dex-hero {
+  padding-block: var(--space-md);
+}
+
+#dexView .dex-hero-content {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+#dexView .dex-hero-action,
+#dexView .dex-scroll-cue {
+  display: none;
+}
+
+#dexView .dex-hero-lead {
+  max-width: 40ch;
+}
+
+#statsView .stats-archive-hero {
+  min-height: 120px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.empty-state .plain-button,
+.empty-state a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xs) var(--space-sm);
+  color: var(--color-accent-strong);
+}
+
+@media (max-width: 1040px) {
+  #dexView .dex-hero,
+  #squadronsView .squadron-archive-hero,
+  #airshowsView .airshow-archive-hero,
+  #statsView .stats-archive-hero {
+    min-height: 0;
+    gap: var(--space-xs);
+    padding-top: max(var(--space-md), var(--safe-area-inset-top));
+    padding-bottom: var(--space-sm);
+  }
+
+  #dexView .dex-hero-content,
+  #squadronsView .squadron-archive-copy,
+  #airshowsView .airshow-archive-copy,
+  #statsView .stats-archive-copy {
+    display: block;
+    padding-right: var(--space-xl);
+  }
+
+  #dexView .dex-hero-content h1,
+  #squadronsView .squadron-archive-copy h1,
+  #airshowsView .airshow-archive-copy h1,
+  #statsView .stats-archive-copy h1 {
+    font-size: var(--text-xl);
+    line-height: 1.2;
+    white-space: normal;
+    letter-spacing: -0.025em;
+  }
+
+  #dexView .dex-hero-content .eyebrow,
+  #dexView .dex-hero-lead,
+  #squadronsView .squadron-archive-copy p,
+  #airshowsView .airshow-archive-copy p,
+  #statsView .stats-archive-copy p {
+    display: none;
+  }
+
+  #dexView .dex-hero-stats,
+  #squadronsView .squadron-archive-stats,
+  #airshowsView .airshow-archive-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  #dexView .dex-hero-stats div,
+  #squadronsView .squadron-archive-stats div,
+  #airshowsView .airshow-archive-stats div {
+    display: flex;
+    gap: var(--space-3xs);
+    align-items: baseline;
+  }
+
+  #dexView .dex-hero-stats dt,
+  #dexView .dex-hero-stats dd,
+  #squadronsView .squadron-archive-stats dt,
+  #squadronsView .squadron-archive-stats dd,
+  #airshowsView .airshow-archive-stats dt,
+  #airshowsView .airshow-archive-stats dd {
+    margin: 0;
+    font-size: var(--text-xs);
+    line-height: 1.5;
+    letter-spacing: normal;
+    text-transform: none;
+  }
+
+  #dexView .dex-command-bar,
+  #squadronsView .squadron-command-bar,
+  #airshowsView .airshow-command-bar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    gap: var(--space-2xs);
+    padding-top: max(var(--space-xs), var(--safe-area-inset-top));
+    padding-right: var(--space-2xl);
+    padding-bottom: var(--space-xs);
+    background: var(--color-surface-deep);
+    border-bottom: 1px solid var(--color-rule);
+  }
+
+  #dexView .dex-family-filter,
+  #squadronsView .squadron-country-rail {
+    gap: var(--space-2xs);
+  }
+
+  #dexView .dex-family-label,
+  #squadronsView .squadron-country-rail > .eyebrow {
+    display: none;
+  }
+
+  #dexView .dex-count,
+  #airshowsView .airshow-command-bar > p {
+    margin: 0;
+    font-size: var(--text-xs);
+  }
+
+  #airshowsView .airshow-command-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .archive-year-control select {
+    font-size: 1rem;
+  }
+
+  .global-search-result-target {
+    display: block;
+    grid-column: 2;
+    max-width: none;
+    text-align: left;
   }
 }

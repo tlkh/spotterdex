@@ -102,6 +102,9 @@
     dexVisibleCount: MOBILE_ARCHIVE_PAGE_SIZE,
     squadronVisibleCount: MOBILE_ARCHIVE_PAGE_SIZE,
     airshowVisibleCount: MOBILE_ARCHIVE_PAGE_SIZE,
+    airshowYearFilter: "",
+    catalogLoadError: false,
+    catalogLoading: false,
     squadronCountryFilter: "",
     statsSection: "summary",
     detailRailDrag: null,
@@ -179,6 +182,9 @@
     searchResults: [],
     searchActiveIndex: -1,
     searchReady: false,
+    searchComposing: false,
+    searchCategory: "",
+    searchVisibleCounts: {},
     searchReturnFocus: null,
     serviceWorkerRegistration: null,
     waitingServiceWorker: null,
@@ -207,13 +213,41 @@
     ensureIosInstallHint();
     ensureMobileAppShell();
     cacheElements();
+    if (els.siteHeader && "ResizeObserver" in window) {
+      new ResizeObserver(() => {
+        document.documentElement.style.setProperty("--archive-sticky-top", `${els.siteHeader.getBoundingClientRect().height}px`);
+      }).observe(els.siteHeader);
+    }
     state.sessionRestore = readPageSessionState();
     restoreSessionFilters(state.sessionRestore);
     setupEvents();
     state.iosInstallHintVisitCount = recordIosInstallHintVisit();
     maybeShowIosInstallHint();
 
-    state.data = prepareData(await loadData());
+    await initializeCatalog();
+  }
+
+  async function initializeCatalog() {
+    if (state.catalogLoading) return;
+    const retryHadFocus = document.activeElement?.matches("[data-catalog-retry]");
+    state.catalogLoading = true;
+    document.querySelectorAll("[data-catalog-retry]").forEach((button) => { button.disabled = true; });
+    try {
+      state.data = prepareData(await loadData());
+      state.catalogLoadError = false;
+      document.getElementById("catalogLoadError")?.remove();
+    } catch (error) {
+      console.warn(error);
+      state.catalogLoadError = true;
+      if (!document.getElementById("catalogLoadError")) {
+        els.main?.insertAdjacentHTML("afterbegin", '<section class="catalog-load-error empty-state" id="catalogLoadError" role="alert"><p>The catalog could not be loaded. Check your connection and try again.</p><button type="button" class="empty-state-reset" data-catalog-retry>Retry loading catalog</button></section>');
+      }
+      if (isGlobalSearchOpen()) renderGlobalSearchResults();
+      return;
+    } finally {
+      state.catalogLoading = false;
+      document.querySelectorAll("[data-catalog-retry]").forEach((button) => { button.disabled = false; });
+    }
     state.searchIndex = buildGlobalSearchIndex();
     state.searchReady = true;
     if (isGlobalSearchOpen()) {
@@ -233,6 +267,13 @@
     scheduleScrollEdgeUpdate();
     scheduleServiceWorkerRegistration();
     announceStoryPreviewReady();
+    if (retryHadFocus && !isViewerOpen()) {
+      const target = isGlobalSearchOpen() ? els.globalSearchInput : els.main;
+      if (target) {
+        if (target === els.main) target.tabIndex = -1;
+        target.focus({ preventScroll: true });
+      }
+    }
   }
 
   function announceStoryPreviewReady() {
@@ -387,11 +428,14 @@
                 <circle cx="11" cy="11" r="7"></circle>
                 <path d="m16.5 16.5 4 4"></path>
               </svg>
-              <input id="globalSearchInput" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Aircraft, squadron, location, airshow, or photo" role="combobox" aria-autocomplete="list" aria-controls="globalSearchResults" aria-expanded="true">
+              <input id="globalSearchInput" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Aircraft, squadron, location, airshow, or photo" role="combobox" aria-autocomplete="list" aria-expanded="false">
               <kbd aria-hidden="true">⌘ K</kbd>
             </label>
+            <label class="global-search-category" for="globalSearchCategory">Category
+              <select id="globalSearchCategory"><option value="">All categories</option>${SEARCH_KIND_ORDER.map((kind) => `<option value="${kind}">${SEARCH_KIND_LABELS[kind]}</option>`).join("")}</select>
+            </label>
             <p class="global-search-summary" id="globalSearchSummary" aria-live="polite">Start typing to search the entire SpotterDex.</p>
-            <div class="global-search-results" id="globalSearchResults" role="listbox" aria-label="Search results"></div>
+            <div class="global-search-results" id="globalSearchResults" aria-label="Search results"></div>
           </section>
         </div>
       `);
@@ -498,6 +542,8 @@
     els.mobileGlobalSearchTrigger = document.getElementById("mobileGlobalSearchTrigger");
     els.globalSearchOverlay = document.getElementById("globalSearchOverlay");
     els.globalSearchInput = document.getElementById("globalSearchInput");
+    els.globalSearchCategory = document.getElementById("globalSearchCategory");
+    els.airshowYearFilter = document.getElementById("airshowYearFilter");
     els.globalSearchResults = document.getElementById("globalSearchResults");
     els.globalSearchSummary = document.getElementById("globalSearchSummary");
     els.appUpdatePrompt = document.getElementById("appUpdatePrompt");
@@ -554,9 +600,6 @@
       els.airshowDetail = document.getElementById("airshowDetail");
     } else if (viewId === "statsView") {
       els.statsHeroMedia = document.getElementById("statsHeroMedia");
-      els.statsHeroPhotoCount = document.getElementById("statsHeroPhotoCount");
-      els.statsHeroAircraftCount = document.getElementById("statsHeroAircraftCount");
-      els.statsHeroLocationCount = document.getElementById("statsHeroLocationCount");
       els.statsDashboard = document.getElementById("statsDashboard");
       els.exifDashboard = document.getElementById("exifDashboard");
       els.statsSectionNav = document.getElementById("statsSectionNav");
@@ -786,10 +829,13 @@
         data = await response.json();
       } catch (error) {
         console.warn(error);
-        data = EMPTY_DATA;
+        throw error;
       }
     }
 
+    if (Number(data?.schemaVersion) !== 2 || !data?.entities || !data?.indexes) {
+      throw new Error("Invalid SpotterDex catalog");
+    }
     return data;
   }
 
@@ -955,11 +1001,19 @@
       const script = document.createElement("script");
       script.src = "data/spotterdex-exif.js";
       script.async = true;
-      script.addEventListener("load", () => resolve(window.SPOTTERDEX_EXIF || null), { once: true });
-      script.addEventListener("error", () => reject(new Error("Could not load Stats EXIF data")), { once: true });
+      script.addEventListener("load", () => {
+        script.remove();
+        if (window.SPOTTERDEX_EXIF) resolve(window.SPOTTERDEX_EXIF);
+        else reject(new Error("Stats EXIF data is unavailable"));
+      }, { once: true });
+      script.addEventListener("error", () => {
+        script.remove();
+        reject(new Error("Could not load Stats EXIF data"));
+      }, { once: true });
       document.head.append(script);
     }).catch((error) => {
       console.warn(error);
+      statsExifLoadPromise = null;
       return null;
     });
     return statsExifLoadPromise;
@@ -1087,6 +1141,7 @@
           displayPhotoDate(photo)
         ].filter(Boolean).join(" · "),
         thumbnail: photo.thumbnail || photo.image || "",
+        targetLabel: records.find((record) => record.kind === targetKind && record.id === targetId)?.label || photo.locationName,
         targetKind,
         targetId
       }, [
@@ -1138,8 +1193,7 @@
     const matches = [];
     SEARCH_KIND_ORDER.forEach((kind) => {
       const records = byKind.get(kind)
-        .sort((a, b) => b.score - a.score || a.label.localeCompare(b.label))
-        .slice(0, SEARCH_RESULT_LIMIT_PER_KIND);
+        .sort((a, b) => b.score - a.score || a.label.localeCompare(b.label));
       matches.push(...records);
     });
     return matches;
@@ -1150,11 +1204,20 @@
       return;
     }
     const query = els.globalSearchInput?.value || "";
+    els.globalSearchInput?.removeAttribute("aria-controls");
+    els.globalSearchInput?.setAttribute("aria-expanded", "false");
+    if (!normalizeText(query) && els.globalSearchCategory) {
+      els.globalSearchCategory.innerHTML = `<option value="">All categories</option>${SEARCH_KIND_ORDER.map((kind) => `<option value="${kind}">${SEARCH_KIND_LABELS[kind]}</option>`).join("")}`;
+      els.globalSearchCategory.value = state.searchCategory;
+    }
     if (!state.searchReady) {
       state.searchResults = [];
       state.searchActiveIndex = -1;
-      els.globalSearchSummary.textContent = "Loading the catalog…";
-      els.globalSearchResults.innerHTML = '<p class="global-search-empty">Preparing aircraft, squadrons, locations, airshows, and photos.</p>';
+      els.globalSearchInput?.removeAttribute("aria-activedescendant");
+      els.globalSearchSummary.textContent = state.catalogLoadError ? "The catalog could not be loaded." : "Loading the catalog…";
+      els.globalSearchResults.innerHTML = state.catalogLoadError
+        ? '<div class="global-search-empty"><p>Check your connection and try again.</p><button type="button" class="empty-state-reset" data-catalog-retry>Retry loading catalog</button></div>'
+        : '<p class="global-search-empty">Preparing aircraft, squadrons, locations, airshows, and photos.</p>';
       return;
     }
     if (!normalizeText(query)) {
@@ -1171,16 +1234,23 @@
       return;
     }
 
-    state.searchResults = globalSearchMatches(query);
+    const matches = globalSearchMatches(query);
+    const selectedMatches = matches.filter((record) => !state.searchCategory || record.kind === state.searchCategory);
+    const totals = new Map(SEARCH_KIND_ORDER.map((kind) => [kind, matches.filter((record) => record.kind === kind).length]));
+    if (els.globalSearchCategory) {
+      els.globalSearchCategory.innerHTML = `<option value="">All categories (${matches.length})</option>${SEARCH_KIND_ORDER.map((kind) => `<option value="${kind}">${SEARCH_KIND_LABELS[kind]} (${totals.get(kind)})</option>`).join("")}`;
+      els.globalSearchCategory.value = state.searchCategory;
+    }
+    state.searchResults = SEARCH_KIND_ORDER.flatMap((kind) => selectedMatches.filter((record) => record.kind === kind).slice(0, state.searchVisibleCounts[kind] || SEARCH_RESULT_LIMIT_PER_KIND));
     state.searchActiveIndex = state.searchResults.length ? 0 : -1;
     if (!state.searchResults.length) {
-      els.globalSearchSummary.textContent = `No results for “${query.trim()}”.`;
+      els.globalSearchSummary.textContent = `No results${state.searchCategory ? ` in ${SEARCH_KIND_LABELS[state.searchCategory]}` : ""} for “${query.trim()}”. ${matches.length} total across all categories.`;
       els.globalSearchResults.innerHTML = '<p class="global-search-empty">No matching records. Try a broader term or ICAO code.</p>';
       els.globalSearchInput?.removeAttribute("aria-activedescendant");
       return;
     }
 
-    els.globalSearchSummary.textContent = `${state.searchResults.length} result${state.searchResults.length === 1 ? "" : "s"} for “${query.trim()}”.`;
+    els.globalSearchSummary.textContent = `Showing ${state.searchResults.length} of ${selectedMatches.length} results for “${query.trim()}”.${state.searchCategory ? ` ${matches.length} total across all categories.` : ""}`;
     let resultIndex = 0;
     els.globalSearchResults.innerHTML = SEARCH_KIND_ORDER.map((kind) => {
       const records = state.searchResults.filter((record) => record.kind === kind);
@@ -1209,12 +1279,16 @@
               <strong>${escapeHtml(record.label)}</strong>
               <small>${escapeHtml(record.meta || SEARCH_KIND_LABELS[kind])}</small>
             </span>
-            <span class="global-search-result-target">${record.kind === "photo" ? `Open ${escapeHtml(targetLabel)}` : "Open"}</span>
+            <span class="global-search-result-target">${record.kind === "photo" ? record.targetLabel ? `Open in ${escapeHtml(record.targetLabel)}` : `Open ${escapeHtml(targetLabel)}` : "Open"}</span>
           </button>
         `;
       }).join("");
-      return `<section class="global-search-group" aria-labelledby="${headingId}"><h3 id="${headingId}">${SEARCH_KIND_LABELS[kind]}</h3>${items}</section>`;
+      const total = totals.get(kind);
+      const more = records.length < total ? `<button type="button" class="global-search-show-more" data-search-show-more="${kind}">Show more ${SEARCH_KIND_LABELS[kind].toLowerCase()} (${total - records.length} remaining)</button>` : "";
+      return `<section class="global-search-group" aria-labelledby="${headingId}"><h3 id="${headingId}">${SEARCH_KIND_LABELS[kind]} <span class="global-search-group-count">${records.length} of ${total}</span></h3><div class="global-search-options" id="globalSearchOptions-${kind}" role="listbox" aria-labelledby="${headingId}">${items}</div>${more}</section>`;
     }).join("");
+    els.globalSearchInput?.setAttribute("aria-expanded", "true");
+    els.globalSearchInput?.setAttribute("aria-controls", SEARCH_KIND_ORDER.filter((kind) => state.searchResults.some((record) => record.kind === kind)).map((kind) => `globalSearchOptions-${kind}`).join(" "));
     updateGlobalSearchActiveResult();
   }
 
@@ -1245,6 +1319,7 @@
       return;
     }
     els.globalSearchOverlay.hidden = true;
+    state.searchComposing = false;
     document.body.classList.remove("is-search-open");
     deactivateOverlayViewportSync();
     setGlobalSearchBackgroundInert(false);
@@ -1294,8 +1369,10 @@
     if (!state.searchResults.length) {
       return;
     }
+    const resultHasFocus = Boolean(document.activeElement?.closest?.("[data-search-result-index]"));
     state.searchActiveIndex = (state.searchActiveIndex + delta + state.searchResults.length) % state.searchResults.length;
     updateGlobalSearchActiveResult();
+    if (resultHasFocus) document.getElementById(`globalSearchResult${state.searchActiveIndex}`)?.focus({ preventScroll: true });
   }
 
   function activateGlobalSearchResult(index = state.searchActiveIndex) {
@@ -1383,8 +1460,49 @@
     els.globalSearchOverlay?.querySelectorAll("[data-global-search-close]").forEach((button) => {
       button.addEventListener("click", closeGlobalSearch);
     });
-    els.globalSearchInput?.addEventListener("input", renderGlobalSearchResults);
+    const refreshSearch = () => {
+      state.searchVisibleCounts = {};
+      renderGlobalSearchResults();
+    };
+    els.globalSearchInput?.addEventListener("compositionstart", () => { state.searchComposing = true; });
+    els.globalSearchInput?.addEventListener("compositionend", () => {
+      state.searchComposing = false;
+      refreshSearch();
+    });
+    els.globalSearchInput?.addEventListener("input", (event) => {
+      if (!event.isComposing && !state.searchComposing) refreshSearch();
+    });
+    els.globalSearchCategory?.addEventListener("change", () => {
+      state.searchCategory = els.globalSearchCategory.value;
+      refreshSearch();
+    });
+    els.airshowYearFilter?.addEventListener("change", () => {
+      state.airshowYearFilter = els.airshowYearFilter.value;
+      state.airshowVisibleCount = MOBILE_ARCHIVE_PAGE_SIZE;
+      renderAirshowsPage();
+      updateDeepLink("year", state.airshowYearFilter);
+      saveCurrentSessionState();
+    });
+    els.globalSearchResults?.addEventListener("focusin", (event) => {
+      const result = event.target.closest("[data-search-result-index]");
+      if (result) {
+        state.searchActiveIndex = Number(result.dataset.searchResultIndex);
+        updateGlobalSearchActiveResult({ scroll: false });
+      }
+    });
     els.globalSearchResults?.addEventListener("click", (event) => {
+      const more = event.target.closest("[data-search-show-more]");
+      if (more) {
+        const kind = more.dataset.searchShowMore;
+        const previousCount = state.searchVisibleCounts[kind] || SEARCH_RESULT_LIMIT_PER_KIND;
+        state.searchVisibleCounts[kind] = previousCount + SEARCH_RESULT_LIMIT_PER_KIND;
+        renderGlobalSearchResults();
+        const firstNewIndex = state.searchResults.findIndex((record) => record.kind === kind) + previousCount;
+        state.searchActiveIndex = firstNewIndex;
+        updateGlobalSearchActiveResult({ scroll: false });
+        document.getElementById(`globalSearchResult${firstNewIndex}`)?.focus({ preventScroll: true });
+        return;
+      }
       const result = event.target.closest("[data-search-result-index]");
       if (result) {
         activateGlobalSearchResult(Number(result.dataset.searchResultIndex));
@@ -1439,10 +1557,12 @@
     document.addEventListener("fullscreenchange", updateViewerFullscreenButton);
     window.addEventListener("resize", debounce(() => {
       ensureMobileAppShell();
-      updateMobileMapHeader();
-      updateRecentLocationNav();
-      updateMapPanelState();
-      updateMapPanelCoach();
+      if (els.mapWorkspace) {
+        updateMobileMapHeader();
+        updateRecentLocationNav();
+        updateMapPanelState();
+        updateMapPanelCoach();
+      }
       updateViewerInfoState();
       updateMobileAppChrome();
       cancelGesturesForGeometryChange();
@@ -1452,14 +1572,18 @@
         measureViewerGestureGeometry();
         constrainViewerPan(state.viewerGestureGeometry);
         updateViewerTransform();
+        updateViewerNavigationPosition();
       }
       scheduleScrollEdgeUpdate();
-      refreshMapLayout();
+      if (els.mapWorkspace) refreshMapLayout();
       if (state.renderedViews.has("dexView")) {
         renderDex();
       }
       if (state.renderedViews.has("squadronsView")) {
         renderSquadronsPage();
+      }
+      if (state.renderedViews.has("airshowsView")) {
+        renderAirshowsPage();
       }
       const activeView = document.querySelector("[data-view].is-active")?.id;
       if (activeView === "aircraftDetailView") {
@@ -1574,19 +1698,30 @@
       return;
     }
 
+    if (event.target.closest("[data-catalog-retry]")) {
+      initializeCatalog();
+      return;
+    }
+
+    const airshowYearButton = event.target.closest("[data-airshow-year]");
+    if (airshowYearButton) {
+      state.airshowYearFilter = airshowYearButton.dataset.airshowYear || "";
+      state.airshowVisibleCount = MOBILE_ARCHIVE_PAGE_SIZE;
+      renderAirshowsPage();
+      updateDeepLink("year", state.airshowYearFilter);
+      saveCurrentSessionState();
+      els.airshowYearFilter?.focus({ preventScroll: true });
+      return;
+    }
+
     const countryJump = event.target.closest("[data-squadron-country-jump]");
     if (countryJump) {
-      if (isFocusedMobileLayout()) {
-        state.squadronCountryFilter = countryJump.dataset.squadronCountryFilter || "";
-        state.squadronVisibleCount = MOBILE_ARCHIVE_PAGE_SIZE;
-        renderSquadronsPage();
-        return;
-      }
-      const target = document.getElementById(countryJump.dataset.squadronCountryJump || "");
-      if (target) {
-        updateSquadronCurrentCountry(countryJump.dataset.squadronCountryFilter || "");
-        target.scrollIntoView({ behavior: isReducedMotion() ? "auto" : "smooth", block: "start" });
-      }
+      state.squadronCountryFilter = countryJump.dataset.squadronCountryFilter || "";
+      state.squadronVisibleCount = MOBILE_ARCHIVE_PAGE_SIZE;
+      renderSquadronsPage();
+      updateDeepLink("country", state.squadronCountryFilter);
+      saveCurrentSessionState();
+      Array.from(els.squadronCountryRail?.querySelectorAll("[data-squadron-country-filter]") || []).find((button) => button.dataset.squadronCountryFilter === state.squadronCountryFilter)?.focus({ preventScroll: true });
       return;
     }
 
@@ -1596,6 +1731,7 @@
       state.dexVisibleCount = MOBILE_ARCHIVE_PAGE_SIZE;
       renderDex();
       clearDeepLink();
+      saveCurrentSessionState();
       document.querySelector("[data-clear-dex-family-filter]")?.focus({ preventScroll: true });
       return;
     }
@@ -1611,7 +1747,7 @@
       openStatsPhotoSet(
         statsFilter.dataset.statsFilterKind,
         statsFilter.dataset.statsFilterValue || "",
-        statsFilter.dataset.statsFilterLabel || "Selected frames"
+        statsFilter.dataset.statsFilterLabel || "Selected photos"
       );
       return;
     }
@@ -1771,6 +1907,7 @@
   }
 
   function handleKeydown(event) {
+    if (event.isComposing || state.searchComposing || event.keyCode === 229) return;
     if ((event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "k") {
       event.preventDefault();
       if (isGlobalSearchOpen()) {
@@ -1781,6 +1918,8 @@
       return;
     }
     if (isGlobalSearchOpen()) {
+      const searchNavigation = document.activeElement === els.globalSearchInput || Boolean(document.activeElement?.closest?.("[data-search-result-index]"));
+      if (event.key !== "Tab" && event.key !== "Escape" && !searchNavigation) return;
       if (event.key === "Tab") {
         trapDialogFocus(els.globalSearchOverlay, event);
       } else if (event.key === "Escape") {
@@ -1818,8 +1957,10 @@
           closeViewer();
         }
       } else if (event.key === "ArrowLeft") {
+        event.preventDefault();
         stepPhoto(-1);
       } else if (event.key === "ArrowRight") {
+        event.preventDefault();
         stepPhoto(1);
       } else if (event.key === "+" || event.key === "=") {
         event.preventDefault();
@@ -1846,7 +1987,7 @@
   function trapDialogFocus(container, event) {
     const focusable = Array.from(container.querySelectorAll(
       'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-    )).filter((element) => !element.hidden && element.getClientRects().length);
+    )).filter((element) => !element.hidden && !element.closest("[inert], [aria-hidden=\"true\"]") && element.getClientRects().length);
     if (!focusable.length) {
       event.preventDefault();
       return;
@@ -2199,6 +2340,7 @@
       dexFamilyFilter: state.dexFamilyFilter,
       dexVisibleCount: state.dexVisibleCount,
       airshowVisibleCount: state.airshowVisibleCount,
+      airshowYearFilter: state.airshowYearFilter,
       squadronCountryFilter: state.squadronCountryFilter,
       squadronVisibleCount: state.squadronVisibleCount,
       statsSection: state.statsSection,
@@ -2223,6 +2365,7 @@
     state.dexFamilyFilter = normalizeAircraftFamily(snapshot.dexFamilyFilter) || "";
     state.dexVisibleCount = Math.max(MOBILE_ARCHIVE_PAGE_SIZE, Number(snapshot.dexVisibleCount) || MOBILE_ARCHIVE_PAGE_SIZE);
     state.airshowVisibleCount = Math.max(MOBILE_ARCHIVE_PAGE_SIZE, Number(snapshot.airshowVisibleCount) || MOBILE_ARCHIVE_PAGE_SIZE);
+    state.airshowYearFilter = String(snapshot.airshowYearFilter || "");
     state.squadronCountryFilter = String(snapshot.squadronCountryFilter || "");
     state.squadronVisibleCount = Math.max(MOBILE_ARCHIVE_PAGE_SIZE, Number(snapshot.squadronVisibleCount) || MOBILE_ARCHIVE_PAGE_SIZE);
     state.statsSection = normalizeStatsSection(snapshot.statsSection);
@@ -3983,7 +4126,7 @@
 
       if (!latest) {
         els.dexHeroMedia.innerHTML = '<span class="dex-hero-media-fallback"></span>';
-        els.dexHeroFeature.innerHTML = `<p>No ${familyId ? `${escapeHtml(familyLabel.toLowerCase())} ` : ""}frames yet</p>`;
+        els.dexHeroFeature.innerHTML = `<p>No ${familyId ? `${escapeHtml(familyLabel.toLowerCase())} ` : ""}photos yet</p>`;
         els.dexHeroAction.hidden = true;
         delete els.dexHeroAction.dataset.photoId;
         delete els.dexHeroAction.dataset.photoContext;
@@ -4033,7 +4176,7 @@
     }
 
     if (!visibleSquadrons.length) {
-      els.squadronLogoGrid.innerHTML = '<div class="empty-state compact">No squadrons match these mobile filters.</div>';
+      els.squadronLogoGrid.innerHTML = '<div class="empty-state compact"><p>No squadrons match this country filter.</p><button class="empty-state-reset" type="button" data-squadron-country-jump="squadronsView" data-squadron-country-filter="">Show all squadrons</button></div>';
     } else {
       els.squadronLogoGrid.innerHTML = renderSquadronCountrySections(visibleSquadrons, filteredSquadrons);
     }
@@ -4051,11 +4194,9 @@
   function squadronArchiveEntries() {
     const squadrons = collectSquadrons();
     const isMobile = isFocusedMobileLayout();
-    const filteredSquadrons = isMobile
-      ? squadrons.filter((squadron) => {
-          return !state.squadronCountryFilter || squadron.country === state.squadronCountryFilter;
-        })
-      : squadrons;
+    const filteredSquadrons = squadrons.filter((squadron) => {
+      return !state.squadronCountryFilter || (squadron.country || "Country not set") === state.squadronCountryFilter;
+    });
     const orderedSquadrons = isMobile
       ? groupSquadronsByCountry(filteredSquadrons).flatMap((group) => group.squadrons)
       : filteredSquadrons;
@@ -4098,22 +4239,19 @@
       return;
     }
     const groups = groupSquadronsByCountry(squadrons);
-    const isMobile = isFocusedMobileLayout();
-    const allActive = isMobile ? !state.squadronCountryFilter : !state.squadronCurrentCountry;
+    const allActive = !state.squadronCountryFilter;
     els.squadronCountryRail.innerHTML = groups.length
       ? `
-          <button class="squadron-country-filter-all${allActive ? " is-active" : ""}" type="button" data-squadron-country-jump="squadronsView" data-squadron-country-filter=""${isMobile ? ` aria-pressed="${String(!state.squadronCountryFilter)}"` : allActive ? ' aria-current="location"' : ""}>
+          <button class="squadron-country-filter-all${allActive ? " is-active" : ""}" type="button" data-squadron-country-jump="squadronsView" data-squadron-country-filter="" aria-pressed="${String(allActive)}">
             <span class="squadron-country-nav-label">All</span>
             <span class="squadron-country-count">${squadrons.length}</span>
           </button>
           ${groups
           .map(
             (group) => {
-              const active = isMobile
-                ? state.squadronCountryFilter === group.country
-                : state.squadronCurrentCountry === group.country;
+              const active = state.squadronCountryFilter === group.country;
               return `
-              <button class="${active ? "is-active" : ""}" type="button" data-squadron-country-jump="${escapeAttr(squadronCountryId(group.country))}" data-squadron-country-filter="${escapeAttr(group.country)}"${isMobile ? ` aria-pressed="${String(active)}"` : active ? ' aria-current="location"' : ""}>
+              <button class="${active ? "is-active" : ""}" type="button" data-squadron-country-jump="${escapeAttr(squadronCountryId(group.country))}" data-squadron-country-filter="${escapeAttr(group.country)}" aria-pressed="${String(active)}">
                 ${renderCountryLabel(group.country, "squadron-country-nav-label")}
                 <span class="squadron-country-count">${group.squadrons.length}</span>
               </button>
@@ -4185,24 +4323,6 @@
 
   function observeSquadronCountrySections() {
     disconnectSquadronCountryObserver();
-    if (isFocusedMobileLayout() || activeViewId() !== "squadronsView" || !("IntersectionObserver" in window)) {
-      return;
-    }
-    const sections = Array.from(els.squadronLogoGrid?.querySelectorAll(".squadron-country-section") || []);
-    if (!sections.length) {
-      updateSquadronCurrentCountry("");
-      return;
-    }
-    const updateCurrent = () => updateSquadronCurrentCountry(currentSquadronCountryFromSections(sections));
-    const activationTop = 150;
-    const activationLineHeight = 2;
-    const bottomMargin = -Math.max(0, window.innerHeight - activationTop - activationLineHeight);
-    state.squadronCountryObserver = new IntersectionObserver(updateCurrent, {
-      rootMargin: `-${activationTop}px 0px ${bottomMargin}px 0px`,
-      threshold: 0
-    });
-    sections.forEach((section) => state.squadronCountryObserver.observe(section));
-    updateCurrent();
   }
 
   function renderSquadronCountrySections(squadrons, totalSquadrons = squadrons) {
@@ -4733,7 +4853,7 @@
 
   function renderAircraftGrid(entries) {
     if (!entries.length) {
-      els.aircraftGrid.innerHTML = '<div class="empty-state">No aircraft entries match this search.</div>';
+      els.aircraftGrid.innerHTML = '<div class="empty-state"><p>No aircraft entries match this filter.</p><button class="empty-state-reset" type="button" data-clear-dex-family-filter>Show all aircraft</button></div>';
       return;
     }
 
@@ -4864,7 +4984,7 @@
   }
 
   function appendAirshowArchivePage() {
-    const airshows = state.data.airshows || [];
+    const airshows = airshowArchiveEntries();
     const previousCount = Math.min(state.airshowVisibleCount, airshows.length);
     const nextCount = Math.min(previousCount + MOBILE_ARCHIVE_PAGE_SIZE, airshows.length);
     const markup = airshows
@@ -6300,6 +6420,7 @@
       })
       .catch((error) => {
         console.warn(error);
+        state.fullDataPromise = null;
         return false;
       });
     return state.fullDataPromise;
@@ -6621,6 +6742,31 @@
     }
     state.viewerRevealToken = renderToken;
     els.viewerImage.classList.add("is-entering");
+    updateViewerNavigationPosition();
+  }
+
+  function updateViewerNavigationPosition() {
+    if (!els.viewerImageFrame) {
+      return;
+    }
+    if (!isMobileViewerLayout() || !els.viewerImage?.naturalWidth || !els.viewerImage?.naturalHeight) {
+      els.viewerImageFrame.style.removeProperty("--viewer-image-bottom");
+      return;
+    }
+
+    const frameWidth = els.viewerImageFrame.clientWidth;
+    const frameHeight = els.viewerImageFrame.clientHeight;
+    if (!frameWidth || !frameHeight) {
+      return;
+    }
+
+    const imageScale = Math.min(
+      frameWidth / els.viewerImage.naturalWidth,
+      frameHeight / els.viewerImage.naturalHeight
+    );
+    const renderedHeight = els.viewerImage.naturalHeight * imageScale;
+    const renderedBottom = (frameHeight + renderedHeight) / 2;
+    els.viewerImageFrame.style.setProperty("--viewer-image-bottom", `${Math.round(renderedBottom)}px`);
   }
 
   function renderViewerTelemetry(photo) {
@@ -7034,7 +7180,12 @@
     els.viewerInfoButton.classList.toggle("is-active", isOpen);
     els.viewerInfoButton.setAttribute("aria-expanded", String(isOpen));
     els.viewerInfoButton.setAttribute("aria-label", isOpen ? "Hide photo info" : "Show photo info");
-    els.viewerInfo.setAttribute("aria-hidden", String(isMobile && !isOpen));
+    const hidden = isMobile && !isOpen;
+    if (hidden && els.viewerInfo.contains(document.activeElement)) {
+      els.viewerInfoButton.focus({ preventScroll: true });
+    }
+    els.viewerInfo.inert = hidden;
+    els.viewerInfo.setAttribute("aria-hidden", String(hidden));
     const handle = els.viewerInfo.querySelector('[data-sheet-handle="viewer"]');
     if (handle) {
       const expanded = state.viewerInfoSnap === "expanded";
@@ -7353,6 +7504,18 @@
 
     state.isApplyingHash = true;
     try {
+      if (pageViewId === "squadronsView" && (params.has("country") || (!options.initial && !squadronId && !photoId))) {
+        const country = params.get("country") || "";
+        if (country !== state.squadronCountryFilter) state.squadronVisibleCount = MOBILE_ARCHIVE_PAGE_SIZE;
+        state.squadronCountryFilter = country;
+        renderSquadronsPage();
+      }
+      if (pageViewId === "airshowsView" && (params.has("year") || (!options.initial && !airshowId && !photoId))) {
+        const year = params.get("year") || "";
+        if (year !== state.airshowYearFilter) state.airshowVisibleCount = MOBILE_ARCHIVE_PAGE_SIZE;
+        state.airshowYearFilter = year;
+        renderAirshowsPage();
+      }
       if (!photoId && isViewerOpen()) {
         closeViewer({ updateHash: false, useHistory: false });
       }
@@ -7423,6 +7586,12 @@
         updateStatsSectionNav();
       }
 
+      if ((pageViewId === "squadronsView" && params.has("country")) || (pageViewId === "airshowsView" && params.has("year"))) {
+        openDirectoryView(pageViewId);
+        saveCurrentSessionState();
+        return true;
+      }
+
       if (pageViewId === "dexView" && aircraftFamily) {
         state.dexFamilyFilter = aircraftFamily;
         openDirectoryView("dexView");
@@ -7459,8 +7628,9 @@
   }
 
   function updateDeepLink(kind, id, options = {}) {
-    if (state.isApplyingHash || !id) {
-      return false;
+    if (state.isApplyingHash) return false;
+    if (!id) {
+      return kind === "country" || kind === "year" ? clearDeepLink(options) : false;
     }
     const nextHash = `#${kind}=${encodeURIComponent(id)}`;
     const changed = navigateToHash(nextHash, {

@@ -9,24 +9,56 @@ function renderAirshowsPage() {
       state.selectedAirshowId = null;
     }
     renderAirshowArchiveHero(airshows);
+    renderAirshowYearFilter(airshows);
+    const filteredAirshows = airshowArchiveEntries();
 
-    if (!airshows.length) {
-      els.airshowTimeline.innerHTML = '<div class="empty-state">Tag photos with an airshow or event name to build this timeline.</div>';
+    if (!filteredAirshows.length) {
+      els.airshowTimeline.innerHTML = state.airshowYearFilter
+        ? '<div class="empty-state"><p>No events in this year.</p><button class="plain-button" type="button" data-airshow-year="">Show all years</button></div>'
+        : '<div class="empty-state">No airshow photos have been published yet. <a href="aircraft-dex.html">Browse aircraft photos</a></div>';
       renderArchivePagination(els.airshowPagination, 0, 0, "airshows", "airshow events");
       return;
     }
 
     const visibleAirshows = isFocusedMobileLayout()
-      ? airshows.slice(0, state.airshowVisibleCount)
-      : airshows;
+      ? filteredAirshows.slice(0, state.airshowVisibleCount)
+      : filteredAirshows;
     els.airshowTimeline.innerHTML = visibleAirshows.map(renderAirshowTimelineItem).join("");
     renderArchivePagination(
       els.airshowPagination,
       visibleAirshows.length,
-      airshows.length,
+      filteredAirshows.length,
       "airshows",
       "airshow events"
     );
+  }
+
+  function airshowArchiveYear(airshow) {
+    return /^(\d{4})/.exec(airshow.latestDate || airshow.firstDate || "")?.[1] || "unknown";
+  }
+
+  function airshowArchiveEntries() {
+    return (state.data.airshows || []).filter((airshow) =>
+      !state.airshowYearFilter || airshowArchiveYear(airshow) === state.airshowYearFilter
+    );
+  }
+
+  function renderAirshowYearFilter(airshows) {
+    const select = document.getElementById("airshowYearFilter");
+    if (!select) return;
+    const counts = new Map();
+    airshows.forEach((airshow) => {
+      const year = airshowArchiveYear(airshow);
+      counts.set(year, (counts.get(year) || 0) + 1);
+    });
+    if (state.airshowYearFilter && !counts.has(state.airshowYearFilter)) {
+      counts.set(state.airshowYearFilter, 0);
+    }
+    const years = Array.from(counts.keys()).sort((a, b) => a === "unknown" ? 1 : b === "unknown" ? -1 : b.localeCompare(a));
+    select.innerHTML = `<option value="">All years (${airshows.length})</option>${years.map((year) =>
+      `<option value="${escapeAttr(year)}">${year === "unknown" ? "Date unknown" : escapeHtml(year)} (${counts.get(year)})</option>`
+    ).join("")}`;
+    select.value = state.airshowYearFilter || "";
   }
 
   function renderAirshowArchiveHero(airshows) {

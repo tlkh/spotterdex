@@ -34,6 +34,8 @@
         queue: null,
         results: {},
         running: false,
+        stopRequested: false,
+        scope: "selected",
         excludeAi: true
       },
       orphans: {
@@ -50,21 +52,28 @@
       airshowPreviewWindow: null
     };
     const viewMeta = {
-      attach: ["Attach Photos", "Tag new raw images and maintain their catalog metadata."],
-      master: ["Master Photo List", "Search and edit every photo record from one workspace."],
-      "squadron-database": ["Squadron Database", "Create and maintain unit-level photo records."],
-      "aircraft-database": ["Aircraft Database", "Create and maintain aircraft–squadron photo records."],
+      attach: ["New images", "Select raw images, assign shared metadata, then review and attach."],
+      master: ["Photo library", "Search, select, and edit existing catalog photos."],
+      "source-photos": ["Photo library · By source", "Edit existing photos and metadata grouped by their photo source."],
+      "squadron-database": ["Units · Details", "Create and maintain squadron and organisation photo sources."],
+      "aircraft-database": ["Aircraft · Details", "Create and maintain aircraft–unit photo sources."],
       "locations-database": ["Locations", "Create and maintain catalog locations and map metadata."],
       writeups: ["Page Write-ups", "Edit optional Markdown content for aircraft, squadron, and airshow pages."],
       "bulk-captions": ["Caption Review", "Generate and review caption suggestions for selected photos."],
       missing: ["Missing Fields", "Resolve incomplete catalog metadata from a focused queue."],
       quality: ["Source Quality", "Review image dimensions and conservative quality warnings."],
-      airshows: ["Airshows", "Manage event dates, photo assignments, and featured images."],
-      squadrons: ["Squadron Heroes", "Choose the featured image for each squadron."],
-      "location-heroes": ["Location Heroes", "Choose featured images for each catalog location."],
-      aircraft: ["Aircraft", "Configure aircraft heroes and card widths."],
-      build: ["Build & Publish", "Validate the catalog, build the site, and clean generated files."]
+      airshows: ["Events", "Manage event dates, photo assignments, segments, and featured images."],
+      squadrons: ["Units · Presentation", "Choose squadron featured images and unit logos."],
+      "location-heroes": ["Locations · Presentation", "Choose featured images for each catalog location."],
+      aircraft: ["Aircraft · Presentation", "Configure aircraft heroes and card widths."],
+      build: ["Build & verify", "Validate and build local output. Commit and push separately to publish."]
     };
+    const workspaceGroups = [
+      [["master", "All photos"], ["source-photos", "By source"]],
+      [["aircraft-database", "Details"], ["aircraft", "Presentation"]],
+      [["squadron-database", "Details"], ["squadrons", "Presentation"]],
+      [["locations-database", "Details"], ["location-heroes", "Presentation"]]
+    ];
     const missingFieldLabels = {
       source: "Source image",
       location: "Location",
@@ -288,6 +297,7 @@
       const renderers = {
         attach: renderEntryDetail,
         master: renderMasterView,
+        "source-photos": renderSourcePhotoLibrary,
         "squadron-database": renderSquadronSourcePage,
         "aircraft-database": renderAircraftSourceCards,
         "locations-database": renderLocationDatabase,
@@ -564,7 +574,7 @@
       document.querySelectorAll("[data-quality-filter]").forEach((button) => {
         const active = button.dataset.qualityFilter === state.qualityFilter;
         button.classList.toggle("active", active);
-        button.setAttribute("aria-selected", String(active));
+        button.setAttribute("aria-pressed", String(active));
       });
       $("qualityHardCount").textContent = hardFailures.length;
       $("qualityWarningCount").textContent = warnings.length;
@@ -1528,23 +1538,41 @@
       let existingPhotoCount = 0;
       let aiExcludedCount = 0;
       let missingCaptionCount = 0;
-      for (const entry of state.data?.entries || []) {
-        for (const photo of entry.photos || []) {
+      const masters = state.data?.masterPhotos || [];
+      const byId = new Map(masters.map((photo) => [photo.id, photo]));
+      const byPath = new Map(masters.map((photo) => [photo.sourceAssetPath || photo.path, photo]));
+      const seenIds = new Set();
+      const seenPaths = new Set();
+      const term = $("masterSearch").value.trim().toLowerCase();
+      const entries = [...(state.data?.entries || []), ...masters.map((photo) => {
+        const subject = (photo.subjects || []).find((item) => item.isPrimary) || photo.subjects?.[0];
+        return {
+          entryPath: subject?.entryPath || `db:location:${photo.locationId}`,
+          sourceScope: subject ? (subject.aircraftId ? "aircraft" : "squadron") : "location",
+          pinId: photo.locationId,
+          aircraftType: subject?.aircraftType,
+          squadronName: subject?.unitName,
+          photos: [{...photo, photoId: photo.id}]
+        };
+      })];
+      for (const entry of entries) {
+        for (const record of entry.photos || []) {
+          const canonical = byId.get(record.photoId) || byPath.get(record.sourceAssetPath || record.path);
+          const photoId = canonical?.id || record.photoId;
+          const photo = canonical ? {...record, ...canonical, photoId} : record;
+          if (state.bulkCaptions.scope === "selected" && !state.bulkEdit.master.has(photoId)) continue;
+          if (state.bulkCaptions.scope === "filtered" && (!canonical || !masterPhotoMatchesSearch(canonical, term))) continue;
           if (photo.invalid || !photo.exists || !photo.sourceAssetPath) continue;
+          if ((photoId && seenIds.has(photoId)) || seenPaths.has(photo.sourceAssetPath)) continue;
+          if (photoId) seenIds.add(photoId);
+          seenPaths.add(photo.sourceAssetPath);
           existingPhotoCount += 1;
-          if (!String(photo.caption || "").trim()) {
-            missingCaptionCount += 1;
-            continue;
-          }
           if (state.bulkCaptions.excludeAi && photo.captionAiAssisted) {
             aiExcludedCount += 1;
             continue;
           }
-          candidates.push({
-            key: captionPhotoKey(entry, photo.index),
-            entry,
-            photo
-          });
+          if (!String(photo.caption || "").trim()) missingCaptionCount += 1;
+          candidates.push({key: photoId || photo.sourceAssetPath, entry, photo});
         }
       }
       return {candidates, existingPhotoCount, aiExcludedCount, missingCaptionCount};
@@ -1555,9 +1583,13 @@
     }
 
     function resetBulkCaptionQueue() {
-      if (state.bulkCaptions.running) return;
+      if (state.bulkCaptions.running || Object.values(state.bulkCaptions.results).some((result) => result.status === "saving")) return false;
+      if (Object.values(state.bulkCaptions.results).some((result) => result.status === "proposed") &&
+          !window.confirm("Discard pending proposed caption drafts and reset the queue? No saved captions will change.")) return false;
       state.bulkCaptions.queue = null;
       state.bulkCaptions.results = {};
+      state.bulkCaptions.stopRequested = false;
+      return true;
     }
 
     function bulkProposalValue(key, fallback = "") {
@@ -1572,26 +1604,43 @@
       const queue = currentBulkCaptionQueue();
       const results = state.bulkCaptions.results;
       const usingSavedQueue = state.bulkCaptions.queue !== null;
-      const selectedLabel = `${selection.existingPhotoCount} existing photo entr${selection.existingPhotoCount === 1 ? "y" : "ies"}, ${selection.candidates.length} eligible human-written caption(s)`;
+      const selectedLabel = `${state.bulkCaptions.scope} scope: ${selection.existingPhotoCount} unique existing photo(s), ${selection.candidates.length} eligible photo(s)`;
+      const counts = queue.reduce((totals, candidate) => {
+        const status = results[candidate.key]?.status || "ready";
+        totals[status] = (totals[status] || 0) + 1;
+        return totals;
+      }, {});
+      const locked = state.bulkCaptions.running || Boolean(counts.saving);
       const exclusions = [
         selection.aiExcludedCount ? `${selection.aiExcludedCount} AI-assisted excluded` : "",
-        selection.missingCaptionCount ? `${selection.missingCaptionCount} without a caption` : ""
+        selection.missingCaptionCount ? `${selection.missingCaptionCount} eligible photos need a first caption` : "",
+        state.bulkCaptions.scope === "filtered" ? `Library search: ${$("masterSearch").value.trim() || "(empty — matches all photos)"}` : ""
       ].filter(Boolean).join("; ");
       $("bulkCaptionSummary").textContent = [
         selectedLabel,
         exclusions,
-        usingSavedQueue ? `${queue.length} caption(s) in the current review queue` : ""
+        usingSavedQueue ? `${queue.length} photo(s) in the frozen review queue; reset to use current selection or search` : "",
+        Object.entries(counts).map(([status, count]) => `${count} ${status}`).join(", "),
+        state.bulkCaptions.stopRequested ? (state.bulkCaptions.running ? "Stopping after the current request" : "Stopped; resume ready photos or retry failures") : ""
       ].filter(Boolean).join(". ");
       $("bulkExcludeAiCaptions").checked = state.bulkCaptions.excludeAi;
-      $("refreshBulkCaptionsBtn").disabled = state.bulkCaptions.running;
-      $("runBulkCaptionsBtn").disabled = state.bulkCaptions.running || !queue.length;
-      $("runBulkCaptionsBtn").textContent = state.bulkCaptions.running ? "Proposing..." : "Propose Captions";
+      $("bulkExcludeAiCaptions").disabled = locked;
+      $("bulkCaptionScope").value = state.bulkCaptions.scope;
+      $("bulkCaptionScope").disabled = locked;
+      $("refreshBulkCaptionsBtn").disabled = locked;
+      $("runBulkCaptionsBtn").disabled = state.bulkCaptions.running || !counts.ready;
+      $("runBulkCaptionsBtn").textContent = state.bulkCaptions.running ? "Proposing..." : usingSavedQueue ? "Resume Queue" : "Propose Captions";
+      $("stopBulkCaptionsBtn").disabled = !state.bulkCaptions.running || state.bulkCaptions.stopRequested;
+      $("retryBulkCaptionsBtn").disabled = state.bulkCaptions.running || !counts.error;
 
       if (!queue.length) {
-        $("bulkCaptionList").innerHTML = `<div class="empty">No existing photo entries with eligible human-written captions were found.</div>`;
+        $("bulkCaptionList").innerHTML = `<div class="empty">No eligible library photos in this scope. Select library photos or choose filtered/all photos.</div>`;
         return;
       }
 
+      const focused = document.activeElement;
+      const focusedKey = focused?.dataset.bulkCaptionKey;
+      const selectionRange = focusedKey ? [focused.selectionStart, focused.selectionEnd] : null;
       $("bulkCaptionList").innerHTML = queue.map((candidate) => {
         const result = results[candidate.key] || {status: "ready"};
         const photo = candidate.photo;
@@ -1604,11 +1653,16 @@
           review = `<div class="bulk-caption-status error">Could not propose a caption: ${escapeHtml(result.message || "Unknown error")}</div>`;
         } else if (result.status === "rejected") {
           review = `<div class="bulk-caption-status">Rejected. The original caption remains unchanged.</div>`;
+        } else if (result.status === "accepted") {
+          review = `<div class="bulk-caption-status">Accepted and saved as AI-assisted.</div><div class="mini-meta">${escapeHtml(result.caption || "")}</div>`;
+        } else if (result.status === "saving") {
+          review = `<div class="bulk-caption-status">Saving accepted caption...</div><div class="mini-meta">${escapeHtml(result.caption || "")}</div>`;
         } else if (result.status === "proposed") {
           review = `
+            ${result.message ? `<div class="bulk-caption-status error">Save failed: ${escapeHtml(result.message)}. Your draft is preserved; try Accept Caption again.</div>` : ""}
             <div class="field">
-              <label>Proposed caption</label>
-              <textarea data-bulk-caption-key="${escapeHtml(candidate.key)}">${escapeHtml(result.caption || "")}</textarea>
+              <label for="caption-proposal-${escapeHtml(candidate.key)}">Proposed caption (editable)</label>
+              <textarea id="caption-proposal-${escapeHtml(candidate.key)}" data-bulk-caption-key="${escapeHtml(candidate.key)}">${escapeHtml(result.caption || "")}</textarea>
             </div>
             <div class="card-actions">
               <button class="btn secondary" type="button" data-bulk-accept="${escapeHtml(candidate.key)}">Accept Caption</button>
@@ -1631,30 +1685,41 @@
           </article>
         `;
       }).join("");
+      if (focusedKey) {
+        const replacement = $("caption-proposal-" + focusedKey);
+        if (replacement) {
+          replacement.focus({preventScroll: true});
+          replacement.setSelectionRange(...selectionRange);
+        }
+      }
     }
 
     function wait(milliseconds) {
       return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
     }
 
-    async function runBulkCaptions() {
+    async function runBulkCaptions(retryFailed = false) {
       if (state.bulkCaptions.running) return;
-      const {candidates} = selectedBulkCaptionCandidates();
-      if (!candidates.length) {
-        throw new Error("No existing photo entries with eligible human-written captions were found.");
+      if (state.bulkCaptions.queue === null) {
+        state.bulkCaptions.queue = selectedBulkCaptionCandidates().candidates;
       }
-      state.bulkCaptions.queue = candidates;
-      state.bulkCaptions.results = {};
+      const candidates = state.bulkCaptions.queue.filter((candidate) => (
+        (state.bulkCaptions.results[candidate.key]?.status || "ready") === (retryFailed ? "error" : "ready")
+      ));
+      if (!candidates.length) return;
+      state.bulkCaptions.stopRequested = false;
       state.bulkCaptions.running = true;
       renderBulkCaptions();
       try {
         for (let index = 0; index < candidates.length; index += 1) {
+          if (state.bulkCaptions.stopRequested) break;
           const candidate = candidates[index];
           state.bulkCaptions.results[candidate.key] = {status: "generating"};
           renderBulkCaptions();
           try {
             const result = await api("/api/generate-caption", {
               ...entryRequestFields(candidate.entry),
+              photoId: candidate.photo.photoId,
               index: candidate.photo.index,
               draftCaption: candidate.photo.caption
             });
@@ -1677,26 +1742,43 @@
       if (!candidate || !result || result.status !== "proposed") return;
       const caption = bulkProposalValue(key, result.caption).trim();
       if (!caption) throw new Error("A caption is required before accepting it.");
-      const photo = candidate.photo;
-      await api("/api/update-photo", {
-        ...entryRequestFields(candidate.entry),
-        index: photo.index,
-        photo: {
-          path: photo.path,
-          location: photo.location || "",
-          pin_id: photo.pinId || "",
-          date: photo.date || "",
-          year: photo.year || "",
-          airshow: photo.airshow || "",
-          title: photo.title || "",
-          caption,
-          captionAiAssisted: true
-        }
-      });
-      state.bulkCaptions.queue = currentBulkCaptionQueue().filter((item) => item.key !== key);
-      delete state.bulkCaptions.results[key];
-      await loadState(true);
+      result.caption = caption;
+      result.status = "saving";
+      result.message = "";
+      renderBulkCaptions();
+      try {
+        const response = await fetch("/api/state");
+        const latest = await readApiJson(response);
+        const photo = (latest.masterPhotos || []).find((item) => candidate.photo.photoId
+          ? item.id === candidate.photo.photoId
+          : (item.sourceAssetPath || item.path) === candidate.photo.sourceAssetPath);
+        if (!photo) throw new Error("Photo no longer exists. Reset the queue to use the current library.");
+        await api("/api/update-photo", {
+          photoId: photo.id,
+          photo: {
+            path: photo.path,
+            location: photo.location || "",
+            pin_id: photo.locationId || photo.pinId || "",
+            date: photo.date || "",
+            year: photo.year || "",
+            airshow: photo.airshow || "",
+            title: photo.title || "",
+            livery: photo.livery || "",
+            caption,
+            captionAiAssisted: true
+          }
+        });
+        result.status = "accepted";
+        candidate.photo = {...candidate.photo, caption, captionAiAssisted: true};
+      } catch (error) {
+        result.status = "proposed";
+        result.message = error.message || "Request failed";
+        throw error;
+      } finally {
+        renderBulkCaptions();
+      }
       toast("Caption accepted and marked as AI-assisted.");
+      await loadState(true);
     }
 
     function rejectBulkCaption(key) {
@@ -2471,20 +2553,28 @@
       }
     }
 
+    let utilityDrawerOpener = null;
+
     function openUtilityDrawer(title, eyebrow, content) {
+      const drawer = $("utilityDrawer");
+      if (!drawer.open) utilityDrawerOpener = document.activeElement;
       $("utilityDrawerTitle").textContent = title;
+      $("utilityDrawerStatus").textContent = "";
       $("utilityDrawerEyebrow").textContent = eyebrow;
       $("utilityDrawerBody").innerHTML = content;
-      $("utilityScrim").hidden = false;
-      $("utilityDrawer").setAttribute("aria-hidden", "false");
-      document.body.dataset.utilityOpen = "true";
-      requestAnimationFrame(() => $("utilityDrawerBody").querySelector("input, select, button")?.focus());
+      $("utilityDrawerBody").querySelectorAll(".field").forEach((field, index) => {
+        const label = field.querySelector("label");
+        const control = field.querySelector("input, select, textarea");
+        if (!label || !control || label.contains(control)) return;
+        if (!control.id) control.id = `utility-field-${index}`;
+        label.htmlFor = control.id;
+      });
+      if (!drawer.open) drawer.showModal();
+      $("closeUtilityDrawerBtn").focus();
     }
 
     function closeUtilityDrawer() {
-      $("utilityDrawer").setAttribute("aria-hidden", "true");
-      $("utilityScrim").hidden = true;
-      delete document.body.dataset.utilityOpen;
+      $("utilityDrawer").close();
     }
 
     function pinSelectOptions(selectedId = "") {
@@ -3398,7 +3488,8 @@
       const buildSettings = collectBuildSettings();
       $("buildBtn").disabled = true;
       $("buildBtn2").disabled = true;
-      $("buildStatus").textContent = "Running";
+      $("buildStatus").textContent = "Building local output…";
+      $("buildStatus").dataset.status = "running";
       $("buildLog").textContent = "";
       $("buildSummary").innerHTML = "";
       state.orphans = {scanned: false, ready: false, items: [], message: ""};
@@ -3432,15 +3523,21 @@
           const payload = JSON.parse(event.data);
           finished = true;
           source.close();
-          $("buildStatus").textContent = `${payload.message} (${payload.durationSeconds}s)`;
+          const succeeded = payload.ok === true && payload.returncode === 0;
+          $("buildStatus").dataset.status = succeeded ? "success" : "error";
+          $("buildStatus").textContent = succeeded
+            ? `Local build succeeded (${payload.durationSeconds}s). Not deployed — review, commit, and push to publish.`
+            : `Local build failed (${payload.durationSeconds}s). Review the log before publishing.`;
           appendBuildLog(`returncode: ${payload.returncode}`, "stdout");
-          toast(payload.message);
+          toast(succeeded ? "Local build complete. The live site has not been updated." : "Local build failed. Review the build log.");
           await loadState(true);
           resolve();
         });
         source.addEventListener("error", (event) => {
           if (finished) return;
           source.close();
+          $("buildStatus").dataset.status = "error";
+          $("buildStatus").textContent = "Local build connection lost. Completion is unknown; inspect the log before retrying. Nothing was deployed by the Manager.";
           try {
             const payload = event.data ? JSON.parse(event.data) : {};
             reject(new Error(payload.message || "Build stream failed"));
@@ -3557,17 +3654,34 @@
       if (!state.assetsOpen && restoreFocus) $("toggleAssetsBtn").focus();
     }
 
+    function renderSourcePhotoLibrary() {
+      const selected = $("entrySelect").value;
+      const entries = [...(state.data?.entries || []), ...squadronOnlyTargets()];
+      $("sourcePhotoSelect").innerHTML = entries.map((entry) => (
+        `<option value="${escapeHtml(entry.targetKey)}">${escapeHtml(entryOptionLabel(entry))}</option>`
+      )).join("");
+      $("sourcePhotoSelect").value = selected;
+      renderEntryDetail();
+    }
+
     function setTab(name) {
       if (!viewMeta[name]) name = "attach";
       state.activeTab = name;
       sessionStorage.setItem("spotterdex-manager.activeTab", name);
       document.body.dataset.activeTab = name;
+      const group = workspaceGroups.find((items) => items.some(([view]) => view === name));
+      const destination = group?.[0][0] || name;
       document.querySelectorAll(".tab").forEach((button) => {
-        const active = button.dataset.tab === name;
+        const active = button.dataset.tab === destination;
         button.classList.toggle("active", active);
         if (active) button.setAttribute("aria-current", "page");
         else button.removeAttribute("aria-current");
       });
+      const nav = $("workspaceNav");
+      nav.hidden = !group;
+      nav.innerHTML = (group || []).map(([view, label]) => (
+        `<button class="btn ghost" type="button" data-workspace-view="${view}"${view === name ? ' aria-current="page"' : ""}>${label}</button>`
+      )).join("");
       document.querySelectorAll(".view").forEach((view) => {
         view.classList.toggle("active", view.id === `${name}View`);
       });
@@ -3579,6 +3693,10 @@
     }
 
     function toast(message) {
+      if ($("utilityDrawer").open) {
+        $("utilityDrawerStatus").textContent = message;
+        return;
+      }
       const node = $("toast");
       node.textContent = message;
       node.classList.add("show");
@@ -3774,14 +3892,55 @@
         document.querySelectorAll(".airshow-story-moment-card.is-dragging").forEach((card) => card.classList.remove("is-dragging"));
       });
       $("bulkExcludeAiCaptions").addEventListener("change", (event) => {
-        state.bulkCaptions.excludeAi = event.target.checked;
-        resetBulkCaptionQueue();
+        if (resetBulkCaptionQueue()) state.bulkCaptions.excludeAi = event.target.checked;
         renderBulkCaptions();
+      });
+      $("bulkCaptionScope").addEventListener("change", (event) => {
+        const scope = event.target.value;
+        if (["selected", "filtered", "all"].includes(scope) && scope !== state.bulkCaptions.scope && resetBulkCaptionQueue()) {
+          state.bulkCaptions.scope = scope;
+        }
+        renderBulkCaptions();
+      });
+      $("stopBulkCaptionsBtn").addEventListener("click", () => {
+        if (state.bulkCaptions.running) state.bulkCaptions.stopRequested = true;
+        renderBulkCaptions();
+      });
+      $("retryBulkCaptionsBtn").addEventListener("click", () => runBulkCaptions(true).catch((error) => toast(error.message)));
+      $("bulkCaptionList").addEventListener("input", (event) => {
+        const key = event.target.dataset.bulkCaptionKey;
+        const result = state.bulkCaptions.results[key];
+        if (result?.status === "proposed") result.caption = event.target.value;
       });
       $("entrySelect").addEventListener("change", () => {
         clearBulkSelection("tagged");
         clearEditor();
         renderEntryDetail();
+      });
+      $("sourcePhotoSelect").addEventListener("change", (event) => {
+        const target = event.target.value;
+        $("entrySearch").value = "";
+        renderEntryOptions();
+        $("entrySelect").value = target;
+        clearBulkSelection("tagged");
+        clearEditor();
+        renderEntryDetail();
+      });
+      document.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-workspace-view]");
+        if (!button) return;
+        setTab(button.dataset.workspaceView);
+        const target = $("workspaceNav").querySelector('[aria-current="page"]') || document.querySelector(".manager-nav .tab.active");
+        target?.focus();
+      });
+      $("reviewLibraryCaptionsBtn").addEventListener("click", () => {
+        if (!resetBulkCaptionQueue()) {
+          if (state.bulkCaptions.running) setTab("bulk-captions");
+          return;
+        }
+        state.bulkCaptions.scope = "selected";
+        setTab("bulk-captions");
+        $("bulkCaptionScope").focus();
       });
       $("reloadBtn").addEventListener("click", () => loadState(true).then(() => toast("Reloaded")));
       $("createSourceInlineBtn").addEventListener("click", openInlineSourceCreator);
@@ -3791,7 +3950,16 @@
       $("inspectLocationBtn").addEventListener("click", inspectSelectedLocation);
       $("inspectEventBtn").addEventListener("click", inspectSelectedEvent);
       $("closeUtilityDrawerBtn").addEventListener("click", closeUtilityDrawer);
-      $("utilityScrim").addEventListener("click", closeUtilityDrawer);
+      $("utilityDrawer").addEventListener("close", () => {
+        const target = utilityDrawerOpener?.isConnected ? utilityDrawerOpener : document.querySelector(".manager-nav .tab.active");
+        target?.focus();
+        utilityDrawerOpener = null;
+      });
+      $("utilityDrawer").addEventListener("click", (event) => {
+        if (event.target !== $("utilityDrawer")) return;
+        const rect = event.target.getBoundingClientRect();
+        if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) closeUtilityDrawer();
+      });
       $("utilityDrawerBody").addEventListener("change", (event) => {
         if (event.target.name === "scope") {
           const show = event.target.value === "aircraft";
@@ -3940,7 +4108,6 @@
       $("clearBuildCacheBtn").addEventListener("click", () => clearBuildCache().catch((error) => toast(error.message)));
       $("clearSelectionBtn").addEventListener("click", () => {
         state.selectedAssets.clear();
-        resetBulkCaptionQueue();
         renderAssetGrid();
         renderSelectedStrip();
         renderBulkCaptions();
@@ -3989,7 +4156,10 @@
         const button = event.target.closest("button[data-filter]");
         if (!button) return;
         state.assetFilter = button.dataset.filter;
-        document.querySelectorAll("#assetFilter button").forEach((node) => node.classList.toggle("active", node === button));
+        document.querySelectorAll("#assetFilter button").forEach((node) => {
+          node.classList.toggle("active", node === button);
+          node.setAttribute("aria-pressed", String(node === button));
+        });
         renderAssetGrid();
       });
       $("assetGrid").addEventListener("click", (event) => {
@@ -4003,7 +4173,6 @@
         const path = card.dataset.asset;
         if (state.selectedAssets.has(path)) state.selectedAssets.delete(path);
         else state.selectedAssets.add(path);
-        resetBulkCaptionQueue();
         renderAssetGrid();
         renderSelectedStrip();
         renderBulkCaptions();
@@ -4050,7 +4219,6 @@
         if (!select) return;
         state.selectedAssets.clear();
         state.selectedAssets.add(select.dataset.qualitySelect);
-        resetBulkCaptionQueue();
         setTab("attach");
         renderAssetGrid();
         renderSelectedStrip();
@@ -4135,9 +4303,11 @@
         }
         if (!button) return;
         clearBulkSelection("tagged");
+        clearEditor();
+        $("entrySearch").value = "";
+        renderEntryOptions();
         $("entrySelect").value = button.dataset.openEntry;
-        setTab("attach");
-        renderEntryDetail();
+        setTab("source-photos");
       }
       $("squadronSourceCards").addEventListener("click", handleSourceCardClick);
       $("aircraftSourceCards").addEventListener("click", handleSourceCardClick);
@@ -4197,11 +4367,7 @@
         button.addEventListener("click", () => setTab(button.dataset.tab));
       });
       document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && document.body.dataset.utilityOpen === "true") {
-          closeUtilityDrawer();
-          return;
-        }
-        if (event.key === "Escape" && state.assetsOpen && !$("assetPreviewModal").open) {
+        if (event.key === "Escape" && state.assetsOpen && !$("assetPreviewModal").open && !$("utilityDrawer").open) {
           setAssetDrawer(false, true);
         }
       });
