@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-06T13:21:11+00:00",
+  "generatedAt": "2026-09-13T12:07:12+00:00",
   "entities": {
     "countries": {
       "au": {
@@ -106,6 +106,14 @@
         "name": "Airbus A330-200",
         "family": "heavy",
         "heroPhotoId": "2024-07-04-dsc08218-enhanced-nr",
+        "doubleWidth": null,
+        "writeUp": ""
+      },
+      "airbus-a350-1000": {
+        "id": "airbus-a350-1000",
+        "name": "Airbus A350-1000",
+        "family": "fighter",
+        "heroPhotoId": "",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -402,6 +410,14 @@
         "name": "General Dynamics F-16B",
         "family": "fighter",
         "heroPhotoId": "2026-01-10-dsc04059",
+        "doubleWidth": null,
+        "writeUp": ""
+      },
+      "general-dynamics-f-16cm": {
+        "id": "general-dynamics-f-16cm",
+        "name": "General Dynamics F-16CM",
+        "family": "fighter",
+        "heroPhotoId": "",
         "doubleWidth": null,
         "writeUp": ""
       },
@@ -775,7 +791,7 @@
         "name": "32\u00b0 Stormo",
         "countryId": "it",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/it-32-stormo.png",
         "heroPhotoId": "2023-08-10-italy-f35-2",
         "writeUp": ""
       },
@@ -887,6 +903,15 @@
         "heroPhotoId": "2023-10-07-dsc02379-enhanced-nr",
         "writeUp": ""
       },
+      "jp-32nd-training-squadron": {
+        "id": "jp-32nd-training-squadron",
+        "name": "32nd Training Squadron",
+        "countryId": "jp",
+        "kind": "squadron",
+        "logo": "",
+        "heroPhotoId": "",
+        "writeUp": ""
+      },
       "jp-402nd-tactical-airlift-squadron": {
         "id": "jp-402nd-tactical-airlift-squadron",
         "name": "402nd Tactical Airlift Squadron",
@@ -921,6 +946,15 @@
         "kind": "squadron",
         "logo": "assets/logos/jp-405th-air-refueling-squadron.png",
         "heroPhotoId": "2025-11-30-dsc04987",
+        "writeUp": ""
+      },
+      "jp-4th-attack-helicopter-squadron": {
+        "id": "jp-4th-attack-helicopter-squadron",
+        "name": "4th Attack Helicopter Squadron",
+        "countryId": "jp",
+        "kind": "squadron",
+        "logo": "",
+        "heroPhotoId": "",
         "writeUp": ""
       },
       "jp-51st-fleet-air-squadron": {
@@ -1009,7 +1043,7 @@
         "name": "Air Patrol Squadron 1",
         "countryId": "jp",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/jp-air-patrol-squadron-1.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1018,7 +1052,7 @@
         "name": "Air Patrol Squadron 3",
         "countryId": "jp",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/jp-air-patrol-squadron-3.jpg",
         "heroPhotoId": "2023-09-09-p1-1",
         "writeUp": ""
       },
@@ -1081,7 +1115,7 @@
         "name": "Fleet Air Wing 5",
         "countryId": "jp",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/jp-fleet-air-wing-5.jpg",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1279,6 +1313,15 @@
         "name": "356th Fighter Squadron",
         "countryId": "us",
         "kind": "squadron",
+        "logo": "assets/logos/us-356th-fighter-squadron.png",
+        "heroPhotoId": "",
+        "writeUp": ""
+      },
+      "us-35th-fighter-wing": {
+        "id": "us-35th-fighter-wing",
+        "name": "35th Fighter Wing",
+        "countryId": "us",
+        "kind": "squadron",
         "logo": "",
         "heroPhotoId": "",
         "writeUp": ""
@@ -1319,6 +1362,15 @@
         "heroPhotoId": "",
         "writeUp": ""
       },
+      "us-62nd-airlift-wing": {
+        "id": "us-62nd-airlift-wing",
+        "name": "62nd Airlift Wing",
+        "countryId": "us",
+        "kind": "squadron",
+        "logo": "",
+        "heroPhotoId": "",
+        "writeUp": ""
+      },
       "us-77th-air-refueling-squadron-77-ars": {
         "id": "us-77th-air-refueling-squadron-77-ars",
         "name": "77th Air Refueling Squadron (77 ARS)",
@@ -1333,7 +1385,7 @@
         "name": "89th Airlift Wing",
         "countryId": "us",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/us-89th-airlift-wing.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1432,7 +1484,7 @@
         "name": "Marine Light Attack Helicopter Squadron 169 (HMLA-169)",
         "countryId": "us",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/us-marine-light-attack-helicopter-squadron-169-hmla-169.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1477,7 +1529,7 @@
         "name": "Patrol Squadron 4 (VP-4)",
         "countryId": "us",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/us-patrol-squadron-4-vp-4.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -5183,6 +5235,196 @@
           "DateTimeOriginal": "2025:12:11 14:20:26",
           "DateTimeDigitized": "2025:12:11 14:20:26",
           "DateTime": "2026:09:06 21:16:53"
+        }
+      },
+      "2025-12-11-dsc07530": {
+        "id": "2025-12-11-dsc07530",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "general-dynamics-f-16cm",
+            "unitId": "us-35th-fighter-wing",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-11",
+        "sortDate": "2025-12-11",
+        "livery": "",
+        "title": "",
+        "caption": "F-16CM from 35th Fighter Wing based in Misawa Air Base landing at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-11-dsc07530.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-11-dsc07530.jpg",
+        "source": "raw_assets/DSC07530.jpg",
+        "originalSize": "4667 x 3500",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "840mm",
+          "FocalLengthIn35mmFilm": "840mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "640",
+          "DateTimeOriginal": "2025:12:11 14:03:24",
+          "DateTimeDigitized": "2025:12:11 14:03:24",
+          "DateTime": "2026:09:13 18:27:21"
+        }
+      },
+      "2025-12-11-dsc07502": {
+        "id": "2025-12-11-dsc07502",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "general-dynamics-f-16cm",
+            "unitId": "us-35th-fighter-wing",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-11",
+        "sortDate": "2025-12-11",
+        "livery": "",
+        "title": "",
+        "caption": "F-16CM from 35th Fighter Wing based in Misawa Air Base landing at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-11-dsc07502.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-11-dsc07502.jpg",
+        "source": "raw_assets/DSC07502.jpg",
+        "originalSize": "7476 x 5607",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "840mm",
+          "FocalLengthIn35mmFilm": "840mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "640",
+          "DateTimeOriginal": "2025:12:11 14:03:21",
+          "DateTimeDigitized": "2025:12:11 14:03:21",
+          "DateTime": "2026:09:13 18:27:20"
+        }
+      },
+      "2025-12-11-dsc07494": {
+        "id": "2025-12-11-dsc07494",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "general-dynamics-f-16cm",
+            "unitId": "us-35th-fighter-wing",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-11",
+        "sortDate": "2025-12-11",
+        "livery": "",
+        "title": "",
+        "caption": "F-16CM from 35th Fighter Wing based in Misawa Air Base landing at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-11-dsc07494.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-11-dsc07494.jpg",
+        "source": "raw_assets/DSC07494.jpg",
+        "originalSize": "5498 x 4124",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "840mm",
+          "FocalLengthIn35mmFilm": "840mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "500",
+          "DateTimeOriginal": "2025:12:11 14:03:19",
+          "DateTimeDigitized": "2025:12:11 14:03:19",
+          "DateTime": "2026:09:13 18:27:18"
+        }
+      },
+      "2025-12-11-dsc07493": {
+        "id": "2025-12-11-dsc07493",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "general-dynamics-f-16cm",
+            "unitId": "us-35th-fighter-wing",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-11",
+        "sortDate": "2025-12-11",
+        "livery": "",
+        "title": "",
+        "caption": "F-16CM from 35th Fighter Wing based in Misawa Air Base landing at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-11-dsc07493.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-11-dsc07493.jpg",
+        "source": "raw_assets/DSC07493.jpg",
+        "originalSize": "4206 x 3154",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "840mm",
+          "FocalLengthIn35mmFilm": "840mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "640",
+          "DateTimeOriginal": "2025:12:11 14:03:19",
+          "DateTimeDigitized": "2025:12:11 14:03:19",
+          "DateTime": "2026:09:13 18:27:16"
+        }
+      },
+      "2025-12-11-dsc07481": {
+        "id": "2025-12-11-dsc07481",
+        "locationId": "jp-kadena-air-base",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "general-dynamics-f-16cm",
+            "unitId": "us-35th-fighter-wing",
+            "primary": true
+          }
+        ],
+        "year": "2025",
+        "date": "2025-12-11",
+        "sortDate": "2025-12-11",
+        "livery": "",
+        "title": "",
+        "caption": "F-16CM from 35th Fighter Wing based in Misawa Air Base landing at Kadena Air Base",
+        "image": "assets/generated/photos/2025-12-11-dsc07481.jpg",
+        "thumbnail": "assets/generated/thumbs/2025-12-11-dsc07481.jpg",
+        "source": "raw_assets/DSC07481.jpg",
+        "originalSize": "4678 x 3508",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-1M2",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter",
+          "FocalLength": "840mm",
+          "FocalLengthIn35mmFilm": "840mm",
+          "FNumber": "f/9.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "640",
+          "DateTimeOriginal": "2025:12:11 14:03:17",
+          "DateTimeDigitized": "2025:12:11 14:03:17",
+          "DateTime": "2026:09:13 18:27:15"
         }
       },
       "2025-12-11-dsc04372": {
@@ -10473,6 +10715,44 @@
           "DateTime": "2026:07:05 09:37:24"
         }
       },
+      "2024-06-04-dsc04640-enhanced-nr": {
+        "id": "2024-06-04-dsc04640-enhanced-nr",
+        "locationId": "sg-singapore",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "boeing-c-17-globemaster-iii",
+            "unitId": "us-62nd-airlift-wing",
+            "primary": true
+          }
+        ],
+        "year": "2024",
+        "date": "2024-06-04",
+        "sortDate": "2024-06-04",
+        "livery": "",
+        "title": "",
+        "caption": "USAF C-17 from McChord landing in Singapore",
+        "image": "assets/generated/photos/2024-06-04-dsc04640-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2024-06-04-dsc04640-enhanced-nr.jpg",
+        "source": "raw_assets/DSC04640-Enhanced-NR.jpg",
+        "originalSize": "5329 x 3997",
+        "processedSize": "2048 x 1536",
+        "thumbnailSize": "768 x 576",
+        "exif": {
+          "Make": "SONY",
+          "Model": "ILCE-6700",
+          "LensModel": "FE 200-600mm F5.6-6.3 G OSS",
+          "FocalLength": "200mm",
+          "FocalLengthIn35mmFilm": "300mm",
+          "FNumber": "f/5.6",
+          "ExposureTime": "1/800s",
+          "ExposureBiasValue": "1.0",
+          "ISO": "500",
+          "DateTimeOriginal": "2024:06:04 17:57:31",
+          "DateTimeDigitized": "2024:06:04 17:57:31",
+          "DateTime": "2026:07:05 09:37:23"
+        }
+      },
       "2024-05-30-dsc03647-enhanced-nr": {
         "id": "2024-05-30-dsc03647-enhanced-nr",
         "locationId": "sg-singapore",
@@ -10587,6 +10867,44 @@
           "DateTime": "2026:07:08 09:31:37"
         }
       },
+      "2024-03-04-usaf-ak-f35a-2-2": {
+        "id": "2024-03-04-usaf-ak-f35a-2-2",
+        "locationId": "sg-singapore",
+        "eventId": "",
+        "subjects": [
+          {
+            "aircraftId": "lockheed-martin-f-35a-lightning-ii",
+            "unitId": "us-356th-fighter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2024",
+        "date": "2024-03-04",
+        "sortDate": "2024-03-04",
+        "livery": "",
+        "title": "",
+        "caption": "USAF F-35A landing in Singapore",
+        "image": "assets/generated/photos/2024-03-04-usaf-ak-f35a-2-2.jpg",
+        "thumbnail": "assets/generated/thumbs/2024-03-04-usaf-ak-f35a-2-2.jpg",
+        "source": "raw_assets/usaf_ak_f35a_2.jpg",
+        "originalSize": "5457 x 3638",
+        "processedSize": "2048 x 1365",
+        "thumbnailSize": "768 x 512",
+        "exif": {
+          "Make": "SONY",
+          "Model": "DSC-RX10M4",
+          "LensModel": "24-600mm F2.4-4.0",
+          "FocalLength": "216.7mm",
+          "FocalLengthIn35mmFilm": "591mm",
+          "FNumber": "f/5.6",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2024:03:04 11:05:09",
+          "DateTimeDigitized": "2024:03:04 11:05:09",
+          "DateTime": "2026:07:04 19:51:58"
+        }
+      },
       "2024-03-04-usaf-ak-f35a-2": {
         "id": "2024-03-04-usaf-ak-f35a-2",
         "locationId": "sg-singapore",
@@ -10604,8 +10922,8 @@
         "livery": "",
         "title": "",
         "caption": "USAF F-35A from 356th Fighter Squadron (\"Green Devils\") landing in Singapore",
-        "image": "assets/generated/photos/2024-03-04-usaf-ak-f35a-2.jpg",
-        "thumbnail": "assets/generated/thumbs/2024-03-04-usaf-ak-f35a-2.jpg",
+        "image": "assets/generated/photos/2024-03-04-usaf-ak-f35a-2-2.jpg",
+        "thumbnail": "assets/generated/thumbs/2024-03-04-usaf-ak-f35a-2-2.jpg",
         "source": "raw_assets/usaf_ak_f35a_2.JPG",
         "originalSize": "5457 x 3638",
         "processedSize": "2048 x 1365",
@@ -11079,6 +11397,44 @@
           "DateTimeOriginal": "2024:02:18 11:57:37",
           "DateTimeDigitized": "2024:02:18 11:57:37",
           "DateTime": "2026:07:08 09:31:18"
+        }
+      },
+      "2024-02-18-dsc04172-enhanced-nr": {
+        "id": "2024-02-18-dsc04172-enhanced-nr",
+        "locationId": "sg-changi-exhibition-centre",
+        "eventId": "sg-singapore-airshow-2024",
+        "subjects": [
+          {
+            "aircraftId": "airbus-a350-1000",
+            "unitId": "fr-airbus",
+            "primary": true
+          }
+        ],
+        "year": "2024",
+        "date": "2024-02-18",
+        "sortDate": "2024-02-18",
+        "livery": "",
+        "title": "",
+        "caption": "Airbus A350-1000 demo flight during Singapore Airshow",
+        "image": "assets/generated/photos/2024-02-18-dsc04172-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2024-02-18-dsc04172-enhanced-nr.jpg",
+        "source": "raw_assets/DSC04172-Enhanced-NR.jpg",
+        "originalSize": "5267 x 3511",
+        "processedSize": "2048 x 1365",
+        "thumbnailSize": "768 x 512",
+        "exif": {
+          "Make": "SONY",
+          "Model": "DSC-RX10M4",
+          "LensModel": "24-600mm F2.4-4.0",
+          "FocalLength": "220mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/5.6",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2024:02:18 11:00:31",
+          "DateTimeDigitized": "2024:02:18 11:00:31",
+          "DateTime": "2026:07:08 09:31:00"
         }
       },
       "2024-02-13-dsc03195-enhanced-nr": {
@@ -11985,6 +12341,120 @@
           "DateTimeOriginal": "2023:11:26 07:59:01",
           "DateTimeDigitized": "2023:11:26 07:59:01",
           "DateTime": "2026:07:04 19:49:38"
+        }
+      },
+      "2023-11-26-qc-dsc04874-enhanced-nr": {
+        "id": "2023-11-26-qc-dsc04874-enhanced-nr",
+        "locationId": "jp-tsuiki-air-base",
+        "eventId": "jp-tsuiki-air-show-2023",
+        "subjects": [
+          {
+            "aircraftId": "kawasaki-t-4",
+            "unitId": "jp-32nd-training-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2023",
+        "date": "2023-11-26",
+        "sortDate": "2023-11-26",
+        "livery": "",
+        "title": "",
+        "caption": "Kawasaki T-4 bearing the Red Dolphin livery from 32nd Training Squadron based at Ashiya Air Base making a flyover at Tsuiki Air Show",
+        "image": "assets/generated/photos/2023-11-26-qc-dsc04874-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2023-11-26-qc-dsc04874-enhanced-nr.jpg",
+        "source": "raw_assets/QC_DSC04874-Enhanced-NR.jpeg",
+        "originalSize": "4402 x 2935",
+        "processedSize": "2048 x 1365",
+        "thumbnailSize": "768 x 512",
+        "exif": {
+          "Make": "SONY",
+          "Model": "DSC-RX10M4",
+          "LensModel": "24-600mm F2.4-4.0",
+          "FocalLength": "81.1mm",
+          "FocalLengthIn35mmFilm": "221mm",
+          "FNumber": "f/4.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2023:11:26 07:32:19",
+          "DateTimeDigitized": "2023:11:26 07:32:19",
+          "DateTime": "2026:07:04 19:49:34"
+        }
+      },
+      "2023-11-26-qc-dsc04839-enhanced-nr-1": {
+        "id": "2023-11-26-qc-dsc04839-enhanced-nr-1",
+        "locationId": "jp-tsuiki-air-base",
+        "eventId": "jp-tsuiki-air-show-2023",
+        "subjects": [
+          {
+            "aircraftId": "kawasaki-t-4",
+            "unitId": "jp-32nd-training-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2023",
+        "date": "2023-11-26",
+        "sortDate": "2023-11-26",
+        "livery": "",
+        "title": "",
+        "caption": "Kawasaki T-4 bearing the Red Dolphin livery from 32nd Training Squadron based at Ashiya Air Base making a flyover at Tsuiki Air Show",
+        "image": "assets/generated/photos/2023-11-26-qc-dsc04839-enhanced-nr-1.jpg",
+        "thumbnail": "assets/generated/thumbs/2023-11-26-qc-dsc04839-enhanced-nr-1.jpg",
+        "source": "raw_assets/QC_DSC04839-Enhanced-NR (1).jpeg",
+        "originalSize": "3934 x 2623",
+        "processedSize": "2048 x 1366",
+        "thumbnailSize": "768 x 512",
+        "exif": {
+          "Make": "SONY",
+          "Model": "DSC-RX10M4",
+          "LensModel": "24-600mm F2.4-4.0",
+          "FocalLength": "220mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/4.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2023:11:26 07:29:19",
+          "DateTimeDigitized": "2023:11:26 07:29:19",
+          "DateTime": "2026:07:04 19:49:33"
+        }
+      },
+      "2023-11-26-qc-dsc04817-enhanced-nr-1": {
+        "id": "2023-11-26-qc-dsc04817-enhanced-nr-1",
+        "locationId": "jp-tsuiki-air-base",
+        "eventId": "jp-tsuiki-air-show-2023",
+        "subjects": [
+          {
+            "aircraftId": "kawasaki-t-4",
+            "unitId": "jp-32nd-training-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2023",
+        "date": "2023-11-26",
+        "sortDate": "2023-11-26",
+        "livery": "",
+        "title": "",
+        "caption": "Kawasaki T-4 bearing the Red Dolphin livery from 32nd Training Squadron based at Ashiya Air Base making a flyover at Tsuiki Air Show",
+        "image": "assets/generated/photos/2023-11-26-qc-dsc04817-enhanced-nr-1.jpg",
+        "thumbnail": "assets/generated/thumbs/2023-11-26-qc-dsc04817-enhanced-nr-1.jpg",
+        "source": "raw_assets/QC_DSC04817-Enhanced-NR (1).jpeg",
+        "originalSize": "4128 x 2752",
+        "processedSize": "2048 x 1365",
+        "thumbnailSize": "768 x 512",
+        "exif": {
+          "Make": "SONY",
+          "Model": "DSC-RX10M4",
+          "LensModel": "24-600mm F2.4-4.0",
+          "FocalLength": "146.8mm",
+          "FocalLengthIn35mmFilm": "400mm",
+          "FNumber": "f/4.0",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2023:11:26 07:28:47",
+          "DateTimeDigitized": "2023:11:26 07:28:47",
+          "DateTime": "2026:07:04 19:49:32"
         }
       },
       "2023-11-26-dsc07531-enhanced-nr-2": {
@@ -19151,6 +19621,120 @@
           "DateTime": "2026:07:04 19:50:50"
         }
       },
+      "2023-10-01-dsc06877-enhanced-nr": {
+        "id": "2023-10-01-dsc06877-enhanced-nr",
+        "locationId": "jp-kisarazu-airfield",
+        "eventId": "jp-kisarazu-air-show-2023",
+        "subjects": [
+          {
+            "aircraftId": "kawasaki-oh-1-ninja",
+            "unitId": "jp-4th-attack-helicopter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2023",
+        "date": "2023-10-01",
+        "sortDate": "2023-10-01",
+        "livery": "",
+        "title": "",
+        "caption": "OH-1 at Kisarazu",
+        "image": "assets/generated/photos/2023-10-01-dsc06877-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2023-10-01-dsc06877-enhanced-nr.jpg",
+        "source": "raw_assets/DSC06877-Enhanced-NR.jpeg",
+        "originalSize": "5424 x 3616",
+        "processedSize": "2048 x 1365",
+        "thumbnailSize": "768 x 512",
+        "exif": {
+          "Make": "SONY",
+          "Model": "DSC-RX10M4",
+          "LensModel": "24-600mm F2.4-4.0",
+          "FocalLength": "220mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/5.6",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "160",
+          "DateTimeOriginal": "2023:10:01 11:36:40",
+          "DateTimeDigitized": "2023:10:01 11:36:40",
+          "DateTime": "2026:07:04 19:50:30"
+        }
+      },
+      "2023-10-01-dsc05522-enhanced-nr": {
+        "id": "2023-10-01-dsc05522-enhanced-nr",
+        "locationId": "jp-kisarazu-airfield",
+        "eventId": "jp-kisarazu-air-show-2023",
+        "subjects": [
+          {
+            "aircraftId": "kawasaki-oh-1-ninja",
+            "unitId": "jp-4th-attack-helicopter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2023",
+        "date": "2023-10-01",
+        "sortDate": "2023-10-01",
+        "livery": "",
+        "title": "",
+        "caption": "OH-1 at Kisarazu",
+        "image": "assets/generated/photos/2023-10-01-dsc05522-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2023-10-01-dsc05522-enhanced-nr.jpg",
+        "source": "raw_assets/DSC05522-Enhanced-NR.jpeg",
+        "originalSize": "5472 x 3648",
+        "processedSize": "2048 x 1365",
+        "thumbnailSize": "768 x 512",
+        "exif": {
+          "Make": "SONY",
+          "Model": "DSC-RX10M4",
+          "LensModel": "24-600mm F2.4-4.0",
+          "FocalLength": "220mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/5.6",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "125",
+          "DateTimeOriginal": "2023:10:01 11:09:12",
+          "DateTimeDigitized": "2023:10:01 11:09:12",
+          "DateTime": "2026:07:04 19:49:46"
+        }
+      },
+      "2023-10-01-dsc05481-enhanced-nr": {
+        "id": "2023-10-01-dsc05481-enhanced-nr",
+        "locationId": "jp-kisarazu-airfield",
+        "eventId": "jp-kisarazu-air-show-2023",
+        "subjects": [
+          {
+            "aircraftId": "kawasaki-oh-1-ninja",
+            "unitId": "jp-4th-attack-helicopter-squadron",
+            "primary": true
+          }
+        ],
+        "year": "2023",
+        "date": "2023-10-01",
+        "sortDate": "2023-10-01",
+        "livery": "",
+        "title": "",
+        "caption": "OH-1 at Kisarazu",
+        "image": "assets/generated/photos/2023-10-01-dsc05481-enhanced-nr.jpg",
+        "thumbnail": "assets/generated/thumbs/2023-10-01-dsc05481-enhanced-nr.jpg",
+        "source": "raw_assets/DSC05481-Enhanced-NR.jpeg",
+        "originalSize": "2995 x 1997",
+        "processedSize": "2048 x 1366",
+        "thumbnailSize": "768 x 512",
+        "exif": {
+          "Make": "SONY",
+          "Model": "DSC-RX10M4",
+          "LensModel": "24-600mm F2.4-4.0",
+          "FocalLength": "220mm",
+          "FocalLengthIn35mmFilm": "600mm",
+          "FNumber": "f/5.6",
+          "ExposureTime": "1/1000s",
+          "ExposureBiasValue": "0.0",
+          "ISO": "100",
+          "DateTimeOriginal": "2023:10:01 11:09:00",
+          "DateTimeDigitized": "2023:10:01 11:09:00",
+          "DateTime": "2026:07:04 19:49:43"
+        }
+      },
       "2023-10-01-dsc03885-enhanced-nr": {
         "id": "2023-10-01-dsc03885-enhanced-nr",
         "locationId": "jp-narita-international-airport",
@@ -24341,6 +24925,9 @@
         "2024-07-04-dsc08248-enhanced-nr",
         "2024-07-04-dsc08218-enhanced-nr"
       ],
+      "airbus-a350-1000": [
+        "2024-02-18-dsc04172-enhanced-nr"
+      ],
       "antonov-an-124-ruslan": [
         "2026-08-01-dsc02041",
         "2026-08-01-dsc02029"
@@ -24414,6 +25001,7 @@
         "2024-02-22-dsc06744-enhanced-nr"
       ],
       "boeing-c-17-globemaster-iii": [
+        "2024-06-04-dsc04640-enhanced-nr",
         "2023-06-27-raaf-c17"
       ],
       "boeing-c-40a-clipper": [
@@ -24590,6 +25178,13 @@
         "2026-01-10-dsc04059",
         "2026-01-10-dsc04052"
       ],
+      "general-dynamics-f-16cm": [
+        "2025-12-11-dsc07530",
+        "2025-12-11-dsc07502",
+        "2025-12-11-dsc07494",
+        "2025-12-11-dsc07493",
+        "2025-12-11-dsc07481"
+      ],
       "grumman-c-2a-greyhound": [
         "2023-12-20-c2-vrc40",
         "2023-02-07-c2-vrc30"
@@ -24678,7 +25273,10 @@
         "2025-11-30-dsc05622",
         "2025-11-30-dsc05292",
         "2025-11-30-dsc05132",
-        "2025-11-30-dsc05117"
+        "2025-11-30-dsc05117",
+        "2023-10-01-dsc06877-enhanced-nr",
+        "2023-10-01-dsc05522-enhanced-nr",
+        "2023-10-01-dsc05481-enhanced-nr"
       ],
       "kawasaki-p-1": [
         "2023-11-26-dsc07531-enhanced-nr-2",
@@ -24714,6 +25312,9 @@
         "2025-11-29-dsc01808",
         "2025-11-29-dsc01654",
         "2025-11-29-dsc01459",
+        "2023-11-26-qc-dsc04874-enhanced-nr",
+        "2023-11-26-qc-dsc04839-enhanced-nr-1",
+        "2023-11-26-qc-dsc04817-enhanced-nr-1",
         "2023-11-26-dsc06342",
         "2023-11-26-dsc06324",
         "2023-11-26-dsc06310",
@@ -24774,6 +25375,7 @@
         "2025-12-03-dsc02059",
         "2025-12-03-dsc02040",
         "2025-12-03-dsc01766",
+        "2024-03-04-usaf-ak-f35a-2-2",
         "2024-03-04-usaf-ak-f35a-2",
         "2024-03-04-usaf-ak-f35a-1",
         "2023-08-10-italy-f35-4",
@@ -25020,6 +25622,7 @@
         "2024-02-18-qc-dsc04655-enhanced-nr"
       ],
       "fr-airbus": [
+        "2024-02-18-dsc04172-enhanced-nr",
         "2023-01-17-beluga-2",
         "2023-01-17-beluga-1"
       ],
@@ -25161,6 +25764,11 @@
         "2023-10-06-dsc00968-enhanced-nr-1",
         "2023-10-06-dsc00945-enhanced-nr"
       ],
+      "jp-32nd-training-squadron": [
+        "2023-11-26-qc-dsc04874-enhanced-nr",
+        "2023-11-26-qc-dsc04839-enhanced-nr-1",
+        "2023-11-26-qc-dsc04817-enhanced-nr-1"
+      ],
       "jp-402nd-tactical-airlift-squadron": [
         "2025-12-07-dsc05101",
         "2025-12-07-dsc05045",
@@ -25181,6 +25789,11 @@
         "2025-11-30-dsc05042",
         "2025-11-30-dsc05021",
         "2025-11-30-dsc04987"
+      ],
+      "jp-4th-attack-helicopter-squadron": [
+        "2023-10-01-dsc06877-enhanced-nr",
+        "2023-10-01-dsc05522-enhanced-nr",
+        "2023-10-01-dsc05481-enhanced-nr"
       ],
       "jp-51st-fleet-air-squadron": [
         "2023-11-04-dsc06896-enhanced-nr",
@@ -25619,7 +26232,15 @@
         "2024-03-04-usaf-ak-f35a-1"
       ],
       "us-356th-fighter-squadron": [
+        "2024-03-04-usaf-ak-f35a-2-2",
         "2024-03-04-usaf-ak-f35a-2"
+      ],
+      "us-35th-fighter-wing": [
+        "2025-12-11-dsc07530",
+        "2025-12-11-dsc07502",
+        "2025-12-11-dsc07494",
+        "2025-12-11-dsc07493",
+        "2025-12-11-dsc07481"
       ],
       "us-36th-airlift-squadron": [
         "2023-11-29-dsc09870-enhanced-nr",
@@ -25644,6 +26265,9 @@
       "us-55th-wing": [
         "2025-12-11-dsc08080",
         "2025-12-11-dsc08013"
+      ],
+      "us-62nd-airlift-wing": [
+        "2024-06-04-dsc04640-enhanced-nr"
       ],
       "us-77th-air-refueling-squadron-77-ars": [
         "2023-09-24-dsc03571-enhanced-nr"
@@ -25882,6 +26506,11 @@
         "2025-12-11-dsc08609",
         "2025-12-11-dsc08080",
         "2025-12-11-dsc08013",
+        "2025-12-11-dsc07530",
+        "2025-12-11-dsc07502",
+        "2025-12-11-dsc07494",
+        "2025-12-11-dsc07493",
+        "2025-12-11-dsc07481",
         "2025-12-10-zz-0007",
         "2025-12-10-dsc03804",
         "2025-12-10-dsc03723",
@@ -25902,7 +26531,10 @@
         "2023-10-01-dsc08517-enhanced-nr",
         "2023-10-01-dsc08272-enhanced-nr",
         "2023-10-01-dsc08267-enhanced-nr",
-        "2023-10-01-dsc07893-enhanced-nr"
+        "2023-10-01-dsc07893-enhanced-nr",
+        "2023-10-01-dsc06877-enhanced-nr",
+        "2023-10-01-dsc05522-enhanced-nr",
+        "2023-10-01-dsc05481-enhanced-nr"
       ],
       "jp-kitakyushu-airport": [
         "2023-11-27-dsc07789-enhanced-nr",
@@ -26101,6 +26733,9 @@
         "2023-11-26-qc-dsc05157-enhanced-nr",
         "2023-11-26-qc-dsc05145-enhanced-nr",
         "2023-11-26-qc-dsc05008-enhanced-nr",
+        "2023-11-26-qc-dsc04874-enhanced-nr",
+        "2023-11-26-qc-dsc04839-enhanced-nr-1",
+        "2023-11-26-qc-dsc04817-enhanced-nr-1",
         "2023-11-26-dsc07531-enhanced-nr-2",
         "2023-11-26-dsc07517-enhanced-nr",
         "2023-11-26-dsc07469-enhanced-nr",
@@ -26201,7 +26836,8 @@
         "2024-02-22-dsc06214-enhanced-nr",
         "2024-02-22-dsc06179-enhanced-nr",
         "2024-02-18-qc-dsc04655-enhanced-nr",
-        "2024-02-18-dsc05211-enhanced-nr"
+        "2024-02-18-dsc05211-enhanced-nr",
+        "2024-02-18-dsc04172-enhanced-nr"
       ],
       "sg-seletar-airport": [
         "2023-04-29-firefly-2",
@@ -26224,9 +26860,11 @@
         "2024-06-22-dsc02893-enhanced-nr",
         "2024-06-05-dsc04820-enhanced-nr",
         "2024-06-05-dsc04786-enhanced-nr",
+        "2024-06-04-dsc04640-enhanced-nr",
         "2024-05-30-dsc03647-enhanced-nr",
         "2024-05-03-dsc08187-enhanced-nr",
         "2024-05-03-dsc08053-enhanced-nr",
+        "2024-03-04-usaf-ak-f35a-2-2",
         "2024-03-04-usaf-ak-f35a-2",
         "2024-03-04-usaf-ak-f35a-1",
         "2024-02-18-dsc05282-enhanced-nr",
@@ -26410,6 +27048,9 @@
         "2023-10-01-dsc08272-enhanced-nr",
         "2023-10-01-dsc08267-enhanced-nr",
         "2023-10-01-dsc07893-enhanced-nr",
+        "2023-10-01-dsc06877-enhanced-nr",
+        "2023-10-01-dsc05522-enhanced-nr",
+        "2023-10-01-dsc05481-enhanced-nr",
         "2023-10-01-dsc03885-enhanced-nr",
         "2023-10-01-dsc03837-enhanced-nr"
       ],
@@ -26540,6 +27181,9 @@
         "2023-11-26-qc-dsc05157-enhanced-nr",
         "2023-11-26-qc-dsc05145-enhanced-nr",
         "2023-11-26-qc-dsc05008-enhanced-nr",
+        "2023-11-26-qc-dsc04874-enhanced-nr",
+        "2023-11-26-qc-dsc04839-enhanced-nr-1",
+        "2023-11-26-qc-dsc04817-enhanced-nr-1",
         "2023-11-26-dsc07531-enhanced-nr-2",
         "2023-11-26-dsc07517-enhanced-nr",
         "2023-11-26-dsc07469-enhanced-nr",
@@ -26609,6 +27253,7 @@
         "2024-02-18-qc-dsc04655-enhanced-nr",
         "2024-02-18-dsc05282-enhanced-nr",
         "2024-02-18-dsc05211-enhanced-nr",
+        "2024-02-18-dsc04172-enhanced-nr",
         "2024-02-13-dsc03195-enhanced-nr",
         "2024-02-13-dsc03158-enhanced-nr",
         "2024-02-13-dsc03123-enhanced-nr",
@@ -26749,6 +27394,9 @@
       "airbus-a330-200": [
         "fr-ervts-2-31-esterel"
       ],
+      "airbus-a350-1000": [
+        "fr-airbus"
+      ],
       "antonov-an-124-ruslan": [
         "ukraine-antonov-airlines"
       ],
@@ -26789,7 +27437,8 @@
         "us-23rd-bomb-squadron"
       ],
       "boeing-c-17-globemaster-iii": [
-        "au-36-squadron"
+        "au-36-squadron",
+        "us-62nd-airlift-wing"
       ],
       "boeing-c-40a-clipper": [
         "us-vr-51",
@@ -26867,6 +27516,9 @@
       "general-dynamics-f-16b": [
         "th-403rd-fighter-squadron"
       ],
+      "general-dynamics-f-16cm": [
+        "us-35th-fighter-wing"
+      ],
       "grumman-c-2a-greyhound": [
         "us-vrc-30",
         "us-vrc-40"
@@ -26896,7 +27548,8 @@
         "jp-electronic-warfare-squadron"
       ],
       "kawasaki-oh-1-ninja": [
-        "jp-1st-attack-helicopter-squadron"
+        "jp-1st-attack-helicopter-squadron",
+        "jp-4th-attack-helicopter-squadron"
       ],
       "kawasaki-p-1": [
         "jp-air-patrol-squadron-1",
@@ -26910,6 +27563,7 @@
         "jp-electronic-warfare-squadron"
       ],
       "kawasaki-t-4": [
+        "jp-32nd-training-squadron",
         "jp-8th-tactical-fighter-squadron",
         "jp-air-development-and-test-wing",
         "jp-blue-impulse"
