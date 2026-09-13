@@ -10,15 +10,17 @@ The public site is a read-only field guide; catalog editing happens in the separ
 | --- | --- | --- |
 | World Map | Photographed locations | Select a marker or browse Locations, then open photos or the location detail. |
 | Aircraft Dex | Aircraft family | Filter the aircraft index, then open a type's operators, locations, and photos. |
-| Squadrons | Country | Filter units consistently on desktop and mobile; All restores the full squadron collection. Organisation units are not listed here. |
+| Squadrons | Country | Filter units consistently on desktop and mobile; the desktop country rail becomes a native selector with per-country counts on mobile. All restores the full squadron collection. Organisation units are not listed here. |
 | Airshows | Year, newest first | Choose a year with an event count, then open an event's field report/story. |
 | Stats | Overview / Camera data | Inspect collection coverage or load camera metadata on demand. |
 
-Archive openings are deliberately compact. Mobile keeps family/country/year controls available while scrolling and progressively loads entries in batches of 12; desktop shows all entries matching the filter. The five-item bottom navigation remains the main mobile navigation, except while viewing a photo. Photograph counts use **Photos**; aircraft **Types** are not counts of unique registrations.
+Archive openings are deliberately compact. Mobile keeps family/country/year controls available while scrolling and progressively loads entries in batches of 12; desktop shows all entries matching the filter. At widths up to 1040px, Aircraft family chips wrap instead of disappearing into a horizontal rail. The aircraft detail view uses a short field-guide hero and a flatter archive browser so the first photos arrive sooner. The five-item bottom navigation remains the main mobile navigation, except while viewing a photo. Photograph counts use **Photos**; aircraft **Types** are not counts of unique registrations.
+
+The Stats overview starts with a compact six-card dashboard: **Photos**, **Photographed locations**, **Aircraft types**, **Squadrons**, **Map locations**, and **Countries photographed**. Map locations count enabled map pins; photographed locations and countries are derived from the photo collection, so those measures remain distinct.
 
 ### Search
 
-Use the magnifying-glass control or **Cmd/Ctrl+K**. Search covers aircraft, squadrons, enabled locations, events, and public photo metadata from the core catalog. Try an aircraft type, ICAO code, squadron, event, photo title, or date.
+Use the magnifying-glass control or **Cmd/Ctrl+K**. The overlay is labelled **Archive search** and **Search SpotterDex**. Search covers aircraft, squadrons, enabled locations, events, and public photo metadata from the core catalog. Try an aircraft type, ICAO code, squadron, event, photo title, or date.
 
 - Results are grouped by category, initially showing up to six per category. **Showing N of M** reports the visible subset and full matching total; it is not a count of just the first page.
 - Use **Category** to narrow the results, or **Show more** to reveal another six in a group. Category options retain their full matching counts.
@@ -70,7 +72,7 @@ The manager is the supported day-to-day authoring interface:
 python3 tools/spotterdex_manager.py
 ```
 
-Open `http://127.0.0.1:8765/` and stop the server with `Ctrl+C` when finished. Use `--open` to open the browser automatically or `--port <port>` to choose another port. Keep the default loopback host for local authoring.
+Open `http://127.0.0.1:8765/manager/` and stop the server with `Ctrl+C` when finished. Use `--open` to open the browser automatically or `--port <port>` to choose another port. Keep the default loopback host for local authoring.
 
 If system Python is missing Pillow or PyYAML and the project virtual environment already exists, launch with `.venv/bin/python tools/spotterdex_manager.py`. Otherwise install the dependencies from `requirements.txt` in your Python environment.
 
@@ -299,7 +301,7 @@ git diff --check
 
 Use `.venv/bin/python` if system Python lacks the build dependencies. Node.js is required for the JavaScript behavioral cases; they are skipped if it is missing. These tests use mocked browser dependencies, not a live browser: they cover search totals and incremental results, country/year state and history handling, IME guards, loading retries, viewer focus/inert state, and non-map resize safety. The site-contract tests also check generated page consistency and token/layout rules.
 
-For CSS or interaction changes, check the running site at 390px, 768px, and 1440px, plus 320px reflow and 200% zoom. Test reduced motion and portrait/landscape resize. Scroll past several archive screens before changing filters; exercise filter links with reload and Back/Forward; use Tab, Enter, Escape, and IME input in search; confirm hidden viewer information cannot receive focus. Simulate blocked catalog and camera-data requests, then unblock and Retry, and test offline/reconnect separately. Browser checks do not replace physical iOS/Safari testing for safe areas, the software keyboard, gestures, or installed-app updates.
+For CSS or interaction changes, check the running site at 390px, 768px, and 1440px, plus 320px reflow and 200% zoom. Test reduced motion and portrait/landscape resize. Scroll past several archive screens before changing filters; confirm Aircraft family chips wrap, the mobile Squadron country selector updates the URL and result set, the Stats totals stay compact, and aircraft detail photos remain close to the short hero. Exercise filter links with reload and Back/Forward; use Tab, Enter, Escape, and IME input in search; confirm hidden viewer information cannot receive focus. Simulate blocked catalog and camera-data requests, then unblock and Retry, and test offline/reconnect separately. Browser checks do not replace physical iOS/Safari testing for safe areas, the software keyboard, gestures, or installed-app updates.
 
 Keep browser tooling/screenshots outside the repository. After public runtime, template, or style changes, run the full build so generated pages and service-worker cache stamps stay current, then verify a second build does not change generated output. Documentation-only edits do not require a rebuild. Preserve unrelated manager/catalog changes when reviewing or staging.
 

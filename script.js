@@ -416,8 +416,8 @@
           <section class="global-search-panel">
             <header class="global-search-heading">
               <div>
-                <p class="eyebrow">Search the archive</p>
-                <h2 id="globalSearchTitle">Find anything</h2>
+                <p class="eyebrow">Archive search</p>
+                <h2 id="globalSearchTitle">Search SpotterDex</h2>
               </div>
               <button class="global-search-close" type="button" data-global-search-close aria-label="Close search" title="Close search">
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"></path></svg>
@@ -434,7 +434,7 @@
             <label class="global-search-category" for="globalSearchCategory">Category
               <select id="globalSearchCategory"><option value="">All categories</option>${SEARCH_KIND_ORDER.map((kind) => `<option value="${kind}">${SEARCH_KIND_LABELS[kind]}</option>`).join("")}</select>
             </label>
-            <p class="global-search-summary" id="globalSearchSummary" aria-live="polite">Start typing to search the entire SpotterDex.</p>
+            <p class="global-search-summary" id="globalSearchSummary" aria-live="polite">Search the entire SpotterDex.</p>
             <div class="global-search-results" id="globalSearchResults" aria-label="Search results"></div>
           </section>
         </div>
@@ -584,6 +584,7 @@
       els.squadronLogoGrid = document.getElementById("squadronLogoGrid");
       els.squadronPagination = document.getElementById("squadronPagination");
       els.squadronCountryRail = document.getElementById("squadronCountryRail");
+      els.squadronCountrySelect = document.getElementById("squadronCountrySelect");
       els.squadronHeroMedia = document.getElementById("squadronHeroMedia");
       els.squadronHeroCountryCount = document.getElementById("squadronHeroCountryCount");
       els.squadronHeroPhotoCount = document.getElementById("squadronHeroPhotoCount");
@@ -1223,10 +1224,9 @@
     if (!normalizeText(query)) {
       state.searchResults = [];
       state.searchActiveIndex = -1;
-      els.globalSearchSummary.textContent = "Start typing to search the entire SpotterDex.";
+      els.globalSearchSummary.textContent = "Search the entire SpotterDex.";
       els.globalSearchResults.innerHTML = `
         <div class="global-search-hint">
-          <span>Search across the field guide</span>
           <small>Try an aircraft type, ICAO code, squadron, event, photo title, or date.</small>
         </div>
       `;
@@ -1481,6 +1481,13 @@
       state.airshowVisibleCount = MOBILE_ARCHIVE_PAGE_SIZE;
       renderAirshowsPage();
       updateDeepLink("year", state.airshowYearFilter);
+      saveCurrentSessionState();
+    });
+    els.squadronCountrySelect?.addEventListener("change", () => {
+      state.squadronCountryFilter = els.squadronCountrySelect.value;
+      state.squadronVisibleCount = MOBILE_ARCHIVE_PAGE_SIZE;
+      renderSquadronsPage();
+      updateDeepLink("country", state.squadronCountryFilter);
       saveCurrentSessionState();
     });
     els.globalSearchResults?.addEventListener("focusin", (event) => {
@@ -4240,6 +4247,13 @@
     }
     const groups = groupSquadronsByCountry(squadrons);
     const allActive = !state.squadronCountryFilter;
+    if (els.squadronCountrySelect) {
+      els.squadronCountrySelect.innerHTML = [
+        `<option value="">All countries (${squadrons.length})</option>`,
+        ...groups.map((group) => `<option value="${escapeAttr(group.country)}">${escapeHtml(group.country)} (${group.squadrons.length})</option>`)
+      ].join("");
+      els.squadronCountrySelect.value = state.squadronCountryFilter;
+    }
     els.squadronCountryRail.innerHTML = groups.length
       ? `
           <button class="squadron-country-filter-all${allActive ? " is-active" : ""}" type="button" data-squadron-country-jump="squadronsView" data-squadron-country-filter="" aria-pressed="${String(allActive)}">
@@ -5270,7 +5284,7 @@
         <div class="detail-overview-toolbar">
           <div class="detail-overview-title">
             <p class="eyebrow">Archive browser</p>
-            <h2 id="aircraftArchiveHeading">Browse the collection</h2>
+            <h2 id="aircraftArchiveHeading">Browse photos</h2>
           </div>
           <div class="segmented" role="radiogroup" aria-label="Organize aircraft photos">
             ${segmentButton(unitGroupLabel, "squadron", state.dexGroupMode, "data-dex-group", "aircraftUnitPhotos")}
@@ -7406,7 +7420,7 @@
     const photographedLocations = unique(
       state.data.photos.map((photo) => photo.pinId || normalizeKey(photo.locationName))
     );
-    const countries = unique(enabledPins.map((pin) => pin.country));
+    const photographedCountries = unique(state.data.photos.map((photo) => photo.country).filter(Boolean));
     const squadrons = collectSquadrons();
 
     return {
@@ -7415,7 +7429,7 @@
       aircraftTypeCount: state.data.aircraft.length,
       squadronCount: squadrons.length,
       locationCount: enabledPins.length,
-      countryCount: countries.length
+      photographedCountryCount: photographedCountries.length
     };
   }
 
@@ -7902,9 +7916,12 @@
       bermuda: "BM",
       france: "FR",
       "hong kong": "HK",
+      india: "IN",
       italy: "IT",
       japan: "JP",
+      korea: "KR",
       malaysia: "MY",
+      "new zealand": "NZ",
       singapore: "SG",
       thailand: "TH",
       "united kingdom": "GB",

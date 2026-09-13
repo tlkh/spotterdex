@@ -4805,6 +4805,7 @@ button.location-unit-chip:focus-visible,
 }
 
 .stats-pair-card,
+.stats-total-card,
 .stats-visual-card,
 .exif-summary-grid > div,
 .exif-stat-card {
@@ -4816,6 +4817,8 @@ button.location-unit-chip:focus-visible,
 
 .stats-pair-card:hover,
 .stats-pair-card:focus-within,
+.stats-total-card:hover,
+.stats-total-card:focus-within,
 .stats-visual-card:hover,
 .exif-summary-grid > div:hover,
 .exif-stat-card:hover {
@@ -4828,6 +4831,37 @@ button.location-unit-chip:focus-visible,
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
+}
+
+.stats-total-card {
+  display: grid;
+  min-width: 0;
+  min-height: 108px;
+  align-content: center;
+  gap: 5px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-strong);
+}
+
+.stats-total-card strong,
+.stats-total-card span {
+  display: block;
+  min-width: 0;
+}
+
+.stats-total-card strong {
+  color: var(--text);
+  font-size: clamp(1.6rem, 3vw, 2.35rem);
+  line-height: 1;
+}
+
+.stats-total-card span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.25;
 }
 
 .stats-visual-grid {
@@ -5438,6 +5472,10 @@ button.location-unit-chip:focus-visible,
 .squadron-country-nav {
   display: grid;
   gap: 4px;
+}
+
+.squadron-country-select-label {
+  display: none;
 }
 
 .squadron-country-nav button {
@@ -8914,6 +8952,7 @@ button.location-unit-chip:focus-visible,
 }
 
 #statsView .stats-pair-card,
+#statsView .stats-total-card,
 #statsView .stats-visual-card,
 #statsView .exif-summary-grid > div,
 #statsView .exif-stat-card {
@@ -8926,6 +8965,8 @@ button.location-unit-chip:focus-visible,
 
 #statsView .stats-pair-card:hover,
 #statsView .stats-pair-card:focus-within,
+#statsView .stats-total-card:hover,
+#statsView .stats-total-card:focus-within,
 #statsView .stats-visual-card:hover,
 #statsView .exif-summary-grid > div:hover,
 #statsView .exif-stat-card:hover {
@@ -8941,6 +8982,7 @@ button.location-unit-chip:focus-visible,
 }
 
 #statsView .stats-pair-card strong,
+#statsView .stats-total-card strong,
 #statsView .exif-summary-grid strong,
 #statsView .stats-country-row strong,
 #statsView .exif-bar-count,
@@ -8954,8 +8996,25 @@ button.location-unit-chip:focus-visible,
   font-weight: 720;
 }
 
+#statsView .stats-total-card {
+  min-height: 104px;
+  align-content: center;
+  padding: 14px;
+}
+
+#statsView .stats-total-card strong {
+  color: var(--stats-ink);
+  font-size: clamp(1.8rem, 3vw, 2.65rem);
+  font-weight: 720;
+}
+
+#statsView .stats-total-card span {
+  color: var(--stats-muted);
+}
+
 #statsView .stats-pair-card span,
 #statsView .stats-pair-card p,
+#statsView .stats-total-card span,
 #statsView .exif-summary-grid span,
 #statsView .exif-summary-grid small,
 #statsView .stats-country-row,
@@ -9185,11 +9244,12 @@ button.location-unit-chip:focus-visible,
   #statsView .stats-summary-grid,
   #statsView .exif-summary-grid,
   #statsView .exif-dashboard-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  #statsView .stats-pair-card {
-    min-height: 130px;
+  #statsView .stats-total-card {
+    min-height: 92px;
+    padding: 12px;
   }
 
   #statsView .aircraft-family-distribution {
@@ -13848,6 +13908,122 @@ body.has-app-update .mobile-install-prompt {
   #dexView .dex-family-filter,
   #squadronsView .squadron-country-rail {
     gap: var(--space-2xs);
+  }
+
+  #dexView .dex-family-options {
+    flex-wrap: wrap;
+    overflow: visible;
+    margin-right: 0;
+    padding-right: 0;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  #squadronsView .squadron-country-nav {
+    display: none;
+  }
+
+  #squadronsView .squadron-country-select-label {
+    display: grid;
+    gap: var(--space-3xs);
+    color: var(--color-muted-strong);
+    font-size: var(--text-xs);
+    font-weight: 750;
+  }
+
+  #squadronsView .squadron-country-select-label select {
+    width: 100%;
+    min-height: 44px;
+    padding: var(--space-2xs) var(--space-xs);
+    border: 1px solid var(--color-rule-strong);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font: inherit;
+    font-size: var(--text-sm);
+  }
+
+  #squadronsView .squadron-country-select-label select:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  .detail-view .aircraft-field-guide-hero {
+    min-height: 260px;
+    padding: 18px;
+    border-radius: var(--radius-sheet);
+  }
+
+  .detail-view .aircraft-field-guide-hero .detail-hero-content .eyebrow {
+    display: none;
+  }
+
+  .detail-view .aircraft-field-guide-hero .detail-hero-content h1 {
+    max-width: 11ch;
+    font-size: clamp(1.9rem, 9vw, 2.8rem);
+  }
+
+  .detail-view .aircraft-archive-browser {
+    border-inline: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .detail-view .aircraft-archive-browser .detail-overview-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 12px 16px;
+  }
+
+  .detail-view .aircraft-archive-browser .detail-overview-title {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .detail-view .aircraft-archive-browser .detail-overview-title .eyebrow {
+    display: none;
+  }
+
+  .detail-view .aircraft-archive-browser .detail-overview-title h2 {
+    font-size: 1.08rem;
+  }
+
+  .detail-view .aircraft-archive-browser .detail-overview-toolbar > .segmented {
+    grid-column: 2;
+    grid-row: 1;
+    width: auto;
+  }
+
+  .detail-view .aircraft-archive-browser .detail-overview-toolbar .segment-button {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding-inline: 10px;
+  }
+
+  .detail-view .aircraft-archive-results {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 10px 16px;
+    background: transparent;
+  }
+
+  .detail-view .aircraft-archive-results-heading {
+    grid-column: 1 / -1;
+  }
+
+  .detail-view .aircraft-archive-results-heading .eyebrow {
+    display: none;
+  }
+
+  .detail-view .aircraft-archive-results-heading h3 {
+    font-size: 0.98rem;
+  }
+
+  .detail-view .aircraft-archive-results .squadron-grid {
+    grid-column: 1 / -1;
+    gap: 8px;
+    margin-bottom: 0;
   }
 
   #dexView .dex-family-label,

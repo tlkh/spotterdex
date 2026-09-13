@@ -103,6 +103,14 @@ class ScriptBehaviorTests(unittest.TestCase):
             assert.equal(squadronArchiveEntries().filteredSquadrons.length, 3);
         ''')
 
+    def test_country_flags_cover_india_korea_and_new_zealand(self):
+        self.run_behavior(["countryFlag"], r'''
+            global.normalizeText = value => String(value).toLowerCase().trim();
+            assert.equal(countryFlag("India"), "🇮🇳");
+            assert.equal(countryFlag("Korea"), "🇰🇷");
+            assert.equal(countryFlag("New Zealand"), "🇳🇿");
+        ''')
+
     def test_catalog_failure_is_not_empty_success(self):
         self.run_behavior(["loadData"], r'''
             global.window = {};

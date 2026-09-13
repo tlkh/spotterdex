@@ -78,28 +78,13 @@ function renderStatsDashboard() {
     const collectionStats = collectionStatsSummary();
     const countryCounts = countBy(state.data.photos, (photo) => photo.country || "Country not set");
     els.statsDashboard.innerHTML = `
-      <div class="stats-summary-grid">
-        ${statsDashboardPair(
-          "Photos",
-          collectionStats.photoCount,
-          "Photographed locations",
-          collectionStats.photographedLocationCount,
-          `${collectionStats.photoCount} photo${collectionStats.photoCount === 1 ? "" : "s"} across ${collectionStats.photographedLocationCount} location${collectionStats.photographedLocationCount === 1 ? "" : "s"}`
-        )}
-        ${statsDashboardPair(
-          "Aircraft types",
-          collectionStats.aircraftTypeCount,
-          "Squadrons",
-          collectionStats.squadronCount,
-          `${collectionStats.aircraftTypeCount} type${collectionStats.aircraftTypeCount === 1 ? "" : "s"} across ${collectionStats.squadronCount} squadron${collectionStats.squadronCount === 1 ? "" : "s"}`
-        )}
-        ${statsDashboardPair(
-          "Locations",
-          collectionStats.locationCount,
-          "Countries",
-          collectionStats.countryCount,
-          `${collectionStats.locationCount} enabled map location${collectionStats.locationCount === 1 ? "" : "s"} across ${collectionStats.countryCount} countr${collectionStats.countryCount === 1 ? "y" : "ies"}`
-        )}
+      <div class="stats-summary-grid" aria-label="Archive totals">
+        ${statsDashboardTotal("Photos", collectionStats.photoCount)}
+        ${statsDashboardTotal("Photographed locations", collectionStats.photographedLocationCount)}
+        ${statsDashboardTotal("Aircraft types", collectionStats.aircraftTypeCount)}
+        ${statsDashboardTotal("Squadrons", collectionStats.squadronCount)}
+        ${statsDashboardTotal("Map locations", collectionStats.locationCount)}
+        ${statsDashboardTotal("Countries photographed", collectionStats.photographedCountryCount)}
       </div>
       <div class="stats-visual-grid">
         ${renderAircraftFamilyCoverage()}
@@ -127,18 +112,11 @@ function renderStatsDashboard() {
       : '<span class="stats-archive-media-fallback"></span>';
   }
 
-  function statsDashboardPair(primaryLabel, primaryValue, secondaryLabel, secondaryValue, detail) {
+  function statsDashboardTotal(label, value) {
     return `
-      <article class="stats-pair-card">
-        <div>
-          <strong>${escapeHtml(primaryValue)}</strong>
-          <span>${escapeHtml(primaryLabel)}</span>
-        </div>
-        <div>
-          <strong>${escapeHtml(secondaryValue)}</strong>
-          <span>${escapeHtml(secondaryLabel)}</span>
-        </div>
-        <p>${escapeHtml(detail)}</p>
+      <article class="stats-total-card">
+        <strong>${escapeHtml(value)}</strong>
+        <span>${escapeHtml(label)}</span>
       </article>
     `;
   }
