@@ -129,7 +129,7 @@ class ManagerCaptionBehaviorTests(unittest.TestCase):
         script = setup + "\n" + "\n".join(functions) + "\n(async () => {\n" + body + "\n})()"
         program = 'const vm = require("node:vm"); const assert = require("node:assert/strict");\n'
         program += "Promise.resolve(vm.runInNewContext(" + json.dumps(script) + ', {assert}, {timeout: 5000})).catch(error => {console.error(error); process.exitCode = 1;});'
-        result = subprocess.run(["node", "-e", program], cwd=ROOT, capture_output=True, text=True, timeout=15)
+        result = subprocess.run(["node"], input=program, cwd=ROOT, capture_output=True, text=True, timeout=15)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_scopes_use_canonical_deduplicated_photos_and_include_missing_captions(self):
@@ -387,7 +387,7 @@ class ManagerShellBehaviorTests(unittest.TestCase):
         script = setup + "\n" + source + "\n" + body
         program = 'const vm = require("node:vm"); const assert = require("node:assert/strict");\n'
         program += "vm.runInNewContext(" + json.dumps(script) + ", {assert}, {timeout: 5000});"
-        result = subprocess.run(["node", "-e", program], cwd=ROOT, capture_output=True, text=True, timeout=15)
+        result = subprocess.run(["node"], input=program, cwd=ROOT, capture_output=True, text=True, timeout=15)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_initialization_and_nested_navigation_preserve_legacy_routes(self):
