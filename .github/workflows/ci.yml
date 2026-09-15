@@ -6,13 +6,90 @@ on:
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
-  verify:
-    name: Verify catalog and site
+  python-tests:
+    name: Python ${{ matrix.python-version }} tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Python dependencies
+        run: python -m pip install --requirement requirements.txt coverage
+
+      - name: Run complete test suite with coverage
+        run: |
+          coverage run --branch --source=tools --omit='tools/tests/*' \
+            -m unittest discover -s tools/tests -v
+          coverage report --show-missing
+          coverage xml --output=coverage.xml
+
+      - name: Upload Python coverage report
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-coverage
+          path: coverage.xml
+          if-no-files-found: error
+
+      - name: Check Python syntax
+        run: python -m compileall -q tools
+
+  javascript-runtime:
+    name: JavaScript runtime checks (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ["20", "22"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Check every shipped JavaScript bundle
+        run: |
+          for file in \
+            script.js \
+            map-page.js \
+            airshows-page.js \
+            stats-page.js \
+            service-worker.js \
+            data/spotterdex-core.js \
+            data/spotterdex-exif.js \
+            tools/manager/app.js; do
+            node --check "$file"
+          done
+
+      - name: Exercise route and service-worker behavior
+        run: python -m unittest tools.tests.test_route_behaviors tools.tests.test_script_behaviors -v
+
+  catalog-and-site:
+    name: Catalog and generated-site integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -20,34 +97,27 @@ jobs:
         with:
           python-version: "3.12"
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-
       - name: Install Python dependencies
-        run: python3 -m pip install --requirement requirements.txt
+        run: python -m pip install --requirement requirements.txt
 
       # raw_assets/ is deliberately not committed, so the image pipeline and the
       # raw source-path checks cannot run here. Everything below is repo-only.
-      - name: Validate catalog
-        run: python3 tools/spotterdex_catalog.py validate --skip-raw-assets
+      - name: Validate catalog relationships and SQL snapshot
+        run: python tools/spotterdex_catalog.py validate --skip-raw-assets
 
-      - name: Run test suite
-        run: python3 -m unittest discover -s tools/tests -v
+      - name: Exercise catalog management CLI
+        run: python tools/spotterdex_catalog.py counts
 
-      - name: Check JavaScript syntax
-        run: |
-          node --check script.js
-          node --check service-worker.js
-          node --check tools/manager/app.js
-
-      - name: Check Python syntax
-        run: python3 -m compileall -q tools
+      - name: Verify generated catalog graph and public asset references
+        run: python -m unittest tools.tests.test_app_integrity tools.tests.test_site_contracts -v
 
       - name: Confirm Apple web-app assets are current
-        run: python3 tools/build_apple_web_app_assets.py --check
+        run: python tools/build_apple_web_app_assets.py --check
 
       - name: Confirm generated pages match the generator
         run: |
-          python3 tools/build_pages.py
+          python tools/build_pages.py
           git diff --exit-code -- '*.html'
+
+      - name: Check diff formatting
+        run: git diff --check
