@@ -14,6 +14,9 @@
       assetFilter: "untagged",
       activeTab: savedActiveTab,
       assetsOpen: true,
+      masterDrafts: new Map(),
+      masterExpanded: new Set(),
+      masterSaveStates: new Map(),
       masterPage: 1,
       masterPageSize: 20,
       bulkEdit: {
@@ -139,6 +142,17 @@
       };
     }
 
+    function isCanonicalDatabase() {
+      return Boolean(state.data?.project?.databasePath);
+    }
+
+    function syncPhotoEditorFields() {
+      const legacy = Boolean(state.data) && !isCanonicalDatabase();
+      $("photoYearField").hidden = !legacy;
+      $("editYearField").hidden = !legacy;
+      $("editDateField").classList.toggle("wide", !legacy);
+    }
+
     function squadronOnlyTargets() {
       const entries = state.data?.entries || [];
       const standaloneKeys = new Set(entries
@@ -215,21 +229,40 @@
 
     async function loadState(keepSelection = true) {
       const previous = keepSelection ? new Set(state.selectedAssets) : new Set();
-      const response = await fetch("/api/state");
-      state.data = await readApiJson(response);
-      state.selectedAssets = new Set([...previous].filter((path) => state.data.assets.some((asset) => asset.path === path)));
-      const validMasterPhotoIds = new Set((state.data.masterPhotos || []).map((photo) => photo.id));
-      state.bulkEdit.master = new Set([...state.bulkEdit.master].filter((photoId) => validMasterPhotoIds.has(photoId)));
-      const validTaggedKeys = new Set();
-      for (const entry of state.data.entries || []) {
-        for (const photo of entry.photos || []) {
-          if (!photo.invalid) validTaggedKeys.add(photoSelectionKey(entry, photo));
+      const previousData = state.data;
+      const previousSelectedAssets = state.selectedAssets;
+      const previousMasterSelection = state.bulkEdit.master;
+      const previousTaggedSelection = state.bulkEdit.tagged;
+      let nextData;
+      try {
+        const response = await fetch("/api/state");
+        nextData = await readApiJson(response);
+        if (response.ok === false || nextData.ok === false) throw new Error(nextData.message || `Catalog request failed (${response.status}).`);
+        if (![nextData.assets, nextData.masterPhotos, nextData.entries].every(Array.isArray)) throw new Error("The server returned an incomplete catalog.");
+        state.data = nextData;
+        state.selectedAssets = new Set([...previous].filter((path) => state.data.assets.some((asset) => asset.path === path)));
+        const validMasterPhotoIds = new Set((state.data.masterPhotos || []).map((photo) => photo.id));
+        state.bulkEdit.master = new Set([...state.bulkEdit.master].filter((photoId) => validMasterPhotoIds.has(photoId)));
+        const validTaggedKeys = new Set();
+        for (const entry of state.data.entries || []) {
+          for (const photo of entry.photos || []) {
+            if (!photo.invalid) validTaggedKeys.add(photoSelectionKey(entry, photo));
+          }
         }
+        state.bulkEdit.tagged = new Set([...state.bulkEdit.tagged].filter((key) => validTaggedKeys.has(key)));
+        renderShared();
+        renderActiveView();
+        syncQualityPolling();
+        $("loadFailure").hidden = true;
+      } catch (error) {
+        state.data = previousData;
+        state.selectedAssets = previousSelectedAssets;
+        state.bulkEdit.master = previousMasterSelection;
+        state.bulkEdit.tagged = previousTaggedSelection;
+        $("loadFailure").hidden = false;
+        $("loadFailureMessage").textContent = `${state.data ? "Could not refresh the catalog. Current data and library drafts are retained." : "Could not load the catalog."} ${error.message || "Check the local manager connection."}`;
+        throw error;
       }
-      state.bulkEdit.tagged = new Set([...state.bulkEdit.tagged].filter((key) => validTaggedKeys.has(key)));
-      renderShared();
-      renderActiveView();
-      syncQualityPolling();
     }
 
     function qualityScanActive() {
@@ -714,6 +747,13 @@
       return String(value || "").trim().toLowerCase();
     }
 
+    function canonicalPhotoIdentity(entry, photo) {
+      const identity = photo?.photoId || photo?.id || photo?.sourceAssetPath || photo?.path;
+      return identity
+        ? String(identity)
+        : `${entry?.targetKey || entry?.entryPath || ""}::${photo?.index ?? ""}`;
+    }
+
     function taggedAirshowGroups() {
       const byEvent = new Map();
       for (const entry of state.data?.entries || []) {
@@ -721,13 +761,17 @@
           if (photo.invalid || !String(photo.airshow || "").trim()) continue;
           const name = String(photo.airshow).trim();
           const key = airshowEventKey(name);
-          if (!byEvent.has(key)) byEvent.set(key, {name, photos: []});
-          byEvent.get(key).photos.push({entry, photo});
+          if (!byEvent.has(key)) byEvent.set(key, {name, photos: [], seen: new Set()});
+          const event = byEvent.get(key);
+          const identity = canonicalPhotoIdentity(entry, photo);
+          if (event.seen.has(identity)) continue;
+          event.seen.add(identity);
+          event.photos.push({entry, photo});
         }
       }
       return [...byEvent.values()]
         .map((event) => ({
-          ...event,
+          name: event.name,
           photos: event.photos.sort((a, b) => effectiveEventDate(b.photo).localeCompare(effectiveEventDate(a.photo)))
         }))
         .sort((a, b) => a.name.localeCompare(b.name));
@@ -1071,6 +1115,7 @@
         const media = selectedPhoto?.sourceAssetPath
           ? `<img src="${thumbUrl(selectedPhoto.sourceAssetPath)}" loading="lazy" alt="${escapeHtml(storyPhotoHeadline(selectedPhoto))}">`
           : '<span class="missing">Photo unavailable</span>';
+        const storyFieldPrefix = `airshow-story-${index}`;
         return `
           <article class="airshow-story-moment-card" data-story-moment="${index}" aria-label="Segment ${index + 1}">
             <div class="airshow-story-moment-order">
@@ -1086,14 +1131,14 @@
               <span class="story-focal-marker" aria-hidden="true"></span>
             </button>
             <div class="airshow-story-moment-fields">
-              <div class="field wide"><label>Hero photo</label><select data-story-photo="${index}">${heroOptions}</select></div>
+              <div class="field wide"><label for="${storyFieldPrefix}-photo">Hero photo</label><select id="${storyFieldPrefix}-photo" data-story-photo="${index}">${heroOptions}</select></div>
               <div class="form-grid">
-                <div class="field"><label>Sequence label</label><input data-story-field="label" data-story-index="${index}" value="${escapeHtml(segment.label || "")}" placeholder="6 Oct · 08:44"></div>
-                <div class="field"><label>Overlay side</label><select data-story-overlay="${index}"><option value="left"${segment.overlaySide === "right" ? "" : " selected"}>Left</option><option value="right"${segment.overlaySide === "right" ? " selected" : ""}>Right</option></select></div>
+                <div class="field"><label for="${storyFieldPrefix}-label">Sequence label</label><input id="${storyFieldPrefix}-label" data-story-field="label" data-story-index="${index}" value="${escapeHtml(segment.label || "")}" placeholder="6 Oct · 08:44"></div>
+                <div class="field"><label for="${storyFieldPrefix}-overlay">Overlay side</label><select id="${storyFieldPrefix}-overlay" data-story-overlay="${index}"><option value="left"${segment.overlaySide === "right" ? "" : " selected"}>Left</option><option value="right"${segment.overlaySide === "right" ? " selected" : ""}>Right</option></select></div>
               </div>
-              <div class="field"><label>Hero motion</label><select data-story-motion="${index}">${["auto", "push-left", "push-right", "pull-in", "hold"].map((motion) => `<option value="${motion}"${motion === (storyPhoto.motion || "auto") ? " selected" : ""}>${motion.replace(/-/g, " ")}</option>`).join("")}</select></div>
-              <div class="field wide"><label>Segment title</label><input data-story-field="headline" data-story-index="${index}" value="${escapeHtml(segment.headline || "")}" placeholder="Defaults to the hero subject"></div>
-              <div class="field wide"><label>Segment caption</label><textarea data-story-field="body" data-story-index="${index}" rows="2" placeholder="Defaults to the hero photo caption">${escapeHtml(segment.body || "")}</textarea></div>
+              <div class="field"><label for="${storyFieldPrefix}-motion">Hero motion</label><select id="${storyFieldPrefix}-motion" data-story-motion="${index}">${["auto", "push-left", "push-right", "pull-in", "hold"].map((motion) => `<option value="${motion}"${motion === (storyPhoto.motion || "auto") ? " selected" : ""}>${motion.replace(/-/g, " ")}</option>`).join("")}</select></div>
+              <div class="field wide"><label for="${storyFieldPrefix}-headline">Segment title</label><input id="${storyFieldPrefix}-headline" data-story-field="headline" data-story-index="${index}" value="${escapeHtml(segment.headline || "")}" placeholder="Defaults to the hero subject"></div>
+              <div class="field wide"><label for="${storyFieldPrefix}-body">Segment caption</label><textarea id="${storyFieldPrefix}-body" data-story-field="body" data-story-index="${index}" rows="2" placeholder="Defaults to the hero photo caption">${escapeHtml(segment.body || "")}</textarea></div>
               <section class="story-supporting" aria-label="Supporting photos for segment ${index + 1}">
                 <div class="story-supporting-head">
                   <div>
@@ -1305,11 +1350,16 @@
       });
 
       const missingByDate = new Map();
+      const seenByDate = new Map();
       for (const entry of state.data?.entries || []) {
         for (const photo of entry.photos || []) {
           const date = effectiveEventDate(photo);
           if (photo.invalid || String(photo.airshow || "").trim() || !eventsByDate.has(date)) continue;
           if (!missingByDate.has(date)) missingByDate.set(date, []);
+          if (!seenByDate.has(date)) seenByDate.set(date, new Set());
+          const identity = canonicalPhotoIdentity(entry, photo);
+          if (seenByDate.get(date).has(identity)) continue;
+          seenByDate.get(date).add(identity);
           missingByDate.get(date).push({entry, photo});
         }
       }
@@ -1369,8 +1419,8 @@
             </div>
             <div class="form-grid">
               <div class="field wide">
-                <label>Assign these images to</label>
-                <input data-airshow-missing-input="${escapeHtml(group.date)}" list="airshowEventOptions" type="text" value="${escapeHtml(suggestedEvent)}" placeholder="Select or enter an airshow event">
+                <label for="airshow-missing-${escapeHtml(group.date)}">Assign these images to</label>
+                <input id="airshow-missing-${escapeHtml(group.date)}" data-airshow-missing-input="${escapeHtml(group.date)}" list="airshowEventOptions" type="text" value="${escapeHtml(suggestedEvent)}" placeholder="Select or enter an airshow event">
               </div>
             </div>
             <div class="card-actions">
@@ -1415,11 +1465,16 @@
 
     function bulkEventGroups() {
       const byDate = new Map();
+      const seenByDate = new Map();
       for (const entry of state.data?.entries || []) {
         for (const photo of entry.photos || []) {
           if (photo.invalid) continue;
           const date = effectiveEventDate(photo) || "undated";
           if (!byDate.has(date)) byDate.set(date, []);
+          if (!seenByDate.has(date)) seenByDate.set(date, new Set());
+          const identity = canonicalPhotoIdentity(entry, photo);
+          if (seenByDate.get(date).has(identity)) continue;
+          seenByDate.get(date).add(identity);
           byDate.get(date).push({entry, photo});
         }
       }
@@ -1496,8 +1551,8 @@
             </div>
             <div class="form-grid">
               <div class="field wide">
-                <label>Airshow or event for this date</label>
-                <input data-bulk-event-input="${escapeHtml(group.date)}" type="text" value="${escapeHtml(eventValue)}" placeholder="Singapore Airshow 2026">
+                <label for="bulk-event-${escapeHtml(group.date)}">Airshow or event for this date</label>
+                <input id="bulk-event-${escapeHtml(group.date)}" data-bulk-event-input="${escapeHtml(group.date)}" type="text" value="${escapeHtml(eventValue)}" placeholder="Singapore Airshow 2026">
               </div>
             </div>
             <div class="card-actions">
@@ -1753,14 +1808,11 @@
           ? item.id === candidate.photo.photoId
           : (item.sourceAssetPath || item.path) === candidate.photo.sourceAssetPath);
         if (!photo) throw new Error("Photo no longer exists. Reset the queue to use the current library.");
-        await api("/api/update-photo", {
+        await api("/api/update-master-photo", {
           photoId: photo.id,
           photo: {
-            path: photo.path,
-            location: photo.location || "",
-            pin_id: photo.locationId || photo.pinId || "",
+            locationId: photo.locationId || photo.pinId || "",
             date: photo.date || "",
-            year: photo.year || "",
             airshow: photo.airshow || "",
             title: photo.title || "",
             livery: photo.livery || "",
@@ -1924,6 +1976,7 @@
 
     function updateBulkEditorStatus(mode) {
       const editor = document.querySelector(`[data-bulk-editor="${mode}"]`);
+      if (mode === "master") updateMasterToolbar();
       if (!editor) return;
       const selectedCount = state.bulkEdit[mode].size;
       const hasField = [...editor.querySelectorAll("[data-bulk-apply-field]")].some((input) => input.checked);
@@ -1988,6 +2041,7 @@
     }
 
     function renderEntryDetail() {
+      syncPhotoEditorFields();
       renderBulkEditor("tagged", "taggedBulkEditor");
       const entry = selectedEntry();
       if (!entry) {
@@ -2201,82 +2255,156 @@
       return subjects.length ? subjects.join(" · ") : "Location-only photo";
     }
 
+    function masterValues(photo) {
+      return Object.fromEntries(["locationId", "date", "airshow", "title", "livery", "caption"].map(key => [key, photo[key] || ""]));
+    }
+
+    function updateMasterDraft(photoId, field, value) {
+      if (state.masterSaveStates.get(photoId)?.status === "saving") return;
+      const photo = state.data?.masterPhotos?.find(item => item.id === photoId);
+      const draft = state.masterDrafts.get(photoId) || (photo && {photo: {...photo}, changes: {}});
+      if (!draft || !(field in masterValues(draft.photo))) return;
+      if (value === (draft.photo[field] || "")) delete draft.changes[field];
+      else draft.changes[field] = value;
+      if (Object.keys(draft.changes).length) state.masterDrafts.set(photoId, draft);
+      else state.masterDrafts.delete(photoId);
+      state.masterSaveStates.delete(photoId);
+      updateMasterStatus(photoId);
+    }
+
+    function masterStatus(photoId) {
+      const save = state.masterSaveStates.get(photoId);
+      if (save?.status === "saving") return "Saving…";
+      if (save?.status === "error") return `Save failed: ${save.message}. Your edits are retained. Try Save changes again.`;
+      if (state.masterDrafts.has(photoId)) return "Unsaved changes";
+      return save?.status === "saved" ? "Saved" : "";
+    }
+
+    function updateMasterToolbar() {
+      $("masterSelectionCount").textContent = `${state.bulkEdit.master.size} selected`;
+      $("masterDraftCount").textContent = state.masterDrafts.size ? `${state.masterDrafts.size} unsaved photo${state.masterDrafts.size === 1 ? "" : "s"}` : "";
+    }
+
+    function updateMasterStatus(photoId) {
+      const row = document.querySelector(`[data-master-row="${CSS.escape(photoId)}"]`);
+      if (row) {
+        const saving = state.masterSaveStates.get(photoId)?.status === "saving";
+        row.querySelector("[data-master-status]").textContent = masterStatus(photoId);
+        row.querySelector("[data-master-status]").dataset.status = state.masterSaveStates.get(photoId)?.status || "";
+        row.querySelector("[data-master-save]").disabled = saving || !state.masterDrafts.has(photoId) || row.dataset.missing === "true";
+        row.querySelector("[data-master-save]").textContent = saving ? "Saving…" : "Save changes";
+        row.querySelector("[data-master-save]").setAttribute("aria-busy", String(saving));
+        row.querySelector("[data-master-discard]").disabled = saving || !state.masterDrafts.has(photoId);
+        row.querySelectorAll("[data-master-field]").forEach(field => { field.disabled = saving; });
+        const detach = row.querySelector("[data-master-detach]");
+        if (detach) detach.disabled = saving;
+      }
+      updateMasterToolbar();
+    }
+
+    function discardMasterDraft(photoId) {
+      if (state.masterSaveStates.get(photoId)?.status === "saving") return;
+      state.masterDrafts.delete(photoId);
+      state.masterSaveStates.delete(photoId);
+      renderMasterView();
+      document.querySelector(`[data-master-edit="${CSS.escape(photoId)}"]`)?.focus();
+    }
+
+    async function reloadManager() {
+      if ([...state.masterSaveStates.values()].some(item => item.status === "saving")) return;
+      if (state.masterDrafts.size && !window.confirm("Reload catalog data and discard unsaved Photo library edits? Other unsaved editors and caption proposals are not protected by this action.")) return;
+      // Discard only after a successful refresh; connection failures must retain drafts.
+      const discarded = new Map([...state.masterDrafts].map(([id, draft]) => [id, JSON.stringify(draft.changes)]));
+      await loadState(true);
+      for (const [id, changes] of discarded) {
+        if (JSON.stringify(state.masterDrafts.get(id)?.changes) === changes) {
+          state.masterDrafts.delete(id);
+          state.masterSaveStates.delete(id);
+        }
+      }
+      if (state.activeTab === "master") renderMasterView();
+    }
+
+    function guardLibraryDeparture(event) {
+      if (!state.masterDrafts.size) return;
+      event.preventDefault();
+      event.returnValue = "";
+    }
+
+    function renderMasterRow(photo, missing = false) {
+      const id = photo.id;
+      const draft = state.masterDrafts.get(id);
+      const values = {...masterValues(photo), ...draft?.changes};
+      const expanded = state.masterExpanded.has(id) || missing;
+      const prefix = `master-${id}`;
+      const label = photo.path || id;
+      const selected = state.bulkEdit.master.has(id);
+      const location = (state.data.pins || []).find(pin => pin.id === values.locationId);
+      const fields = [["locationId", "Location", "select"], ["date", "Date override", "date"], ["airshow", "Airshow event", "text"], ["title", "Title", "text"], ["livery", "Livery", "text"], ["caption", "Caption", "textarea"]];
+      return `<article class="master-row${selected ? " selected" : ""}" data-master-row="${escapeHtml(id)}" data-missing="${missing}" aria-labelledby="${escapeHtml(prefix)}-heading">
+        <div class="master-media">${photo.exists && photo.sourceAssetPath ? `<img src="${thumbUrl(photo.sourceAssetPath)}" loading="lazy" alt="${escapeHtml(masterSubjectLabel(photo) || label)}">` : '<div class="missing">Missing source</div>'}</div>
+        <div class="master-content">
+          <div class="master-heading">
+            <div><h3 class="mini-title" id="${escapeHtml(prefix)}-heading">${escapeHtml(masterSubjectLabel(photo) || label)}</h3>
+              <div class="mini-meta">${escapeHtml(label)}</div>
+              <div class="mini-meta">${escapeHtml(location?.name || photo.locationName || "No location")} · ${escapeHtml(photo.exifDate || values.date || "No capture date")}</div>
+            </div>
+            <div class="master-heading-actions">
+              ${missing ? "" : `<label class="photo-select"><input type="checkbox" aria-label="Select ${escapeHtml(label)}" data-bulk-select-mode="master" data-bulk-select-key="${escapeHtml(id)}"${selected ? " checked" : ""}> Select</label>`}
+              ${missing ? "" : `<button class="btn ghost" type="button" data-master-edit="${escapeHtml(id)}" aria-label="${expanded ? "Close editor for" : "Edit"} ${escapeHtml(label)}" aria-controls="${escapeHtml(prefix)}-editor" aria-expanded="${expanded}">${expanded ? "Close editor" : "Edit"}</button>`}
+            </div>
+          </div>
+          <p class="master-caption-excerpt">${escapeHtml(values.caption || "No caption")}</p>
+          ${missing ? '<p class="master-missing-note">This photo is no longer in the catalog. Your unsaved text is retained below for copying. Discard it when you no longer need it.</p>' : ""}
+          <div class="master-save-status" data-master-status role="status" aria-live="polite">${escapeHtml(masterStatus(id))}</div>
+        </div>
+          <div id="${escapeHtml(prefix)}-editor" class="master-editor"${expanded ? "" : " hidden"}>
+            <div class="form-grid master-fields">${fields.map(([key, title, type]) => {
+              const fieldId = `${prefix}-${key}`;
+              const attrs = `id="${escapeHtml(fieldId)}" data-master-field="${key}"`;
+              const control = type === "select" ? `<select ${attrs}>${masterLocationOptions(values[key])}</select>`
+                : type === "textarea" ? `<textarea ${attrs} rows="3">${escapeHtml(values[key])}</textarea>`
+                : `<input ${attrs} type="${type}" value="${escapeHtml(values[key])}"${key === "date" ? ` aria-describedby="${escapeHtml(prefix)}-date-help"` : ""}>`;
+              return `<div class="field${type === "textarea" ? " wide" : ""}"><label for="${escapeHtml(fieldId)}">${title}</label>${control}${key === "date" ? `<span class="subtle" id="${escapeHtml(prefix)}-date-help">Fallback only; EXIF capture date takes precedence.</span>` : ""}</div>`;
+            }).join("")}</div>
+            <div class="card-actions">
+              <button class="btn primary" type="button" data-master-save="${escapeHtml(id)}" aria-label="Save changes to ${escapeHtml(label)}">Save changes</button>
+              <button class="btn ghost" type="button" data-master-discard="${escapeHtml(id)}" aria-label="Discard changes to ${escapeHtml(label)}">Discard</button>
+              ${missing ? "" : `<button class="btn danger" type="button" data-master-detach="${escapeHtml(id)}" aria-label="Detach ${escapeHtml(label)} from catalog">Detach raw image</button>`}
+            </div>
+          </div>
+      </article>`;
+    }
+
     function renderMasterView() {
       if (!state.data || !$("masterList")) return;
-      renderBulkEditor("master", "masterBulkEditor");
+      const active = document.activeElement;
+      const focusId = active?.closest?.("[data-master-row]") ? active.id : "";
+      const selection = focusId && typeof active.selectionStart === "number" ? [active.selectionStart, active.selectionEnd] : null;
+      // Keep bulk-field choices intact when paging or refreshing the library.
+      if (!$("masterBulkEditor").querySelector("[data-bulk-editor]")) renderBulkEditor("master", "masterBulkEditor");
+      else updateBulkEditorStatus("master");
       const all = state.data.masterPhotos || [];
       const term = $("masterSearch").value.trim().toLowerCase();
-      const photos = all.filter((photo) => masterPhotoMatchesSearch(photo, term));
+      const photos = all.filter(photo => masterPhotoMatchesSearch(photo, term));
       const pageCount = Math.max(1, Math.ceil(photos.length / state.masterPageSize));
       state.masterPage = Math.min(Math.max(1, state.masterPage), pageCount);
       const start = (state.masterPage - 1) * state.masterPageSize;
       const pagePhotos = photos.slice(start, start + state.masterPageSize);
-      $("masterSummary").textContent = `${photos.length} of ${all.length} database photos · page ${state.masterPage} of ${pageCount}`;
-      if (!photos.length) {
-        $("masterList").innerHTML = `<div class="empty">No database photos match this search.</div>`;
-        $("masterPagination").innerHTML = "";
-        return;
-      }
-      $("masterList").innerHTML = pagePhotos.map((photo) => {
-        const media = photo.exists && photo.sourceAssetPath
-          ? `<img src="${thumbUrl(photo.sourceAssetPath)}" loading="lazy" alt="${escapeHtml(photo.path)}">`
-          : `<div class="missing">Missing source</div>`;
-        const dateMeta = photo.date ? `Override: ${photo.date}` : `EXIF: ${photo.exifDate || "none"}`;
-        const subjectLabel = masterSubjectLabel(photo);
-        const selected = state.bulkEdit.master.has(photo.id);
-        return `
-          <article class="master-row${selected ? " selected" : ""}" data-master-row="${escapeHtml(photo.id)}">
-            <div class="master-media">${media}</div>
-            <div class="master-content">
-              <div class="master-heading">
-                <div>
-                  <div class="mini-title">${escapeHtml(photo.path)}</div>
-                  <div class="mini-meta">${escapeHtml(photo.id)} · ${escapeHtml(dateMeta)} · ${photo.captionAiAssisted ? "AI-assisted caption" : ""}</div>
-                </div>
-                <div class="master-heading-actions">
-                  <label class="photo-select"><input type="checkbox" data-bulk-select-mode="master" data-bulk-select-key="${escapeHtml(photo.id)}"${selected ? " checked" : ""}> Select</label>
-                  <span class="tag${photo.exists ? "" : " warn"}">${photo.exists ? "source present" : "source missing"}</span>
-                </div>
-              </div>
-              <div class="master-subjects"><strong>Subjects:</strong> ${escapeHtml(subjectLabel)}</div>
-              <div class="form-grid master-fields">
-                <div class="field">
-                  <label>Location</label>
-                  <select data-master-field="locationId">${masterLocationOptions(photo.locationId)}</select>
-                </div>
-                <div class="field">
-                  <label>Date override</label>
-                  <input data-master-field="date" type="date" value="${escapeHtml(photo.date || "")}">
-                </div>
-                <div class="field wide">
-                  <label>Airshow event</label>
-                  <input data-master-field="airshow" type="text" value="${escapeHtml(photo.airshow || "")}" placeholder="Optional event name">
-                </div>
-                <div class="field wide">
-                  <label>Title</label>
-                  <input data-master-field="title" type="text" value="${escapeHtml(photo.title || "")}" placeholder="Optional title">
-                </div>
-                <div class="field wide">
-                  <label>Livery</label>
-                  <input data-master-field="livery" type="text" value="${escapeHtml(photo.livery || "")}" placeholder="Optional livery">
-                </div>
-                <div class="field wide">
-                  <label>Caption</label>
-                  <textarea data-master-field="caption" rows="3">${escapeHtml(photo.caption || "")}</textarea>
-                </div>
-              </div>
-              <div class="card-actions">
-                <button class="btn secondary" type="button" data-master-save="${escapeHtml(photo.id)}">Save changes</button>
-                <button class="btn danger" type="button" data-master-detach="${escapeHtml(photo.id)}">Detach raw image</button>
-              </div>
-            </div>
-          </article>
-        `;
-      }).join("");
-      $("masterPagination").innerHTML = `
+      const orphanDrafts = [...state.masterDrafts].filter(([id]) => !all.some(photo => photo.id === id));
+      $("masterSummary").textContent = `${photos.length} of ${all.length} photos · page ${state.masterPage} of ${pageCount}`;
+      $("masterList").innerHTML = orphanDrafts.map(([, draft]) => renderMasterRow(draft.photo, true)).join("") +
+        (pagePhotos.length ? pagePhotos.map(photo => renderMasterRow(photo)).join("") : `<div class="empty">${term ? 'No photos match this search. <button class="btn ghost" type="button" data-master-clear-search>Clear search</button>' : 'No photos in the catalog yet.'}</div>`);
+      $("masterPagination").innerHTML = photos.length ? `
         <button class="btn ghost" type="button" data-master-page="${state.masterPage - 1}"${state.masterPage === 1 ? " disabled" : ""}>Previous</button>
         <span>${start + 1}–${Math.min(start + state.masterPageSize, photos.length)} of ${photos.length}</span>
-        <button class="btn ghost" type="button" data-master-page="${state.masterPage + 1}"${state.masterPage === pageCount ? " disabled" : ""}>Next</button>`;
+        <button class="btn ghost" type="button" data-master-page="${state.masterPage + 1}"${state.masterPage === pageCount ? " disabled" : ""}>Next</button>` : "";
+      [...pagePhotos.map(photo => photo.id), ...orphanDrafts.map(([id]) => id)].forEach(updateMasterStatus);
+      updateMasterToolbar();
+      if (focusId && $(focusId)) {
+        $(focusId).focus({preventScroll: true});
+        if (selection) $(focusId).setSelectionRange(...selection);
+      }
     }
 
     function entryByTargetKey(targetKey) {
@@ -2595,6 +2723,16 @@
           <p class="subtle">Existing aircraft and units are reused automatically when their names match.</p>
           <button class="btn primary" type="submit">Create and select</button>
         </form>`);
+    }
+
+    function setInlineAircraftVisibility(show) {
+      $("utilityDrawerBody").querySelectorAll("[data-inline-aircraft]").forEach((field) => {
+        field.hidden = !show;
+        field.querySelectorAll("input,select,textarea").forEach((control) => {
+          control.disabled = !show;
+          if (control.name === "aircraftType") control.required = show;
+        });
+      });
     }
 
     function sourceDestinationOptions(sourceKey) {
@@ -2925,6 +3063,7 @@
 
     function renderMissingPhotoEditor(issue) {
       state.captionAssist.missingPhotoKey = "";
+      const canonical = isCanonicalDatabase();
       const selectedPin = state.data.pins.find((pin) => pin.id === issue.photo.pinId || pin.name === issue.photo.location);
       const pinOptions = state.data.pins.map((pin) => (
         `<option value="${escapeHtml(pin.key)}"${selectedPin?.key === pin.key ? " selected" : ""}>${escapeHtml(pinOptionLabel(pin))}</option>`
@@ -2943,14 +3082,15 @@
             <label for="missingPhotoAirshow">Airshow Event (optional)</label>
             <input id="missingPhotoAirshow" type="text" value="${escapeHtml(issue.photo.airshow || "")}">
           </div>
-          <div class="field">
-            <label for="missingPhotoDate">Date</label>
-            <input id="missingPhotoDate" type="date" value="${escapeHtml(issue.photo.date || "")}">
+          <div class="field${canonical ? " wide" : ""}">
+            <label for="missingPhotoDate">Date override</label>
+            <input id="missingPhotoDate" type="date" aria-describedby="missingPhotoDateHelp" value="${escapeHtml(issue.photo.date || "")}">
+            <span class="subtle" id="missingPhotoDateHelp">Fallback date only; EXIF capture date takes precedence.</span>
           </div>
-          <div class="field">
+          ${canonical ? "" : `<div class="field">
             <label for="missingPhotoYear">Year</label>
             <input id="missingPhotoYear" type="text" inputmode="numeric" value="${escapeHtml(issue.photo.year || "")}">
-          </div>
+          </div>`}
           <div class="field wide">
             <label for="missingPhotoCaption">Caption</label>
             <textarea id="missingPhotoCaption">${escapeHtml(issue.photo.caption || "")}</textarea>
@@ -2975,6 +3115,7 @@
       const photo = entry.photos.find((item) => item.index === index);
       if (!photo || photo.invalid) return;
       state.captionAssist.editPhotoKey = "";
+      syncPhotoEditorFields();
       $("editIndex").value = String(index);
       $("editPath").value = photo.path || "";
       $("editDate").value = photo.date || "";
@@ -2989,6 +3130,7 @@
 
     function clearEditor() {
       state.captionAssist.editPhotoKey = "";
+      syncPhotoEditorFields();
       $("editIndex").value = "";
       $("editPath").value = "";
       $("editDate").value = "";
@@ -3087,9 +3229,9 @@
         caption: $("captionInput").value,
         captionAiAssisted: Boolean(aiCaptionAssetPath),
         date: $("photoDate").value,
-        year: $("photoYear").value,
         dedupe: $("dedupeSelect").value !== "allow"
       };
+      if (!isCanonicalDatabase()) payload.year = $("photoYear").value;
       const result = await api("/api/attach", payload);
       state.selectedAssets.clear();
       state.captionAssist.attachAssetPath = "";
@@ -3103,23 +3245,24 @@
       if (!entry || index === "") throw new Error("Choose a photo to edit.");
       const pin = selectedPin("editLocation");
       const tagTarget = entryByTargetKey($("editTagTarget").value);
+      const photo = {
+        path: $("editPath").value,
+        location: pin ? pin.name : "",
+        pin_id: pin ? pin.id : "",
+        date: $("editDate").value,
+        airshow: $("editAirshow").value,
+        livery: $("editLivery").value,
+        caption: $("editCaption").value,
+        captionAiAssisted: state.captionAssist.editPhotoKey === captionPhotoKey(entry, Number(index))
+      };
+      if (!isCanonicalDatabase()) photo.year = $("editYear").value;
       const payload = {
         ...entryRequestFields(entry),
         index: Number(index),
         tagTargetEntryPath: tagTarget?.sourceScope === "squadron-target" ? "" : tagTarget?.entryPath || "",
         tagTargetScope: tagTarget?.sourceScope === "squadron-target" ? "" : tagTarget?.sourceScope || "",
         tagTargetSquadron: tagTarget?.sourceScope === "squadron-target" ? squadronTargetPayload(tagTarget) : null,
-        photo: {
-          path: $("editPath").value,
-          location: pin ? pin.name : "",
-          pin_id: pin ? pin.id : "",
-          date: $("editDate").value,
-          year: $("editYear").value,
-          airshow: $("editAirshow").value,
-          livery: $("editLivery").value,
-          caption: $("editCaption").value,
-          captionAiAssisted: state.captionAssist.editPhotoKey === captionPhotoKey(entry, Number(index))
-        }
+        photo
       };
       const result = await api("/api/update-photo", payload);
       toast(result.message);
@@ -3128,31 +3271,26 @@
       await loadState(true);
     }
 
-    function masterField(row, name) {
-      return row.querySelector(`[data-master-field="${name}"]`);
-    }
-
-    async function saveMasterPhoto(photoId, button) {
-      const row = button.closest("[data-master-row]");
-      if (!row) return;
-      button.disabled = true;
+    async function saveMasterPhoto(photoId) {
+      const draft = state.masterDrafts.get(photoId);
+      const photo = state.data?.masterPhotos?.find(item => item.id === photoId);
+      if (!draft || !photo || state.masterSaveStates.get(photoId)?.status === "saving") return;
+      const values = {...masterValues(photo), ...draft.changes};
+      state.masterSaveStates.set(photoId, {status: "saving"});
+      updateMasterStatus(photoId);
       try {
-        const result = await api("/api/update-master-photo", {
-          photoId,
-          photo: {
-            locationId: masterField(row, "locationId").value,
-            date: masterField(row, "date").value,
-            airshow: masterField(row, "airshow").value,
-            title: masterField(row, "title").value,
-            livery: masterField(row, "livery").value,
-            caption: masterField(row, "caption").value
-          }
-        });
-        toast(result.message);
-        await loadState(true);
-      } finally {
-        button.disabled = false;
+        await api("/api/update-master-photo", {photoId, photo: values});
+      } catch (error) {
+        state.masterSaveStates.set(photoId, {status: "error", message: error.message || "Request failed"});
+        updateMasterStatus(photoId);
+        return;
       }
+      Object.assign(photo, values);
+      state.masterDrafts.delete(photoId);
+      state.masterSaveStates.set(photoId, {status: "saved"});
+      updateMasterStatus(photoId);
+      // A refresh failure is different from a failed save: the write already succeeded.
+      try { await loadState(true); } catch (_) { /* Persistent load banner owns recovery. */ }
     }
 
     async function detachMasterPhoto(photoId) {
@@ -3171,20 +3309,21 @@
       const issue = getSelectedIssue();
       if (!issue || issue.type !== "photo") throw new Error("Choose a photo item.");
       const pin = state.data.pins.find((item) => item.key === $("missingPhotoLocation").value);
+      const photo = {
+        path: $("missingPhotoPath").value,
+        location: pin ? pin.name : "",
+        pin_id: pin ? pin.id : "",
+        date: $("missingPhotoDate").value,
+        airshow: $("missingPhotoAirshow").value,
+        title: issue.photo.title || "",
+        caption: $("missingPhotoCaption").value,
+        captionAiAssisted: state.captionAssist.missingPhotoKey === captionPhotoKey(issue.entry, issue.photo.index)
+      };
+      if (!isCanonicalDatabase()) photo.year = $("missingPhotoYear").value;
       const result = await api("/api/update-photo", {
         ...entryRequestFields(issue.entry),
         index: issue.photo.index,
-        photo: {
-          path: $("missingPhotoPath").value,
-          location: pin ? pin.name : "",
-          pin_id: pin ? pin.id : "",
-          date: $("missingPhotoDate").value,
-          year: $("missingPhotoYear").value,
-          airshow: $("missingPhotoAirshow").value,
-          title: issue.photo.title || "",
-          caption: $("missingPhotoCaption").value,
-          captionAiAssisted: state.captionAssist.missingPhotoKey === captionPhotoKey(issue.entry, issue.photo.index)
-        }
+        photo
       });
       toast(result.message);
       state.captionAssist.missingPhotoKey = "";
@@ -3220,6 +3359,9 @@
     async function deletePhoto(index) {
       const entry = selectedEntry();
       if (!entry) return;
+      const photo = entry.photos?.[index];
+      if (!photo) throw new Error("Photo no longer exists. Reload and try again.");
+      if (!window.confirm(`Remove this photo from the catalog?\n\n${photo.path || "Selected photo"}\n\nThe raw file in raw_assets will not be deleted.`)) return;
       const result = await api("/api/delete-photo", {...entryRequestFields(entry), index});
       toast(result.message);
       clearEditor();
@@ -3530,8 +3672,13 @@
             : `Local build failed (${payload.durationSeconds}s). Review the log before publishing.`;
           appendBuildLog(`returncode: ${payload.returncode}`, "stdout");
           toast(succeeded ? "Local build complete. The live site has not been updated." : "Local build failed. Review the build log.");
-          await loadState(true);
-          resolve();
+          try {
+            await loadState(true);
+          } catch (_) {
+            // The build result is already known; the load banner owns catalog refresh recovery.
+          } finally {
+            resolve();
+          }
         });
         source.addEventListener("error", (event) => {
           if (finished) return;
@@ -3645,13 +3792,68 @@
       }
     }
 
+    let assetDrawerOpener = null;
+    let syncingManagerLayout = false;
+
+    function syncManagerLayout() {
+      const focus = document.activeElement;
+      const panel = $("assetPanel");
+      const assetsDialog = $("managerAssetsDialog");
+      const nav = $("managerNav");
+      const navDialog = $("managerNavDialog");
+      const overlay = window.matchMedia("(max-width: 1100px)").matches;
+      const narrow = window.matchMedia("(max-width: 760px)").matches;
+      const focusInPanel = panel.contains(focus);
+      const focusInNav = navDialog.contains(focus) || nav.contains(focus);
+      syncingManagerLayout = true;
+      if (overlay) {
+        if (panel.parentElement !== assetsDialog) assetsDialog.appendChild(panel);
+        if (state.assetsOpen && !assetsDialog.open) {
+          assetsDialog.showModal();
+          $("assetSearch").focus();
+        } else if (!state.assetsOpen && assetsDialog.open) assetsDialog.close();
+      } else {
+        if (assetsDialog.open) assetsDialog.close();
+        const stage = document.querySelector(".workspace-stage");
+        if (panel.parentElement !== stage) stage.insertBefore(panel, document.querySelector(".manager-main"));
+      }
+      if (narrow) {
+        if (nav.parentElement !== navDialog) navDialog.appendChild(nav);
+      } else {
+        if (navDialog.open) navDialog.close();
+        const body = document.querySelector(".app-body");
+        if (nav.parentElement !== body) body.insertBefore(nav, document.querySelector(".workspace-stage"));
+      }
+      $("openManagerNavBtn").setAttribute("aria-expanded", String(navDialog.open));
+      syncingManagerLayout = false;
+      if (focusInPanel && state.assetsOpen && focus?.isConnected) focus.focus({preventScroll: true});
+      else if (focusInNav) {
+        if (narrow && !navDialog.open) $("openManagerNavBtn").focus();
+        else if (!assetsDialog.open && focus?.isConnected) focus.focus({preventScroll: true});
+      } else if (!narrow && focus === $("openManagerNavBtn")) {
+        nav.querySelector(".tab.active")?.focus();
+      }
+    }
+
     function setAssetDrawer(open, restoreFocus = false) {
-      state.assetsOpen = Boolean(open);
-      document.body.dataset.assetsOpen = String(state.assetsOpen);
-      $("toggleAssetsBtn").setAttribute("aria-expanded", String(state.assetsOpen));
-      $("assetPanel").setAttribute("aria-hidden", String(!state.assetsOpen));
-      $("assetPanel").inert = !state.assetsOpen;
-      if (!state.assetsOpen && restoreFocus) $("toggleAssetsBtn").focus();
+      if (open && !state.assetsOpen) assetDrawerOpener = document.activeElement;
+      state.assetsOpen = open;
+      document.body.dataset.assetsOpen = String(open);
+      $("toggleAssetsBtn").setAttribute("aria-expanded", String(open));
+      $("assetPanel").setAttribute("aria-hidden", String(!open));
+      $("assetPanel").inert = !open;
+      syncManagerLayout();
+      if (!open && restoreFocus) {
+        const opener = assetDrawerOpener;
+        if (opener?.isConnected && !opener.closest("[inert], dialog:not([open])")) opener.focus();
+        else $("toggleAssetsBtn").focus();
+      }
+    }
+
+    function closeManagerNavigation(restoreFocus = true) {
+      $("managerNavDialog").close();
+      $("openManagerNavBtn").setAttribute("aria-expanded", "false");
+      if (restoreFocus && window.matchMedia("(max-width: 760px)").matches) $("openManagerNavBtn").focus();
     }
 
     function renderSourcePhotoLibrary() {
@@ -3666,6 +3868,7 @@
 
     function setTab(name) {
       if (!viewMeta[name]) name = "attach";
+      if ($("managerNavDialog").open) closeManagerNavigation();
       state.activeTab = name;
       sessionStorage.setItem("spotterdex-manager.activeTab", name);
       document.body.dataset.activeTab = name;
@@ -3687,6 +3890,7 @@
       });
       const [title, description] = viewMeta[name];
       $("viewTitle").textContent = title;
+      $("mobileDestination").textContent = title;
       $("viewDescription").textContent = description;
       setAssetDrawer(name === "attach");
       renderActiveView();
@@ -3705,6 +3909,22 @@
     }
 
     function bindEvents() {
+      $("openManagerNavBtn").addEventListener("click", () => {
+        $("managerNavDialog").showModal();
+        $("openManagerNavBtn").setAttribute("aria-expanded", "true");
+        $("managerNav").querySelector(".tab.active")?.focus();
+      });
+      $("closeManagerNavBtn").addEventListener("click", () => closeManagerNavigation());
+      $("managerNavDialog").addEventListener("cancel", event => { event.preventDefault(); closeManagerNavigation(); });
+      $("managerNavDialog").addEventListener("close", () => {
+        $("openManagerNavBtn").setAttribute("aria-expanded", "false");
+      });
+      $("managerAssetsDialog").addEventListener("cancel", event => { event.preventDefault(); setAssetDrawer(false, true); });
+      $("managerAssetsDialog").addEventListener("close", () => {
+        if (!syncingManagerLayout && window.matchMedia("(max-width: 1100px)").matches && !$("managerAssetsDialog").open && state.assetsOpen) setAssetDrawer(false, true);
+      });
+      window.matchMedia("(max-width: 1100px)").addEventListener("change", syncManagerLayout);
+      window.matchMedia("(max-width: 760px)").addEventListener("change", syncManagerLayout);
       $("assetSearch").addEventListener("input", renderAssetGrid);
       $("entrySearch").addEventListener("input", renderEntryOptions);
       $("squadronSourceSearch").addEventListener("input", renderSquadronSourceCards);
@@ -3861,6 +4081,7 @@
           renderAirshowStoryManager();
         }
         if (focal) {
+          if (event.detail === 0 && !event.clientX && !event.clientY) return;
           const segment = state.airshowStoryDraft?.segments?.[Number(focal.dataset.storyFocal)];
           if (!segment?.photos?.[0]) return;
           const rect = focal.getBoundingClientRect();
@@ -3942,7 +4163,14 @@
         setTab("bulk-captions");
         $("bulkCaptionScope").focus();
       });
-      $("reloadBtn").addEventListener("click", () => loadState(true).then(() => toast("Reloaded")));
+      $("reloadBtn").addEventListener("click", () => reloadManager().catch(() => {}));
+      $("retryLoadBtn").addEventListener("click", async () => {
+        $("retryLoadBtn").disabled = true;
+        $("retryLoadBtn").setAttribute("aria-busy", "true");
+        try { await loadState(true); } catch (_) { /* Keep the persistent error. */ }
+        finally { $("retryLoadBtn").disabled = false; $("retryLoadBtn").setAttribute("aria-busy", "false"); }
+      });
+      window.addEventListener("beforeunload", guardLibraryDeparture);
       $("createSourceInlineBtn").addEventListener("click", openInlineSourceCreator);
       $("createLocationInlineBtn").addEventListener("click", openInlineLocationCreator);
       $("createEventInlineBtn").addEventListener("click", openInlineEventCreator);
@@ -3963,7 +4191,7 @@
       $("utilityDrawerBody").addEventListener("change", (event) => {
         if (event.target.name === "scope") {
           const show = event.target.value === "aircraft";
-          $("utilityDrawerBody").querySelectorAll("[data-inline-aircraft]").forEach((field) => { field.hidden = !show; });
+          setInlineAircraftVisibility(show);
         }
         if (event.target.name === "deleteMode") {
           const zone = event.target.closest("[data-entry-delete-zone]");
@@ -4312,11 +4540,32 @@
       $("squadronSourceCards").addEventListener("click", handleSourceCardClick);
       $("aircraftSourceCards").addEventListener("click", handleSourceCardClick);
       $("masterList").addEventListener("click", (event) => {
+        const edit = event.target.closest("[data-master-edit]");
+        const discard = event.target.closest("[data-master-discard]");
+        if (edit) {
+          const id = edit.dataset.masterEdit;
+          if (state.masterExpanded.has(id)) state.masterExpanded.delete(id);
+          else state.masterExpanded.add(id);
+          renderMasterView();
+          document.querySelector(`[data-master-edit="${CSS.escape(id)}"]`)?.focus();
+        }
+        if (discard) discardMasterDraft(discard.dataset.masterDiscard);
+        if (event.target.closest("[data-master-clear-search]")) {
+          $("masterSearch").value = "";
+          renderMasterView();
+          $("masterSearch").focus();
+        }
         const save = event.target.closest("[data-master-save]");
         const detach = event.target.closest("[data-master-detach]");
         if (save) saveMasterPhoto(save.dataset.masterSave, save).catch((error) => toast(error.message));
         if (detach) detachMasterPhoto(detach.dataset.masterDetach).catch((error) => toast(error.message));
       });
+      const captureLibraryField = (event) => {
+        const field = event.target.closest("[data-master-field]");
+        if (field) updateMasterDraft(field.closest("[data-master-row]").dataset.masterRow, field.dataset.masterField, field.value);
+      };
+      $("masterList").addEventListener("input", captureLibraryField);
+      $("masterList").addEventListener("change", captureLibraryField);
       $("masterList").addEventListener("change", (event) => {
         const input = event.target.closest("[data-bulk-select-mode='master']");
         if (input) toggleBulkSelection("master", input.dataset.bulkSelectKey, input.checked);
@@ -4367,7 +4616,7 @@
         button.addEventListener("click", () => setTab(button.dataset.tab));
       });
       document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && state.assetsOpen && !$("assetPreviewModal").open && !$("utilityDrawer").open) {
+        if (!event.defaultPrevented && event.key === "Escape" && state.assetsOpen && !$("managerAssetsDialog").open && !$("managerNavDialog").open && !$("assetPreviewModal").open && !$("utilityDrawer").open) {
           setAssetDrawer(false, true);
         }
       });
@@ -4375,4 +4624,4 @@
 
     bindEvents();
     setTab(state.activeTab);
-    loadState(false).catch((error) => toast(error.message));
+    loadState(false).catch(() => {});

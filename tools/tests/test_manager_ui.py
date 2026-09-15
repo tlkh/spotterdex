@@ -92,12 +92,40 @@ class ManagerHtmlContractTests(unittest.TestCase):
         self.assertEqual(self.html.by_id("bulkCaptionSummary")["attrs"]["aria-live"], "polite")
         self.assertEqual(self.html.by_id("bulkCaptionSummary")["attrs"]["role"], "status")
 
+    def test_dynamic_event_fields_associate_labels_with_controls(self):
+        source = (MANAGER / "app.js").read_text("utf-8")
+        for fragment in (
+            '<label for="${storyFieldPrefix}-photo">Hero photo</label>',
+            '<label for="${storyFieldPrefix}-label">Sequence label</label>',
+            '<label for="${storyFieldPrefix}-overlay">Overlay side</label>',
+            '<label for="${storyFieldPrefix}-motion">Hero motion</label>',
+            '<label for="${storyFieldPrefix}-headline">Segment title</label>',
+            '<label for="${storyFieldPrefix}-body">Segment caption</label>',
+            '<label for="airshow-missing-${escapeHtml(group.date)}">Assign these images to</label>',
+            '<label for="bulk-event-${escapeHtml(group.date)}">Airshow or event for this date</label>',
+        ):
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, source)
+
+    def test_canonical_photo_editors_hide_legacy_year_fields(self):
+        source = (MANAGER / "app.js").read_text("utf-8")
+        markup = (MANAGER / "app.html").read_text("utf-8")
+        self.assertIn('id="photoYearField" hidden', markup)
+        self.assertIn('id="editYearField" hidden', markup)
+        self.assertIn('aria-describedby="editDateHelp"', markup)
+        self.assertIn('id="editDateHelp"', markup)
+        self.assertIn('function syncPhotoEditorFields()', source)
+        self.assertIn('$("photoYearField").hidden = !legacy;', source)
+        self.assertIn('$("editYearField").hidden = !legacy;', source)
+        self.assertIn('$("editDateField").classList.toggle("wide", !legacy);', source)
+        self.assertIn('if (!isCanonicalDatabase()) payload.year = $("photoYear").value;', source)
+
 
 @unittest.skipUnless(shutil.which("node"), "Node.js is required for Manager behavior tests")
 class ManagerCaptionBehaviorTests(unittest.TestCase):
     def run_behavior(self, body):
         source = (MANAGER / "app.js").read_text("utf-8")
-        names = ("selectedBulkCaptionCandidates", "currentBulkCaptionQueue", "resetBulkCaptionQueue", "bulkProposalValue", "renderBulkCaptions", "runBulkCaptions", "acceptBulkCaption", "rejectBulkCaption", "masterPhotoMatchesSearch", "escapeHtml", "thumbUrl")
+        names = ("selectedBulkCaptionCandidates", "currentBulkCaptionQueue", "resetBulkCaptionQueue", "bulkProposalValue", "renderBulkCaptions", "runBulkCaptions", "acceptBulkCaption", "rejectBulkCaption", "masterPhotoMatchesSearch", "escapeHtml", "thumbUrl", "effectiveEventDate", "airshowEventKey", "canonicalPhotoIdentity", "taggedAirshowGroups", "untaggedAirshowDayGroups", "bulkEventGroups")
         functions = []
         for name in names:
             match = re.search(r"^    (?:async )?function " + name + r"\([^\n]*\) \{.*?^    \}", source, re.MULTILINE | re.DOTALL)
@@ -110,7 +138,7 @@ class ManagerCaptionBehaviorTests(unittest.TestCase):
             const document = {querySelectorAll: () => drafts};
             const window = {confirm: () => true};
             const state = {
-                data: {entries: [], masterPhotos: []},
+                data: {entries: [], masterPhotos: [], airshowEvents: []},
                 bulkEdit: {master: new Set()},
                 selectedAssets: new Set(),
                 bulkCaptions: {queue: null, results: {}, running: false, stopRequested: false, scope: "selected", excludeAi: true}
@@ -235,7 +263,7 @@ class ManagerCaptionBehaviorTests(unittest.TestCase):
             let fetches = 0;
             fetch = async url => {assert.equal(url, "/api/state"); fetches++; return new Promise(resolve => {release = resolve;});};
             const updates = [];
-            api = async (url, payload) => {assert.equal(url, "/api/update-photo"); updates.push(payload);};
+            api = async (url, payload) => {assert.equal(url, "/api/update-master-photo"); updates.push(payload);};
             const pending = acceptBulkCaption("a");
             assert.equal(state.bulkCaptions.results.a.status, "saving");
             await acceptBulkCaption("a");
@@ -250,9 +278,24 @@ class ManagerCaptionBehaviorTests(unittest.TestCase):
             assert.equal(updates[0].photo.captionAiAssisted, true);
             assert.equal(updates[0].photo.title, "Latest title");
             assert.equal(updates[0].photo.livery, "Latest livery");
-            assert.equal(updates[0].photo.pin_id, "new-base");
+            assert.equal(updates[0].photo.locationId, "new-base");
             assert.equal(state.bulkCaptions.results.a.status, "accepted");
             assert.equal(reloads, 1);
+        ''')
+
+    def test_airshow_groups_deduplicate_multi_subject_photos(self):
+        self.run_behavior(r'''
+            const shared = photo("shared", {photoId: "shared", airshow: "Display Day", date: "2026-06-02"});
+            const untagged = photo("untagged", {photoId: "untagged", date: "2026-06-02", airshow: ""});
+            state.data.entries = [
+                {targetKey: "aircraft-a", entryPath: "db:aircraft:a:u", photos: [shared, untagged]},
+                {targetKey: "aircraft-b", entryPath: "db:aircraft:b:u", photos: [shared, untagged]}
+            ];
+            state.data.airshowEvents = [{id: "display-day", name: "Display Day"}];
+            assert.equal(taggedAirshowGroups().length, 1);
+            assert.equal(taggedAirshowGroups()[0].photos.length, 1);
+            assert.equal(untaggedAirshowDayGroups()[0].photos.length, 1);
+            assert.equal(bulkEventGroups().find(group => group.date === "2026-06-02").photos.length, 2);
         ''')
 
     def test_failed_save_preserves_edited_draft_for_retry(self):
@@ -288,6 +331,15 @@ class ManagerCaptionBehaviorTests(unittest.TestCase):
                 assert.match(html, /data-bulk-caption-key="a">Edited draft<\/textarea>/);
                 replacement = {
                     dataset: {bulkCaptionKey: "a"}, value: "Edited draft",
+                    get parentElement() {return nodes[this.record.parents.at(-1)] || null;},
+                    contains(other) {return other === this || !!other?.record.parents.includes(nodes.indexOf(this));},
+                    appendChild(child) {
+                        const descendants = nodes.filter(node => node !== child && child.contains(node));
+                        const previous = [...child.record.parents, nodes.indexOf(child)];
+                        child.record.parents = [...this.record.parents, nodes.indexOf(this)];
+                        for (const node of descendants) node.record.parents = [...child.record.parents, nodes.indexOf(child), ...node.record.parents.slice(previous.length)];
+                    },
+                    insertBefore(child) {this.appendChild(child);},
                     focus() {document.activeElement = this;},
                     setSelectionRange(start, end) {this.selectionStart = start; this.selectionEnd = end;}
                 };
@@ -339,8 +391,13 @@ class ManagerShellBehaviorTests(unittest.TestCase):
             const records = RECORDS;
             const storage = new Map([["spotterdex-manager.activeTab", SAVED_TAB]]);
             const sessionStorage = {getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value)};
-            const window = {matchMedia: () => ({matches: false}), addEventListener() {}};
+            const media = new Map();
+            const window = {matchMedia: query => {
+                if (!media.has(query)) media.set(query, {matches: false, addEventListener() {}});
+                return media.get(query);
+            }, addEventListener() {}, confirm: () => true};
             const document = {activeElement: null, addEventListener() {}};
+            const CSS = {escape: value => value};
             const nodes = records.map(record => {
                 const attrs = {...record.attrs};
                 const classes = new Set((attrs.class || "").split(/\s+/));
@@ -357,6 +414,15 @@ class ManagerShellBehaviorTests(unittest.TestCase):
                     removeAttribute: key => {delete attrs[key];},
                     addEventListener(type, handler) {(listeners[type] ||= []).push(handler);},
                     dispatch(type, event = {}) {for (const handler of listeners[type] || []) handler({target: this, ...event});},
+                    get parentElement() {return nodes[this.record.parents.at(-1)] || null;},
+                    contains(other) {return other === this || !!other?.record.parents.includes(nodes.indexOf(this));},
+                    appendChild(child) {
+                        const descendants = nodes.filter(node => node !== child && child.contains(node));
+                        const previous = [...child.record.parents, nodes.indexOf(child)];
+                        child.record.parents = [...this.record.parents, nodes.indexOf(this)];
+                        for (const node of descendants) node.record.parents = [...child.record.parents, nodes.indexOf(child), ...node.record.parents.slice(previous.length)];
+                    },
+                    insertBefore(child) {this.appendChild(child);},
                     focus() {document.activeElement = this;},
                     showModal() {this.open = true; this.modalCalls = (this.modalCalls || 0) + 1;},
                     close() {this.open = false; this.dispatch("close");},
@@ -386,7 +452,7 @@ class ManagerShellBehaviorTests(unittest.TestCase):
         '''.replace("RECORDS", json.dumps(records)).replace("SAVED_TAB", json.dumps(saved_tab))
         script = setup + "\n" + source + "\n" + body
         program = 'const vm = require("node:vm"); const assert = require("node:assert/strict");\n'
-        program += "vm.runInNewContext(" + json.dumps(script) + ", {assert}, {timeout: 5000});"
+        program += "Promise.resolve(vm.runInNewContext(" + json.dumps(script) + ", {assert}, {timeout: 5000})).catch(error => {console.error(error); process.exitCode = 1;});"
         result = subprocess.run(["node"], input=program, cwd=ROOT, capture_output=True, text=True, timeout=15)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
@@ -457,6 +523,313 @@ class ManagerShellBehaviorTests(unittest.TestCase):
                     assert.equal(node.classList.contains("active"), node === button);
                 }
             }
+        ''')
+
+    def test_photo_editor_year_fields_track_canonical_database_mode(self):
+        self.run_shell(r'''
+            state.data = {project: {databasePath: "content/spotterdex.sqlite3"}, entries: [], pins: []};
+            renderEntryDetail();
+            assert.equal($("photoYearField").hidden, true);
+            assert.equal($("editYearField").hidden, true);
+            assert.equal($("editDateField").classList.contains("wide"), true);
+            state.data = {project: {}, entries: [], pins: []};
+            renderEntryDetail();
+            assert.equal($("photoYearField").hidden, false);
+            assert.equal($("editYearField").hidden, false);
+            assert.equal($("editDateField").classList.contains("wide"), false);
+        ''')
+
+    def test_missing_photo_editor_omits_derived_year_in_canonical_mode(self):
+        self.run_shell(r'''
+            const issue = {type: "photo", entry: {aircraftType: "C-130", squadronName: "61 Sqn", entryPath: "db:aircraft:c130:u"}, photo: {path: "frame.jpg", date: "", year: "2026", caption: "", exifDate: ""}};
+            state.data = {project: {databasePath: "content/spotterdex.sqlite3"}, pins: []};
+            renderMissingPhotoEditor(issue);
+            assert.equal($('missingEditor').innerHTML.includes('missingPhotoYear'), false);
+            assert.equal($('missingEditor').innerHTML.includes('missingPhotoDateHelp'), true);
+            state.data = {project: {}, pins: []};
+            renderMissingPhotoEditor(issue);
+            assert.equal($('missingEditor').innerHTML.includes('missingPhotoYear'), true);
+        ''')
+
+
+    def test_library_drafts_survive_filter_pagination_and_navigation(self):
+        self.run_shell(r'''
+            state.data = {masterPhotos: [{id: "a", path: "a.jpg", caption: "Stored"}, {id: "b", path: "b.jpg", caption: "Other"}], pins: []};
+            updateMasterDraft("a", "caption", "Keep this draft");
+            updateMasterDraft("b", "title", "Other draft");
+            state.masterExpanded.add("a");
+            state.masterExpanded.add("b");
+            state.masterPageSize = 1;
+            renderMasterView();
+            assert.match($("masterList").innerHTML, /Keep this draft/);
+            $("masterSearch").value = "no matches";
+            renderMasterView();
+            assert.match($("masterList").innerHTML, /Clear search/);
+            assert.equal(state.masterDrafts.size, 2);
+            $("masterSearch").value = "";
+            state.masterPage = 2;
+            renderMasterView();
+            assert.match($("masterList").innerHTML, /Other draft/);
+            renderActiveView = () => {};
+            setTab("build");
+            setTab("master");
+            state.masterPage = 1;
+            renderMasterView();
+            assert.match($("masterList").innerHTML, /Keep this draft/);
+            assert.equal(state.masterExpanded.size, 2);
+            updateMasterDraft("a", "caption", "Stored");
+            assert.equal(state.masterDrafts.has("a"), false);
+            assert.equal(state.masterDrafts.has("b"), true);
+        ''')
+
+    def test_library_save_failure_retry_and_other_draft_preservation(self):
+        self.run_shell(r'''
+            (async () => {
+                state.data = {masterPhotos: [{id: "a", caption: "Stored", livery: "Old"}, {id: "b", caption: "Other"}], pins: []};
+                updateMasterDraft("a", "caption", "Proposed");
+                updateMasterDraft("b", "title", "Keep B");
+                state.data.masterPhotos[0].livery = "Refreshed unrelated value";
+                let requests = 0, release;
+                api = async (url, payload) => {
+                    requests++;
+                    assert.equal(url, "/api/update-master-photo");
+                    assert.equal(payload.photo.caption, "Proposed");
+                    assert.equal(payload.photo.livery, "Refreshed unrelated value");
+                    return new Promise((resolve, reject) => {release = {resolve, reject};});
+                };
+                const first = saveMasterPhoto("a");
+                assert.equal(masterStatus("a"), "Saving…");
+                updateMasterDraft("a", "caption", "Blocked while saving");
+                await saveMasterPhoto("a");
+                assert.equal(requests, 1);
+                release.reject(Error("Connection lost"));
+                await first;
+                assert.match(masterStatus("a"), /Save failed: Connection lost/);
+                assert.equal(state.masterDrafts.get("a").changes.caption, "Proposed");
+                loadState = async () => {throw Error("Refresh failed after successful save");};
+                const retry = saveMasterPhoto("a");
+                release.resolve({});
+                await retry;
+                assert.equal(state.masterDrafts.has("a"), false);
+                assert.equal(masterStatus("a"), "Saved");
+                assert.equal(state.masterDrafts.get("b").changes.title, "Keep B");
+                assert.equal(state.data.masterPhotos[0].caption, "Proposed");
+            })()
+        ''')
+
+    def test_missing_record_retains_editable_draft_and_label_associations(self):
+        self.run_shell(r'''
+            state.data = {masterPhotos: [{id: "photo-a", path: "a.jpg", caption: "Stored"}], pins: []};
+            updateMasterDraft("photo-a", "caption", "Recover me");
+            state.data.masterPhotos = [];
+            renderMasterView();
+            const markup = $("masterList").innerHTML;
+            assert.match(markup, /no longer in the catalog/);
+            assert.match(markup, /Recover me/);
+            assert.match(markup, /data-missing="true"/);
+            for (const field of ["locationId", "date", "airshow", "title", "livery", "caption"]) {
+                assert(markup.includes(`for="master-photo-a-${field}"`));
+                assert(markup.includes(`id="master-photo-a-${field}"`));
+            }
+            assert.match(markup, /aria-label="Save changes to a.jpg"/);
+            discardMasterDraft("photo-a");
+            assert.equal(state.masterDrafts.size, 0);
+        ''')
+
+    def test_reload_and_browser_departure_protect_library_drafts(self):
+        self.run_shell(r'''
+            (async () => {
+                state.data = {masterPhotos: [{id: "a", caption: "Stored"}], pins: []};
+                updateMasterDraft("a", "caption", "Draft");
+                let blocked = false, loads = 0;
+                const event = {preventDefault() {blocked = true;}};
+                guardLibraryDeparture(event);
+                assert.equal(blocked, true);
+                assert.equal(event.returnValue, "");
+                window.confirm = () => false;
+                loadState = async () => {loads++;};
+                await reloadManager();
+                assert.equal(loads, 0);
+                assert.equal(state.masterDrafts.size, 1);
+                window.confirm = () => true;
+                loadState = async () => {throw Error("Offline");};
+                await assert.rejects(reloadManager(), /Offline/);
+                assert.equal(state.masterDrafts.size, 1);
+                loadState = async () => {};
+                await reloadManager();
+                assert.equal(state.masterDrafts.size, 0);
+                blocked = false;
+                guardLibraryDeparture(event);
+                assert.equal(blocked, false);
+            })()
+        ''')
+
+    def test_load_failure_retains_catalog_and_retry_recovers(self):
+        self.run_shell(r'''
+            (async () => {
+                renderShared = () => {};
+                renderActiveView = () => {};
+                syncQualityPolling = () => {};
+                let response;
+                fetch = async () => {if (!response) throw Error("Offline"); return response;};
+                readApiJson = async value => value;
+                await assert.rejects(loadState(), /Offline/);
+                assert.equal(state.data, null);
+                assert.equal($("loadFailure").hidden, false);
+                response = {ok: false, status: 503, message: "Server unavailable"};
+                await assert.rejects(loadState(), /Server unavailable/);
+                assert.equal(state.data, null);
+                response = {ok: true};
+                await assert.rejects(loadState(), /incomplete catalog/);
+                assert.equal(state.data, null);
+                response = {assets: [], masterPhotos: [{id: "a", caption: "Stored"}], entries: []};
+                await loadState();
+                assert.equal($("loadFailure").hidden, true);
+                updateMasterDraft("a", "caption", "Draft");
+                const previous = state.data;
+                response = null;
+                await assert.rejects(loadState(), /Offline/);
+                assert.equal(state.data, previous);
+                assert.equal(state.masterDrafts.get("a").changes.caption, "Draft");
+                assert.match($("loadFailureMessage").textContent, /retained/);
+            })()
+        ''')
+
+    def test_render_failure_retains_previous_catalog_and_exposes_retry(self):
+        self.run_shell(r'''
+            (async () => {
+                const previous = {assets: [], masterPhotos: [], entries: []};
+                state.data = previous;
+                state.selectedAssets.add("keep.jpg");
+                renderShared = () => {throw Error("Malformed catalog rendering");};
+                renderActiveView = () => {};
+                syncQualityPolling = () => {};
+                fetch = async () => ({ok: true});
+                readApiJson = async () => ({assets: [], masterPhotos: [], entries: []});
+                await assert.rejects(loadState(), /Malformed catalog rendering/);
+                assert.equal(state.data, previous);
+                assert.equal(state.selectedAssets.has("keep.jpg"), true);
+                assert.equal($("loadFailure").hidden, false);
+                assert.match($('loadFailureMessage').textContent, /Malformed catalog rendering/);
+            })()
+        ''')
+
+    def test_inline_unit_scope_disables_aircraft_constraints(self):
+        self.run_shell(r'''
+            const aircraftType = {name: "aircraftType", disabled: false, required: true};
+            const aircraftFamily = {name: "aircraftFamily", disabled: false, required: false};
+            const aircraftFields = [{hidden: false, querySelectorAll: () => [aircraftType, aircraftFamily]}];
+            $("utilityDrawerBody").querySelectorAll = selector => selector === "[data-inline-aircraft]" ? aircraftFields : [];
+            setInlineAircraftVisibility(false);
+            assert.equal(aircraftFields[0].hidden, true);
+            assert.equal(aircraftType.disabled, true);
+            assert.equal(aircraftType.required, false);
+            assert.equal(aircraftFamily.disabled, true);
+            setInlineAircraftVisibility(true);
+            assert.equal(aircraftFields[0].hidden, false);
+            assert.equal(aircraftType.disabled, false);
+            assert.equal(aircraftType.required, true);
+            assert.equal(aircraftFamily.disabled, false);
+        ''')
+
+    def test_build_completion_reenables_controls_when_catalog_refresh_fails(self):
+        self.run_shell(r'''
+            (async () => {
+                collectBuildSettings = () => ({});
+                renderOrphans = () => {};
+                setTab = () => {};
+                appendBuildLog = () => {};
+                renderBuildSummary = () => {};
+                loadState = async () => {throw Error("Refresh unavailable");};
+                toast = () => {};
+                globalThis.URLSearchParams = class {
+                    constructor(values) {this.values = {...values};}
+                    set(key, value) {this.values[key] = value;}
+                    toString() {return Object.entries(this.values).map(([key, value]) => `${key}=${value}`).join("&");}
+                };
+                let stream;
+                globalThis.EventSource = class {
+                    constructor(url) {this.url = url; this.listeners = {}; stream = this;}
+                    addEventListener(name, handler) {(this.listeners[name] ||= []).push(handler);}
+                    close() {this.closed = true;}
+                    emit(name, payload) {for (const handler of this.listeners[name] || []) handler({data: JSON.stringify(payload)});}
+                };
+                const pending = runBuild();
+                assert.equal($("buildBtn").disabled, true);
+                assert.equal($("buildBtn2").disabled, true);
+                stream.emit("done", {ok: true, returncode: 0, durationSeconds: 1});
+                await pending;
+                assert.equal($("buildBtn").disabled, false);
+                assert.equal($("buildBtn2").disabled, false);
+                assert.equal($("buildStatus").dataset.status, "success");
+            })()
+        ''')
+
+    def test_photo_delete_requires_confirmation(self):
+        self.run_shell(r'''
+            (async () => {
+                state.data = {entries: [{targetKey: "entry", entryPath: "db:location:base", sourceScope: "location", photos: [{path: "frame.jpg"}]}], pins: []};
+                $("entrySelect").value = "entry";
+                let requests = 0;
+                api = async (url) => {requests++; assert.equal(url, "/api/delete-photo"); return {message: "Photo removed."};};
+                loadState = async () => {};
+                toast = () => {};
+                window.confirm = () => false;
+                await deletePhoto(0);
+                assert.equal(requests, 0);
+                window.confirm = () => true;
+                await deletePhoto(0);
+                assert.equal(requests, 1);
+            })()
+        ''')
+
+    def test_keyboard_activation_does_not_move_story_focal_point(self):
+        self.run_shell(r'''
+            state.airshowStoryDraft = {segments: [{photos: [{photoId: "photo-a"}]}]};
+            const focal = {
+                dataset: {storyFocal: "0"},
+                closest: selector => selector === "[data-story-focal]" ? focal : null
+            };
+            $("airshowStoryEditor").dispatch("click", {target: focal, detail: 0, clientX: 0, clientY: 0});
+            assert.equal(state.airshowStoryDraft.segments[0].photos[0].focalX, undefined);
+            assert.equal(state.airshowStoryDraft.segments[0].photos[0].focalY, undefined);
+        ''')
+
+    def test_responsive_dialogs_reuse_nodes_and_restore_focus(self):
+        self.run_shell(r'''
+            const panel = $("assetPanel"), nav = $("managerNav");
+            const stage = panel.parentElement;
+            const body = nav.parentElement;
+            state.selectedAssets.add("keep.jpg");
+            setAssetDrawer(false);
+            $("toggleAssetsBtn").focus();
+            window.matchMedia("(max-width: 1100px)").matches = true;
+            window.matchMedia("(max-width: 760px)").matches = true;
+            syncManagerLayout();
+            assert.equal(panel.parentElement, $("managerAssetsDialog"));
+            assert.equal(nav.parentElement, $("managerNavDialog"));
+            setAssetDrawer(true);
+            assert.equal($("managerAssetsDialog").open, true);
+            assert.equal(document.activeElement, $("assetSearch"));
+            $("managerAssetsDialog").dispatch("cancel", {preventDefault() {}});
+            assert.equal(state.assetsOpen, false);
+            assert.equal(document.activeElement, $("toggleAssetsBtn"));
+            $("openManagerNavBtn").dispatch("click");
+            assert.equal($("managerNavDialog").open, true);
+            assert.equal($("openManagerNavBtn").getAttribute("aria-expanded"), "true");
+            setTab("aircraft");
+            assert.equal($("managerNavDialog").open, false);
+            assert.equal($("mobileDestination").textContent, "Aircraft · Presentation");
+            setAssetDrawer(true);
+            window.matchMedia("(max-width: 1100px)").matches = false;
+            window.matchMedia("(max-width: 760px)").matches = false;
+            syncManagerLayout();
+            assert.equal(panel.parentElement, stage);
+            assert.equal(nav.parentElement, body);
+            assert.equal($("managerAssetsDialog").open, false);
+            assert.equal(state.assetsOpen, true);
+            assert.equal(document.activeElement, $("assetSearch"));
+            assert.equal(state.selectedAssets.has("keep.jpg"), true);
         ''')
 
 

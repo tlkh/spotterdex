@@ -57,6 +57,43 @@ class ScriptBehaviorTests(unittest.TestCase):
             assert.doesNotMatch(els.globalSearchResults.innerHTML, /data-search-show-more/);
         ''')
 
+    def test_aircraft_archive_balances_the_final_row(self):
+        self.run_behavior(["aircraftGridEntries", "aircraftGridPromotionIds", "aircraftGridMetrics"], r'''
+            global.window = {matchMedia: () => ({matches: false})};
+            global.aircraftStats = () => ({photoCount: 0});
+            global.photosForAircraft = () => [];
+            const entries = Array.from({length: 12}, (_, index) => ({
+                id: `aircraft-${index}`,
+                typeName: `Aircraft ${String(index).padStart(2, "0")}`,
+                doubleWidth: null
+            }));
+            let rendered = aircraftGridEntries(entries);
+            assert.equal(rendered.at(-2).isWide, false);
+            assert.equal(rendered.at(-1).entry.id, "aircraft-11");
+            assert.equal(rendered.at(-1).isWide, true);
+
+            entries.at(-1).doubleWidth = false;
+            rendered = aircraftGridEntries(entries);
+            assert.equal(rendered.at(-1).isWide, false, JSON.stringify(rendered));
+
+            global.window.matchMedia = query => ({matches: query === "(max-width: 1040px)"});
+            assert.deepEqual(aircraftGridMetrics(), {columns: 2, normalSpan: 1, wideSpan: 2});
+            assert.deepEqual([...aircraftGridPromotionIds(entries)], []);
+            entries.at(-1).doubleWidth = null;
+            rendered = aircraftGridEntries(entries);
+            assert.equal(rendered.at(-2).entry.id, "aircraft-10");
+            assert.equal(rendered.at(-2).isWide, false);
+            assert.equal(rendered.at(-1).entry.id, "aircraft-11");
+            assert.equal(rendered.at(-1).isWide, false);
+            const partialEntries = entries.slice(0, 11);
+            rendered = aircraftGridEntries(partialEntries, {balanceFinalRow: false});
+            assert.equal(rendered.at(-1).isWide, false);
+            rendered = aircraftGridEntries(partialEntries);
+            assert.equal(rendered.at(-1).isWide, true);
+            entries[0].doubleWidth = true;
+            assert.deepEqual([...aircraftGridPromotionIds(entries)], ["aircraft-0"]);
+        ''')
+
     def test_ime_key_events_do_not_navigate_or_close(self):
         self.run_behavior(["handleKeydown"], r'''
             global.state = {searchComposing: false};

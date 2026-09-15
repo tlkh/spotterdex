@@ -4783,10 +4783,13 @@
     renderDexFamilyFilter();
     scrollActiveFilterChip(els.dexFamilyFilter);
     els.dexCount.textContent = `${entries.length} entr${entries.length === 1 ? "y" : "ies"}${familyFilter ? ` in ${AIRCRAFT_FAMILY_LABELS.get(familyFilter) || "selected family"}` : ""}`;
-    const visibleEntries = isFocusedMobileLayout()
+    const mobileLayout = isFocusedMobileLayout();
+    const visibleEntries = mobileLayout
       ? entries.slice(0, state.dexVisibleCount)
       : entries;
-    renderAircraftGrid(visibleEntries);
+    renderAircraftGrid(visibleEntries, {
+      balanceFinalRow: !mobileLayout || visibleEntries.length >= entries.length
+    });
     renderArchivePagination(els.dexPagination, visibleEntries.length, entries.length, "aircraft", "aircraft entries");
   }
 
@@ -4865,13 +4868,13 @@
     return aircraftFamilyForPhoto(photo || {})?.id || "";
   }
 
-  function renderAircraftGrid(entries) {
+  function renderAircraftGrid(entries, options = {}) {
     if (!entries.length) {
       els.aircraftGrid.innerHTML = '<div class="empty-state"><p>No aircraft entries match this filter.</p><button class="empty-state-reset" type="button" data-clear-dex-family-filter>Show all aircraft</button></div>';
       return;
     }
 
-    const gridEntries = aircraftGridEntries(entries);
+    const gridEntries = aircraftGridEntries(entries, options);
     els.aircraftGrid.innerHTML = gridEntries
       .map(({ entry, isWide }, index) => renderAircraftCard(entry, isWide, index))
       .join("");
@@ -4950,7 +4953,9 @@
     const entries = filteredAircraftEntries();
     const previousCount = Math.min(state.dexVisibleCount, entries.length);
     const nextCount = Math.min(previousCount + MOBILE_ARCHIVE_PAGE_SIZE, entries.length);
-    const gridEntries = aircraftGridEntries(entries.slice(0, nextCount));
+    const gridEntries = aircraftGridEntries(entries.slice(0, nextCount), {
+      balanceFinalRow: nextCount >= entries.length
+    });
     const markup = gridEntries
       .slice(previousCount)
       .map(({ entry, isWide }, offset) => renderAircraftCard(entry, isWide, previousCount + offset))
@@ -5129,7 +5134,7 @@
     });
   }
 
-  function aircraftGridEntries(entries) {
+  function aircraftGridEntries(entries, { balanceFinalRow = true } = {}) {
     const promotedEntryIds = aircraftGridPromotionIds(entries);
     const { columns, normalSpan, wideSpan } = aircraftGridMetrics();
     const rows = [];
@@ -5172,6 +5177,29 @@
       nextWideSide = nextWideSide === "left" ? "right" : "left";
     });
 
+    // Keep the final archive row balanced when automatic sizing leaves one
+    // or more regular cards stranded beside an empty grid slot. Progressive
+    // archive pages defer this adjustment until the complete collection is
+    // visible, so a page boundary never leaves a stale wide card behind.
+    // Run this after wide-card alternation so the final entry keeps its
+    // position. An explicit standard-width setting still wins over this
+    // adjustment.
+    if (balanceFinalRow && rows.length && wideSpan > normalSpan) {
+      const lastRow = rows[rows.length - 1];
+      const lastItem = lastRow[lastRow.length - 1];
+      const lastRowColumns = lastRow.reduce(
+        (total, item) => total + (item.isWide ? wideSpan : normalSpan),
+        0
+      );
+      const canExpandLastItem = lastItem
+        && !lastItem.isWide
+        && lastItem.entry.doubleWidth !== false
+        && lastRowColumns + wideSpan - normalSpan <= columns;
+      if (canExpandLastItem) {
+        lastItem.isWide = true;
+      }
+    }
+
     return rows.flat();
   }
 
@@ -5198,12 +5226,13 @@
       .map((item) => item.entry.id);
     const candidates = new Set([...topPhotoEntryIds, ...recentEntryIds]);
     const { columns, normalSpan, wideSpan } = aircraftGridMetrics();
+    const autoPromotionEnabled = columns !== 2;
     const promoted = new Set();
     let usedColumns = 0;
 
     entries.forEach((entry) => {
       const wantsWide = entry.doubleWidth === true
-        || (entry.doubleWidth !== false && candidates.has(entry.id));
+        || (autoPromotionEnabled && entry.doubleWidth !== false && candidates.has(entry.id));
       if (entry.doubleWidth === true && wideSpan > normalSpan && usedColumns + wideSpan > columns) {
         usedColumns = 0;
       }
@@ -5229,8 +5258,11 @@
   }
 
   function aircraftGridMetrics() {
-    if (window.matchMedia("(max-width: 1040px)").matches) {
+    if (window.matchMedia("(max-width: 620px)").matches) {
       return { columns: 1, normalSpan: 1, wideSpan: 1 };
+    }
+    if (window.matchMedia("(max-width: 1040px)").matches) {
+      return { columns: 2, normalSpan: 1, wideSpan: 2 };
     }
     return { columns: 12, normalSpan: 4, wideSpan: 8 };
   }

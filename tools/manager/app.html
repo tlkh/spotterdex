@@ -30,7 +30,8 @@
     </header>
 
     <div class="app-body">
-      <nav class="manager-nav" aria-label="Manager views">
+      <button class="btn ghost mobile-navigation-trigger" id="openManagerNavBtn" type="button" aria-controls="managerNavDialog" aria-expanded="false"><span id="mobileDestination">New images</span><span aria-hidden="true"> ▾</span></button>
+      <nav class="manager-nav" id="managerNav" aria-label="Manager views">
         <div class="nav-group">
           <span class="nav-group-label">Photos</span>
           <button class="tab active" data-tab="attach" type="button" aria-current="page">
@@ -67,7 +68,7 @@
       <aside class="panel asset-panel" id="assetPanel" aria-label="Raw Assets">
         <div class="panel-head">
           <div>
-            <h2 class="panel-title">Raw Assets</h2>
+            <h2 class="panel-title" id="rawAssetsTitle">Raw Assets</h2>
             <div class="subtle" id="selectedCount">0 selected</div>
           </div>
           <div class="card-actions">
@@ -93,6 +94,10 @@
       </aside>
 
       <main class="manager-main">
+      <div class="load-failure" id="loadFailure" hidden>
+        <p id="loadFailureMessage" role="alert"></p>
+        <button class="btn ghost" id="retryLoadBtn" type="button">Retry catalog load</button>
+      </div>
       <nav class="workspace-nav" id="workspaceNav" aria-label="Workspace sections" hidden></nav>
       <section class="workspace">
         <section class="view active" id="attachView">
@@ -121,12 +126,12 @@
               <label for="liveryInput">Livery (optional)</label>
               <input id="liveryInput" type="text" placeholder="Retro livery, Pixel Blue, special anniversary scheme">
             </div>
-            <div class="field">
+            <div class="field" id="photoYearField" hidden>
               <label for="photoYear">Year</label>
               <input id="photoYear" type="text" inputmode="numeric" placeholder="2026">
             </div>
             <div class="field">
-              <label for="photoDate">Date</label>
+              <label for="photoDate">Date override</label>
               <input id="photoDate" type="date" aria-describedby="photoDateHelp">
               <div class="subtle" id="photoDateHelp">Fallback date only; EXIF capture date takes precedence.</div>
             </div>
@@ -191,15 +196,16 @@
                 <label for="editLivery">Livery (optional)</label>
                 <input id="editLivery" type="text">
               </div>
-              <div class="field">
-                <label for="editDate">Date</label>
-                <input id="editDate" type="date">
+              <div class="field" id="editDateField">
+                <label for="editDate">Date override</label>
+                <input id="editDate" type="date" aria-describedby="editDateHelp">
+                <span class="subtle" id="editDateHelp">Fallback date only; EXIF capture date takes precedence.</span>
               </div>
-              <div class="field">
+              <div class="field" id="editYearField" hidden>
                 <label for="editYear">Year</label>
                 <input id="editYear" type="text" inputmode="numeric">
               </div>
-              <div class="field">
+              <div class="field wide">
                 <label for="editCaption">Caption</label>
                 <textarea id="editCaption"></textarea>
                 <div class="caption-actions">
@@ -219,7 +225,7 @@
           <div class="bar">
             <div>
               <h2 class="panel-title">Photo library</h2>
-              <div class="subtle" id="masterSummary">Every current database photo appears once, regardless of how many subjects it has.</div>
+              <div class="subtle" id="masterSummary">Loading photos…</div>
             </div>
           </div>
           <div class="form-grid master-tools">
@@ -228,11 +234,12 @@
               <input id="masterSearch" type="search" placeholder="path, aircraft, unit, location, event, caption">
             </div>
           </div>
-          <div class="bar">
-            <div class="subtle master-note">Save changes per row. Select photos to review their captions. “Detach raw image” removes only the catalog record; the original file stays in <code>raw_assets/</code>.</div>
+          <div class="bar master-toolbar">
+            <div class="master-toolbar-counts"><strong id="masterSelectionCount">0 selected</strong><span class="subtle" id="masterDraftCount" role="status"></span></div>
             <button class="btn ghost" id="reviewLibraryCaptionsBtn" type="button">Review selected captions</button>
           </div>
-          <div id="masterBulkEditor"></div>
+          <p class="subtle master-note">Edit a photo, then Save or Discard. Drafts stay as you browse; save before closing the app.</p>
+          <details class="master-bulk-disclosure"><summary>Bulk edit selected photos</summary><div id="masterBulkEditor"></div></details>
           <div class="master-list" id="masterList"></div>
           <div class="pagination" id="masterPagination" aria-label="Photo library pages"></div>
         </section>
@@ -707,6 +714,10 @@
       </div>
     </div>
   </div>
+  <dialog class="manager-assets-dialog" id="managerAssetsDialog" aria-labelledby="rawAssetsTitle"></dialog>
+  <dialog class="manager-navigation-dialog" id="managerNavDialog" aria-labelledby="managerNavTitle">
+    <div class="manager-dialog-heading"><h2 id="managerNavTitle">Manager views</h2><button class="btn ghost" id="closeManagerNavBtn" type="button">Close</button></div>
+  </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <dialog class="utility-drawer" id="utilityDrawer" aria-labelledby="utilityDrawerTitle">
     <div class="utility-drawer-head">

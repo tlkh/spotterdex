@@ -64,7 +64,7 @@ Navigation and authoring contracts:
 - **Catalog:** Aircraft, Units, and Locations each have local Details / Presentation navigation. Events owns event tagging, heroes, and cinematic segments; Page write-ups remains a separate catalog destination.
 - **Review:** Captions, Missing, and Quality. **Output:** Build & verify.
 - Keep `viewMeta`, `workspaceGroups`, renderers, and section IDs in sync. Internal routes such as `master`, `source-photos`, `aircraft`, `squadrons`, and `location-heroes` are not public-site URLs. The active manager route is retained in session storage; presentation routes must highlight their parent catalog destination.
-- Photo editing still uses explicit save actions. There is no app-wide unsaved-change guard or persistent draft recovery; do not document these as implemented. Save before changing sources, reloading, or closing the app.
+- Photo editing still uses explicit save actions. All photos has in-memory drafts keyed by canonical photo ID, expandable editors, inline save status/errors, and guards for Reload/browser departure. Drafts survive filtering, pagination, navigation, and unrelated saves; missing-record drafts remain available for copying/discarding. This is not an app-wide guard or persistent draft recovery. Save other editors before changing sources, reloading, or closing the app.
 
 Caption review contracts:
 
@@ -76,7 +76,7 @@ Caption review contracts:
 
 Accessibility and maintenance contracts:
 
-- The utility drawer and raw-image preview use native `<dialog>` behavior. Preserve modal focus containment, Escape dismissal, and opener focus restoration. Drawer status belongs inside the modal so feedback remains visible and announced while the background is inert.
+- The utility drawer, raw-image preview, narrow-screen primary navigation, and raw-assets overlay use native `<dialog>` behavior. Raw assets remain a nonmodal panel on desktop; breakpoint changes move the same DOM nodes and preserve selections. Preserve modal focus containment, Escape dismissal, and opener focus restoration. Drawer status belongs inside the modal so feedback remains visible and announced while the background is inert.
 - Asset and quality filters are button groups with synchronized `aria-pressed`, not partial ARIA tablists. Primary/local navigation uses `aria-current="page"`. Inline New/Inspect actions need contextual accessible names.
 - Quality review acknowledgements are local state, not image corrections. The confirmed QC_ prefix/approval actions rename raw files and update catalog paths through the manager; do not perform equivalent ad hoc filesystem renames or reorganize `raw_assets/`.
 - Events can generate segments from EXIF calendar days or gaps over two hours, then manually reorder them. Only explicitly assigned photos appear in saved cinematic stories. Preview Draft is not Save Segments, and neither deploys the site.
@@ -120,7 +120,7 @@ node --check service-worker.js
 node --check tools/manager/app.js
 ```
 
-Manager UI regression tests run with `python3 -m unittest discover -s tools/tests -p test_manager_ui.py -v`; they use Node.js with mocked DOM/API behavior and do not call the caption service or mutate the catalog. Coverage includes shell initialization, nested navigation, dialog focus restoration, filter state, caption scopes, stop/resume/retry, and save recovery. Node.js must be available for the behavioral tests; otherwise those tests are skipped. If the system Python lacks Pillow or PyYAML, use the existing `.venv/bin/python` for Python verification commands.
+Manager UI regression tests run with `python3 -m unittest discover -s tools/tests -p test_manager_ui.py -v`; they use Node.js with mocked DOM/API behavior and do not call the caption service or mutate the catalog. Coverage includes shell initialization, nested navigation, dialog focus restoration, filter state, caption scopes, stop/resume/retry, save recovery, library draft preservation across filtering/pagination/navigation, failed-save retry, missing-record drafts, reload/browser-departure guards, load-failure retry, and responsive dialog transitions. Node.js must be available for the behavioral tests; otherwise those tests are skipped. If the system Python lacks Pillow or PyYAML, use the existing `.venv/bin/python` for Python verification commands.
 
 For manager-only UI changes, run the focused tests, `node --check tools/manager/app.js`, and `git diff --check`; a public-site image rebuild is not needed unless catalog/build inputs also changed. Mocked tests do not verify actual layout, native focus trapping, or screen-reader announcements. Manually check keyboard Tab/Escape and focus return, filter states, desktop/narrow layouts, and caption edits during generation without sending real caption requests unless intended.
 

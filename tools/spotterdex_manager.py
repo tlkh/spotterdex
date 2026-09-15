@@ -566,9 +566,8 @@ class SpotterDexManager:
         snapshot_replaced = False
         try:
             # Keep the filesystem move, catalog transaction, and SQL snapshot in
-            # one failure-safe unit. The generic writer commits before exporting,
-            # which is safe for DB-only edits but can leave a rename half-applied
-            # if snapshot export fails.
+            # one failure-safe unit. Export the snapshot before committing so an
+            # export failure can still roll back both the rename and catalog edit.
             with self._database_write_lock:
                 connection = self._database_connection()
                 try:
@@ -873,8 +872,11 @@ class SpotterDexManager:
                 errors = validate_database(connection, raw_assets_dir=self.raw_assets_dir)
                 if errors:
                     raise ValueError("Database update failed validation: " + "; ".join(errors))
-                connection.commit()
+                # Export while the mutation is still inside the transaction. The
+                # snapshot writer is atomic, so an export failure leaves both the
+                # previous snapshot and the database mutation rollback-able.
                 export_snapshot(connection, self.sql_snapshot_path)
+                connection.commit()
                 return result
             except Exception:
                 connection.rollback()
@@ -917,6 +919,11 @@ class SpotterDexManager:
         return [str(row[0]) for row in rows]
 
     def _database_photo_id(self, connection: sqlite3.Connection, payload: Dict[str, Any]) -> str:
+        photo_id = clean_text(payload.get("photoId"))
+        if photo_id:
+            if not connection.execute("SELECT 1 FROM photos WHERE id=?", (photo_id,)).fetchone():
+                raise ValueError("Photo no longer exists.")
+            return photo_id
         ids = self._database_entry_photo_ids(connection, clean_text(payload.get("entryPath")))
         try:
             index = int(payload.get("index"))
@@ -1589,6 +1596,8 @@ class SpotterDexManager:
         incoming = payload.get("photo") or {}
         if not isinstance(incoming, dict):
             raise ValueError("Photo payload must be an object.")
+        if "year" in incoming and not clean_text(incoming.get("date")):
+            raise ValueError("Year is derived from EXIF or Date override for canonical photos.")
 
         def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
             photo_id = self._database_photo_id(connection, payload)
@@ -1612,7 +1621,7 @@ class SpotterDexManager:
                     location_id,
                     event_id,
                     date_override,
-                    clean_text(incoming.get("title")),
+                    clean_text(incoming.get("title")) if "title" in incoming else clean_text(current["title"]),
                     clean_text(incoming.get("caption")),
                     clean_text(incoming.get("livery")),
                     1 if payload_caption_is_ai_assisted(incoming) or current["caption_ai_assisted"] else 0,
@@ -1669,7 +1678,7 @@ class SpotterDexManager:
                 capture_date,
             )
             connection.execute(
-                "UPDATE photos SET location_id=?,event_id=?,date_override=?,title=?,caption=?,livery=? WHERE id=?",
+                "UPDATE photos SET location_id=?,event_id=?,date_override=?,title=?,caption=?,livery=?,caption_ai_assisted=? WHERE id=?",
                 (
                     location_id,
                     event_id,
@@ -1677,6 +1686,7 @@ class SpotterDexManager:
                     clean_text(incoming.get("title")),
                     clean_text(incoming.get("caption")),
                     clean_text(incoming.get("livery")),
+                    1 if payload_caption_is_ai_assisted(incoming) or current["caption_ai_assisted"] else 0,
                     photo_id,
                 ),
             )

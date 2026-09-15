@@ -1,3 +1,4 @@
+/* Hallmark · macrostructure: Workbench · tone: utilitarian · manager-local dark system */
     :root {
       color-scheme: dark;
       --bg: #0c0c0c;
@@ -2009,7 +2010,6 @@
       min-width: 0;
       min-height: 0;
       overflow: hidden;
-      transition: grid-template-columns 180ms ease;
     }
     body[data-assets-open="true"] .workspace-stage {
       grid-template-columns: clamp(340px, 32vw, 510px) minmax(0, 1fr);
@@ -2510,4 +2510,138 @@
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
       }
+    }
+
+    /* Hallmark · manager workbench · system typography and restrained dark surfaces.
+     * Library drafts, compact browsing, and responsive native dialogs. */
+    :root {
+      --manager-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --manager-focus: var(--accent);
+      --manager-scrim: rgb(0 0 0 / 0.6);
+    }
+    [hidden] { display: none !important; }
+    .btn { transition: background 120ms var(--manager-ease-out), transform 120ms var(--manager-ease-out); }
+    .btn:active:not(:disabled), .text-action:active:not(:disabled) { transform: translateY(1px); }
+    .btn:disabled { cursor: not-allowed; }
+    [aria-busy="true"] { cursor: wait; }
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible,
+    textarea:focus-visible, summary:focus-visible { outline: 2px solid var(--manager-focus); }
+    .asset-panel { transition: opacity 140ms var(--manager-ease-out), transform 180ms var(--manager-ease-out); }
+    .mobile-navigation-trigger { display: none; }
+    .load-failure {
+      flex: 0 0 auto;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--warn);
+      background: var(--surface);
+      max-height: 40dvh;
+      overflow: auto;
+    }
+    .load-failure p { margin: 0 0 8px; overflow-wrap: anywhere; }
+    .master-toolbar {
+      position: sticky;
+      top: -18px;
+      z-index: 5;
+      padding: 10px 0;
+      background: var(--bg);
+      border-bottom: 1px solid var(--line);
+    }
+    .master-toolbar-counts { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+    .master-toolbar .btn { white-space: nowrap; }
+    .master-bulk-disclosure { margin: 12px 0; }
+    .master-bulk-disclosure > summary { padding: 10px 0; cursor: pointer; font-size: 13px; color: var(--muted); }
+    .master-row { grid-template-columns: 120px minmax(0, 1fr); align-items: start; }
+    .master-content { gap: 6px; }
+    .master-heading h3 { margin: 0 0 4px; font-weight: 650; }
+    .master-caption-excerpt {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      overflow-wrap: anywhere;
+    }
+    .master-save-status { font-size: 12px; color: var(--warn); }
+    .master-save-status:empty { display: none; }
+    .master-save-status[data-status="error"], .master-missing-note { color: var(--bad); }
+    .master-save-status[data-status="saved"] { color: var(--good); }
+    .master-editor { grid-column: 1 / -1; padding-top: 12px; border-top: 1px solid var(--line); }
+    .master-editor .card-actions { margin-top: 12px; flex-wrap: wrap; }
+    .master-missing-note { margin: 0; font-size: 13px; line-height: 1.5; }
+    .master-heading-actions .btn { white-space: nowrap; }
+    .manager-assets-dialog, .manager-navigation-dialog {
+      color: var(--ink);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      padding: 0;
+      max-width: 100%;
+      max-height: 100dvh;
+      box-shadow: var(--shadow);
+    }
+    .manager-assets-dialog::backdrop, .manager-navigation-dialog::backdrop { background: var(--manager-scrim); }
+    .manager-assets-dialog {
+      margin: 0;
+      width: min(480px, 100%);
+      height: 100dvh;
+    }
+    .manager-assets-dialog .asset-panel {
+      position: static;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      transform: none;
+      box-shadow: none;
+    }
+    .manager-assets-dialog .asset-grid { flex: 1; height: auto; min-height: 0; max-height: none; }
+    .manager-assets-dialog .panel-head, .manager-assets-dialog .asset-tools { flex: 0 0 auto; }
+    .manager-assets-dialog .asset-tools { grid-template-columns: minmax(0, 1fr); }
+    .manager-assets-dialog .asset-close { display: inline-flex; }
+    .manager-navigation-dialog {
+      width: min(420px, calc(100% - 24px));
+      border-radius: 12px;
+      max-height: calc(100dvh - 24px);
+    }
+    .manager-dialog-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px; }
+    .manager-dialog-heading h2 { margin: 0; font-size: 16px; }
+    .manager-navigation-dialog .manager-nav { height: auto; display: flex; flex-direction: column; overflow: visible; border: 0; }
+    .manager-navigation-dialog .nav-group { display: grid; gap: 4px; }
+    .manager-navigation-dialog .nav-group-label { display: block; }
+    .manager-navigation-dialog .stats { display: none; }
+    .manager-navigation-dialog .tab { width: 100%; }
+    @media (max-width: 760px) {
+      .mobile-navigation-trigger { display: flex; justify-content: space-between; margin: 6px 10px; min-width: 0; text-align: left; }
+      .mobile-navigation-trigger span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .master-toolbar { top: -14px; }
+      .master-row { grid-template-columns: 72px minmax(0, 1fr); gap: 10px; }
+      .master-media { max-width: none; width: auto; }
+      .master-heading { flex-wrap: wrap; }
+      .master-heading-actions { justify-content: flex-start; }
+      .master-fields { grid-template-columns: minmax(0, 1fr); }
+      .actions { flex-wrap: wrap; }
+      .manager-assets-dialog input, .manager-assets-dialog select,
+      .view input, .view select, .view textarea { font-size: 16px; }
+    }
+    @media (max-width: 760px), (pointer: coarse) {
+      .btn, .text-action, .manager-nav .tab, .segmented button, .photo-select, .asset-preview,
+      .master-bulk-disclosure > summary, input:not([type="checkbox"]), select, textarea { min-height: 44px; }
+      .photo-select { display: inline-flex; align-items: center; }
+    }
+    @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+      header { background: var(--surface-muted); backdrop-filter: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .btn, .asset-panel { transition: none; }
+      .btn:active:not(:disabled), .text-action:active:not(:disabled) { transform: none; }
+    }
+
+    .master-note { padding: 0; border: 0; background: transparent; }
+
+    main.manager-main { gap: 0; }
+    .segmented button.active { background: var(--accent); color: var(--bg); }
+    @media (max-width: 760px) {
+      header .actions { width: 100%; justify-content: flex-start; }
+      header .actions .btn { padding-inline: 10px; font-size: 13px; white-space: nowrap; }
     }

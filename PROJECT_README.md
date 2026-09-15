@@ -95,12 +95,14 @@ Aircraft, Units, and Locations use local **Details / Presentation** navigation r
 ### Attach new images and edit existing records
 
 1. Keep original images flat in `raw_assets/`; open **New images** and select them in **Assets**. New/All/Used filters refer to whether an asset is already tagged.
-2. Choose the photo source and location, then optional event, livery, date, year, and caption. Inline **New** and **Inspect** buttons create or inspect related records without leaving the workflow.
+2. Choose the photo source and location, then optional event, livery, date override, and caption. Canonical photos derive their year from EXIF or the date override. Inline **New** and **Inspect** buttons create or inspect related records without leaving the workflow.
 3. Review the selected images and shared metadata before **Attach Selected**. The shared caption applies to every selected image; single-image AI Caption requires one selected image. EXIF capture date takes precedence over the fallback date during generation.
-4. For existing photos, use **Photo library → All photos** and save each edited row. **By source** provides the individual photo editor and source-specific bulk editing; opening a source from the catalog also leads here.
+4. For existing photos, use **Photo library → All photos**. Compact rows show photo context and caption excerpts; choose **Edit** to expand one or more editors, then **Save changes** or **Discard**. The sticky toolbar keeps the selected count and caption-review action available. **By source** provides the individual photo editor and source-specific bulk editing; opening a source from the catalog also leads here.
 5. Use the library's selection checkboxes for bulk metadata edits or **Review selected captions**. Library selection is separate from raw asset selection, including selections made in the Assets drawer.
 
-Successful catalog writes are transactional and refresh `content/spotterdex.sql`; they do not rebuild the public site. Save edits before changing sources, using Reload, or closing the browser: there is no app-wide unsaved-change guard or persistent draft recovery. A checked bulk field with a blank value can clear existing metadata, so review the selected fields and photo count before applying.
+Successful catalog writes are transactional and refresh `content/spotterdex.sql`; they do not rebuild the public site. **All photos** keeps drafts by photo ID through search, pagination, navigation, and other photo saves. Each editor shows unsaved, saving, saved, or persistent error feedback; failed saves retain the draft. If a record disappears during refresh, its draft remains available for copying or discarding. Reload asks before discarding library drafts and keeps them if the refresh fails; browser departure also warns while library drafts exist. Drafts are in memory only, with no persistent recovery. This is not an app-wide guard: save other editors before changing sources, reloading, or closing. On narrow screens, the current-destination button opens grouped navigation; raw assets open in a modal panel. Both support Escape and focus restoration. Initial loading and refresh failures provide a persistent Retry catalog load action.
+
+A checked bulk field with a blank value can clear existing metadata, so review the selected fields and photo count before applying.
 
 Removing/detaching a photo removes its catalog record, not the original raw file, and can clear hero references. Generated derivatives may remain until a rebuild and orphan cleanup. Use **Backup Database** before substantial catalog maintenance.
 
@@ -156,7 +158,7 @@ node --check tools/manager/app.js
 git diff --check
 ```
 
-Use `.venv/bin/python` in place of `python3` if needed. The behavior tests require Node.js and use mocked DOM/API responses, with no caption-service calls or catalog writes. They cover navigation, drawer focus restoration, filter states, caption scope/deduplication, stop/resume/retry, draft preservation, and save failures. They do not replace real-browser checks.
+Use `.venv/bin/python` in place of `python3` if needed. The behavior tests require Node.js and use mocked DOM/API responses, with no caption-service calls or catalog writes. They cover navigation, drawer focus restoration, filter states, caption scope/deduplication, stop/resume/retry, library draft preservation across filtering/pagination/navigation, failed-save retry, missing-record drafts, reload/browser-departure guards, load-failure retry, and responsive dialog transitions. They do not replace real-browser checks.
 
 For UI changes, also check desktop/narrow layouts, Tab/Escape behavior, focus return after closing drawers, announced feedback, and editing a proposal while another suggestion completes. The utility drawer and image preview are native modal dialogs; asset/quality filters are pressed-state button groups. Keep browser audit tooling and screenshots outside the repository. Manager-only UI edits do not require an image rebuild.
 

@@ -12735,6 +12735,19 @@ body {
   #squadronsView .squadron-logo-card {
     grid-column: auto;
   }
+
+  #dexView .aircraft-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: clamp(231px, 29.7vw, 286px);
+  }
+
+  #dexView .aircraft-card {
+    grid-column: auto;
+  }
+
+  #dexView .aircraft-card.is-wide {
+    grid-column: span 2;
+  }
 }
 
 @media (hover: none), (pointer: coarse) {

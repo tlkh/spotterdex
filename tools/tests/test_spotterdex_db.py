@@ -4,6 +4,7 @@ import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from PIL import Image
 
@@ -39,6 +40,32 @@ def seed_minimal_catalog(database_path: Path) -> None:
         connection.commit()
     finally:
         connection.close()
+
+
+def seed_catalog_photo(root: Path, *, photo_id: str = "test-photo", title: str = "Original title") -> Path:
+    """Create a minimal canonical catalog with one tagged source photo."""
+    raw_assets = root / "raw_assets"
+    content = root / "content"
+    raw_assets.mkdir()
+    content.mkdir()
+    Image.new("RGB", (64, 48), "navy").save(raw_assets / "frame.jpg")
+    database = content / "spotterdex.sqlite3"
+    seed_minimal_catalog(database)
+    connection = connect_database(database)
+    try:
+        connection.execute(
+            "INSERT INTO photos(id,source_path,location_id,title,caption,livery) VALUES(?,?,?,?,?,?)",
+            (photo_id, "frame.jpg", "jp-test-base", title, "Original caption", "Original livery"),
+        )
+        connection.execute(
+            "INSERT INTO photo_subjects(photo_id,position,aircraft_id,unit_id,is_primary) VALUES(?,?,?,?,1)",
+            (photo_id, 0, "kawasaki-t-4", "jp-test-unit"),
+        )
+        connection.commit()
+        export_snapshot(connection, content / "spotterdex.sql")
+    finally:
+        connection.close()
+    return database
 
 
 class DatabaseTests(unittest.TestCase):
@@ -348,6 +375,155 @@ class DatabaseTests(unittest.TestCase):
             state = manager.get_state()
             self.assertFalse(any(entry["targetKey"] == destination["entryPath"] for entry in state["aircraft"]))
             self.assertEqual(state["masterPhotos"][0]["subjects"], [])
+
+    def test_database_photo_update_preserves_omitted_title(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            seed_catalog_photo(root)
+            manager = SpotterDexManager(root)
+
+            result = manager.update_photo(
+                {
+                    "entryPath": "db:aircraft:kawasaki-t-4:jp-test-unit",
+                    "index": 0,
+                    "photo": {
+                        "path": "frame.jpg",
+                        "pin_id": "jp-test-base",
+                        "date": "2026",
+                        "caption": "Updated caption",
+                        "livery": "Updated livery",
+                    },
+                }
+            )
+
+            self.assertTrue(result["ok"])
+            connection = connect_database(root / "content" / "spotterdex.sqlite3", read_only=True)
+            try:
+                row = connection.execute(
+                    "SELECT title,caption,livery,date_override FROM photos WHERE id='test-photo'"
+                ).fetchone()
+                self.assertEqual(tuple(row), ("Original title", "Updated caption", "Updated livery", "2026-01-01"))
+                self.assertTrue(snapshot_is_current(connection, root / "content" / "spotterdex.sql"))
+            finally:
+                connection.close()
+
+    def test_database_photo_reference_accepts_canonical_photo_id(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            seed_catalog_photo(root)
+            manager = SpotterDexManager(root)
+
+            result = manager.update_photo(
+                {
+                    "photoId": "test-photo",
+                    "photo": {
+                        "path": "frame.jpg",
+                        "pin_id": "jp-test-base",
+                        "caption": "Updated through canonical id",
+                        "title": "Retained title",
+                    },
+                }
+            )
+
+            self.assertTrue(result["ok"])
+            state = manager.get_state()
+            self.assertEqual(state["masterPhotos"][0]["caption"], "Updated through canonical id")
+
+    def test_canonical_photo_update_rejects_legacy_year_field(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            seed_catalog_photo(root)
+            manager = SpotterDexManager(root)
+
+            with self.assertRaisesRegex(ValueError, "Year is derived"):
+                manager.update_photo(
+                    {
+                        "photoId": "test-photo",
+                        "photo": {"path": "frame.jpg", "pin_id": "jp-test-base", "year": "2026"},
+                    }
+                )
+
+    def test_master_photo_update_marks_caption_ai_assisted(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            seed_catalog_photo(root)
+            manager = SpotterDexManager(root)
+
+            result = manager.update_master_photo(
+                {
+                    "photoId": "test-photo",
+                    "photo": {
+                        "locationId": "jp-test-base",
+                        "title": "Updated title",
+                        "caption": "AI-assisted caption",
+                        "livery": "Updated livery",
+                        "captionAiAssisted": True,
+                    },
+                }
+            )
+
+            self.assertEqual(result["photoId"], "test-photo")
+            connection = connect_database(root / "content" / "spotterdex.sqlite3", read_only=True)
+            try:
+                row = connection.execute(
+                    "SELECT title,caption,livery,caption_ai_assisted FROM photos WHERE id='test-photo'"
+                ).fetchone()
+                self.assertEqual(tuple(row), ("Updated title", "AI-assisted caption", "Updated livery", 1))
+            finally:
+                connection.close()
+
+    def test_database_write_rolls_back_when_snapshot_export_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            seed_catalog_photo(root)
+            snapshot = root / "content" / "spotterdex.sql"
+            original_snapshot = snapshot.read_bytes()
+            manager = SpotterDexManager(root)
+
+            with patch("tools.spotterdex_manager.export_snapshot", side_effect=OSError("disk full")):
+                with self.assertRaisesRegex(OSError, "disk full"):
+                    manager.update_master_photo(
+                        {
+                            "photoId": "test-photo",
+                            "photo": {
+                                "locationId": "jp-test-base",
+                                "title": "Should roll back",
+                                "caption": "Should roll back",
+                            },
+                        }
+                    )
+
+            self.assertEqual(snapshot.read_bytes(), original_snapshot)
+            connection = connect_database(root / "content" / "spotterdex.sqlite3", read_only=True)
+            try:
+                row = connection.execute("SELECT title,caption FROM photos WHERE id='test-photo'").fetchone()
+                self.assertEqual(tuple(row), ("Original title", "Original caption"))
+            finally:
+                connection.close()
+
+    def test_bulk_photo_update_deduplicates_canonical_photo_ids(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            seed_catalog_photo(root)
+            manager = SpotterDexManager(root)
+
+            result = manager.bulk_update_photos(
+                {
+                    "photos": [{"photoId": "test-photo"}, {"photoId": "test-photo"}],
+                    "fields": {"caption": "Bulk caption"},
+                }
+            )
+
+            self.assertEqual(result["updated"], 1)
+            self.assertIn("1 photo(s)", result["message"])
+            connection = connect_database(root / "content" / "spotterdex.sqlite3", read_only=True)
+            try:
+                self.assertEqual(
+                    connection.execute("SELECT caption FROM photos WHERE id='test-photo'").fetchone()[0],
+                    "Bulk caption",
+                )
+            finally:
+                connection.close()
 
     def test_manager_rejects_duplicate_aircraft_name_without_integrity_error(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
