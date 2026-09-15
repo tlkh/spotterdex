@@ -2,6 +2,7 @@
       <section class="view is-active" id="mapView" data-view>
         <div class="workspace map-workspace">
           <button class="mobile-map-photos-card" type="button" data-map-panel-toggle="results" aria-controls="mapResults" aria-expanded="false" aria-label="Open photos for the selected location" disabled>
+            <img id="mobileMapPhotoPreview" alt="" hidden>
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <rect x="3.5" y="5" width="17" height="14" rx="2"></rect>
               <circle cx="9" cy="10" r="1.5"></circle>
@@ -26,7 +27,7 @@
             <p>Tap <strong>Locations</strong> to browse pins, or select a marker to open <strong>Photos</strong>.</p>
             <button class="plain-button map-panel-coach-dismiss" type="button" id="mapPanelCoachDismiss">Got it</button>
           </div>
-          <aside class="control-panel" id="mapControlPanel" aria-label="Timothy Liu overview">
+          <aside class="control-panel" id="mapControlPanel" aria-label="Locations and collection summary">
             <div class="map-sheet-bar">
               <button class="map-sheet-handle" type="button" data-sheet-handle="map" aria-label="Expand Locations panel" aria-expanded="false"></button>
               <strong>Locations</strong>
@@ -34,25 +35,25 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
               </button>
             </div>
-            <p class="eyebrow">Spotting logbook</p>
-            <h1>Timothy Liu</h1>
             <div class="stat-grid" aria-label="Collection summary">
-              <div><span class="stat-value" id="aircraftCount">0</span><span class="stat-label">Aircraft</span></div>
+              <div><span class="stat-value" id="aircraftCount">0</span><span class="stat-label">Aircraft types</span></div>
               <div><span class="stat-value" id="photoCount">0</span><span class="stat-label">Photos</span></div>
               <div><span class="stat-value" id="locationCount">0</span><span class="stat-label">Locations</span></div>
             </div>
             <label class="field-label" for="locationSearch">Find a location</label>
-            <input class="search-input" id="locationSearch" type="search" autocomplete="off" placeholder="Search map pins">
+            <input class="search-input" id="locationSearch" type="search" autocomplete="off" placeholder="Location, ICAO, aircraft or unit">
             <div class="panel-heading">
-              <h2>Recent Locations</h2>
+              <h2 id="locationListHeading">Recent Locations</h2>
               <button class="plain-button" type="button" id="fitPinsPanelButton" aria-label="Fit all map locations">Fit All</button>
             </div>
+            <div class="map-result-summary"><span id="locationResultCount">0 locations</span><button class="plain-button" id="clearLocationFilters" type="button" hidden>Clear filters</button></div>
             <div class="location-list" id="locationList" aria-live="polite"></div>
           </aside>
           <div class="map-column">
             <section class="map-stage" aria-label="World map with aircraft spotting pins">
-              <div class="world-map" id="worldMap" role="img" aria-label="Dark world map showing aircraft spotting locations"></div>
-              <p class="map-fallback" id="mapFallback" hidden><span>Map tiles require a connection. Cached locations remain available.</span><a href="aircraft-dex.html">Browse Aircraft Dex</a></p>
+              <div class="world-map" id="worldMap" role="region" aria-label="Interactive world map of aircraft spotting locations" aria-describedby="mapKeyboardHelp"></div>
+              <p class="visually-hidden" id="mapKeyboardHelp">Use the location list to select a pin. Map controls support zooming and panning.</p>
+              <p class="map-fallback" id="mapFallback" hidden><span id="mapFallbackMessage">Map tiles require a connection. Cached locations remain available.</span><button class="plain-button" id="retryMapButton" type="button">Retry map</button><a href="aircraft-dex.html">Browse Aircraft Dex</a></p>
             </section>
             <section class="results-panel" id="mapResults" aria-live="polite"></section>
           </div>

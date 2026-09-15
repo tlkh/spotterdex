@@ -42,12 +42,30 @@ function scheduleMapInitialization() {
 
 function renderLocations() {
     const query = normalizeText(els.locationSearch.value);
-    const locations = recentLocations()
-      .filter((location) => !query || normalizeText(`${location.pin.name} ${location.pin.country}`).includes(query));
+    const allLocations = recentLocations();
+    populateLocationCountries(allLocations);
+    const locations = allLocations
+      .filter((location) => state.includeEmptyLocations || location.photos.length)
+      .filter((location) => !state.locationCountryFilter || location.pin.country === state.locationCountryFilter)
+      .map((location) => ({ ...location, match: mapLocationMatch(location, query) }))
+      .filter((location) => !query || location.match)
+      .sort(mapLocationComparator(state.locationSort));
+    state.mapDiscoveryPinIds = new Set(locations.map(({ pin }) => pin.id));
+
+    if (els.locationResultCount) {
+      els.locationResultCount.textContent = `${locations.length} location${locations.length === 1 ? "" : "s"}`;
+    }
+    if (els.locationListHeading) {
+      els.locationListHeading.textContent = state.locationSort === "recent" ? "Recent Locations" : "Locations";
+    }
+    if (els.clearLocationFilters) {
+      els.clearLocationFilters.hidden = !(query || state.locationCountryFilter || state.locationSort !== "recent" || state.includeEmptyLocations);
+    }
 
     if (!locations.length) {
-      els.locationList.innerHTML = '<div class="empty-state">No recent locations match this search.</div>';
+      els.locationList.innerHTML = '<div class="empty-state">No locations match these filters.</div>';
       updateRecentLocationNav();
+      renderPins();
       return;
     }
 
@@ -55,18 +73,62 @@ function renderLocations() {
       .map((location) => {
         const pin = location.pin;
         const activeClass = pin.id === state.selectedPinId ? " is-active" : "";
+        const preview = location.photos.find((photo) => photo.thumbnail || photo.image);
+        const image = preview
+          ? `<img class="location-row-image" src="${escapeAttr(preview.thumbnail || preview.image)}" loading="lazy" decoding="async" alt="">`
+          : '<span class="location-row-image is-empty" aria-hidden="true"></span>';
+        const match = query && location.match && location.match !== "Location"
+          ? `<span class="location-match">${escapeHtml(location.match)}</span>`
+          : "";
         return `
           <button class="location-row${activeClass}" type="button" data-location-id="${escapeAttr(pin.id)}">
-            <span>
+            ${image}
+            <span class="location-row-copy">
+              <span class="location-row-kicker">${escapeHtml([pin.icao, pin.country].filter(Boolean).join(" · ") || "Location")}</span>
               <strong>${escapeHtml(pin.name)}</strong>
-              <span>${escapeHtml(formatDisplayDate(location.latestDate))} - ${escapeHtml(pin.country || "Location")}</span>
+              <span class="location-row-date">${escapeHtml(formatDisplayDate(location.latestDate))}</span>
+              ${match}
             </span>
-            <span class="count-pill">${location.photos.length}</span>
+            <span class="count-pill" aria-label="${location.photos.length} photos">${location.photos.length}</span>
           </button>
         `;
       })
       .join("");
     updateRecentLocationNav();
+    renderPins();
+    if (!performance.getEntriesByName("spotterdex-catalog-usable").length) performance.mark("spotterdex-catalog-usable");
+  }
+
+  function mapLocationMatch(location, query) {
+    if (!query) return "Location";
+    const pinText = normalizeText(`${location.pin.name} ${location.pin.country} ${location.pin.icao || ""}`);
+    if (pinText.includes(query)) return location.pin.icao && normalizeText(location.pin.icao).includes(query) ? `ICAO · ${location.pin.icao}` : "Location";
+    const photo = location.photos.find((item) => normalizeText(`${item.aircraftType || ""} ${item.squadronName || ""} ${item.unitLabel || ""}`).includes(query));
+    if (!photo) return "";
+    return [photo.aircraftType, photo.squadronName].filter(Boolean).join(" · ");
+  }
+
+  function mapLocationComparator(sort) {
+    if (sort === "photos") return (a, b) => b.photos.length - a.photos.length || a.pin.name.localeCompare(b.pin.name);
+    if (sort === "name") return (a, b) => a.pin.name.localeCompare(b.pin.name);
+    return (a, b) => b.latestTime - a.latestTime || a.pin.name.localeCompare(b.pin.name);
+  }
+
+  function populateLocationCountries(locations) {
+    if (!els.locationCountryFilter || els.locationCountryFilter.options.length > 1) return;
+    const countries = Array.from(new Set(locations.map(({ pin }) => pin.country).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+    countries.forEach((country) => els.locationCountryFilter.add(new Option(country, country)));
+  }
+
+  function clearMapDiscoveryFilters() {
+    state.locationCountryFilter = "";
+    state.locationSort = "recent";
+    state.includeEmptyLocations = false;
+    if (els.locationSearch) els.locationSearch.value = "";
+    if (els.locationCountryFilter) els.locationCountryFilter.value = "";
+    if (els.locationSort) els.locationSort.value = "recent";
+    if (els.includeEmptyLocations) els.includeEmptyLocations.checked = false;
+    renderLocations();
   }
 
   function updateRecentLocationNav() {
@@ -77,7 +139,7 @@ function renderLocations() {
     const buttons = new Map(
       Array.from(els.mobileMapLocationNav.querySelectorAll("[data-location-nav]")).map((button) => [button.dataset.locationNav, button])
     );
-    const locations = recentLocations();
+    const locations = recentLocations().filter((location) => location.photos.length);
     const selectedIndex = locations.findIndex((location) => location.pin.id === state.selectedPinId);
     const olderButton = buttons.get("older");
     const newerButton = buttons.get("newer");
@@ -94,7 +156,7 @@ function renderLocations() {
       return;
     }
 
-    const locations = recentLocations();
+    const locations = recentLocations().filter((location) => location.photos.length);
     if (!locations.length) {
       return;
     }
@@ -167,6 +229,7 @@ function renderLocations() {
         if (!state.connectivityOffline && els.mapFallback) {
           els.mapFallback.hidden = true;
         }
+        if (!performance.getEntriesByName("spotterdex-basemap-ready").length) performance.mark("spotterdex-basemap-ready");
       });
     });
     tileLayer.addTo(state.map);
@@ -210,11 +273,7 @@ function renderLocations() {
       if (state.mapZoomInProgress) {
         return;
       }
-      if (isMobileMapLayout()) {
-        scheduleMapCalloutRefresh();
-      } else if (mapCalloutsNeedReflow()) {
-        refreshMapLayout();
-      }
+      scheduleMapCalloutRefresh();
     });
     observeMapSize();
   }
@@ -224,8 +283,7 @@ function renderLocations() {
       return;
     }
 
-    loadLeaflet()
-      .then(() => loadOpenFreeMap())
+    loadOpenFreeMap()
       .then(() => {
         if (state.map || !els.worldMap) {
           return;
@@ -242,8 +300,32 @@ function renderLocations() {
       })
       .catch((error) => {
         console.warn("Leaflet could not be loaded", error);
-        els.mapFallback.hidden = false;
+        showMapFallback("The interactive map could not load. Location browsing is still available.");
       });
+  }
+
+  function showMapFallback(message) {
+    if (els.mapFallbackMessage) els.mapFallbackMessage.textContent = message;
+    if (els.mapFallback) els.mapFallback.hidden = false;
+  }
+
+  function retryMapInitialization() {
+    if (state.map) {
+      state.map.remove();
+      state.map = null;
+    }
+    state.markerLayer = null;
+    state.mapLeaderLayer = null;
+    state.mapLabelLayer = null;
+    state.mapTrafficLayer = null;
+    state.markersByPinId = new Map();
+    state.mapLabelsByPinId = new Map();
+    state.mapTrafficInitialized = false;
+    leafletLoadPromise = null;
+    openFreeMapLoadPromise = null;
+    document.querySelectorAll("script[data-leaflet-runtime], script[data-maplibre-runtime], script[data-maplibre-leaflet-runtime]").forEach((script) => script.remove());
+    if (els.mapFallback) els.mapFallback.hidden = true;
+    initializeMapWhenReady();
   }
 
   function loadLeaflet() {
@@ -262,7 +344,11 @@ function renderLocations() {
       script.async = true;
       script.dataset.leafletRuntime = "true";
       script.addEventListener("load", () => resolve(window.L), { once: true });
-      script.addEventListener("error", () => reject(new Error("Leaflet runtime request failed")), { once: true });
+      script.addEventListener("error", () => {
+        script.remove();
+        leafletLoadPromise = null;
+        reject(new Error("Leaflet runtime request failed"));
+      }, { once: true });
       document.head.append(script);
     });
     return leafletLoadPromise;
@@ -276,13 +362,17 @@ function renderLocations() {
       return openFreeMapLoadPromise;
     }
 
-    openFreeMapLoadPromise = loadRuntimeScript(MAPLIBRE_SCRIPT_URL, "maplibreRuntime")
+    openFreeMapLoadPromise = Promise.all([loadLeaflet(), loadRuntimeScript(MAPLIBRE_SCRIPT_URL, "maplibreRuntime")])
       .then(() => loadRuntimeScript(MAPLIBRE_LEAFLET_SCRIPT_URL, "maplibreLeafletRuntime"))
       .then(() => {
         if (!window.L?.maplibreGL) {
           throw new Error("OpenFreeMap Leaflet bridge did not initialize");
         }
         return window.L.maplibreGL;
+      })
+      .catch((error) => {
+        openFreeMapLoadPromise = null;
+        throw error;
       });
     return openFreeMapLoadPromise;
   }
@@ -294,7 +384,10 @@ function renderLocations() {
       script.async = true;
       script.dataset[dataAttribute] = "true";
       script.addEventListener("load", resolve, { once: true });
-      script.addEventListener("error", () => reject(new Error(`${src} request failed`)), { once: true });
+      script.addEventListener("error", () => {
+        script.remove();
+        reject(new Error(`${src} request failed`));
+      }, { once: true });
       document.head.append(script);
     });
   }
@@ -370,7 +463,7 @@ function renderLocations() {
   }
 
   function ensureMapPinMarkers() {
-    const pins = state.enabledPins;
+    const pins = mapVisiblePins();
     const hasEveryPin = state.markersByPinId.size === pins.length
       && pins.every((pin) => state.markersByPinId.has(pin.id));
     if (hasEveryPin) {
@@ -398,6 +491,10 @@ function renderLocations() {
   }
 
   function renderMapCallouts() {
+    performance.clearMarks("spotterdex-callout-layout-start");
+    performance.clearMarks("spotterdex-callout-layout-end");
+    performance.clearMeasures("spotterdex-callout-layout");
+    performance.mark("spotterdex-callout-layout-start");
     state.mapLeaderLayer.clearLayers();
     state.mapLabelLayer.clearLayers();
     state.mapLabelsByPinId = new Map();
@@ -431,20 +528,32 @@ function renderLocations() {
       point: { x: layout.point.x, y: layout.point.y },
       bounds: layout.bounds
     }));
+    performance.mark("spotterdex-callout-layout-end");
+    performance.measure("spotterdex-callout-layout", "spotterdex-callout-layout-start", "spotterdex-callout-layout-end");
   }
 
   function mapPinsForCallouts() {
-    if (!isMobileMapLayout() || !state.map) {
-      return state.enabledPins;
+    const visiblePins = mapVisiblePins();
+    if (!state.map) {
+      return visiblePins;
     }
+    const visibleBounds = state.map.getBounds();
+    return prioritizeMapCallouts(visiblePins.filter((pin) => visibleBounds.contains([pin.lat, pin.lon])));
+  }
 
-    const visibleBounds = state.map.getBounds().pad(0.22);
-    const pins = state.enabledPins.filter((pin) => visibleBounds.contains([pin.lat, pin.lon]));
-    const selectedPin = state.pinById.get(state.selectedPinId);
-    if (selectedPin && !pins.some((pin) => pin.id === selectedPin.id)) {
-      pins.push(selectedPin);
-    }
-    return declutterMobileCalloutPins(pins);
+  function mapVisiblePins() {
+    if (!(state.mapDiscoveryPinIds instanceof Set)) return state.enabledPins;
+    return state.enabledPins.filter((pin) => state.mapDiscoveryPinIds.has(pin.id));
+  }
+
+  function prioritizeMapCallouts(pins) {
+    return pins.slice().sort((a, b) => {
+      if (a.id === state.selectedPinId) return -1;
+      if (b.id === state.selectedPinId) return 1;
+      const latestA = photosForPin(a)[0]?.sortTime || 0;
+      const latestB = photosForPin(b)[0]?.sortTime || 0;
+      return latestB - latestA || a.name.localeCompare(b.name);
+    });
   }
 
   function declutterMobileCalloutPins(pins) {
@@ -547,11 +656,27 @@ function renderLocations() {
       layout.calloutClusterSize = 1;
       layout.bounds = mapOffscreenLabelBounds(layout, mapSize);
     });
-    layouts.forEach((layout) => {
+    // Admit every label that fits, with selected/recent locations taking priority.
+    // A crowded cluster must not consume the label budget for isolated pins.
+    const accepted = [];
+    const priority = new Map(pins.map((pin, index) => [pin.id, index]));
+    reachableLayouts.sort((a, b) => priority.get(a.pin.id) - priority.get(b.pin.id));
+    reachableLayouts.forEach((layout) => {
+      const candidates = layout.candidates;
+      const available = candidates.find(({ bounds }) => (
+        bounds.left >= margin && bounds.right <= mapSize.x - margin &&
+        bounds.top >= margin && bounds.bottom <= mapSize.y - margin &&
+        !candidateOverlapsLabels(bounds, accepted) &&
+        !candidateOverlapsBlockedBounds(bounds, blockedBounds) &&
+        !candidateOverlapsMarkers(bounds, markerPoints, markerRadius) &&
+        mapLeaderIsClear(layout, bounds, accepted, markerPoints, markerRadius, blockedBounds)
+      ));
+      if (!available) return;
+      layout.bounds = available.bounds;
       layout.callout = mapCalloutForBounds(layout, layout.bounds);
+      accepted.push(layout);
     });
-
-    return layouts;
+    return accepted;
   }
 
   function mapLayoutCanReachViewport(layout, mapSize) {
@@ -1044,6 +1169,41 @@ function renderLocations() {
     ];
   }
 
+  function mapSegmentNearPoint(start, end, point, radius) {
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const lengthSquared = dx * dx + dy * dy;
+    const t = lengthSquared ? Math.max(0, Math.min(1,
+      ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared)) : 0;
+    return Math.hypot(point.x - start.x - t * dx, point.y - start.y - t * dy) < radius;
+  }
+
+  function mapLeaderHitsBounds(points, bounds) {
+    const corners = [
+      { x: bounds.left, y: bounds.top }, { x: bounds.right, y: bounds.top },
+      { x: bounds.right, y: bounds.bottom }, { x: bounds.left, y: bounds.bottom }
+    ];
+    return points.some((point) => point.x >= bounds.left && point.x <= bounds.right &&
+      point.y >= bounds.top && point.y <= bounds.bottom) ||
+      corners.some((corner, index) => mapPolylinesCross(points, [corner, corners[(index + 1) % 4]]));
+  }
+
+  function mapLeaderIsClear(layout, bounds, occupied, markerPoints, radius, blockedBounds) {
+    const points = mapLeaderAbsolutePoints(layout, bounds);
+    const crossesPin = markerPoints.some((point) => {
+      // Overlapping pins share the initial marker footprint. A line may exit
+      // that footprint, but must never pass through a separate pin.
+      if (Math.hypot(point.x - layout.point.x, point.y - layout.point.y) < radius) return false;
+      return points.slice(1).some((end, index) => mapSegmentNearPoint(points[index], end, point, radius));
+    });
+    if (crossesPin || blockedBounds.some((blocked) => mapLeaderHitsBounds(points, blocked))) return false;
+    return !occupied.some((other) => {
+      const otherPoints = mapLeaderAbsolutePoints(other, other.bounds);
+      return mapPolylinesCross(points, otherPoints) ||
+        mapLeaderHitsBounds(points, other.bounds) || mapLeaderHitsBounds(otherPoints, bounds);
+    });
+  }
+
   function mapLeaderLength(points) {
     let length = 0;
     for (let index = 1; index < points.length; index += 1) {
@@ -1165,7 +1325,15 @@ function renderLocations() {
     const secondSide = cross(firstStart, firstEnd, secondEnd);
     const thirdSide = cross(secondStart, secondEnd, firstStart);
     const fourthSide = cross(secondStart, secondEnd, firstEnd);
-    return firstSide * secondSide < 0 && thirdSide * fourthSide < 0;
+    const onSegment = (start, end, point) => (
+      point.x >= Math.min(start.x, end.x) && point.x <= Math.max(start.x, end.x) &&
+      point.y >= Math.min(start.y, end.y) && point.y <= Math.max(start.y, end.y)
+    );
+    return (firstSide * secondSide < 0 && thirdSide * fourthSide < 0) ||
+      (firstSide === 0 && onSegment(firstStart, firstEnd, secondStart)) ||
+      (secondSide === 0 && onSegment(firstStart, firstEnd, secondEnd)) ||
+      (thirdSide === 0 && onSegment(secondStart, secondEnd, firstStart)) ||
+      (fourthSide === 0 && onSegment(secondStart, secondEnd, firstEnd));
   }
 
   function mapLabelCandidateScore(candidate, layout, occupied, markerPoints, radius, blockedBounds) {
@@ -1367,7 +1535,8 @@ function renderLocations() {
 
   function mapTrafficIsAllowed() {
     const connection = navigator.connection;
-    return !connection?.saveData
+    return state.mapAmbientEnabled
+      && !connection?.saveData
       && !["slow-2g", "2g"].includes(connection?.effectiveType)
       && !isReducedMotion();
   }
@@ -1556,7 +1725,6 @@ function renderLocations() {
     const profile = locationProfile(pin, photos);
     els.mapResults.innerHTML = `
       ${renderMapSheetBar("Photos", "Photos")}
-      <h2 class="location-details-title">Location Details</h2>
       ${renderMapLocationPanel(profile)}
     `;
     els.mapResults.dataset.pinId = pin.id;
@@ -1740,8 +1908,29 @@ function renderLocations() {
     return [pin.icao, pin.country].filter(Boolean).join(" - ") || "Location";
   }
 
+  // Use catalog photo frequency as the measure of the unit's most common type.
+  function locationUnitFamily(photos) {
+    const unit = photos.length ? squadronForPhoto(photos[0]) : null;
+    const catalogPhotos = unit?.photoIds?.map((id) => state.photoById.get(String(id))).filter(Boolean);
+    const types = new Map();
+    (catalogPhotos?.length ? catalogPhotos : photos).forEach((photo) => {
+      const family = aircraftFamilyForPhoto(photo);
+      if (!family) return;
+      const key = photo.aircraftId || photo.aircraftType || family.id;
+      const record = types.get(key) || { key, family, count: 0 };
+      record.count += 1;
+      types.set(key, record);
+    });
+    return Array.from(types.values()).sort((a, b) => b.count - a.count || a.key.localeCompare(b.key))[0]?.family || null;
+  }
+
   function renderLocationIdentityMarks(families, units, options = {}) {
-    return renderPhotoIdentityMarks(families, units, {
+    const marks = (units || []).map((unit) => {
+      const fallback = unit.logo ? null : locationUnitFamily(unit.photos || []);
+      if (!fallback) return unit;
+      return { ...unit, logo: fallback.darkIcon || fallback.icon, name: `${unit.name} · ${fallback.label} aircraft family` };
+    });
+    return renderPhotoIdentityMarks(families, marks, {
       wrapperClass: "location-identity-marks",
       familyClass: "location-identity-mark is-family",
       unitClass: "location-identity-mark is-unit",
@@ -1888,9 +2077,12 @@ function renderLocations() {
     const remaining = group.photos.slice(1);
     const singlePhotoId = group.photos.length === 1 && latest?.id ? latest.id : "";
     const squadronId = kind === "squadron" ? group.squadronId : "";
+    const fallbackFamily = !group.logo && kind === "squadron" ? locationUnitFamily(group.photos) : null;
     const logo = group.logo
       ? `<img class="location-group-logo" data-deferred-src="${escapeAttr(group.logo)}" alt="${escapeAttr(`${group.title} logo`)}">`
-      : "";
+      : fallbackFamily
+        ? `<img class="location-group-logo" data-deferred-src="${escapeAttr(fallbackFamily.darkIcon || fallbackFamily.icon)}" alt="${escapeAttr(`${fallbackFamily.label} aircraft family`)}">`
+        : "";
     return `
       <article class="location-expandable-group${isExpanded ? " is-expanded" : ""}">
         <button
@@ -1956,10 +2148,12 @@ function renderLocations() {
           unitType,
           logo: squadron ? squadron.logo || "" : "",
           squadronId: squadron ? squadronPageIdForUnit(squadron) : squadronPageIdForPhoto(photo),
-          count: 0
+          count: 0,
+          photos: []
         });
       }
       byUnit.get(key).count += 1;
+      byUnit.get(key).photos.push(photo);
     });
 
     return Array.from(byUnit.values())

@@ -481,6 +481,8 @@ class ServiceWorkerClientContractTests(unittest.TestCase):
 class MapSelectionContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.script = (ROOT / "script.js").read_text("utf-8")
+        self.map_script = (ROOT / "map-page.js").read_text("utf-8")
+        self.map_template = (ROOT / "tools" / "page_templates" / "map.html").read_text("utf-8")
 
     def test_default_map_selection_prefers_latest_non_singapore_location(self) -> None:
         selection = re.search(
@@ -493,6 +495,39 @@ class MapSelectionContractTests(unittest.TestCase):
             'recent.find(({ pin }) => normalizeKey(pin.country) !== "singapore") || recent[0]',
             selection.group(1),
         )
+
+    def test_map_discovery_keeps_search_without_extra_controls(self) -> None:
+        for contract in (
+            'id="locationCountryFilter"',
+            'id="locationSort"',
+            'id="includeEmptyLocations"',
+            'id="mapAmbientToggle"',
+        ):
+            with self.subTest(contract=contract):
+                self.assertNotIn(contract, self.map_template)
+        self.assertIn('id="locationSearch"', self.map_template)
+        self.assertIn('id="clearLocationFilters"', self.map_template)
+        self.assertIn("item.aircraftType", self.map_script)
+        self.assertIn("item.squadronName", self.map_script)
+        self.assertIn('sort === "photos"', self.map_script)
+        self.assertIn('sort === "name"', self.map_script)
+        self.assertIn("state.mapDiscoveryPinIds = new Set", self.map_script)
+        self.assertNotIn("prioritizeMapCallouts(visiblePins).slice(0, 12)", self.map_script)
+        self.assertNotIn("declutterMobileCalloutPins(pins).slice(0, 6)", self.map_script)
+
+    def test_interactive_map_semantics_and_retry_are_exposed(self) -> None:
+        self.assertIn('id="worldMap" role="region"', self.map_template)
+        self.assertNotIn('id="worldMap" role="img"', self.map_template)
+        self.assertIn('id="mapKeyboardHelp"', self.map_template)
+        self.assertIn('id="retryMapButton"', self.map_template)
+        self.assertIn("function retryMapInitialization()", self.map_script)
+
+    def test_map_runtime_loads_in_parallel_and_releases_failures(self) -> None:
+        self.assertIn("Promise.all([loadLeaflet(), loadRuntimeScript(MAPLIBRE_SCRIPT_URL", self.map_script)
+        self.assertIn("leafletLoadPromise = null", self.map_script)
+        self.assertIn("openFreeMapLoadPromise = null", self.map_script)
+        self.assertIn("script.remove()", self.map_script)
+        self.assertIn('performance.measure("spotterdex-callout-layout"', self.map_script)
 
 
 class ConnectedFieldGuideContractTests(unittest.TestCase):

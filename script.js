@@ -121,6 +121,11 @@
     mapTrafficFamilyIndexByPinId: new Map(),
     mobileMapTrafficPinIds: null,
     mapTrafficRotationTimer: null,
+    mapAmbientEnabled: false,
+    locationCountryFilter: "",
+    locationSort: "recent",
+    includeEmptyLocations: false,
+    mapDiscoveryPinIds: null,
     mapPreviewCache: new Map(),
     mapDossierOpen: true,
     markersByPinId: new Map(),
@@ -557,6 +562,15 @@
       els.photoCount = document.getElementById("photoCount");
       els.locationCount = document.getElementById("locationCount");
       els.locationSearch = document.getElementById("locationSearch");
+      els.locationCountryFilter = document.getElementById("locationCountryFilter");
+      els.locationSort = document.getElementById("locationSort");
+      els.includeEmptyLocations = document.getElementById("includeEmptyLocations");
+      els.mapAmbientToggle = document.getElementById("mapAmbientToggle");
+      els.locationResultCount = document.getElementById("locationResultCount");
+      els.locationListHeading = document.getElementById("locationListHeading");
+      els.clearLocationFilters = document.getElementById("clearLocationFilters");
+      els.retryMapButton = document.getElementById("retryMapButton");
+      els.mapFallbackMessage = document.getElementById("mapFallbackMessage");
       els.locationList = document.getElementById("locationList");
       els.mapWorkspace = document.querySelector("#mapView .map-workspace");
       els.mapControlPanel = document.getElementById("mapControlPanel");
@@ -624,6 +638,7 @@
     els.mobileMapLocationNav = document.querySelector(".mobile-map-location-nav");
     els.mobileMapPhotoCount = document.getElementById("mobileMapPhotoCount");
     els.mobileMapPhotoLocation = document.getElementById("mobileMapPhotoLocation");
+    els.mobileMapPhotoPreview = document.getElementById("mobileMapPhotoPreview");
     els.appToast = document.getElementById("appToast");
   }
 
@@ -1525,6 +1540,24 @@
     els.worldMap?.addEventListener("pointerdown", handleMapDirectInteraction, { capture: true, passive: true });
 
     els.locationSearch?.addEventListener("input", renderLocations);
+    els.locationCountryFilter?.addEventListener("change", () => {
+      state.locationCountryFilter = els.locationCountryFilter.value;
+      renderLocations();
+    });
+    els.locationSort?.addEventListener("change", () => {
+      state.locationSort = els.locationSort.value;
+      renderLocations();
+    });
+    els.includeEmptyLocations?.addEventListener("change", () => {
+      state.includeEmptyLocations = els.includeEmptyLocations.checked;
+      renderLocations();
+    });
+    els.mapAmbientToggle?.addEventListener("change", () => {
+      state.mapAmbientEnabled = els.mapAmbientToggle.checked;
+      renderMapTraffic(true);
+    });
+    els.clearLocationFilters?.addEventListener("click", clearMapDiscoveryFilters);
+    els.retryMapButton?.addEventListener("click", retryMapInitialization);
 
     document.addEventListener("click", handleDocumentClick);
     document.addEventListener("error", handlePhotoMediaError, true);
@@ -4070,6 +4103,15 @@
     if (els.mobileMapPhotoLocation) {
       els.mobileMapPhotoLocation.textContent = pin?.name || "No location selected";
     }
+    if (els.mobileMapPhotoPreview) {
+      const preview = photos.find((photo) => photo.thumbnail || photo.image);
+      els.mobileMapPhotoPreview.hidden = !preview;
+      if (preview) {
+        els.mobileMapPhotoPreview.src = preview.thumbnail || preview.image;
+      } else {
+        els.mobileMapPhotoPreview.removeAttribute("src");
+      }
+    }
 
     if (els.mobileMapLocationCard) {
       els.mobileMapLocationCard.setAttribute("aria-label", "Browse locations");
@@ -6028,7 +6070,6 @@
           latestTime: latestPhoto ? latestPhoto.sortTime || 0 : 0
         };
       })
-      .filter((location) => location.photos.length)
       .sort((a, b) => {
         const timeDiff = b.latestTime - a.latestTime;
         if (timeDiff) {
