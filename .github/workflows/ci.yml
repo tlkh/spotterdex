@@ -41,7 +41,7 @@ jobs:
           coverage run --branch --source=tools --omit='tools/tests/*' \
             -m unittest discover -s tools/tests -v
           coverage report --show-missing
-          coverage xml --output=coverage.xml
+          coverage xml -o coverage.xml
 
       - name: Upload Python coverage report
         if: matrix.python-version == '3.12'
@@ -106,7 +106,7 @@ jobs:
         run: python tools/spotterdex_catalog.py validate --skip-raw-assets
 
       - name: Exercise catalog management CLI
-        run: python tools/spotterdex_catalog.py counts
+        run: python tools/spotterdex_catalog.py counts --skip-raw-assets
 
       - name: Verify generated catalog graph and public asset references
         run: python -m unittest tools.tests.test_app_integrity tools.tests.test_site_contracts -v
