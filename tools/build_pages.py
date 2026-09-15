@@ -87,11 +87,15 @@ def page_navigation(active_file: str) -> str:
         ("airshows.html", "Airshows"),
         ("stats.html", "Stats"),
     )
-    return "\n".join(
-        f'        <a class="tab-button{" is-active" if filename == active_file else ""}" href="{filename}"'
-        f'{(" aria-current=\"page\"" if filename == active_file else "")}>{label}</a>'
-        for filename, label in pages
-    )
+    links = []
+    for filename, label in pages:
+        active_class = " is-active" if filename == active_file else ""
+        current_marker = ' aria-current="page"' if filename == active_file else ""
+        links.append(
+            f'        <a class="tab-button{active_class}" href="{filename}"'
+            f'{current_marker}>{label}</a>'
+        )
+    return "\n".join(links)
 
 
 def map_globe_icon() -> str:
