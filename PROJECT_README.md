@@ -81,11 +81,11 @@ If system Python is missing Pillow or PyYAML and the project virtual environment
 | Navigation | Purpose |
 | --- | --- |
 | Photos → New images | Select flat raw assets and attach them with shared metadata. |
-| Photos → Photo library | Search and edit existing records in All photos, or use By source for the source-specific editor and bulk actions. |
+| Photos → Photo library | Browse one shared photo grid in All photos or By source, filter by catalog metadata, and open a focused editor. |
 | Catalog → Aircraft | Details creates/manages aircraft–unit photo sources; Presentation selects aircraft heroes and Automatic, Standard, or Double card widths. |
 | Catalog → Units | Details manages squadron/organisation photo sources; Presentation manages squadron heroes and unit logos. |
 | Catalog → Locations | Details manages location/map metadata; Presentation selects location heroes. |
-| Catalog → Events | Manage event photo tags, event heroes, and cinematic story segments. |
+| Catalog → Events | Choose an event, then use Photos, Presentation, or Segments; cross-event tagging tools remain available separately. |
 | Catalog → Page write-ups | Edit optional Markdown for aircraft, squadron, and event pages. |
 | Review → Captions / Missing / Quality | Review caption suggestions, resolve missing metadata, or assess source images. |
 | Output → Build & verify | Build local output, inspect logs/changes, back up the database, and clean orphaned generated files. |
@@ -97,10 +97,10 @@ Aircraft, Units, and Locations use local **Details / Presentation** navigation r
 1. Keep original images flat in `raw_assets/`; open **New images** and select them in **Assets**. New/All/Used filters refer to whether an asset is already tagged.
 2. Choose the photo source and location, then optional event, livery, date override, and caption. Canonical photos derive their year from EXIF or the date override. Inline **New** and **Inspect** buttons create or inspect related records without leaving the workflow.
 3. Review the selected images and shared metadata before **Attach Selected**. The shared caption applies to every selected image; single-image AI Caption requires one selected image. EXIF capture date takes precedence over the fallback date during generation.
-4. For existing photos, use **Photo library → All photos**. Compact rows show photo context and caption excerpts; choose **Edit** to expand one or more editors, then **Save changes** or **Discard**. The sticky toolbar keeps the selected count and caption-review action available. **By source** provides the individual photo editor and source-specific bulk editing; opening a source from the catalog also leads here.
+4. For existing photos, use **Photo library → All photos** or **By source**. Filter the shared image grid by aircraft, unit, location, event, or missing metadata. Click an image to open its focused editor, use Previous/Next within the current collection, then **Save changes** or **Discard**. Subjects supports multiple aircraft/unit pairs and one primary subject. Selection checkboxes are separate from opening an editor.
 5. Use the library's selection checkboxes for bulk metadata edits or **Review selected captions**. Library selection is separate from raw asset selection, including selections made in the Assets drawer.
 
-Successful catalog writes are transactional and refresh `content/spotterdex.sql`; they do not rebuild the public site. **All photos** keeps drafts by photo ID through search, pagination, navigation, and other photo saves. Each editor shows unsaved, saving, saved, or persistent error feedback; failed saves retain the draft. If a record disappears during refresh, its draft remains available for copying or discarding. Reload asks before discarding library drafts and keeps them if the refresh fails; browser departure also warns while library drafts exist. Drafts are in memory only, with no persistent recovery. This is not an app-wide guard: save other editors before changing sources, reloading, or closing. On narrow screens, the current-destination button opens grouped navigation; raw assets open in a modal panel. Both support Escape and focus restoration. Initial loading and refresh failures provide a persistent Retry catalog load action.
+Successful catalog writes are transactional and refresh `content/spotterdex.sql`; they do not rebuild the public site. **All photos** keeps drafts by photo ID through search, pagination, navigation, and other photo saves. Each editor shows unsaved, saving, saved, or persistent error feedback; failed saves retain the draft. If a record disappears during refresh, its draft remains available for copying or discarding. Reload refreshes catalog data while retaining drafts. Photo, catalog form, write-up, event-story, and caption-review drafts are stored locally in this browser, keyed by repository. A fresh page asks **Restore drafts** or **Discard drafts**; restoration never starts caption generation or saves automatically. **Unsaved work** lists drafts for reopening or discarding, and browser departure warns while work remains. Browser storage can be unavailable or cleared, so it is recovery assistance rather than a catalog backup. Existing-record saves check the revision that the editor started with; conflicts show the saved record beside your proposal and require an explicit review and save. A successful save followed by a failed catalog refresh is reported separately. On narrow screens, the current-destination button opens grouped navigation; raw assets open in a modal panel. Both support Escape and focus restoration. Initial loading and refresh failures provide a persistent Retry catalog load action.
 
 A checked bulk field with a blank value can clear existing metadata, so review the selected fields and photo count before applying.
 
@@ -108,9 +108,15 @@ Removing/detaching a photo removes its catalog record, not the original raw file
 
 ### Caption review queue
 
-Set `LLM_API_KEY` only in the manager process environment or the local, ignored root `.env` file when using AI captions. Copy `.env.example` to `.env` and fill in the key if preferred. It is never sent to browser JavaScript or written to the catalog.
+Caption assistance uses AFM 3 Core through Apple Foundation Models and runs entirely on this Mac. It requires macOS 27, Xcode 27, Apple Intelligence enabled with its model assets ready, and the optional Python dependency:
 
-Caption assistance uses the internal Nemotron 3 Nano Omni deployment with high reasoning (`/think`), a 16,384-token output limit, and an 8,192-token reasoning budget. Optional endpoint/model overrides are documented in `.env.example`.
+```bash
+.venv/bin/python -m pip install -r requirements-caption.txt
+```
+
+The manager prepares an orientation-corrected local image, invokes the model in an isolated subprocess, and deletes the temporary image afterward. Generation is limited to one photo at a time and never saves a caption automatically.
+
+Caption generation has two automatic modes: an empty caption generates a new caption; an existing caption is refined into a complete replacement. Both modes use the supplied country, aircraft type, squadron or organisation, location, event, and livery metadata, and ask the model to describe the aircraft, its visible action, and the surrounding environment.
 
 1. Select photos in **Photo library** and choose **Review selected captions**, or open **Review → Captions** and select a queue scope:
    - **Selected library photos** (default): the library's selected records.
@@ -122,7 +128,7 @@ Caption assistance uses the internal Nemotron 3 Nano Omni deployment with high r
 5. **Stop after current photo** lets the in-flight request finish. **Resume Queue** generates remaining ready items without replacing proposals; **Retry failed** retries generation errors only. To retry a failed save, use **Accept Caption** again.
 6. **Reset queue**, scope changes, and exclusion changes ask before discarding pending proposals. These controls are disabled while generation or caption saves are active.
 
-Generation never saves captions automatically. Edited proposals retain their text and caret during asynchronous list refreshes, but queue membership, unsaved proposals, and review states live only in browser memory and are lost on reload. Raw asset selection does not reset the queue.
+Generation never saves captions automatically. Edited proposals retain their text and caret during asynchronous list refreshes. Browser-local recovery preserves queue membership, proposals, and review states; interrupted generation becomes retryable and interrupted acceptance reports an unknown outcome for review. Restoring a queue never resumes requests automatically. Raw asset selection does not reset the queue.
 
 AI-assisted is provenance, not a synonym for reviewed or accepted. It remains set when an assisted caption is subsequently edited and is omitted from public payloads. The explicit CLI marker reset below clears those flags without changing caption text.
 
@@ -142,7 +148,7 @@ In **Catalog → Events**, tag event photos, select an optional event hero, and 
 
 ### Build locally, then publish separately
 
-**Build & verify → Build locally** validates/builds local generated output and shows progress, a log, and generated-file changes. It does not commit, push, or deploy to GitHub Pages. Success and failure are explicitly distinguished; a lost build stream means completion is unknown, not that the build succeeded.
+**Build & verify → Build locally** validates/builds local generated output and shows progress, a log, and generated-file changes. It does not commit, push, or deploy to GitHub Pages. Builds run as background jobs with bounded logs persisted in the ignored `.spotterdex-manager-build-jobs.json` journal. Reloading or reopening Build & verify reconnects to the current/recent job without starting another build. Only one job runs at once. A lost connection triggers read-only polling; success, failure, and a manager restart with unknown completion are shown distinctly.
 
 The current image-width/JPEG-quality form values are used for the next build. **Save settings** keeps them in `.spotterdex-manager-build-settings.json` for future sessions; **Reset defaults** restores the defaults. Use **Backup Database** for an ignored local backup and **Clear Build Cache** when you need to invalidate cached image processing.
 
@@ -150,7 +156,7 @@ Build before **Find Orphans**. Review the listed generated files before deleting
 
 ### Manager development and accessibility checks
 
-The UI source is `tools/manager/app.html`, `app.css`, and `app.js`; the local API is `tools/spotterdex_manager.py`. These are separate from the generated public pages and their templates.
+The UI source is `tools/manager/app.html`, `app.css`, and `app.js`, with `library`, `workflows`, `drafts`, `recovery-ui`, and `build-jobs` helpers in the same directory; the local API is `tools/spotterdex_manager.py` and its build registry is `tools/spotterdex_manager_jobs.py`. These are separate from the generated public pages and their templates.
 
 ```bash
 python3 -m unittest discover -s tools/tests -p test_manager_ui.py -v

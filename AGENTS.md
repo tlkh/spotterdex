@@ -52,7 +52,7 @@ Photo rules:
 - EXIF capture date takes precedence over `date_override` during generation; the override is the fallback.
 - `caption_ai_assisted` is source-only review metadata and is omitted from the public payload.
 
-Set `LLM_API_KEY` only in the manager process environment or the local, ignored root `.env` file for AI captions; `.env.example` documents the local setup. The caption assistant uses the internal Nemotron 3 Nano Omni deployment with `/think`, a 16,384-token output limit, and an 8,192-token reasoning budget. Never expose the key or hidden reasoning to browser JavaScript, logs, generated data, or commits.
+Caption assistance uses AFM 3 Core locally through Apple Foundation Models on macOS 27. Install the optional pinned dependency from `requirements-caption.txt`; Apple Intelligence must be enabled and its model assets ready. The manager invokes the native SDK in a short-lived subprocess, permits one generation at a time, and never exposes prompts or native errors to browser JavaScript, generated data, or commits.
 
 ## Manager UI maintenance
 
@@ -64,15 +64,15 @@ Navigation and authoring contracts:
 - **Catalog:** Aircraft, Units, and Locations each have local Details / Presentation navigation. Events owns event tagging, heroes, and cinematic segments; Page write-ups remains a separate catalog destination.
 - **Review:** Captions, Missing, and Quality. **Output:** Build & verify.
 - Keep `viewMeta`, `workspaceGroups`, renderers, and section IDs in sync. Internal routes such as `master`, `source-photos`, `aircraft`, `squadrons`, and `location-heroes` are not public-site URLs. The active manager route is retained in session storage; presentation routes must highlight their parent catalog destination.
-- Photo editing still uses explicit save actions. All photos has in-memory drafts keyed by canonical photo ID, expandable editors, inline save status/errors, and guards for Reload/browser departure. Drafts survive filtering, pagination, navigation, and unrelated saves; missing-record drafts remain available for copying/discarding. This is not an app-wide guard or persistent draft recovery. Save other editors before changing sources, reloading, or closing the app.
+- Photo editing still uses explicit save actions. All photos and By source share a filtered photo grid with separate selection controls and a native focused-editor dialog. Drafts are keyed by canonical photo ID and survive filtering, pagination, navigation, and unrelated saves; missing-record drafts remain available for copying/discarding. Browser-local recovery covers photo, catalog form, write-up, story, and caption drafts, keyed by repository root and database path. Require explicit Restore/Discard on a fresh page; never automatically save or restart generation. Preserve unsaved-work navigation, departure guards, and original revision tokens through refreshes. Existing-record saves must supply resource revisions; stale saves return 409 and retain proposals for comparison and explicit resubmission. Distinguish successful saves from a subsequent refresh failure.
 
 Caption review contracts:
 
 - Scope is selected library photos (default), all matching library search results across pages, or all eligible photos. An empty library search matches all photos. Deduplicate canonical photo IDs/source paths; photos without captions are eligible when their raw sources exist.
 - Freeze queue membership when generation begins. Stop finishes the current request; Resume processes remaining ready items; Retry failed processes generation failures only. None of these actions saves captions.
 - Keep edited proposals across asynchronous rerenders, including focus and caret position. Accept saves once and marks the caption AI-assisted; a failed save retains the editable draft. Reject leaves the stored caption unchanged. Accepted/rejected states remain in the current queue.
-- Scope/exclusion changes and Reset queue must confirm before discarding pending proposals and remain blocked during generation or caption saves. Raw asset selection must not reset a caption queue. Queue/proposal/review states are in-memory and are lost on a browser reload.
-- `caption_ai_assisted` is provenance used by the default exclusion filter, not an accepted/rejected review status. Editing a caption does not automatically clear that marker. Caption acceptance uses canonical photo identity and refreshes metadata before saving; preserve unrelated fields, including livery. The refresh is not an atomic concurrency guarantee.
+- Scope/exclusion changes and Reset queue must confirm before discarding pending proposals and remain blocked during generation or caption saves. Raw asset selection must not reset a caption queue. Queue/proposal/review states participate in explicit browser-local recovery; interrupted generation is retryable and interrupted acceptance has an unknown outcome, never an automatic resubmission.
+- `caption_ai_assisted` is provenance used by the default exclusion filter, not an accepted/rejected review status. Editing a caption does not automatically clear that marker. Caption acceptance uses canonical photo identity and refreshes metadata before saving; preserve unrelated fields, including livery. The acceptance request includes the refreshed photo revision and the backend checks it within the write transaction.
 
 Accessibility and maintenance contracts:
 
@@ -80,7 +80,7 @@ Accessibility and maintenance contracts:
 - Asset and quality filters are button groups with synchronized `aria-pressed`, not partial ARIA tablists. Primary/local navigation uses `aria-current="page"`. Inline New/Inspect actions need contextual accessible names.
 - Quality review acknowledgements are local state, not image corrections. The confirmed QC_ prefix/approval actions rename raw files and update catalog paths through the manager; do not perform equivalent ad hoc filesystem renames or reorganize `raw_assets/`.
 - Events can generate segments from EXIF calendar days or gaps over two hours, then manually reorder them. Only explicitly assigned photos appear in saved cinematic stories. Preview Draft is not Save Segments, and neither deploys the site.
-- Build & verify generates local output only. It does not commit, push, or deploy. Keep success, failure, and lost-stream/unknown-completion messaging distinct. Orphan cleanup deletes generated derivatives, not raw originals; build before scanning.
+- Build & verify generates local output only. It does not commit, push, or deploy. Builds use a persisted bounded job registry with one active job. POST starts a job; GET observers only reconnect/poll and must never repeat a start after connection loss. Keep success, failure, and restart/unknown-completion messaging distinct. Orphan cleanup deletes generated derivatives, not raw originals; build before scanning.
 
 ## Maintenance CLI
 
@@ -120,13 +120,28 @@ node --check service-worker.js
 node --check tools/manager/app.js
 ```
 
-Manager UI regression tests run with `python3 -m unittest discover -s tools/tests -p test_manager_ui.py -v`; they use Node.js with mocked DOM/API behavior and do not call the caption service or mutate the catalog. Coverage includes shell initialization, nested navigation, dialog focus restoration, filter state, caption scopes, stop/resume/retry, save recovery, library draft preservation across filtering/pagination/navigation, failed-save retry, missing-record drafts, reload/browser-departure guards, load-failure retry, and responsive dialog transitions. Node.js must be available for the behavioral tests; otherwise those tests are skipped. If the system Python lacks Pillow or PyYAML, use the existing `.venv/bin/python` for Python verification commands.
+The complete local application suite is `python3 -m unittest discover -s tools/tests -v`. Keep this suite high-coverage across both shipped surfaces:
+
+- **Public web app:** `test_route_behaviors`, `test_script_behaviors`, `test_archive_routes`, `test_map_leaders`, `test_site_contracts`, `test_app_integrity`, `test_airshow_story`, and `test_apple_web_app` cover route rendering, shared runtime behavior, map layout, generated markup/assets, service-worker contracts, accessibility, recovery, and responsive layout rules.
+- **Management app and catalog backend:** `test_manager_ui`, `test_manager_drafts`, `test_manager_jobs`, `test_manager_revisions`, `test_manager_workflows`, `test_caption_assistant`, `test_quality_control`, and `test_spotterdex_db` cover authoring workflows, recovery, concurrency, build jobs, captioning, quality actions, persistence, and database invariants.
+
+Every new public or manager behavior must add or update a discoverable test in the appropriate module; do not rely on syntax checks alone. The Node-backed tests use mocked DOM/API behavior and do not call the caption service or mutate the catalog. Node.js is required for meaningful web/manager coverage: skipped Node tests do not count as a passing coverage result. If the system Python lacks Pillow or PyYAML, use the existing `.venv/bin/python` for local verification commands.
+
+For a local coverage report matching CI's Python measurement, install/use `coverage` in the active environment and run:
+
+```bash
+coverage run --branch --source=tools --omit='tools/tests/*' \
+  -m unittest discover -s tools/tests -v
+coverage report --show-missing
+```
+
+This reports Python manager/catalog coverage; public and manager browser JavaScript coverage is enforced by the Node behavior and contract tests above, plus the shipped-bundle syntax checks.
 
 For manager-only UI changes, run the focused tests, `node --check tools/manager/app.js`, and `git diff --check`; a public-site image rebuild is not needed unless catalog/build inputs also changed. Mocked tests do not verify actual layout, native focus trapping, or screen-reader announcements. Manually check keyboard Tab/Escape and focus return, filter states, desktop/narrow layouts, and caption edits during generation without sending real caption requests unless intended.
 
 Builds are idempotent: rebuilding an unchanged catalog must leave the worktree clean. `generatedAt` is carried over from the previous manifest whenever the payload is otherwise identical, and generated text files are only rewritten when their content changes. A no-op rebuild that still dirties files is a bug worth investigating.
 
-`.github/workflows/ci.yml` runs the repo-only subset of these checks on every push. Because `raw_assets/` is not committed, CI cannot run the image pipeline or the raw source-path checks, so it uses `python3 tools/spotterdex_catalog.py validate --skip-raw-assets` and verifies that the committed pages still match `tools/build_pages.py`. The full strict build remains a local step.
+`.github/workflows/ci.yml` should mirror the complete local suite wherever the environment permits. Its Python job runs the same `unittest discover -s tools/tests` suite with coverage on each supported Python version; its Node job checks every shipped bundle and exercises the public route/runtime and map regression tests; its catalog/site job runs generated-asset, markup, and page-builder contracts. Add new discoverable tests to the full CI suite and add a targeted Node invocation when a test protects browser-runtime behavior. CI cannot run the image pipeline or raw source-path checks because `raw_assets/` is not committed, so it uses `python3 tools/spotterdex_catalog.py validate --skip-raw-assets`; the full strict build remains a local step. A test that is intentionally CI-incompatible (for example, macOS-only Apple Foundation Models) must have its limitation documented and must not silently reduce local coverage.
 
 The builder opens the database read-only, validates relationships and raw paths, verifies the SQL snapshot, processes all photos through one pipeline, derives indexes and statistics, and writes:
 
@@ -292,7 +307,7 @@ node --check stats-page.js
 git diff --check
 ```
 
-The behavior tests execute JavaScript with Node.js and mocked browser dependencies; they skip when Node.js is unavailable. They cover search counts/pagination, IME guards, filter/history/session behavior, loading retries, viewer inert state, and non-map resize handling. Site contracts check generated markup, token usage, and layout rules. These are not end-to-end browser or screen-reader tests.
+The behavior tests execute JavaScript with Node.js and mocked browser dependencies; they skip when Node.js is unavailable, and skipped tests do not constitute complete verification. They cover search counts/pagination, IME guards, filter/history/session behavior, loading retries, viewer inert state, and non-map resize handling. Site contracts check generated markup, token usage, and layout rules. These are not end-to-end browser or screen-reader tests.
 
 For interaction/CSS changes, serve the repository on loopback and check 390px mobile, 768px tablet, and 1440px desktop, plus 320px reflow, 200% zoom, reduced motion, and portrait/landscape resize. Exercise sticky controls after several screens of scrolling, confirm Aircraft family chips wrap, select a Squadron country from the mobile native control and verify the hash/result set, confirm the six Stats totals remain compact, and verify aircraft detail photos stay close to the short hero. Exercise Tab/Enter/Escape and IME search, filter links/reload/Back/Forward, viewer focus while information is collapsed, and blocked catalog/EXIF requests followed by Retry. Test offline/reconnect separately. Physical iOS/Safari checks remain necessary for safe areas, the software keyboard, gestures, and standalone updates.
 

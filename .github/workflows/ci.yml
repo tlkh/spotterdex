@@ -84,7 +84,7 @@ jobs:
           done
 
       - name: Exercise route and service-worker behavior
-        run: python -m unittest tools.tests.test_route_behaviors tools.tests.test_script_behaviors -v
+        run: python -m unittest tools.tests.test_route_behaviors tools.tests.test_script_behaviors tools.tests.test_map_leaders -v
 
   catalog-and-site:
     name: Catalog and generated-site integrity

@@ -273,7 +273,11 @@ function renderLocations() {
       if (state.mapZoomInProgress) {
         return;
       }
-      scheduleMapCalloutRefresh();
+      if (isMobileMapLayout()) {
+        scheduleMapCalloutRefresh();
+      } else if (mapCalloutsNeedReflow()) {
+        refreshMapLayout();
+      }
     });
     observeMapSize();
   }
@@ -537,8 +541,18 @@ function renderLocations() {
     if (!state.map) {
       return visiblePins;
     }
-    const visibleBounds = state.map.getBounds();
-    return prioritizeMapCallouts(visiblePins.filter((pin) => visibleBounds.contains([pin.lat, pin.lon])));
+    const mobileLayout = isMobileMapLayout();
+    const visibleBounds = mobileLayout ? state.map.getBounds().pad(0.22) : state.map.getBounds();
+    const pins = visiblePins.filter((pin) => visibleBounds.contains([pin.lat, pin.lon]));
+    if (!mobileLayout) {
+      return prioritizeMapCallouts(pins);
+    }
+
+    const selectedPin = state.pinById.get(state.selectedPinId);
+    if (selectedPin && !pins.some((pin) => pin.id === selectedPin.id)) {
+      pins.push(selectedPin);
+    }
+    return declutterMobileCalloutPins(pins);
   }
 
   function mapVisiblePins() {

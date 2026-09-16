@@ -214,6 +214,8 @@
     }
 
     async function api(path, body = null) {
+      if (typeof prepareManagerMutation === "function") body = prepareManagerMutation(path, body);
+      const draftSnapshot = body ? JSON.stringify(state.__managerDraftForms || {}) : "";
       const options = body ? {
         method: "POST",
         headers: {"Content-Type": "application/json"},
@@ -222,9 +224,18 @@
       const response = await fetch(path, options);
       const payload = await readApiJson(response);
       if (!response.ok || payload.ok === false) {
-        throw new Error(payload.message || `Request failed: ${response.status}`);
+        const error = new Error(payload.message || `Request failed: ${response.status}`);
+        error.payload = payload; error.status = response.status;
+        if (payload.code === "revision_conflict" && typeof showManagerConflict === "function") showManagerConflict(path, body, payload).catch(() => toast("Could not load the changed record. Your draft is retained; reconnect and try again."));
+        throw error;
       }
+      if (body && typeof managerMutationSucceeded === "function") managerMutationSucceeded(path, body, payload, draftSnapshot);
       return payload;
+    }
+
+    async function refreshManagerAfterSave() {
+      try { await loadState(true); }
+      catch (_) { toast("Saved. Catalog refresh failed; use Retry catalog load to reconnect."); }
     }
 
     async function loadState(keepSelection = true) {
@@ -240,6 +251,8 @@
         if (response.ok === false || nextData.ok === false) throw new Error(nextData.message || `Catalog request failed (${response.status}).`);
         if (![nextData.assets, nextData.masterPhotos, nextData.entries].every(Array.isArray)) throw new Error("The server returned an incomplete catalog.");
         state.data = nextData;
+        for (const photo of nextData.masterPhotos || []) photo._revision = nextData.revisions?.[`photo:${photo.id}`];
+        if (typeof initializeManagerRecovery === "function") initializeManagerRecovery();
         state.selectedAssets = new Set([...previous].filter((path) => state.data.assets.some((asset) => asset.path === path)));
         const validMasterPhotoIds = new Set((state.data.masterPhotos || []).map((photo) => photo.id));
         state.bulkEdit.master = new Set([...state.bulkEdit.master].filter((photoId) => validMasterPhotoIds.has(photoId)));
@@ -345,6 +358,8 @@
         build: renderOrphans
       };
       renderers[state.activeTab]?.();
+      if (typeof renderManagerWorkflows === "function") renderManagerWorkflows();
+      if (typeof restoreManagerForms === "function") restoreManagerForms();
     }
 
     function writeUpEntities(type = $("writeUpType")?.value || "aircraft") {
@@ -371,6 +386,7 @@
     function loadSelectedWriteUp() {
       const entity = writeUpEntities().find((item) => item.id === $("writeUpEntity").value);
       $("writeUpMarkdown").value = entity?.writeUp || "";
+      if (typeof restoreManagerWriteUp === "function") restoreManagerWriteUp();
       renderWriteUpPreview();
       $("saveWriteUpBtn").disabled = !entity;
     }
@@ -408,7 +424,7 @@
       button.disabled = true;
       try {
         const result = await api("/api/update-write-up", {entityType, entityId, writeUp: $("writeUpMarkdown").value});
-        await loadState(true);
+        await refreshManagerAfterSave();
         $("writeUpType").value = entityType;
         renderWriteUpEditor(entityId);
         toast(result.message);
@@ -491,7 +507,8 @@
 
     function renderAssetGrid() {
       const assets = filteredAssets();
-      $("selectedCount").textContent = `${state.selectedAssets.size} selected`;
+      $("selectedCount").textContent = `${state.selectedAssets.size} selected raw images`;
+      if (typeof renderManagerWorkflows === "function") renderManagerWorkflows();
       $("attachSummary").textContent = state.selectedAssets.size
         ? `${state.selectedAssets.size} asset(s) selected`
         : "No assets selected";
@@ -697,7 +714,7 @@
     async function acknowledgeQuality(path, acknowledged) {
       const result = await api("/api/acknowledge-quality", {path, acknowledged});
       toast(result.message);
-      await loadState(true);
+      await refreshManagerAfterSave();
     }
 
     async function markQualityFailures() {
@@ -711,7 +728,7 @@
       const result = await api("/api/mark-quality-failures", {paths, includeWarnings});
       toast(result.message);
       state.selectedAssets.clear();
-      await loadState(true);
+      await refreshManagerAfterSave();
     }
 
     async function approvePassingQc() {
@@ -722,7 +739,7 @@
       if (!window.confirm(`Approve ${paths.length} passing QC_ image${paths.length === 1 ? "" : "s"} and remove the QC_ tag from their filenames?`)) return;
       const result = await api("/api/approve-passing-qc", {paths});
       state.selectedAssets.clear();
-      await loadState(true);
+      await refreshManagerAfterSave();
       toast(result.message);
     }
 
@@ -837,6 +854,13 @@
     }
 
     function loadAirshowStoryDraft(eventId, force = false) {
+      if (typeof saveManagerStoryDraft === "function" && state.airshowStoryEventId !== eventId) saveManagerStoryDraft();
+      if (!force && state.__managerAirshowStoryDrafts?.[eventId]?.dirty) {
+        state.airshowStoryEventId = eventId;
+        state.airshowStoryDraft = cloneStory(state.__managerAirshowStoryDrafts[eventId].draft);
+        state.airshowStoryDirty = true; state.airshowStorySelection.clear(); return;
+      }
+      if (force) delete state.__managerAirshowStoryDrafts?.[eventId];
       const event = airshowStoryEvent(eventId);
       if (!event) {
         state.airshowStoryEventId = "";
@@ -849,6 +873,7 @@
       state.airshowStoryEventId = eventId;
       state.airshowStoryDraft = cloneStory(event.story || {mode: event.storyMode || "standard", segments: []});
       state.airshowStoryDraft.mode = event.storyMode || state.airshowStoryDraft.mode || "standard";
+      state.airshowStoryDraft._revision = state.data?.revisions?.[`story:${eventId}`];
       state.airshowStoryDirty = false;
       state.airshowStorySelection.clear();
     }
@@ -859,6 +884,7 @@
       const count = state.airshowStoryDraft?.segments?.length || 0;
       $("airshowStorySummary").textContent = `${event?.name || "Airshow"} · ${count} segment${count === 1 ? "" : "s"} · Unsaved changes`;
       sendAirshowStoryPreview();
+      if (typeof saveManagerStoryDraft === "function") saveManagerStoryDraft();
     }
 
     function storyPhotoCoverage(segments, photos) {
@@ -1131,7 +1157,7 @@
               <span class="story-focal-marker" aria-hidden="true"></span>
             </button>
             <div class="airshow-story-moment-fields">
-              <div class="field wide"><label for="${storyFieldPrefix}-photo">Hero photo</label><select id="${storyFieldPrefix}-photo" data-story-photo="${index}">${heroOptions}</select></div>
+              <div class="field wide"><label for="${storyFieldPrefix}-photo">Featured photo</label><select id="${storyFieldPrefix}-photo" data-story-photo="${index}">${heroOptions}</select></div>
               <div class="form-grid">
                 <div class="field"><label for="${storyFieldPrefix}-label">Sequence label</label><input id="${storyFieldPrefix}-label" data-story-field="label" data-story-index="${index}" value="${escapeHtml(segment.label || "")}" placeholder="6 Oct · 08:44"></div>
                 <div class="field"><label for="${storyFieldPrefix}-overlay">Overlay side</label><select id="${storyFieldPrefix}-overlay" data-story-overlay="${index}"><option value="left"${segment.overlaySide === "right" ? "" : " selected"}>Left</option><option value="right"${segment.overlaySide === "right" ? " selected" : ""}>Right</option></select></div>
@@ -1263,10 +1289,25 @@
       const mode = $("airshowStoryEnabled").checked ? "cinematic" : "standard";
       const segments = state.airshowStoryDraft.segments || [];
       if (mode === "cinematic" && segments.length < 2) throw new Error("Add at least two segments before enabling the cinematic page.");
+      const submitted = JSON.stringify(state.airshowStoryDraft);
       const result = await api("/api/save-event-story", {eventId: event.id, mode, segments});
-      state.airshowStoryDraft = null;
-      state.airshowStoryDirty = false;
-      await loadState(true);
+      if (state.airshowStoryEventId === event.id && JSON.stringify(state.airshowStoryDraft) === submitted) {
+        state.airshowStoryDraft = null;
+        state.airshowStoryDirty = false;
+        delete state.__managerAirshowStoryDrafts?.[event.id];
+      } else {
+        // Edits made while saving remain a draft against the newly saved revision.
+        const pending = state.__managerAirshowStoryDrafts?.[event.id];
+        const revision = result.revisions?.[`story:${event.id}`];
+        if (state.airshowStoryEventId === event.id && state.airshowStoryDraft) {
+          state.airshowStoryDraft._revision = revision;
+          if (typeof saveManagerStoryDraft === "function") saveManagerStoryDraft();
+        } else if (pending && JSON.stringify(pending.draft) === submitted) {
+          delete state.__managerAirshowStoryDrafts[event.id];
+        } else if (pending?.draft) pending.draft._revision = revision;
+      }
+      if (typeof managerDraftsChanged === "function") managerDraftsChanged();
+      await refreshManagerAfterSave();
       toast(result.message);
     }
 
@@ -1303,7 +1344,7 @@
                 <h3>${escapeHtml(event.name)}</h3>
                 <p class="subtle">${event.photos.length} tagged photo${event.photos.length === 1 ? "" : "s"} · ${heroStatus}</p>
               </div>
-              <button class="btn ghost" type="button" data-airshow-hero-clear="${escapeHtml(event.name)}"${Object.keys(hero).length ? "" : " disabled"}>Clear Hero</button>
+              <button class="btn ghost" type="button" data-airshow-hero-clear="${escapeHtml(event.name)}"${Object.keys(hero).length ? "" : " disabled"}>Clear featured photo</button>
             </div>
             <div class="airshow-hero-picker">
               ${event.photos.map(({entry, photo}) => {
@@ -1335,7 +1376,7 @@
         hero: candidate ? {...entryRequestFields(candidate.entry), index: candidate.photo.index} : null
       });
       toast(result.message);
-      await loadState(true);
+      await refreshManagerAfterSave();
     }
 
     function untaggedAirshowDayGroups() {
@@ -1448,7 +1489,7 @@
         }))
       });
       toast(result.message);
-      await loadState(true);
+      await refreshManagerAfterSave();
     }
 
     function formatEventDate(value) {
@@ -1581,7 +1622,7 @@
         }))
       });
       toast(result.message);
-      await loadState(true);
+      await refreshManagerAfterSave();
     }
 
     function captionPhotoKey(entry, index) {
@@ -1616,7 +1657,7 @@
           const photoId = canonical?.id || record.photoId;
           const photo = canonical ? {...record, ...canonical, photoId} : record;
           if (state.bulkCaptions.scope === "selected" && !state.bulkEdit.master.has(photoId)) continue;
-          if (state.bulkCaptions.scope === "filtered" && (!canonical || !masterPhotoMatchesSearch(canonical, term))) continue;
+          if (state.bulkCaptions.scope === "filtered" && (!canonical || !(typeof libraryPhotoMatches === "function" ? libraryPhotoMatches(canonical) : masterPhotoMatchesSearch(canonical, term)))) continue;
           if (photo.invalid || !photo.exists || !photo.sourceAssetPath) continue;
           if ((photoId && seenIds.has(photoId)) || seenPaths.has(photo.sourceAssetPath)) continue;
           if (photoId) seenIds.add(photoId);
@@ -1654,6 +1695,7 @@
     }
 
     function renderBulkCaptions() {
+      if (typeof managerDraftsChanged === "function") managerDraftsChanged();
       if (!state.data) return;
       const selection = selectedBulkCaptionCandidates();
       const queue = currentBulkCaptionQueue();
@@ -1810,6 +1852,7 @@
         if (!photo) throw new Error("Photo no longer exists. Reset the queue to use the current library.");
         await api("/api/update-master-photo", {
           photoId: photo.id,
+          expectedRevisions: latest.revisions ? {[`photo:${photo.id}`]: latest.revisions[`photo:${photo.id}`]} : undefined,
           photo: {
             locationId: photo.locationId || photo.pinId || "",
             date: photo.date || "",
@@ -1830,7 +1873,7 @@
         renderBulkCaptions();
       }
       toast("Caption accepted and marked as AI-assisted.");
-      await loadState(true);
+      await refreshManagerAfterSave();
     }
 
     function rejectBulkCaption(key) {
@@ -1996,7 +2039,7 @@
       if (selected) state.bulkEdit[mode].add(key);
       else state.bulkEdit[mode].delete(key);
       const input = document.querySelector(`[data-bulk-select-mode="${mode}"][data-bulk-select-key="${CSS.escape(key)}"]`);
-      input?.closest(".photo-card, .master-row")?.classList.toggle("selected", selected);
+      input?.closest(".photo-card, .master-row, .library-card")?.classList.toggle("selected", selected);
       updateBulkEditorStatus(mode);
     }
 
@@ -2004,7 +2047,7 @@
       state.bulkEdit[mode].clear();
       document.querySelectorAll(`[data-bulk-select-mode="${mode}"]`).forEach((input) => {
         input.checked = false;
-        input.closest(".photo-card, .master-row")?.classList.remove("selected");
+        input.closest(".photo-card, .master-row, .library-card")?.classList.remove("selected");
       });
       updateBulkEditorStatus(mode);
     }
@@ -2013,7 +2056,7 @@
       document.querySelectorAll(`[data-bulk-select-mode="${mode}"]`).forEach((input) => {
         input.checked = true;
         state.bulkEdit[mode].add(input.dataset.bulkSelectKey);
-        input.closest(".photo-card, .master-row")?.classList.add("selected");
+        input.closest(".photo-card, .master-row, .library-card")?.classList.add("selected");
       });
       updateBulkEditorStatus(mode);
     }
@@ -2030,6 +2073,9 @@
         fields[field] = editor.querySelector(`[data-bulk-field="${field}"]`).value;
       });
       if (!Object.keys(fields).length) throw new Error("Choose at least one field to update.");
+      const fieldNames = {locationId: "Location", date: "Date override", airshow: "Event", livery: "Livery", caption: "Caption"};
+      const preview = Object.entries(fields).map(([key, value]) => `${fieldNames[key]}: ${value ? (key === "locationId" ? state.data.pins.find(pin => pin.id === value)?.name || value : value) : "CLEAR existing value"}`).join("\n");
+      if (!window.confirm(`Apply these changes to ${selections.length} selected photos?\n\n${preview}\n\nOther fields stay unchanged.`)) return;
       const result = await api("/api/bulk-update-photos", {
         photos: selections.map(bulkPhotoReference),
         fields
@@ -2037,7 +2083,7 @@
       state.bulkEdit[mode].clear();
       if (mode === "tagged") clearEditor();
       toast(result.message);
-      await loadState(true);
+      await refreshManagerAfterSave();
     }
 
     function renderEntryDetail() {
@@ -2199,7 +2245,7 @@
                 <p class="subtle">${escapeHtml(item.family)} · ${item.photoCount} tagged photo${item.photoCount === 1 ? "" : "s"} · ${hasHero ? "Hero selected" : "No hero selected"}</p>
               </div>
               <div class="card-actions">
-                <button class="btn ghost" type="button" data-aircraft-hero-clear="${escapeHtml(item.id)}"${hasHero ? "" : " disabled"}>Clear Hero</button>
+                <button class="btn ghost" type="button" data-aircraft-hero-clear="${escapeHtml(item.id)}"${hasHero ? "" : " disabled"}>Clear featured photo</button>
               </div>
             </div>
             ${picker}
@@ -2270,6 +2316,7 @@
       else state.masterDrafts.delete(photoId);
       state.masterSaveStates.delete(photoId);
       updateMasterStatus(photoId);
+      if (typeof managerDraftsChanged === "function") managerDraftsChanged();
     }
 
     function masterStatus(photoId) {
@@ -2283,6 +2330,7 @@
     function updateMasterToolbar() {
       $("masterSelectionCount").textContent = `${state.bulkEdit.master.size} selected`;
       $("masterDraftCount").textContent = state.masterDrafts.size ? `${state.masterDrafts.size} unsaved photo${state.masterDrafts.size === 1 ? "" : "s"}` : "";
+      if (typeof syncLibrarySelection === "function") syncLibrarySelection();
     }
 
     function updateMasterStatus(photoId) {
@@ -2300,17 +2348,20 @@
         if (detach) detach.disabled = saving;
       }
       updateMasterToolbar();
+      if (typeof syncLibrarySelection === "function") syncLibrarySelection();
     }
 
     function discardMasterDraft(photoId) {
       if (state.masterSaveStates.get(photoId)?.status === "saving") return;
       state.masterDrafts.delete(photoId);
       state.masterSaveStates.delete(photoId);
+      if (typeof managerDraftsChanged === "function") managerDraftsChanged();
       renderMasterView();
       document.querySelector(`[data-master-edit="${CSS.escape(photoId)}"]`)?.focus();
     }
 
     async function reloadManager() {
+      if (typeof managerRecoveryReady !== "undefined" && managerRecoveryReady) { await loadState(true); return; }
       if ([...state.masterSaveStates.values()].some(item => item.status === "saving")) return;
       if (state.masterDrafts.size && !window.confirm("Reload catalog data and discard unsaved Photo library edits? Other unsaved editors and caption proposals are not protected by this action.")) return;
       // Discard only after a successful refresh; connection failures must retain drafts.
@@ -2340,7 +2391,7 @@
       const label = photo.path || id;
       const selected = state.bulkEdit.master.has(id);
       const location = (state.data.pins || []).find(pin => pin.id === values.locationId);
-      const fields = [["locationId", "Location", "select"], ["date", "Date override", "date"], ["airshow", "Airshow event", "text"], ["title", "Title", "text"], ["livery", "Livery", "text"], ["caption", "Caption", "textarea"]];
+      const fields = [["locationId", "Location", "select"], ["date", "Date override", "date"], ["airshow", "Event", "text"], ["title", "Title", "text"], ["livery", "Livery", "text"], ["caption", "Caption", "textarea"]];
       return `<article class="master-row${selected ? " selected" : ""}" data-master-row="${escapeHtml(id)}" data-missing="${missing}" aria-labelledby="${escapeHtml(prefix)}-heading">
         <div class="master-media">${photo.exists && photo.sourceAssetPath ? `<img src="${thumbUrl(photo.sourceAssetPath)}" loading="lazy" alt="${escapeHtml(masterSubjectLabel(photo) || label)}">` : '<div class="missing">Missing source</div>'}</div>
         <div class="master-content">
@@ -2377,6 +2428,7 @@
     }
 
     function renderMasterView() {
+      if (typeof renderLibraryGrid === "function") return renderLibraryGrid();
       if (!state.data || !$("masterList")) return;
       const active = document.activeElement;
       const focusId = active?.closest?.("[data-master-row]") ? active.id : "";
@@ -2557,7 +2609,7 @@
                 <p class="subtle">${escapeHtml(metadata)} · ${taggedPhotoCount} tagged photo${taggedPhotoCount === 1 ? "" : "s"} · ${hasHero ? "Hero selected" : "No hero selected"}</p>
               </div>
               <div class="card-actions">
-                <button class="btn ghost" type="button" data-location-hero-clear="${escapeHtml(pin.key)}"${hasHero ? "" : " disabled"}>Clear Hero</button>
+                <button class="btn ghost" type="button" data-location-hero-clear="${escapeHtml(pin.key)}"${hasHero ? "" : " disabled"}>Clear featured photo</button>
                 <button class="btn secondary" type="button" data-location-hero-asset="${escapeHtml(pin.key)}">Use Selected Raw Asset</button>
               </div>
             </div>
@@ -2644,7 +2696,7 @@
                 <h3>${escapeHtml(group.name)}</h3>
                 <p class="subtle">${escapeHtml(group.country || "Country not set")} · ${taggedPhotoCount} tagged image${taggedPhotoCount === 1 ? "" : "s"} · ${hasHero ? "Hero selected" : "No hero selected"}</p>
               </div>
-              <button class="btn ghost" type="button" data-squadron-hero-clear="${escapeHtml(group.key)}"${hasHero ? "" : " disabled"}>Clear Hero</button>
+              <button class="btn ghost" type="button" data-squadron-hero-clear="${escapeHtml(group.key)}"${hasHero ? "" : " disabled"}>Clear featured photo</button>
             </div>
             <div class="unit-logo-editor" data-unit-logo-row="${escapeHtml(group.key)}">
               <div class="field">
@@ -2675,7 +2727,7 @@
           logoSource: input.value
         });
         toast(result.message);
-        await loadState(true);
+        await refreshManagerAfterSave();
       } finally {
         button.disabled = false;
       }
@@ -2690,6 +2742,7 @@
       $("utilityDrawerStatus").textContent = "";
       $("utilityDrawerEyebrow").textContent = eyebrow;
       $("utilityDrawerBody").innerHTML = content;
+      if (typeof restoreManagerForms === "function") restoreManagerForms();
       $("utilityDrawerBody").querySelectorAll(".field").forEach((field, index) => {
         const label = field.querySelector("label");
         const control = field.querySelector("input, select, textarea");
@@ -2927,7 +2980,7 @@
     async function saveQualitySettings(reset = false) {
       const result = await api("/api/save-quality-settings", reset ? {reset: true} : {settings: collectQualitySettings()});
       toast(result.message);
-      await loadState(true);
+      await refreshManagerAfterSave();
     }
 
     function renderBuildSettings() {
@@ -2957,7 +3010,7 @@
     async function saveBuildSettings(reset = false) {
       const result = await api("/api/save-build-settings", reset ? {reset: true} : {settings: collectBuildSettings()});
       toast(result.message);
-      await loadState(true);
+      await refreshManagerAfterSave();
     }
 
     function getSelectedIssue() {
@@ -3095,7 +3148,7 @@
             <label for="missingPhotoCaption">Caption</label>
             <textarea id="missingPhotoCaption">${escapeHtml(issue.photo.caption || "")}</textarea>
             <div class="caption-actions">
-              <span class="subtle">Uses Nemotron 3 Omni; review before saving.</span>
+              <span class="subtle">Generates a new caption when empty or refines the existing caption; review before saving.</span>
               <button class="btn ghost" id="generateMissingCaptionBtn" type="button">AI Caption</button>
             </div>
           </div>
@@ -3268,7 +3321,7 @@
       toast(result.message);
       state.captionAssist.editPhotoKey = "";
       clearEditor();
-      await loadState(true);
+      await refreshManagerAfterSave();
     }
 
     async function saveMasterPhoto(photoId) {
@@ -3288,6 +3341,7 @@
       Object.assign(photo, values);
       state.masterDrafts.delete(photoId);
       state.masterSaveStates.set(photoId, {status: "saved"});
+      if (typeof managerDraftsChanged === "function") managerDraftsChanged();
       updateMasterStatus(photoId);
       // A refresh failure is different from a failed save: the write already succeeded.
       try { await loadState(true); } catch (_) { /* Persistent load banner owns recovery. */ }
@@ -3302,7 +3356,7 @@
       if (!confirmed) return;
       const result = await api("/api/delete-master-photo", {photoId});
       toast(result.message);
-      await loadState(true);
+      await refreshManagerAfterSave();
     }
 
     async function saveMissingPhoto() {
@@ -3328,7 +3382,7 @@
       toast(result.message);
       state.captionAssist.missingPhotoKey = "";
       state.selectedIssueKey = "";
-      await loadState(true);
+      await refreshManagerAfterSave();
       renderMissingFields();
     }
 
@@ -3352,7 +3406,7 @@
       const result = await api("/api/update-entry", payload);
       toast(result.message);
       state.selectedIssueKey = "";
-      await loadState(true);
+      await refreshManagerAfterSave();
       renderMissingFields();
     }
 
@@ -3365,7 +3419,7 @@
       const result = await api("/api/delete-photo", {...entryRequestFields(entry), index});
       toast(result.message);
       clearEditor();
-      await loadState(true);
+      await refreshManagerAfterSave();
     }
 
     async function openCreatedSource(result) {
@@ -3416,7 +3470,7 @@
         lon: $("pinLon").value
       });
       toast(result.message);
-      await loadState(true);
+      await refreshManagerAfterSave();
     }
 
     async function setLocationHero(pinKey) {
@@ -3432,7 +3486,7 @@
         assetPath
       });
       toast(result.message);
-      await loadState(true);
+      await refreshManagerAfterSave();
     }
 
     async function setLocationHeroFromPhoto(pinKey, photoKey) {
@@ -3445,7 +3499,7 @@
         assetPath: reference.photo.sourceAssetPath
       });
       toast(result.message);
-      await loadState(true);
+      await refreshManagerAfterSave();
     }
 
     async function clearLocationHero(pinKey) {
@@ -3453,7 +3507,7 @@
       if (!pin) throw new Error("This location is no longer available. Reload and try again.");
       const result = await api("/api/set-pin-hero", {pinPath: pin.pinPath, pinId: pin.id, clear: true});
       toast(result.message);
-      await loadState(true);
+      await refreshManagerAfterSave();
     }
 
     async function setSquadronHero(groupKey, photoKey = "") {
@@ -3467,7 +3521,7 @@
         hero: reference ? {...entryRequestFields(reference.entry), index: reference.photo.index} : null
       });
       toast(result.message);
-      await loadState(true);
+      await refreshManagerAfterSave();
     }
 
     async function setAircraftHero(aircraftId, photoId = "") {
@@ -3475,7 +3529,7 @@
       if (!aircraft) throw new Error("This aircraft type is no longer available. Reload and try again.");
       const result = await api("/api/set-aircraft-hero", {aircraftId: aircraft.id, photoId});
       toast(result.message);
-      await loadState(true);
+      await refreshManagerAfterSave();
     }
 
     async function saveAircraftSettings(aircraftId, button) {
@@ -3487,12 +3541,12 @@
         doubleWidth: select.value
       });
       toast(result.message);
-      await loadState(true);
+      await refreshManagerAfterSave();
     }
 
     function appendBuildLog(line, stream = "stdout") {
       const prefix = stream === "stderr" ? "stderr" : "stdout";
-      $("buildLog").textContent += `${prefix}: ${line}\n`;
+      $("buildLog").textContent = ($("buildLog").textContent + `${prefix}: ${line}\n`).slice(-250000);
       $("buildLog").scrollTop = $("buildLog").scrollHeight;
     }
 
@@ -3627,6 +3681,7 @@
     }
 
     async function runBuild() {
+      if (typeof startManagerBuild === "function") return startManagerBuild();
       const buildSettings = collectBuildSettings();
       $("buildBtn").disabled = true;
       $("buildBtn2").disabled = true;
@@ -3857,6 +3912,12 @@
     }
 
     function renderSourcePhotoLibrary() {
+      if (typeof renderLibraryGrid === "function") {
+        const entries = [...(state.data?.entries || []), ...squadronOnlyTargets()];
+        $("sourcePhotoSelect").innerHTML = '<option value="">All sources</option>' + entries.map(entry => `<option value="${escapeHtml(entry.targetKey)}">${escapeHtml(entryOptionLabel(entry))}</option>`).join("");
+        $("sourcePhotoSelect").value = librarySourceKey;
+        return renderLibraryGrid();
+      }
       const selected = $("entrySelect").value;
       const entries = [...(state.data?.entries || []), ...squadronOnlyTargets()];
       $("sourcePhotoSelect").innerHTML = entries.map((entry) => (
@@ -3894,9 +3955,12 @@
       $("viewDescription").textContent = description;
       setAssetDrawer(name === "attach");
       renderActiveView();
+      if (name === "build" && typeof reconnectManagerBuild === "function") reconnectManagerBuild();
     }
 
     function toast(message) {
+      const workflowDialog = document.querySelector(".workflow-create-dialog[open]");
+      if (workflowDialog?.querySelector(".workflow-status")) { workflowDialog.querySelector(".workflow-status").textContent = message; return; }
       if ($("utilityDrawer").open) {
         $("utilityDrawerStatus").textContent = message;
         return;
@@ -3937,7 +4001,7 @@
       $("bulkEventSearch").addEventListener("input", renderBulkEvents);
       $("airshowStoryEvent").addEventListener("change", (event) => {
         const nextEventId = event.target.value;
-        if (state.airshowStoryDirty && !window.confirm("Discard unsaved segment changes and open another event?")) {
+        if (typeof saveManagerStoryDraft !== "function" && state.airshowStoryDirty && !window.confirm("Discard unsaved segment changes and open another event?")) {
           event.target.value = state.airshowStoryEventId;
           return;
         }
@@ -4132,6 +4196,7 @@
         const key = event.target.dataset.bulkCaptionKey;
         const result = state.bulkCaptions.results[key];
         if (result?.status === "proposed") result.caption = event.target.value;
+        if (typeof managerDraftsChanged === "function") managerDraftsChanged();
       });
       $("entrySelect").addEventListener("change", () => {
         clearBulkSelection("tagged");
@@ -4139,6 +4204,7 @@
         renderEntryDetail();
       });
       $("sourcePhotoSelect").addEventListener("change", (event) => {
+        if (typeof renderLibraryGrid === "function") { librarySourceKey = event.target.value; state.masterPage = 1; renderLibraryGrid(); return; }
         const target = event.target.value;
         $("entrySearch").value = "";
         renderEntryOptions();
@@ -4211,7 +4277,7 @@
               locationId: locationForm.dataset.locationEdit,
               ...values
             });
-            await loadState(true);
+            await refreshManagerAfterSave();
             closeUtilityDrawer();
             toast(result.message);
           } catch (error) {
@@ -4253,7 +4319,7 @@
               mergeExistingAircraft,
               ...values
             });
-            await loadState(true);
+            await refreshManagerAfterSave();
             closeUtilityDrawer();
             toast(result.message);
           } catch (error) {
@@ -4535,6 +4601,7 @@
         $("entrySearch").value = "";
         renderEntryOptions();
         $("entrySelect").value = button.dataset.openEntry;
+        if (typeof librarySourceKey !== "undefined") librarySourceKey = button.dataset.openEntry;
         setTab("source-photos");
       }
       $("squadronSourceCards").addEventListener("click", handleSourceCardClick);
@@ -4575,7 +4642,7 @@
         if (!button || button.disabled) return;
         state.masterPage = Number(button.dataset.masterPage) || 1;
         renderMasterView();
-        $("masterView").scrollTo({top: 0, behavior: "smooth"});
+        $(state.activeTab === "source-photos" ? "source-photosView" : "masterView").scrollTo({top: 0, behavior: "smooth"});
       });
       $("taggedBulkEditor").addEventListener("click", (event) => {
         const selectAll = event.target.closest("[data-bulk-select-all]");
@@ -4622,6 +4689,9 @@
       });
     }
 
+    if (typeof initializeManagerWorkflows === "function") initializeManagerWorkflows();
     bindEvents();
+    if (typeof initializeLibrary === "function") initializeLibrary();
+    if (typeof initializeManagerRecoveryControls === "function") initializeManagerRecoveryControls();
     setTab(state.activeTab);
     loadState(false).catch(() => {});

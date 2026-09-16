@@ -1,0 +1,226 @@
+/* Workflow layer: square, compact controls that sit on top of app.css. */
+.workflow-stagebar,
+.workflow-browse-toolbar,
+.workflow-event-nav,
+.workflow-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+@media (min-width: 721px) {
+  .workflow-hide-duplicate-title > div > .panel-title,
+  .workflow-hide-duplicate-title > .panel-title {
+    display: none;
+  }
+}
+
+.workflow-stagebar {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.workflow-stage-list {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  min-width: 0;
+}
+
+.workflow-stage {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  color: var(--muted);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.workflow-stage span {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid currentColor;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.workflow-stage.active {
+  border-color: var(--accent);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 13%, transparent);
+}
+
+.workflow-stage-actions {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+#attachView[data-workflow-attach-stage="1"] > [data-workflow-stage-visible],
+#attachView[data-workflow-attach-stage="2"] > [data-workflow-stage-visible="3"],
+#attachView[data-workflow-attach-stage="3"] > [data-workflow-stage-visible="2"] {display:none;}
+#aircraft-databaseView > .split,
+#squadron-databaseView > .split,
+#locations-databaseView > .split {grid-template-columns:minmax(0,1fr);}
+
+.workflow-browse-toolbar {
+  margin-bottom: 14px;
+}
+
+.workflow-browse-toolbar > div:first-child {
+  min-width: 0;
+}
+
+.workflow-create-dialog {
+  width: min(620px, calc(100vw - 32px));
+  max-height: min(90vh, 760px);
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-raised);
+  color: var(--ink);
+}
+
+.workflow-create-dialog::backdrop {
+  background: var(--manager-scrim);
+}
+
+.workflow-dialog-head {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.workflow-dialog-head h2 {
+  margin: 2px 0 0;
+  font-size: 18px;
+}
+
+.workflow-create-form {
+  margin: 0;
+  padding: 16px;
+  border: 0;
+}
+
+.workflow-event-picker {
+  min-width: min(360px, 100%);
+  margin: 0;
+}
+
+.workflow-event-nav {
+  justify-content: flex-start;
+  margin: 0 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.workflow-event-tab {
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  color: var(--muted);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.workflow-event-tab.active,
+.workflow-event-tab[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 13%, transparent);
+}
+
+.workflow-secondary-disclosure {
+  margin: 14px 0;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.workflow-secondary-disclosure > summary {
+  padding: 11px 14px;
+  color: var(--ink);
+  font-weight: 700;
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.workflow-secondary-disclosure > summary::marker {
+  color: var(--accent);
+}
+
+.workflow-secondary-disclosure > .build-settings,
+.workflow-secondary-disclosure > .orphan-section,
+.workflow-secondary-disclosure > .console {
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+
+.workflow-secondary-disclosure > .build-settings,
+.workflow-secondary-disclosure > .orphan-section {
+  padding: 12px;
+}
+
+.workflow-build-log > .console {
+  max-height: 360px;
+  overflow: auto;
+}
+
+@media (max-width: 720px) {
+  .workflow-stagebar,
+  .workflow-browse-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .workflow-stage-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .workflow-stage {
+    flex-direction: column;
+    justify-content: center;
+    padding: 8px 4px;
+    font-size: 12px;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .workflow-stage-actions {
+    justify-content: flex-end;
+  }
+
+  .workflow-event-nav {
+    overflow-x: auto;
+  }
+
+  .workflow-event-tab {
+    flex: 1 0 auto;
+  }
+
+  .workflow-event-picker {
+    min-width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workflow-stage,
+  .workflow-event-tab {
+    transition: none;
+  }
+}
+.workflow-review {padding:16px;margin:16px 0;border:1px solid var(--line);background:var(--surface-muted);line-height:1.6;overflow-wrap:anywhere;}
+.workflow-status {padding:0 16px;color:var(--warn);}
+.workflow-event-grid {display:grid;grid-template-columns:repeat(auto-fill,minmax(min(200px,100%),1fr));gap:12px;margin:12px 0;}
+.workflow-create-dialog .btn,.workflow-create-dialog button {border-radius:0;}
+@media(max-width:760px){.workflow-event-grid {grid-template-columns:repeat(2,minmax(0,1fr));}}

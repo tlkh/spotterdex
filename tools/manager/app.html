@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SpotterDex Manager</title>
   <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="library.css">
+  <link rel="stylesheet" href="workflows.css">
 </head>
 <body data-active-tab="attach" data-assets-open="true">
   <div class="shell">
@@ -24,6 +26,7 @@
         <button class="btn ghost assets-toggle" id="toggleAssetsBtn" type="button" aria-controls="assetPanel" aria-expanded="true">
           Assets <span class="button-count" id="assetSelectionBadge">0</span>
         </button>
+        <button class="btn ghost" id="managerUnsavedButton" type="button" hidden>Unsaved work</button>
         <button class="btn ghost" id="reloadBtn" type="button">Reload</button>
         <button class="btn primary" id="buildBtn" type="button">Build locally</button>
       </div>
@@ -94,6 +97,7 @@
       </aside>
 
       <main class="manager-main">
+      <p id="managerStorageNotice" role="status" hidden></p>
       <div class="load-failure" id="loadFailure" hidden>
         <p id="loadFailureMessage" role="alert"></p>
         <button class="btn ghost" id="retryLoadBtn" type="button">Retry catalog load</button>
@@ -107,7 +111,7 @@
           </div>
           <div class="form-grid">
             <div class="field wide">
-              <label for="entrySearch">Photo Source Search</label>
+              <label for="entrySearch">Find aircraft / unit</label>
               <input id="entrySearch" type="search" placeholder="aircraft, unit, location, country">
             </div>
             <div class="field wide">
@@ -146,7 +150,7 @@
               <label for="captionInput">Shared caption (all selected images)</label>
               <textarea id="captionInput" placeholder="Caption for attached photos"></textarea>
               <div class="caption-actions">
-                <span class="subtle">Uses the one selected image; review before attaching.</span>
+                <span class="subtle">Generates a new caption when empty or refines the existing caption; review before attaching.</span>
                 <button class="btn ghost" id="generateAttachCaptionBtn" type="button">AI Caption</button>
               </div>
             </div>
@@ -163,9 +167,11 @@
 
         <section class="view" id="source-photosView">
           <div class="field">
-            <label for="sourcePhotoSelect">Photo source</label>
+            <label for="sourcePhotoSelect">Aircraft / unit or location</label>
             <select id="sourcePhotoSelect"></select>
           </div>
+          <div id="sourceLibraryHost"></div>
+          <div id="sourceLibraryLegacy">
           <div class="bar">
             <h2 class="panel-title">Photos by source</h2>
             <button class="btn ghost" id="clearEditorBtn" type="button">Clear Editor</button>
@@ -209,7 +215,7 @@
                 <label for="editCaption">Caption</label>
                 <textarea id="editCaption"></textarea>
                 <div class="caption-actions">
-                  <span class="subtle">Uses Nemotron 3 Omni; review before saving.</span>
+                  <span class="subtle">Generates a new caption when empty or refines the existing caption; review before saving.</span>
                   <button class="btn ghost" id="generateEditCaptionBtn" type="button">AI Caption</button>
                 </div>
               </div>
@@ -219,9 +225,11 @@
               <div class="photo-list" id="photoList"></div>
             </div>
           </div>
+          </div>
         </section>
 
         <section class="view" id="masterView">
+          <div id="libraryWorkspace">
           <div class="bar">
             <div>
               <h2 class="panel-title">Photo library</h2>
@@ -234,14 +242,17 @@
               <input id="masterSearch" type="search" placeholder="path, aircraft, unit, location, event, caption">
             </div>
           </div>
-          <div class="bar master-toolbar">
+          <div class="library-filters"><label>Aircraft<select id="libraryFilter-aircraft"><option value="">All aircraft</option></select></label><label>Units<select id="libraryFilter-unit"><option value="">All units</option></select></label><label>Locations<select id="libraryFilter-location"><option value="">All locations</option></select></label><label>Events<select id="libraryFilter-event"><option value="">All events</option></select></label><label>Missing metadata<select id="libraryFilter-missing"><option value="">Any status</option><option value="caption">No caption</option><option value="date">No date</option><option value="source">Missing source</option></select></label></div>
+          <div class="bar master-toolbar" id="librarySelectionToolbar" hidden>
             <div class="master-toolbar-counts"><strong id="masterSelectionCount">0 selected</strong><span class="subtle" id="masterDraftCount" role="status"></span></div>
+            <button class="btn ghost" type="button" id="libraryEditSelection">Edit metadata</button><button class="btn ghost" type="button" id="libraryAssignEvent">Assign event</button><button class="btn ghost" type="button" id="libraryClearSelection">Clear selection</button>
             <button class="btn ghost" id="reviewLibraryCaptionsBtn" type="button">Review selected captions</button>
           </div>
-          <p class="subtle master-note">Edit a photo, then Save or Discard. Drafts stay as you browse; save before closing the app.</p>
-          <details class="master-bulk-disclosure"><summary>Bulk edit selected photos</summary><div id="masterBulkEditor"></div></details>
+          <div class="bar"><p class="subtle master-note">Open a photo to edit. Use the checkboxes for bulk actions. Changes save only when you choose Save.</p><button class="btn ghost" type="button" id="librarySelectPage">Select this page</button></div>
+          <details class="master-bulk-disclosure" id="libraryBulkDetails"><summary>Bulk edit selected photos</summary><div id="masterBulkEditor"></div></details>
           <div class="master-list" id="masterList"></div>
           <div class="pagination" id="masterPagination" aria-label="Photo library pages"></div>
+          </div>
         </section>
 
         <section class="view" id="bulk-captionsView">
@@ -279,7 +290,7 @@
         <section class="view" id="airshowsView">
           <div class="bar">
             <div>
-              <h2 class="panel-title">Airshow Manager</h2>
+              <h2 class="panel-title">Events</h2>
               <div class="subtle" id="bulkEventSummary">Set event heroes and find photos that need an event tag.</div>
             </div>
           </div>
@@ -333,7 +344,7 @@
           </section>
           <section class="airshow-management-section" aria-labelledby="airshowHeroHeading">
             <div>
-              <h3 class="panel-title" id="airshowHeroHeading">Event Hero Photos</h3>
+              <h3 class="panel-title" id="airshowHeroHeading">Event featured photos</h3>
               <div class="subtle" id="airshowHeroSummary">Choose one tagged photo to feature for an event on the Airshows timeline. A hero is optional.</div>
             </div>
             <div class="airshow-hero-list" id="airshowHeroList"></div>
@@ -745,6 +756,17 @@
     </div>
   </dialog>
 
+  <dialog id="libraryEditor" class="library-dialog" aria-labelledby="libraryEditorTitle">
+    <div class="library-dialog-head"><div><h2 id="libraryEditorTitle">Edit photo</h2><span id="libraryEditorPosition" class="subtle"></span></div><div class="card-actions"><button class="btn ghost" id="libraryPrevious" type="button">Previous</button><button class="btn ghost" id="libraryNext" type="button">Next</button><button class="btn ghost" id="libraryEditorClose" type="button">Close</button></div></div>
+    <div id="libraryEditorBody"></div>
+  </dialog>
+  <dialog id="managerConflictDialog" class="library-dialog" aria-labelledby="managerConflictTitle"><div class="library-dialog-head"><h2 id="managerConflictTitle">This record changed elsewhere</h2><button class="btn ghost" type="button" id="managerConflictClose">Close</button></div><p class="manager-conflict-help">Compare the saved record with your proposal. Keeping the draft updates its starting revision; it does not save.</p><div id="managerConflictValues"></div><div class="card-actions manager-conflict-actions"><button class="btn primary" id="managerConflictKeep" type="button">Keep draft against current record</button></div></dialog>
+  <dialog id="managerUnsavedDialog" class="utility-drawer" aria-labelledby="managerUnsavedTitle"><div class="utility-drawer-head"><h2 id="managerUnsavedTitle">Unsaved work</h2><button id="managerUnsavedClose" class="btn ghost" type="button">Close</button></div><div class="utility-drawer-body" id="managerUnsavedList"></div></dialog>
+  <script src="recovery-ui.js" defer></script>
+  <script src="library.js" defer></script>
+  <script src="workflows.js" defer></script>
+  <script src="drafts.js" defer></script>
+  <script src="build-jobs.js" defer></script>
   <script src="app.js" defer></script>
 </body>
 </html>

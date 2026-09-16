@@ -95,7 +95,7 @@ class ManagerHtmlContractTests(unittest.TestCase):
     def test_dynamic_event_fields_associate_labels_with_controls(self):
         source = (MANAGER / "app.js").read_text("utf-8")
         for fragment in (
-            '<label for="${storyFieldPrefix}-photo">Hero photo</label>',
+            '<label for="${storyFieldPrefix}-photo">Featured photo</label>',
             '<label for="${storyFieldPrefix}-label">Sequence label</label>',
             '<label for="${storyFieldPrefix}-overlay">Overlay side</label>',
             '<label for="${storyFieldPrefix}-motion">Hero motion</label>',
@@ -125,7 +125,7 @@ class ManagerHtmlContractTests(unittest.TestCase):
 class ManagerCaptionBehaviorTests(unittest.TestCase):
     def run_behavior(self, body):
         source = (MANAGER / "app.js").read_text("utf-8")
-        names = ("selectedBulkCaptionCandidates", "currentBulkCaptionQueue", "resetBulkCaptionQueue", "bulkProposalValue", "renderBulkCaptions", "runBulkCaptions", "acceptBulkCaption", "rejectBulkCaption", "masterPhotoMatchesSearch", "escapeHtml", "thumbUrl", "effectiveEventDate", "airshowEventKey", "canonicalPhotoIdentity", "taggedAirshowGroups", "untaggedAirshowDayGroups", "bulkEventGroups")
+        names = ("selectedBulkCaptionCandidates", "currentBulkCaptionQueue", "resetBulkCaptionQueue", "bulkProposalValue", "renderBulkCaptions", "runBulkCaptions", "acceptBulkCaption", "rejectBulkCaption", "masterPhotoMatchesSearch", "refreshManagerAfterSave", "escapeHtml", "thumbUrl", "effectiveEventDate", "airshowEventKey", "canonicalPhotoIdentity", "taggedAirshowGroups", "untaggedAirshowDayGroups", "bulkEventGroups")
         functions = []
         for name in names:
             match = re.search(r"^    (?:async )?function " + name + r"\([^\n]*\) \{.*?^    \}", source, re.MULTILINE | re.DOTALL)

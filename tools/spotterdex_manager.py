@@ -8,9 +8,7 @@ for the web server and SQLite catalog plus Pillow for image inspection.
 from __future__ import annotations
 
 import argparse
-import base64
 import hashlib
-import io
 import json
 import mimetypes
 import math
@@ -22,6 +20,7 @@ import sqlite3
 import statistics
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import traceback
@@ -33,9 +32,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
-from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, unquote, urlparse
-from urllib.request import Request, urlopen
 
 try:
     import yaml
@@ -58,6 +55,11 @@ except ImportError:  # Support importing as tools.spotterdex_manager.
     from tools.spotterdex_db import connect_database, export_snapshot, snapshot_is_current, validate_database
 
 
+try:
+    from spotterdex_manager_jobs import BuildJobRegistry, BuildAlreadyRunning, BuildJobNotFound
+except ImportError:
+    from tools.spotterdex_manager_jobs import BuildJobRegistry, BuildAlreadyRunning, BuildJobNotFound
+
 ROOT = Path(__file__).resolve().parents[1]
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp"}
 CACHE_DIR = ROOT / ".spotterdex-manager-cache"
@@ -69,6 +71,14 @@ MANAGER_STATIC_FILES = {
     "app.html": "text/html; charset=utf-8",
     "app.css": "text/css; charset=utf-8",
     "app.js": "application/javascript; charset=utf-8",
+    # Feature modules are served from the same local manager origin.
+    "library.js": "application/javascript; charset=utf-8",
+    "library.css": "text/css; charset=utf-8",
+    "workflows.js": "application/javascript; charset=utf-8",
+    "workflows.css": "text/css; charset=utf-8",
+    "recovery-ui.js": "application/javascript; charset=utf-8",
+    "drafts.js": "application/javascript; charset=utf-8",
+    "build-jobs.js": "application/javascript; charset=utf-8",
 }
 PREVIEW_ROOT_FILES = {
     "airshows.html",
@@ -84,13 +94,10 @@ PREVIEW_ROOT_FILES = {
 }
 # Generated JPEG output directories scanned by the orphan detector.
 GENERATED_ORPHAN_DIRS = ("assets/generated/photos", "assets/generated/thumbs")
-NVIDIA_CAPTION_ENDPOINT = "https://inference-api.nvidia.com/v1/chat/completions"
-NVIDIA_CAPTION_MODEL = "nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
-NVIDIA_CAPTION_IMAGE_WIDTH = 768
-NVIDIA_CAPTION_TIMEOUT_SECONDS = 180
-NVIDIA_CAPTION_MAX_TOKENS = 16384
-NVIDIA_CAPTION_REASONING_BUDGET = 8192
-DOTENV_PATH = ROOT / ".env"
+APPLE_CAPTION_IMAGE_WIDTH = 768
+APPLE_CAPTION_TIMEOUT_SECONDS = 180
+APPLE_CAPTION_WORKER = Path(__file__).resolve().parent / "spotterdex_afm_caption.py"
+APPLE_CAPTION_LOCK = threading.Lock()
 MIN_SOURCE_PHOTO_WIDTH = 2560
 QUALITY_ANALYSIS_MAX_DIMENSION = 256
 QUALITY_CLIP_MAX_DIMENSION = 1024
@@ -222,6 +229,16 @@ class CaptionAssistError(ValueError):
     """A safe, user-facing error from the server-side caption assistant."""
 
 
+class RevisionConflictError(ValueError):
+    """Raised when a save was based on an older copy of a resource."""
+
+    def __init__(self, resource: str, expected: str, current: str) -> None:
+        self.resource = resource
+        self.expected = expected
+        self.current = current
+        super().__init__(f"The {resource} changed in another editor. Reload it before saving.")
+
+
 MISSING_FIELD_LABELS = {
     "source": "Source image",
     "location": "Location",
@@ -253,6 +270,7 @@ class SpotterDexManager:
         self.database_path = self.root / "content" / "spotterdex.sqlite3"
         self.sql_snapshot_path = self.root / "content" / "spotterdex.sql"
         self._database_write_lock = threading.RLock()
+        self.build_jobs = BuildJobRegistry(self, self.root / ".spotterdex-manager-build-jobs.json")
         self.aircraft_dir = self.root / "aircraft"
         self.squadron_dir = self.root / "squadrons"
         self.map_dir = self.root / "map_pins"
@@ -862,7 +880,94 @@ class SpotterDexManager:
     def _database_connection(self, *, read_only: bool = False) -> sqlite3.Connection:
         return connect_database(self.database_path, read_only=read_only)
 
-    def _database_write(self, operation: Any) -> Any:
+    def _resource_revision(self, connection: sqlite3.Connection, resource: str) -> str:
+        """Return a deterministic optimistic-concurrency token for one resource.
+
+        Resource revisions deliberately live outside the catalog schema.  They are
+        hashes of the canonical rows that an editor can mutate, so unrelated
+        records can continue saving concurrently.
+        """
+        resource = clean_text(resource)
+        kind, _, remainder = resource.partition(":")
+        records: Dict[str, Any] = {"resource": resource}
+
+        def rows(table: str, where: str, params: Tuple[Any, ...], order: str = "") -> List[List[Any]]:
+            cursor = connection.execute(f'SELECT * FROM "{table}" WHERE {where}' + (f" ORDER BY {order}" if order else ""), params)
+            return [list(row) for row in cursor.fetchall()]
+
+        if kind == "photo" and remainder:
+            records["photos"] = rows("photos", "id=?", (remainder,))
+            records["subjects"] = rows("photo_subjects", "photo_id=?", (remainder,), "position")
+        elif kind == "location" and remainder:
+            records["locations"] = rows("locations", "id=?", (remainder,))
+            records["event_locations"] = rows("event_locations", "location_id=?", (remainder,), "event_id")
+        elif kind == "aircraft" and remainder:
+            records["aircraft"] = rows("aircraft", "id=?", (remainder,))
+            records["aircraft_units"] = rows("aircraft_units", "aircraft_id=?", (remainder,), "unit_id")
+        elif kind == "unit" and remainder:
+            records["units"] = rows("units", "id=?", (remainder,))
+            records["aircraft_units"] = rows("aircraft_units", "unit_id=?", (remainder,), "aircraft_id")
+        elif kind == "event" and remainder:
+            records["events"] = rows("events", "id=?", (remainder,))
+            records["event_locations"] = rows("event_locations", "event_id=?", (remainder,), "location_id")
+        elif kind == "entry" and remainder:
+            parts = self._database_entry_parts(remainder)
+            if parts[1] == "aircraft" and len(parts) == 4:
+                aircraft_id, unit_id = parts[2], parts[3]
+                records["aircraft"] = rows("aircraft", "id=?", (aircraft_id,))
+                records["units"] = rows("units", "id=?", (unit_id,))
+                records["aircraft_units"] = rows("aircraft_units", "aircraft_id=? AND unit_id=?", (aircraft_id, unit_id))
+            elif parts[1] == "unit" and len(parts) == 3:
+                records["units"] = rows("units", "id=?", (parts[2],))
+                records["aircraft_units"] = rows("aircraft_units", "unit_id=?", (parts[2],), "aircraft_id")
+            else:
+                records["invalid"] = True
+        elif kind == "writeup" and remainder:
+            entity_type, _, entity_id = remainder.partition(":")
+            table = {"aircraft": "aircraft", "squadron": "units", "airshow": "events"}.get(entity_type)
+            records["entity"] = rows(table, "id=?", (entity_id,)) if table else []
+        elif kind == "story" and remainder:
+            records["events"] = rows("events", "id=?", (remainder,))
+            records["moments"] = rows("event_story_moments", "event_id=?", (remainder,), "position,id")
+            records["photos"] = rows(
+                "event_story_photos",
+                "moment_id IN (SELECT id FROM event_story_moments WHERE event_id=?)",
+                (remainder,),
+                "moment_id,position",
+            )
+        else:
+            records["invalid"] = True
+        encoded = json.dumps(records, ensure_ascii=True, separators=(",", ":"), sort_keys=True)
+        return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+    def get_revision(self, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Return a revision token for a manager resource (read-only)."""
+        resource = clean_text((payload or {}).get("resource"))
+        if not resource:
+            raise ValueError("A resource is required.")
+        with self._database_write_lock:
+            connection = self._database_connection(read_only=True)
+            try:
+                return {"ok": True, "resource": resource, "revision": self._resource_revision(connection, resource)}
+            finally:
+                connection.close()
+
+    def _check_revision(self, connection: sqlite3.Connection, payload: Dict[str, Any], resource: str) -> None:
+        """Check an optional expected token while the write transaction is locked."""
+        expected = payload.get("expectedRevision")
+        revisions = payload.get("expectedRevisions")
+        if isinstance(revisions, dict):
+            expected = revisions.get(resource, revisions.get(resource.split(":")[-1], expected))
+        if expected is None:
+            if payload.get("_requireRevision"):
+                raise ValueError(f"Missing editor revision for {resource}; reload this record before saving.")
+            return
+        expected = clean_text(expected)
+        current = self._resource_revision(connection, resource)
+        if expected != current:
+            raise RevisionConflictError(resource, expected, current)
+
+    def _database_write(self, operation: Any, revision_resources: Any = None) -> Any:
         """Serialize a validated database mutation and refresh the SQL snapshot."""
         with self._database_write_lock:
             connection = self._database_connection()
@@ -876,6 +981,17 @@ class SpotterDexManager:
                 # snapshot writer is atomic, so an export failure leaves both the
                 # previous snapshot and the database mutation rollback-able.
                 export_snapshot(connection, self.sql_snapshot_path)
+                if isinstance(result, dict):
+                    resources = result.pop("_revisionResources", None)
+                    if resources is None and revision_resources:
+                        resources = revision_resources(connection)
+                else:
+                    resources = None
+                if resources and isinstance(result, dict):
+                    result["revisions"] = {
+                        resource: self._resource_revision(connection, resource)
+                        for resource in resources
+                    }
                 connection.commit()
                 return result
             except Exception:
@@ -935,6 +1051,9 @@ class SpotterDexManager:
 
     def _get_database_state(self) -> Dict[str, Any]:
         tag_map: Dict[str, List[Dict[str, Any]]] = {}
+        # Keep the catalog snapshot and its revision map on the same read while
+        # local mutations are excluded by the manager's write lock.
+        self._database_write_lock.acquire()
         connection = self._database_connection(read_only=True)
         try:
             countries = {row["id"]: dict(row) for row in connection.execute("SELECT * FROM countries")}
@@ -955,8 +1074,34 @@ class SpotterDexManager:
             relations = [dict(row) for row in connection.execute("SELECT * FROM aircraft_units ORDER BY aircraft_id,unit_id")]
             integrity_errors = validate_database(connection, raw_assets_dir=self.raw_assets_dir)
             snapshot_current = snapshot_is_current(connection, self.sql_snapshot_path)
+            revisions: Dict[str, str] = {}
+            for photo_id in photos:
+                revisions[f"photo:{photo_id}"] = self._resource_revision(connection, f"photo:{photo_id}")
+            for aircraft_id in aircraft:
+                revisions[f"aircraft:{aircraft_id}"] = self._resource_revision(connection, f"aircraft:{aircraft_id}")
+            for unit_id in units:
+                revisions[f"unit:{unit_id}"] = self._resource_revision(connection, f"unit:{unit_id}")
+            for location_id in locations:
+                revisions[f"location:{location_id}"] = self._resource_revision(connection, f"location:{location_id}")
+            for event_id in events:
+                revisions[f"event:{event_id}"] = self._resource_revision(connection, f"event:{event_id}")
+            for aircraft_id, unit_id in connection.execute("SELECT aircraft_id,unit_id FROM aircraft_units ORDER BY aircraft_id,unit_id"):
+                resource = f"entry:db:aircraft:{aircraft_id}:{unit_id}"
+                revisions[resource] = self._resource_revision(connection, resource)
+            for unit_id in units:
+                resource = f"entry:db:unit:{unit_id}"
+                revisions[resource] = self._resource_revision(connection, resource)
+            for entity_type, table in (("aircraft", "aircraft"), ("squadron", "units"), ("airshow", "events")):
+                for row in connection.execute(f'SELECT id FROM "{table}" ORDER BY id'):
+                    resource = f"writeup:{entity_type}:{row[0]}"
+                    revisions[resource] = self._resource_revision(connection, resource)
+            for event_id in events:
+                resource = f"story:{event_id}"
+                revisions[resource] = self._resource_revision(connection, resource)
         finally:
-            connection.close()
+            if connection is not None:
+                connection.close()
+            self._database_write_lock.release()
 
         photo_record_cache: Dict[str, Dict[str, Any]] = {}
         for photo_id, photo in photos.items():
@@ -1345,6 +1490,7 @@ class SpotterDexManager:
             "qualitySettings": dict(self.quality_settings),
             "buildSettings": dict(self.build_settings),
             "quality": self.quality_status()["quality"],
+            "revisions": revisions,
         }
 
     @staticmethod
@@ -1604,6 +1750,8 @@ class SpotterDexManager:
             current = connection.execute("SELECT * FROM photos WHERE id=?", (photo_id,)).fetchone()
             if not current:
                 raise ValueError("Photo no longer exists.")
+            resource = f"photo:{photo_id}"
+            self._check_revision(connection, payload, resource)
             source_path = clean_text(incoming.get("path"))
             if not source_path:
                 raise ValueError("Photo path is required.")
@@ -1647,7 +1795,7 @@ class SpotterDexManager:
                         "INSERT INTO photo_subjects(photo_id,position,aircraft_id,unit_id,is_primary) VALUES(?,?,?,?,1)",
                         (photo_id, 0, aircraft_id, unit_id),
                     )
-            return {"ok": True, "message": "Photo updated."}
+            return {"ok": True, "message": "Photo updated.", "_revisionResources": [resource]}
 
         return self._database_write(operation)
 
@@ -1663,6 +1811,8 @@ class SpotterDexManager:
             current = connection.execute("SELECT * FROM photos WHERE id=?", (photo_id,)).fetchone()
             if not current:
                 raise ValueError("Photo no longer exists.")
+            resource = f"photo:{photo_id}"
+            self._check_revision(connection, payload, resource)
             location_id = clean_text(incoming.get("locationId")) or str(current["location_id"])
             if not connection.execute("SELECT 1 FROM locations WHERE id=?", (location_id,)).fetchone():
                 raise ValueError("Choose a valid location.")
@@ -1677,6 +1827,43 @@ class SpotterDexManager:
                 location_id,
                 capture_date,
             )
+            if "subjects" in incoming:
+                raw_subjects = incoming.get("subjects")
+                if not isinstance(raw_subjects, list):
+                    raise ValueError("Photo subjects must be a list.")
+                normalized_subjects: List[Tuple[Optional[str], Optional[str], int]] = []
+                seen_pairs: set[Tuple[Optional[str], Optional[str]]] = set()
+                primary_count = 0
+                for subject in raw_subjects:
+                    if not isinstance(subject, dict):
+                        raise ValueError("Photo subjects must be objects.")
+                    aircraft_id = clean_text(subject.get("aircraftId")) or None
+                    unit_id = clean_text(subject.get("unitId")) or None
+                    if not aircraft_id and not unit_id:
+                        raise ValueError("Each photo subject needs an aircraft or unit.")
+                    pair = (aircraft_id, unit_id)
+                    if pair in seen_pairs:
+                        raise ValueError("Photo subjects must be unique.")
+                    seen_pairs.add(pair)
+                    if aircraft_id and unit_id and not connection.execute(
+                        "SELECT 1 FROM aircraft_units WHERE aircraft_id=? AND unit_id=?", (aircraft_id, unit_id)
+                    ).fetchone():
+                        raise ValueError("Photo subject aircraft/unit pair is not registered.")
+                    if aircraft_id and not connection.execute("SELECT 1 FROM aircraft WHERE id=?", (aircraft_id,)).fetchone():
+                        raise ValueError("Photo subject aircraft no longer exists.")
+                    if unit_id and not connection.execute("SELECT 1 FROM units WHERE id=?", (unit_id,)).fetchone():
+                        raise ValueError("Photo subject unit no longer exists.")
+                    is_primary = 1 if subject.get("isPrimary") is True else 0
+                    primary_count += is_primary
+                    normalized_subjects.append((aircraft_id, unit_id, is_primary))
+                if normalized_subjects and primary_count != 1:
+                    raise ValueError("A photo with subjects must have exactly one primary subject.")
+                connection.execute("DELETE FROM photo_subjects WHERE photo_id=?", (photo_id,))
+                for position, (aircraft_id, unit_id, is_primary) in enumerate(normalized_subjects):
+                    connection.execute(
+                        "INSERT INTO photo_subjects(photo_id,position,aircraft_id,unit_id,is_primary) VALUES(?,?,?,?,?)",
+                        (photo_id, position, aircraft_id, unit_id, is_primary),
+                    )
             connection.execute(
                 "UPDATE photos SET location_id=?,event_id=?,date_override=?,title=?,caption=?,livery=?,caption_ai_assisted=? WHERE id=?",
                 (
@@ -1690,7 +1877,7 @@ class SpotterDexManager:
                     photo_id,
                 ),
             )
-            return {"ok": True, "message": "Master photo updated.", "photoId": photo_id}
+            return {"ok": True, "message": "Master photo updated.", "photoId": photo_id, "_revisionResources": [resource]}
 
         return self._database_write(operation)
 
@@ -1717,6 +1904,9 @@ class SpotterDexManager:
                     raise ValueError("A selected photo no longer exists.")
                 if photo_id not in photo_ids:
                     photo_ids.append(photo_id)
+
+            for photo_id in photo_ids:
+                self._check_revision(connection, payload, f"photo:{photo_id}")
 
             location_id = None
             if "locationId" in fields:
@@ -1778,6 +1968,7 @@ class SpotterDexManager:
                 "ok": True,
                 "updated": len(photo_ids),
                 "message": f"Updated {len(photo_ids)} photo(s).",
+                "_revisionResources": [f"photo:{photo_id}" for photo_id in photo_ids],
             }
 
         return self._database_write(operation)
@@ -1844,6 +2035,8 @@ class SpotterDexManager:
 
         def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
             photo_ids = list(dict.fromkeys(self._database_photo_id(connection, ref) for ref in references if isinstance(ref, dict)))
+            for photo_id in photo_ids:
+                self._check_revision(connection, payload, f"photo:{photo_id}")
             updated = 0
             for photo_id in photo_ids:
                 photo = connection.execute("SELECT location_id,date_override,event_id,source_path FROM photos WHERE id=?", (photo_id,)).fetchone()
@@ -1854,7 +2047,7 @@ class SpotterDexManager:
                     connection.execute("UPDATE photos SET event_id=? WHERE id=?", (event_id, photo_id))
                     updated += 1
             action = f"Set event '{event_name}'" if event_name else "Cleared event"
-            return {"ok": True, "updated": updated, "unchanged": len(photo_ids) - updated, "message": f"{action} on {updated} photo(s)."}
+            return {"ok": True, "updated": updated, "unchanged": len(photo_ids) - updated, "message": f"{action} on {updated} photo(s).", "_revisionResources": [f"photo:{photo_id}" for photo_id in photo_ids]}
 
         return self._database_write(operation)
 
@@ -1867,6 +2060,8 @@ class SpotterDexManager:
             event = connection.execute("SELECT id FROM events WHERE lower(name)=lower(?)", (event_name,)).fetchone()
             if not event:
                 raise ValueError("Event not found.")
+            resource = f"event:{event[0]}"
+            self._check_revision(connection, payload, resource)
             hero = payload.get("hero")
             photo_id = self._database_photo_id(connection, hero) if isinstance(hero, dict) else None
             if photo_id:
@@ -1874,7 +2069,7 @@ class SpotterDexManager:
                 if not tagged:
                     raise ValueError("Choose a photo tagged with this event.")
             connection.execute("UPDATE events SET hero_photo_id=? WHERE id=?", (photo_id, event[0]))
-            return {"ok": True, "message": f"{'Set' if photo_id else 'Cleared'} hero photo for {event_name}."}
+            return {"ok": True, "message": f"{'Set' if photo_id else 'Cleared'} hero photo for {event_name}.", "_revisionResources": [resource]}
 
         return self._database_write(operation)
 
@@ -1900,8 +2095,10 @@ class SpotterDexManager:
                 if not unit:
                     raise ValueError("Unit not found.")
                 unit_id, unit_name = str(unit[0]), str(unit[1])
+            resource = f"unit:{unit_id}"
+            self._check_revision(connection, payload, resource)
             connection.execute("UPDATE units SET hero_photo_id=? WHERE id=?", (photo_id, unit_id))
-            return {"ok": True, "message": f"{'Set' if photo_id else 'Cleared'} hero photo for {unit_name}."}
+            return {"ok": True, "message": f"{'Set' if photo_id else 'Cleared'} hero photo for {unit_name}.", "_revisionResources": [resource]}
 
         return self._database_write(operation)
 
@@ -1915,6 +2112,8 @@ class SpotterDexManager:
             aircraft = connection.execute("SELECT name FROM aircraft WHERE id=?", (aircraft_id,)).fetchone()
             if not aircraft:
                 raise ValueError("Aircraft type not found.")
+            resource = f"aircraft:{aircraft_id}"
+            self._check_revision(connection, payload, resource)
             if photo_id:
                 tagged = connection.execute(
                     "SELECT 1 FROM photo_subjects WHERE photo_id=? AND aircraft_id=? LIMIT 1",
@@ -1926,6 +2125,7 @@ class SpotterDexManager:
             return {
                 "ok": True,
                 "message": f"{'Set' if photo_id else 'Cleared'} hero photo for {aircraft[0]}.",
+                "_revisionResources": [resource],
             }
 
         return self._database_write(operation)
@@ -1948,6 +2148,8 @@ class SpotterDexManager:
         double_width = normalize_optional_boolean(payload.get("doubleWidth"))
 
         def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            resource = f"aircraft:{aircraft_id}"
+            self._check_revision(connection, payload, resource)
             aircraft = connection.execute("SELECT name FROM aircraft WHERE id=?", (aircraft_id,)).fetchone()
             if not aircraft:
                 raise ValueError("Aircraft type not found.")
@@ -1956,7 +2158,7 @@ class SpotterDexManager:
                 (None if double_width is None else int(double_width), aircraft_id),
             )
             label = "Automatic" if double_width is None else "Double width" if double_width else "Standard width"
-            return {"ok": True, "message": f"{aircraft[0]} set to {label.lower()}."}
+            return {"ok": True, "_revisionResources": [resource], "message": f"{aircraft[0]} set to {label.lower()}."}
 
         return self._database_write(operation)
 
@@ -1973,8 +2175,10 @@ class SpotterDexManager:
             entity = connection.execute(f'SELECT name FROM "{table}" WHERE id=?', (entity_id,)).fetchone()
             if not entity:
                 raise ValueError("The selected page no longer exists.")
+            resource = f"writeup:{entity_type}:{entity_id}"
+            self._check_revision(connection, payload, resource)
             connection.execute(f'UPDATE "{table}" SET write_up=? WHERE id=?', (write_up, entity_id))
-            return {"ok": True, "message": f"Write-up saved for {entity[0]}."}
+            return {"ok": True, "message": f"Write-up saved for {entity[0]}.", "_revisionResources": [resource]}
 
         return self._database_write(operation)
 
@@ -2004,6 +2208,8 @@ class SpotterDexManager:
             event = connection.execute("SELECT name FROM events WHERE id=?", (event_id,)).fetchone()
             if not event:
                 raise ValueError("The selected airshow event no longer exists.")
+            resource = f"story:{event_id}"
+            self._check_revision(connection, payload, resource)
             event_photo_count = int(connection.execute("SELECT COUNT(*) FROM photos WHERE event_id=?", (event_id,)).fetchone()[0])
             existing_owners = {
                 str(row["id"]): str(row["event_id"])
@@ -2139,6 +2345,7 @@ class SpotterDexManager:
                 "assignedPhotoCount": len(used_photo_ids),
                 "unassignedPhotoCount": max(0, event_photo_count - len(used_photo_ids)),
                 "message": f"Airshow story saved for {event[0]} ({len(used_photo_ids)} of {event_photo_count} event photos assigned).",
+                "_revisionResources": [resource],
             }
 
         return self._database_write(operation)
@@ -2149,6 +2356,8 @@ class SpotterDexManager:
         requested_unit_id = clean_text(payload.get("unitId"))
 
         def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            resource = f"entry:{entry_path}"
+            self._check_revision(connection, payload, resource)
             merged_aircraft_name = ""
             if parts[1] == "aircraft":
                 if len(parts) != 4:
@@ -2243,6 +2452,7 @@ class SpotterDexManager:
                 "unitId": unit_id,
                 "unitName": unit_name,
                 "message": message,
+                "_revisionResources": [resource],
             }
 
         return self._database_write(operation)
@@ -2255,9 +2465,11 @@ class SpotterDexManager:
             unit = connection.execute("SELECT name FROM units WHERE id=?", (unit_id,)).fetchone()
             if not unit:
                 raise ValueError("Squadron not found.")
+            resource = f"unit:{unit_id}"
+            self._check_revision(connection, payload, resource)
             connection.execute("UPDATE units SET logo_source=? WHERE id=?", (logo_source, unit_id))
             action = "cleared" if not logo_source else "updated"
-            return {"ok": True, "message": f"{unit[0]} logo {action}."}
+            return {"ok": True, "message": f"{unit[0]} logo {action}.", "_revisionResources": [resource]}
 
         return self._database_write(operation)
 
@@ -2460,6 +2672,8 @@ class SpotterDexManager:
         enabled = 0 if clean_text(enabled_value).lower() in {"0", "false", "no", "off", "disabled"} else 1
 
         def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            resource = f"location:{location_id}"
+            self._check_revision(connection, payload, resource)
             location = connection.execute(
                 "SELECT name,country_id FROM locations WHERE id=?",
                 (location_id,),
@@ -2477,7 +2691,7 @@ class SpotterDexManager:
                 "UPDATE locations SET name=?,country_id=?,icao=?,latitude=?,longitude=?,enabled=? WHERE id=?",
                 (name, country_id, icao, latitude, longitude, enabled, location_id),
             )
-            return {"ok": True, "locationId": location_id, "name": name, "message": f"Location updated: {name}."}
+            return {"ok": True, "_revisionResources": [resource], "locationId": location_id, "name": name, "message": f"Location updated: {name}."}
 
         return self._database_write(operation)
 
@@ -2516,6 +2730,8 @@ class SpotterDexManager:
         asset_rel = clean_text(payload.get("assetPath"))
 
         def operation(connection: sqlite3.Connection) -> Dict[str, Any]:
+            resource = f"location:{pin_id}"
+            self._check_revision(connection, payload, resource)
             if not connection.execute("SELECT 1 FROM locations WHERE id=?", (pin_id,)).fetchone():
                 raise ValueError("Location not found.")
             photo_id = None
@@ -2525,7 +2741,7 @@ class SpotterDexManager:
                     raise ValueError("Location heroes must use an image already stored in the photo catalog.")
                 photo_id = str(row[0])
             connection.execute("UPDATE locations SET hero_photo_id=? WHERE id=?", (photo_id, pin_id))
-            return {"ok": True, "message": "Location hero cleared." if clear else "Location hero updated."}
+            return {"ok": True, "_revisionResources": [resource], "message": "Location hero cleared." if clear else "Location hero updated."}
 
         return self._database_write(operation)
 
@@ -2581,7 +2797,9 @@ class SpotterDexManager:
         if not source_path.is_file() or source_path.suffix.lower() not in IMAGE_EXTENSIONS:
             raise CaptionAssistError("The selected photo source is unavailable.")
         draft = clean_text(payload.get("draftCaption"))
-        caption = request_nvidia_caption(
+        if len(draft) > 4000:
+            raise CaptionAssistError("The existing caption is too long to refine.")
+        caption = request_apple_caption(
             prompt=build_caption_prompt(
                 country=country,
                 aircraft_type=aircraft_name,
@@ -2592,7 +2810,7 @@ class SpotterDexManager:
                 livery=livery,
                 draft_caption=draft,
             ),
-            image_url=caption_image_data_url(source_path),
+            source_path=source_path,
         )
         return {"ok": True, "caption": caption, "message": "Caption suggestion ready. Review it, then save the photo."}
 
@@ -3170,7 +3388,6 @@ class SpotterDexManager:
         if len(draft_caption) > 4000:
             raise CaptionAssistError("The existing caption is too long to refine.")
 
-        image_url = caption_image_data_url(source_path)
         prompt = build_caption_prompt(
             country=country,
             aircraft_type=aircraft_type,
@@ -3181,7 +3398,7 @@ class SpotterDexManager:
             livery=livery,
             draft_caption=draft_caption,
         )
-        caption = request_nvidia_caption(prompt=prompt, image_url=image_url)
+        caption = request_apple_caption(prompt=prompt, source_path=source_path)
         return {
             "ok": True,
             "caption": caption,
@@ -4427,14 +4644,27 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
             if manager_path in {"/", "/index.html", "/app.html"}:
                 self._send_manager_asset("app.html")
                 return
-            if manager_path in {"/app.css", "/app.js"}:
+            if manager_path in {f"/{filename}" for filename in MANAGER_STATIC_FILES if filename != "app.html"}:
                 self._send_manager_asset(manager_path.lstrip("/"))
+                return
+            if parsed.path == "/api/build-jobs":
+                self._send_json(self.context.manager.build_jobs.list_jobs())
+                return
+            if parsed.path.startswith("/api/build-jobs/"):
+                query = parse_qs(parsed.query)
+                self._send_json(self.context.manager.build_jobs.poll(
+                    parsed.path.rsplit("/", 1)[-1], cursor=query.get("cursor", [0])[0], limit=query.get("limit", [150])[0]))
                 return
             if parsed.path == "/api/state":
                 self._send_json(self.context.manager.get_state())
                 return
             if parsed.path == "/api/quality-status":
                 self._send_json(self.context.manager.quality_status())
+                return
+            if parsed.path == "/api/revision":
+                query = parse_qs(parsed.query)
+                resource = query.get("resource", [""])[0]
+                self._send_json(self.context.manager.get_revision({"resource": resource}))
                 return
             if parsed.path == "/api/thumb":
                 query = parse_qs(parsed.query)
@@ -4449,25 +4679,7 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
                 self._send_bytes(content, content_type)
                 return
             if parsed.path == "/api/build-stream":
-                query = parse_qs(parsed.query)
-                strict = query.get("strict", ["0"])[0] in {"1", "true", "yes"}
-                build_query_keys = {
-                    "image_width": "width",
-                    "thumbnail_width": "thumb-width",
-                    "image_jpeg_quality": "jpeg-quality",
-                    "thumbnail_jpeg_quality": "thumb-jpeg-quality",
-                }
-                requested_settings = {
-                    key: query[query_key][0]
-                    for key, query_key in build_query_keys.items()
-                    if query.get(query_key)
-                }
-                build_settings = (
-                    normalize_build_settings(requested_settings, strict=True)
-                    if requested_settings
-                    else None
-                )
-                self._send_build_stream(strict=strict, build_settings=build_settings)
+                self._send_error(HTTPStatus.METHOD_NOT_ALLOWED, "Use POST /api/build-jobs to start a reconnectable local build.")
                 return
             if parsed.path == "/favicon.ico":
                 icon_path = self.context.manager.root / "assets/icons/spotterdex-app-icon.png"
@@ -4482,6 +4694,11 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
         try:
             parsed = urlparse(self.path)
             payload = self._read_json()
+            if parsed.path in {"/api/build-jobs", "/api/build"}:
+                if payload.get("buildSettings") is not None:
+                    payload["buildSettings"] = normalize_build_settings(payload["buildSettings"], strict=True)
+                self._send_json(self.context.manager.build_jobs.start(payload))
+                return
             routes = {
                 "/api/attach": self.context.manager.append_photos,
                 "/api/update-entry": self.context.manager.update_entry,
@@ -4520,6 +4737,28 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
             if not handler:
                 self._send_error(HTTPStatus.NOT_FOUND, "Not found")
                 return
+            protected_routes = {
+                "/api/update-pin", "/api/set-pin-hero", "/api/update-aircraft-settings",
+                "/api/set-aircraft-hero", "/api/update-unit-logo", "/api/set-squadron-hero",
+                "/api/set-airshow-hero", "/api/bulk-airshow",
+                "/api/update-entry",
+                "/api/update-write-up",
+                "/api/save-event-story",
+                "/api/update-photo",
+                "/api/update-master-photo",
+                "/api/bulk-update-photos",
+            }
+            if parsed.path in protected_routes and self.context.manager.database_path.exists():
+                has_revision = (
+                    isinstance(payload.get("expectedRevisions"), dict)
+                    if parsed.path == "/api/bulk-update-photos"
+                    else payload.get("expectedRevision") is not None
+                    or isinstance(payload.get("expectedRevisions"), dict)
+                )
+                if not has_revision:
+                    self._send_error(HTTPStatus.PRECONDITION_REQUIRED, "This save requires the revision captured when the editor opened.")
+                    return
+            payload["_requireRevision"] = parsed.path in protected_routes and self.context.manager.database_path.exists()
             self._send_json(handler(payload))
         except Exception as exc:  # pragma: no cover - defensive request guard
             self._send_exception(exc)
@@ -4544,11 +4783,25 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
         self._send_json({"ok": False, "message": message}, status=status)
 
     def _send_exception(self, exc: Exception) -> None:
-        status = HTTPStatus.BAD_REQUEST if isinstance(exc, (ValueError, FileNotFoundError)) else HTTPStatus.INTERNAL_SERVER_ERROR
+        if isinstance(exc, BuildAlreadyRunning):
+            self._send_json({"ok": False, "code": "build_in_progress", "message": str(exc), "activeJob": exc.active_job}, status=HTTPStatus.CONFLICT)
+            return
+        if isinstance(exc, BuildJobNotFound):
+            self._send_error(HTTPStatus.NOT_FOUND, str(exc))
+            return
+        status = (
+            HTTPStatus.CONFLICT
+            if isinstance(exc, RevisionConflictError)
+            else HTTPStatus.BAD_REQUEST
+            if isinstance(exc, (ValueError, FileNotFoundError))
+            else HTTPStatus.INTERNAL_SERVER_ERROR
+        )
         payload = {
             "ok": False,
             "message": str(exc) or exc.__class__.__name__,
         }
+        if isinstance(exc, RevisionConflictError):
+            payload.update({"code": "revision_conflict", "resource": exc.resource, "expectedRevision": exc.expected, "currentRevision": exc.current})
         if status == HTTPStatus.INTERNAL_SERVER_ERROR:
             payload["traceback"] = traceback.format_exc()
         self._send_json(payload, status=status)
@@ -5941,97 +6194,27 @@ def payload_caption_is_ai_assisted(payload: Dict[str, Any]) -> bool:
     return payload.get("captionAiAssisted") is True or payload.get("caption_ai_assisted") is True
 
 
-def caption_image_data_url(source_path: Path) -> str:
-    """Return a server-generated 768 px-wide JPEG data URL for the VLM."""
+def prepare_caption_image(source_path: Path, destination: Path) -> None:
+    """Write an orientation-normalized JPEG suitable for an AFM image prompt."""
     try:
         with Image.open(source_path) as opened:
             image = ImageOps.exif_transpose(opened)
-            height = max(1, round(image.height * NVIDIA_CAPTION_IMAGE_WIDTH / image.width))
-            image = image.resize((NVIDIA_CAPTION_IMAGE_WIDTH, height), Image.Resampling.LANCZOS)
+            if image.width > APPLE_CAPTION_IMAGE_WIDTH:
+                height = max(1, round(image.height * APPLE_CAPTION_IMAGE_WIDTH / image.width))
+                image = image.resize((APPLE_CAPTION_IMAGE_WIDTH, height), Image.Resampling.LANCZOS)
             if image.mode in {"RGBA", "LA"}:
                 background = Image.new("RGB", image.size, "white")
-                alpha = image.getchannel("A")
-                background.paste(image.convert("RGB"), mask=alpha)
+                background.paste(image.convert("RGB"), mask=image.getchannel("A"))
                 image = background
             elif image.mode != "RGB":
                 image = image.convert("RGB")
-            buffer = io.BytesIO()
-            image.save(buffer, "JPEG", quality=88, optimize=True)
+            image.save(destination, "JPEG", quality=88, optimize=True)
     except Exception as exc:  # Pillow uses multiple exception types for malformed source files.
         print(f"Caption image preparation failed for {source_path}: {exc}", file=sys.stderr)
         raise CaptionAssistError("The selected image could not be prepared for caption assistance.") from exc
 
-    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
-    return f"data:image/jpeg;base64,{encoded}"
 
-
-def nvidia_caption_endpoint() -> str:
-    configured = clean_text(
-        os.getenv("NVIDIA_CAPTION_ENDPOINT")
-        or os.getenv("NVIDIA_INFERENCE_BASE_URL")
-        or os.getenv("NVIDIA_INFERENCE_URL")
-        or NVIDIA_CAPTION_ENDPOINT
-    ).rstrip("/")
-    if configured.endswith("/chat/completions"):
-        return configured
-    if configured.endswith("/v1"):
-        return f"{configured}/chat/completions"
-    raise CaptionAssistError("NVIDIA_CAPTION_ENDPOINT must be a /v1 base URL or /v1/chat/completions endpoint.")
-
-
-def load_local_env(path: Optional[Path] = None) -> None:
-    """Load simple KEY=VALUE settings from the local, ignored manager .env file.
-
-    Explicit process environment variables win over values in .env. Values are
-    loaded only into the manager process and are never included in browser state,
-    generated data, or error messages.
-    """
-    env_path = path or DOTENV_PATH
-    try:
-        lines = env_path.read_text("utf-8").splitlines()
-    except OSError:
-        return
-
-    key_pattern = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
-    for raw_line in lines:
-        line = raw_line.strip()
-        if not line or line.startswith("#"):
-            continue
-        if line.startswith("export "):
-            line = line[7:].lstrip()
-        key, separator, value = line.partition("=")
-        key = key.strip()
-        if not separator or not key_pattern.fullmatch(key):
-            continue
-        value = value.strip()
-        if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
-            value = value[1:-1]
-        os.environ.setdefault(key, value)
-
-
-def resolve_nvidia_caption_key() -> str:
-    load_local_env()
-    value = clean_text(os.getenv("LLM_API_KEY"))
-    if value:
-        return value
-    raise CaptionAssistError("Caption assist is not configured. Set LLM_API_KEY in the manager environment or in the manager .env file.")
-
-
-def extract_caption_from_response(payload: Any) -> str:
-    if not isinstance(payload, dict):
-        raise CaptionAssistError("Caption assist returned an invalid response.")
-    choices = payload.get("choices")
-    if not isinstance(choices, list) or not choices:
-        raise CaptionAssistError("Caption assist returned no caption.")
-    first_choice = choices[0] if isinstance(choices[0], dict) else {}
-    message = first_choice.get("message") if isinstance(first_choice, dict) else {}
-    content = message.get("content") if isinstance(message, dict) else ""
-    if isinstance(content, list):
-        content = " ".join(
-            clean_text(item.get("text"))
-            for item in content
-            if isinstance(item, dict) and clean_text(item.get("text"))
-        )
+def normalize_generated_caption(content: Any) -> str:
     caption = " ".join(clean_text(content).split())
     if caption.lower().startswith("caption:"):
         caption = caption.split(":", 1)[1].strip()
@@ -6042,56 +6225,45 @@ def extract_caption_from_response(payload: Any) -> str:
     return caption
 
 
-def request_nvidia_caption(*, prompt: str, image_url: str) -> str:
-    load_local_env()
-    api_key = resolve_nvidia_caption_key()
-    model = clean_text(os.getenv("NVIDIA_CAPTION_MODEL")) or NVIDIA_CAPTION_MODEL
-    body = {
-        "model": model,
-        "messages": [
-            {
-                "role": "system",
-                "content": f"/think\n{CAPTION_SYSTEM_PROMPT}",
-            },
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt},
-                    {"type": "image_url", "image_url": {"url": image_url}},
-                ],
-            },
-        ],
-        "temperature": 0.25,
-        "max_tokens": NVIDIA_CAPTION_MAX_TOKENS,
-        "reasoning_budget": NVIDIA_CAPTION_REASONING_BUDGET,
-        "stream": False,
-    }
-    request = Request(
-        nvidia_caption_endpoint(),
-        data=json.dumps(body).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-        },
-        method="POST",
-    )
+def request_apple_caption(*, prompt: str, source_path: Path) -> str:
+    """Generate one caption with the local Apple Foundation Models runtime."""
+    if not APPLE_CAPTION_LOCK.acquire(blocking=False):
+        raise CaptionAssistError("Another caption is being generated on this Mac. Try again when it finishes.")
     try:
-        with urlopen(request, timeout=NVIDIA_CAPTION_TIMEOUT_SECONDS) as response:
-            response_body = response.read()
-    except HTTPError as exc:
-        if exc.code in {401, 403}:
-            raise CaptionAssistError("Caption assist could not authenticate with NVIDIA. Check the server-side key.") from exc
-        raise CaptionAssistError(f"Caption assist is temporarily unavailable (NVIDIA returned {exc.code}).") from exc
-    except (URLError, TimeoutError) as exc:
-        raise CaptionAssistError("Caption assist could not reach NVIDIA. Please try again.") from exc
+        with tempfile.TemporaryDirectory(prefix="spotterdex-afm-") as temporary:
+            image_path = Path(temporary) / "caption-input.jpg"
+            prepare_caption_image(source_path, image_path)
+            worker_request = {
+                "prompt": prompt,
+                "system_prompt": CAPTION_SYSTEM_PROMPT,
+                "image_path": str(image_path),
+            }
+            try:
+                completed = subprocess.run(
+                    [sys.executable, str(APPLE_CAPTION_WORKER)],
+                    input=json.dumps(worker_request),
+                    capture_output=True,
+                    text=True,
+                    timeout=APPLE_CAPTION_TIMEOUT_SECONDS,
+                    check=False,
+                )
+            except subprocess.TimeoutExpired as exc:
+                raise CaptionAssistError("Apple Intelligence took too long to generate this caption. Please try again.") from exc
 
-    try:
-        return extract_caption_from_response(json.loads(response_body.decode("utf-8")))
-    except CaptionAssistError:
-        raise
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise CaptionAssistError("Caption assist returned an invalid response.") from exc
+            try:
+                response = json.loads(completed.stdout)
+            except (TypeError, json.JSONDecodeError) as exc:
+                if completed.stderr:
+                    print(f"AFM caption worker failed: {completed.stderr.strip()}", file=sys.stderr)
+                raise CaptionAssistError("Apple Intelligence returned an invalid caption response.") from exc
+
+            if not isinstance(response, dict) or response.get("ok") is not True:
+                error = response.get("error") if isinstance(response, dict) else None
+                message = clean_text(error.get("message")) if isinstance(error, dict) else ""
+                raise CaptionAssistError(message or "Apple Intelligence could not generate this caption. Please try again.")
+            return normalize_generated_caption(response.get("caption"))
+    finally:
+        APPLE_CAPTION_LOCK.release()
 
 
 def clean_year(value: Any) -> str:

@@ -9,3 +9,5 @@ raw_assets/
 .spotterdex-manager-build-settings.json
 .playwright*
 content/backups/
+
+.spotterdex-manager-build-jobs.json*

@@ -1,33 +1,23 @@
 from __future__ import annotations
 
+import asyncio
 import json
-import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
+from tools import spotterdex_afm_caption
 from tools.prompts import build_caption_prompt
 from tools.spotterdex_manager import (
-    NVIDIA_CAPTION_MAX_TOKENS,
-    NVIDIA_CAPTION_REASONING_BUDGET,
-    load_local_env,
-    request_nvidia_caption,
+    APPLE_CAPTION_LOCK,
+    APPLE_CAPTION_TIMEOUT_SECONDS,
+    CaptionAssistError,
+    request_apple_caption,
 )
-
-
-class FakeResponse:
-    def __init__(self, body: bytes) -> None:
-        self.body = body
-
-    def __enter__(self) -> "FakeResponse":
-        return self
-
-    def __exit__(self, *_args: object) -> None:
-        return None
-
-    def read(self) -> bytes:
-        return self.body
 
 
 class CaptionAssistantTests(unittest.TestCase):
@@ -44,38 +34,117 @@ class CaptionAssistantTests(unittest.TestCase):
         )
         self.assertIn("Country: Japan", prompt)
         self.assertIn("Aircraft type: Kawasaki T-4", prompt)
-        self.assertIn("visible action", prompt)
-        self.assertIn("retain as much accurate additional information", prompt)
+        self.assertIn("Task: refine an existing caption", prompt)
+        self.assertIn("what the aircraft is doing", prompt)
+        self.assertIn("surroundings and environment", prompt)
+        self.assertIn("Include the country, aircraft type, squadron or organisation, location, event, and livery", prompt)
         self.assertIn("06-5790", prompt)
 
-    def test_local_env_loads_values_without_overriding_process_environment(self) -> None:
+    def test_prompt_selects_new_caption_mode_when_draft_is_empty(self) -> None:
+        prompt = build_caption_prompt(
+            country="United Kingdom",
+            aircraft_type="Hawker Hurricane",
+            squadron_name="Historic Flight",
+            unit_type="organisation",
+            location="Duxford",
+            airshow="Flying Legends",
+            livery="Battle of Britain scheme",
+            draft_caption="",
+        )
+        self.assertIn("Task: generate a new caption", prompt)
+        self.assertIn("For new-caption mode, create the caption", prompt)
+        self.assertIn("Existing caption: None", prompt)
+
+    def test_caption_request_uses_isolated_worker_and_normalizes_output(self) -> None:
+        completed = SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps({"ok": True, "caption": '  Caption: "Japan Kawasaki T-4 landing."  '}),
+            stderr="",
+        )
+        with patch("tools.spotterdex_manager.prepare_caption_image") as prepare:
+            with patch("tools.spotterdex_manager.subprocess.run", return_value=completed) as run:
+                caption = request_apple_caption(prompt="caption this", source_path=Path("photo.jpg"))
+
+        self.assertEqual(caption, "Japan Kawasaki T-4 landing.")
+        prepare.assert_called_once()
+        request = json.loads(run.call_args.kwargs["input"])
+        self.assertEqual(request["prompt"], "caption this")
+        self.assertIn("aviation photography caption editor", request["system_prompt"])
+        self.assertTrue(request["image_path"].endswith("caption-input.jpg"))
+        self.assertEqual(run.call_args.kwargs["timeout"], APPLE_CAPTION_TIMEOUT_SECONDS)
+
+    def test_caption_request_surfaces_worker_error(self) -> None:
+        completed = SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps({
+                "ok": False,
+                "error": {"code": "model_unavailable", "message": "Apple Intelligence is not enabled on this Mac."},
+            }),
+            stderr="",
+        )
+        with patch("tools.spotterdex_manager.prepare_caption_image"):
+            with patch("tools.spotterdex_manager.subprocess.run", return_value=completed):
+                with self.assertRaisesRegex(CaptionAssistError, "not enabled"):
+                    request_apple_caption(prompt="caption this", source_path=Path("photo.jpg"))
+
+    def test_caption_request_times_out_cleanly(self) -> None:
+        timeout = subprocess.TimeoutExpired(cmd=["python"], timeout=APPLE_CAPTION_TIMEOUT_SECONDS)
+        with patch("tools.spotterdex_manager.prepare_caption_image"):
+            with patch("tools.spotterdex_manager.subprocess.run", side_effect=timeout):
+                with self.assertRaisesRegex(CaptionAssistError, "took too long"):
+                    request_apple_caption(prompt="caption this", source_path=Path("photo.jpg"))
+
+    def test_caption_request_rejects_concurrent_generation(self) -> None:
+        self.assertTrue(APPLE_CAPTION_LOCK.acquire(blocking=False))
+        try:
+            with self.assertRaisesRegex(CaptionAssistError, "Another caption"):
+                request_apple_caption(prompt="caption this", source_path=Path("photo.jpg"))
+        finally:
+            APPLE_CAPTION_LOCK.release()
+
+    def test_worker_sends_image_prompt_with_bounded_generation_options(self) -> None:
+        observed = {}
+
+        class FakeModel:
+            def is_available(self):
+                return True, None
+
+        class FakeAttachment:
+            def __init__(self, *, path):
+                observed["image_path"] = path
+
+        class FakeOptions:
+            def __init__(self, *, temperature, maximum_response_tokens):
+                observed["temperature"] = temperature
+                observed["maximum_response_tokens"] = maximum_response_tokens
+
+        class FakeSession:
+            def __init__(self, *, instructions, model):
+                observed["instructions"] = instructions
+                observed["model"] = model
+
+            async def respond(self, prompt, *, options):
+                observed["prompt"] = prompt
+                observed["options"] = options
+                return "A locally generated aircraft caption."
+
+        fake_sdk = SimpleNamespace(
+            SystemLanguageModel=FakeModel,
+            ImageAttachment=FakeAttachment,
+            GenerationOptions=FakeOptions,
+            LanguageModelSession=FakeSession,
+        )
         with tempfile.TemporaryDirectory() as temporary:
-            env_path = Path(temporary) / ".env"
-            env_path.write_text(
-                "# local-only settings\n"
-                "LLM_API_KEY='from-file'\n"
-                "export NVIDIA_CAPTION_MODEL=example/model\n",
-                encoding="utf-8",
-            )
-            with patch.dict(os.environ, {"LLM_API_KEY": "from-process"}, clear=True):
-                load_local_env(env_path)
-                self.assertEqual(os.environ["LLM_API_KEY"], "from-process")
-                self.assertEqual(os.environ["NVIDIA_CAPTION_MODEL"], "example/model")
+            image_path = Path(temporary) / "photo.jpg"
+            image_path.touch()
+            with patch.dict(sys.modules, {"apple_fm_sdk": fake_sdk}):
+                result = asyncio.run(spotterdex_afm_caption._generate("caption this", "be accurate", image_path))
 
-    def test_caption_request_enables_thinking_and_bounds_output(self) -> None:
-        response_body = json.dumps({"choices": [{"message": {"content": "Japan Kawasaki T-4 landing at Gifu Air Base."}}]}).encode()
-        with patch.dict(os.environ, {"LLM_API_KEY": "test-key"}, clear=True):
-            with patch("tools.spotterdex_manager.urlopen", return_value=FakeResponse(response_body)) as mocked_urlopen:
-                caption = request_nvidia_caption(prompt="caption this", image_url="data:image/jpeg;base64,abc")
-
-        self.assertIn("Kawasaki T-4", caption)
-        request = mocked_urlopen.call_args.args[0]
-        body = json.loads(request.data.decode("utf-8"))
-        self.assertEqual(body["max_tokens"], NVIDIA_CAPTION_MAX_TOKENS)
-        self.assertEqual(body["reasoning_budget"], NVIDIA_CAPTION_REASONING_BUDGET)
-        self.assertEqual(body["messages"][0]["content"].splitlines()[0], "/think")
-        self.assertNotIn("reasoning_effort", body)
-        self.assertEqual(request.headers["Authorization"], "Bearer test-key")
+        self.assertEqual(result, {"ok": True, "caption": "A locally generated aircraft caption."})
+        self.assertEqual(observed["prompt"][0], "caption this")
+        self.assertIsInstance(observed["prompt"][1], FakeAttachment)
+        self.assertEqual(observed["temperature"], 0.25)
+        self.assertEqual(observed["maximum_response_tokens"], 512)
 
 
 if __name__ == "__main__":

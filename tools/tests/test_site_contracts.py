@@ -512,8 +512,13 @@ class MapSelectionContractTests(unittest.TestCase):
         self.assertIn('sort === "photos"', self.map_script)
         self.assertIn('sort === "name"', self.map_script)
         self.assertIn("state.mapDiscoveryPinIds = new Set", self.map_script)
-        self.assertNotIn("prioritizeMapCallouts(visiblePins).slice(0, 12)", self.map_script)
-        self.assertNotIn("declutterMobileCalloutPins(pins).slice(0, 6)", self.map_script)
+        self.assertIn("const mobileLayout = isMobileMapLayout();", self.map_script)
+        self.assertIn(
+            "const visibleBounds = mobileLayout ? state.map.getBounds().pad(0.22) : state.map.getBounds();",
+            self.map_script,
+        )
+        self.assertIn("const selectedPin = state.pinById.get(state.selectedPinId);", self.map_script)
+        self.assertIn("return declutterMobileCalloutPins(pins);", self.map_script)
 
     def test_interactive_map_semantics_and_retry_are_exposed(self) -> None:
         self.assertIn('id="worldMap" role="region"', self.map_template)
