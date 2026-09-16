@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-13T12:07:12+00:00",
+  "generatedAt": "2026-09-16T14:10:38+00:00",
   "entities": {
     "countries": {
       "au": {
@@ -1052,7 +1052,7 @@
         "name": "Air Patrol Squadron 3",
         "countryId": "jp",
         "kind": "squadron",
-        "logo": "assets/logos/jp-air-patrol-squadron-3.jpg",
+        "logo": "assets/logos/jp-air-patrol-squadron-3.png",
         "heroPhotoId": "2023-09-09-p1-1",
         "writeUp": ""
       },
@@ -1115,7 +1115,7 @@
         "name": "Fleet Air Wing 5",
         "countryId": "jp",
         "kind": "squadron",
-        "logo": "assets/logos/jp-fleet-air-wing-5.jpg",
+        "logo": "assets/logos/jp-fleet-air-wing-5.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
