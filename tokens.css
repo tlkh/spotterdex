@@ -63,10 +63,10 @@
   --text-xl: 1.75rem;
   --text-2xl: 2.5rem;
 
-  --radius-control: 0.75rem;
-  --radius-card: 1rem;
-  --radius-sheet: 1rem;
-  --radius-pill: 999px;
+  --radius-control: 0;
+  --radius-card: 0;
+  --radius-sheet: 0;
+  --radius-pill: 0;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0);

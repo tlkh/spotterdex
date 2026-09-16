@@ -40,8 +40,10 @@ preserved, but page CSS consumes semantic tokens from `tokens.css`.
 ## Spacing and surfaces
 
 Use the named 4-point scale in `tokens.css`. Desktop archive surfaces are
-quietly squared; mobile sheets and controls use 12–16px corners, 44–48px
-minimum touch targets, and safe-area-aware padding.
+square across the public app, share pages, and local manager. All UI corner
+radii are zero, including navigation, photo previews, badges, map controls,
+and mobile sheets. Preserve borders, surface contrast, 44–48px minimum touch
+targets, and safe-area-aware padding.
 
 ## Motion
 
