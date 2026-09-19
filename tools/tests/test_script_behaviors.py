@@ -22,6 +22,28 @@ class ScriptBehaviorTests(unittest.TestCase):
         result = subprocess.run(["node", "-e", program], cwd=ROOT, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_field_guide_buttons_target_rendered_archive_groups(self):
+        self.run_behavior(["renderFieldGuideBrowser", "renderAircraftTypePhotoGroups"], r'''
+            global.escapeHtml = global.escapeAttr = value => String(value);
+            global.aircraftTypePhotoGroups = photos => photos.length ? [
+                {key: "aircraft-type-a330", title: "Airbus A330", photos, eyebrow: "Aircraft type"},
+                {key: "unit-example", title: "Example unit", photos, eyebrow: "Squadron"}
+            ] : [];
+            global.renderProgressivePhotoGrid = () => "<div>Photos</div>";
+            for (const context of ["location", "squadron"]) {
+                const key = `${context}-aircraft-types`;
+                const browser = renderFieldGuideBrowser([{}], key);
+                const archive = renderAircraftTypePhotoGroups([{}], context, key);
+                const targets = [...browser.matchAll(/data-aircraft-photo-target="([^"]+)"/g)].map(match => match[1]);
+                assert.equal(targets.length, 2);
+                for (const target of targets) assert(archive.includes(`id="${target}"`));
+                assert.equal(renderFieldGuideBrowser([], key), "");
+                const tagged = renderFieldGuideBrowser([], key, [{title: "Location photos", target: "tagged", count: 2}]);
+                assert(tagged.includes('data-aircraft-photo-target="tagged"'));
+                assert(!tagged.includes("photos photos"));
+            }
+        ''')
+
     def test_search_keeps_full_totals_and_incremental_category_results(self):
         self.run_behavior(["globalSearchMatches", "renderGlobalSearchResults"], r'''
             global.SEARCH_KIND_ORDER = ["aircraft", "photo"];
@@ -92,6 +114,27 @@ class ScriptBehaviorTests(unittest.TestCase):
             assert.equal(rendered.at(-1).isWide, true);
             entries[0].doubleWidth = true;
             assert.deepEqual([...aircraftGridPromotionIds(entries)], ["aircraft-0"]);
+        ''')
+
+    def test_photo_captions_default_to_icao_and_date_across_pages(self):
+        self.run_behavior(["photoCaptionLocation", "renderPhotoCard"], r'''
+            global.state = {pinById: new Map([["gifu", {icao: "RJNG"}]])};
+            global.normalizeIcao = value => String(value || "").toUpperCase();
+            global.escapeHtml = global.escapeAttr = value => String(value);
+            global.photoSubjectLabel = () => "Mitsubishi F-2A";
+            global.displayPhotoDate = () => "8 Apr 2026";
+            global.renderResponsivePhotoImage = () => "<img>";
+            global.photoContextLabel = () => "Air Development and Test Wing";
+            const photo = {id: "f2a", pinId: "gifu", locationName: "Gifu Air Base", livery: "Anniversary"};
+            for (const context of ["dex", "location", "squadron", "airshow"]) {
+                const card = renderPhotoCard(photo, context);
+                assert.match(card, /RJNG, 8 Apr 2026/);
+                assert.doesNotMatch(card, />Mitsubishi F-2A</);
+                assert.doesNotMatch(card, /Air Development and Test Wing/);
+                assert.doesNotMatch(card, /Anniversary/);
+            }
+            state.pinById.clear();
+            assert.match(renderPhotoCard(photo, "location"), /Gifu Air Base, 8 Apr 2026/);
         ''')
 
     def test_ime_key_events_do_not_navigate_or_close(self):

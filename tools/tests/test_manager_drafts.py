@@ -73,6 +73,23 @@ console.log(JSON.stringify(second.bulkCaptions.results));
         self.assertEqual(result["p-2"]["status"], "proposed")
         self.assertIn("unknown", result["p-2"]["message"])
 
+    def test_caption_review_filter_and_hidden_proposals_survive_recovery(self):
+        result = self.run_node("""
+const first = state();
+Drafts.configure({state: first, storage});
+first.bulkCaptions.reviewFilter = 'completed';
+first.bulkCaptions.queue = [{key: 'pending'}, {key: 'done'}];
+first.bulkCaptions.results = {pending: {status: 'proposed', caption: 'Hidden edited proposal'}, done: {status: 'accepted', caption: 'Saved'}};
+Drafts.captureCaptions(first); Drafts.persist(first);
+const second = state(); Drafts.configure({state: second, storage});
+Drafts.restore(second);
+console.log(JSON.stringify(second.bulkCaptions));
+""")
+        self.assertEqual(result["reviewFilter"], "completed")
+        self.assertEqual([item["key"] for item in result["queue"]], ["pending", "done"])
+        self.assertEqual(result["results"]["pending"]["caption"], "Hidden edited proposal")
+        self.assertEqual(result["results"]["done"]["status"], "accepted")
+
     def test_corrupt_storage_and_repository_isolation_do_not_break_manager(self):
         result = self.run_node("""
 values.set('spotterdex.manager.drafts.v1:%2Ftmp%2Fcatalog.sqlite3', '{bad json');

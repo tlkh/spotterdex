@@ -63,6 +63,7 @@
         <div class="nav-group">
           <span class="nav-group-label">Output</span>
           <button class="tab" data-tab="build" type="button">Build &amp; verify</button>
+          <button class="tab" data-tab="dataset-export" type="button">Export dataset</button>
         </div>
         <div class="stats" id="stats"></div>
       </nav>
@@ -283,6 +284,15 @@
               <label><input id="bulkExcludeAiCaptions" type="checkbox" checked> Exclude captions already assisted by AI</label>
               <div class="subtle">Photos without captions are eligible. AI-assisted is provenance, not review status. Review, edit, and accept each suggestion individually.</div>
             </div>
+          </div>
+          <div class="bulk-caption-review-tools">
+            <div class="segmented bulk-caption-filters" id="bulkCaptionReviewFilters" role="group" aria-label="Caption review status">
+              <button type="button" data-caption-review-filter="review" aria-pressed="false">Needs review <span id="captionReviewCount-review">0</span></button>
+              <button type="button" data-caption-review-filter="failed" aria-pressed="false">Failed <span id="captionReviewCount-failed">0</span></button>
+              <button type="button" data-caption-review-filter="completed" aria-pressed="false">Completed <span id="captionReviewCount-completed">0</span></button>
+              <button type="button" data-caption-review-filter="all" class="active" aria-pressed="true">All <span id="captionReviewCount-all">0</span></button>
+            </div>
+            <p class="subtle" id="bulkCaptionReviewStatus" role="status" tabindex="-1"></p>
           </div>
           <div class="bulk-caption-list" id="bulkCaptionList"></div>
         </section>
@@ -718,6 +728,19 @@
               </div>
             </div>
             <div class="orphan-list" id="orphanList"></div>
+          </section>
+        </section>
+
+        <section class="view" id="dataset-exportView">
+          <div class="bar"><div><h2 class="panel-title">Export dataset</h2><p class="subtle">Export saved photos and metadata as a ZIP for <code>vlm-prompt-optimisation</code>.</p></div></div>
+          <section class="panel-section dataset-export-panel" aria-labelledby="datasetExportHeading">
+            <h3 id="datasetExportHeading" class="panel-title">Scope</h3>
+            <div class="field"><label for="datasetExportScope">Photos to include</label><select id="datasetExportScope" aria-describedby="datasetExportScopeHelp"><option value="all">All eligible photos</option><option value="selected">Selected library photos</option><option value="matching">All matching library results</option></select><div class="subtle" id="datasetExportScopeHelp">Eligibility requires one aircraft subject paired with a unit. Organisation units are treated as squadron/operator labels.</div></div>
+            <div class="subtle dataset-export-note">Saved catalog values are exported. Blank livery is labelled <code>standard</code>. Photos are not grouped by session.</div>
+            <div id="datasetExportSummary" class="dataset-export-summary" role="status" aria-live="polite">Choose Preview to check eligibility.</div>
+            <div class="card-actions"><button class="btn ghost" id="previewDatasetExportBtn" type="button">Preview</button><button class="btn primary" id="startDatasetExportBtn" type="button" disabled>Export ZIP</button></div>
+            <button class="btn ghost" type="button" id="reconnectDatasetExportBtn">Refresh export status</button>
+            <div id="datasetExportJobStatus" class="dataset-export-job" role="status" aria-live="polite"></div>
           </section>
         </section>
       </section>

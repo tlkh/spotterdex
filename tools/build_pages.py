@@ -121,9 +121,11 @@ def search_icon() -> str:
 def global_search_button() -> str:
     return (
         '<button class="header-global-search-trigger" type="button" '
-        'data-global-search-trigger aria-label="Search SpotterDex" '
-        'title="Search SpotterDex" aria-keyshortcuts="Control+K Meta+K">'
+        'data-global-search-trigger aria-label="Search the SpotterDex archive" '
+        'title="Search the archive" aria-keyshortcuts="Control+K Meta+K">'
         f'{search_icon()}'
+        '<span>Search archive</span>'
+        '<kbd aria-hidden="true">⌘K</kbd>'
         '</button>'
     )
 

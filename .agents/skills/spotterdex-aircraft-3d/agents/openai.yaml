@@ -1,0 +1,4 @@
+interface:
+  display_name: SpotterDex Aircraft 3D
+  short_description: Reconstruct aircraft from photos with Blender MCP
+  default_prompt: Use $spotterdex-aircraft-3d to prepare or review a photo-guided aircraft model in the SpotterDex aircraft-3d project.

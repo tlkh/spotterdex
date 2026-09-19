@@ -11,3 +11,8 @@ raw_assets/
 content/backups/
 
 .spotterdex-manager-build-jobs.json*
+
+# Local 3D masters, reference sheets, textures, renders, and exports.
+aircraft-3d/work/
+
+.spotterdex-manager-exports/

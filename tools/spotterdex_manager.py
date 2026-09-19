@@ -60,6 +60,11 @@ try:
 except ImportError:
     from tools.spotterdex_manager_jobs import BuildJobRegistry, BuildAlreadyRunning, BuildJobNotFound
 
+try:
+    from spotterdex_dataset_export import ExportJobRegistry, ExportAlreadyRunning, snapshot as dataset_snapshot, preview as dataset_preview
+except ImportError:
+    from tools.spotterdex_dataset_export import ExportJobRegistry, ExportAlreadyRunning, snapshot as dataset_snapshot, preview as dataset_preview
+
 ROOT = Path(__file__).resolve().parents[1]
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp"}
 CACHE_DIR = ROOT / ".spotterdex-manager-cache"
@@ -270,6 +275,7 @@ class SpotterDexManager:
         self.database_path = self.root / "content" / "spotterdex.sqlite3"
         self.sql_snapshot_path = self.root / "content" / "spotterdex.sql"
         self._database_write_lock = threading.RLock()
+        self.export_jobs = ExportJobRegistry(self.root)
         self.build_jobs = BuildJobRegistry(self, self.root / ".spotterdex-manager-build-jobs.json")
         self.aircraft_dir = self.root / "aircraft"
         self.squadron_dir = self.root / "squadrons"
@@ -4647,6 +4653,26 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
             if manager_path in {f"/{filename}" for filename in MANAGER_STATIC_FILES if filename != "app.html"}:
                 self._send_manager_asset(manager_path.lstrip("/"))
                 return
+            if parsed.path == "/api/dataset-export-jobs":
+                self._send_json(self.context.manager.export_jobs.list_jobs())
+                return
+            if parsed.path.startswith("/api/dataset-export-jobs/"):
+                parts = parsed.path.removeprefix("/api/dataset-export-jobs/").split("/")
+                if len(parts) == 2 and parts[1] == "download":
+                    path = self.context.manager.export_jobs.download_path(parts[0])
+                    with path.open("rb") as handle:
+                        self.send_response(200)
+                        self.send_header("Content-Type", "application/zip")
+                        self.send_header("Content-Disposition", 'attachment; filename="spotterdex-dataset.zip"')
+                        self.send_header("Content-Length", str(path.stat().st_size))
+                        self.send_header("Cache-Control", "no-store")
+                        self.end_headers()
+                        shutil.copyfileobj(handle, self.wfile)
+                elif len(parts) == 1:
+                    self._send_json(self.context.manager.export_jobs.get(parts[0]))
+                else:
+                    self._send_error(HTTPStatus.NOT_FOUND, "Not found")
+                return
             if parsed.path == "/api/build-jobs":
                 self._send_json(self.context.manager.build_jobs.list_jobs())
                 return
@@ -4694,6 +4720,12 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
         try:
             parsed = urlparse(self.path)
             payload = self._read_json()
+            if parsed.path == "/api/dataset-export-preview":
+                self._send_json(dataset_preview(dataset_snapshot(self.context.manager.root, payload)))
+                return
+            if parsed.path == "/api/dataset-export-jobs":
+                self._send_json(self.context.manager.export_jobs.start(payload))
+                return
             if parsed.path in {"/api/build-jobs", "/api/build"}:
                 if payload.get("buildSettings") is not None:
                     payload["buildSettings"] = normalize_build_settings(payload["buildSettings"], strict=True)
@@ -4783,6 +4815,9 @@ class SpotterDexHandler(BaseHTTPRequestHandler):
         self._send_json({"ok": False, "message": message}, status=status)
 
     def _send_exception(self, exc: Exception) -> None:
+        if isinstance(exc, ExportAlreadyRunning):
+            self._send_error(HTTPStatus.CONFLICT, str(exc))
+            return
         if isinstance(exc, BuildAlreadyRunning):
             self._send_json({"ok": False, "code": "build_in_progress", "message": str(exc), "activeJob": exc.active_job}, status=HTTPStatus.CONFLICT)
             return

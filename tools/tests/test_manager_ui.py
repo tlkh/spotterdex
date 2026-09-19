@@ -78,7 +78,7 @@ class ManagerHtmlContractTests(unittest.TestCase):
         tabs = [node["attrs"]["data-tab"] for node in self.html.nodes
                 if "data-tab" in node["attrs"] and any(parent is nav for parent in node["ancestors"])]
         self.assertEqual(len(tabs), len(set(tabs)))
-        self.assertEqual(set(tabs), {"attach", "master", "aircraft-database", "squadron-database", "locations-database", "airshows", "writeups", "bulk-captions", "missing", "quality", "build"})
+        self.assertEqual(set(tabs), {"attach", "master", "aircraft-database", "squadron-database", "locations-database", "airshows", "writeups", "bulk-captions", "missing", "quality", "build", "dataset-export"})
         self.assertEqual(self.html.by_id("workspaceNav")["tag"], "nav")
 
     def test_caption_queue_controls_and_accessible_status(self):
@@ -125,7 +125,7 @@ class ManagerHtmlContractTests(unittest.TestCase):
 class ManagerCaptionBehaviorTests(unittest.TestCase):
     def run_behavior(self, body):
         source = (MANAGER / "app.js").read_text("utf-8")
-        names = ("selectedBulkCaptionCandidates", "currentBulkCaptionQueue", "resetBulkCaptionQueue", "bulkProposalValue", "renderBulkCaptions", "runBulkCaptions", "acceptBulkCaption", "rejectBulkCaption", "masterPhotoMatchesSearch", "refreshManagerAfterSave", "escapeHtml", "thumbUrl", "effectiveEventDate", "airshowEventKey", "canonicalPhotoIdentity", "taggedAirshowGroups", "untaggedAirshowDayGroups", "bulkEventGroups")
+        names = ("selectedBulkCaptionCandidates", "currentBulkCaptionQueue", "resetBulkCaptionQueue", "bulkProposalValue", "bulkCaptionReviewCategory", "bulkCaptionReviewView", "setBulkCaptionReviewFilter", "bulkCaptionFocusedKey", "focusBulkCaptionReview", "renderBulkCaptions", "runBulkCaptions", "acceptBulkCaption", "rejectBulkCaption", "masterPhotoMatchesSearch", "refreshManagerAfterSave", "escapeHtml", "thumbUrl", "effectiveEventDate", "airshowEventKey", "canonicalPhotoIdentity", "taggedAirshowGroups", "untaggedAirshowDayGroups", "bulkEventGroups")
         functions = []
         for name in names:
             match = re.search(r"^    (?:async )?function " + name + r"\([^\n]*\) \{.*?^    \}", source, re.MULTILINE | re.DOTALL)
@@ -133,7 +133,7 @@ class ManagerCaptionBehaviorTests(unittest.TestCase):
             functions.append(match.group(0))
         setup = r'''
             const nodes = {};
-            const $ = id => nodes[id] ||= {value: "", disabled: false, dataset: {}};
+            const $ = id => nodes[id] ||= {value: "", disabled: false, dataset: {}, querySelectorAll: () => [], focus() {document.activeElement = this;}};
             let drafts = [];
             const document = {querySelectorAll: () => drafts};
             const window = {confirm: () => true};

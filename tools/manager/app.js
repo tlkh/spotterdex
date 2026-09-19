@@ -35,6 +35,7 @@
       thumbnailCacheNonce: "",
       bulkCaptions: {
         queue: null,
+        reviewFilter: null,
         results: {},
         running: false,
         stopRequested: false,
@@ -52,7 +53,8 @@
       airshowStoryDirty: false,
       draggedStoryMoment: -1,
       airshowStorySelection: new Set(),
-      airshowPreviewWindow: null
+      airshowPreviewWindow: null,
+      datasetExport: {scope: "all", preview: null, previewPayload: null, job: null, polling: false, timer: null}
     };
     const viewMeta = {
       attach: ["New images", "Select raw images, assign shared metadata, then review and attach."],
@@ -69,7 +71,8 @@
       squadrons: ["Units · Presentation", "Choose squadron featured images and unit logos."],
       "location-heroes": ["Locations · Presentation", "Choose featured images for each catalog location."],
       aircraft: ["Aircraft · Presentation", "Configure aircraft heroes and card widths."],
-      build: ["Build & verify", "Validate and build local output. Commit and push separately to publish."]
+      build: ["Build & verify", "Validate and build local output. Commit and push separately to publish."],
+      "dataset-export": ["Export dataset", "Prepare labelled aircraft photos for VLM prompt optimisation."]
     };
     const workspaceGroups = [
       [["master", "All photos"], ["source-photos", "By source"]],
@@ -355,7 +358,8 @@
         "location-heroes": renderLocationHeroManager,
         squadrons: renderSquadronHeroManager,
         aircraft: renderAircraftSettings,
-        build: renderOrphans
+        build: renderOrphans,
+        "dataset-export": renderDatasetExport
       };
       renderers[state.activeTab]?.();
       if (typeof renderManagerWorkflows === "function") renderManagerWorkflows();
@@ -1685,6 +1689,7 @@
       state.bulkCaptions.queue = null;
       state.bulkCaptions.results = {};
       state.bulkCaptions.stopRequested = false;
+      state.bulkCaptions.reviewFilter = null;
       return true;
     }
 
@@ -1694,12 +1699,61 @@
       return node ? node.value : fallback;
     }
 
+    function bulkCaptionReviewCategory(result) {
+      if (["proposed", "saving"].includes(result?.status)) return "review";
+      if (result?.status === "error") return "failed";
+      if (["accepted", "rejected"].includes(result?.status)) return "completed";
+      return "waiting";
+    }
+
+    function bulkCaptionReviewView(queue, results) {
+      const counts = {review: 0, failed: 0, completed: 0, all: queue.length};
+      for (const candidate of queue) {
+        const category = bulkCaptionReviewCategory(results[candidate.key]);
+        if (category !== "waiting") counts[category] += 1;
+      }
+      if (!["review", "failed", "completed", "all"].includes(state.bulkCaptions.reviewFilter)) state.bulkCaptions.reviewFilter = null;
+      if (!state.bulkCaptions.reviewFilter && counts.review) state.bulkCaptions.reviewFilter = "review";
+      const filter = state.bulkCaptions.reviewFilter || "all";
+      return {filter, counts, visible: queue.filter(candidate => filter === "all" || bulkCaptionReviewCategory(results[candidate.key]) === filter)};
+    }
+
+    function setBulkCaptionReviewFilter(filter) {
+      if (!["review", "failed", "completed", "all"].includes(filter)) return;
+      state.bulkCaptions.reviewFilter = filter;
+      renderBulkCaptions();
+    }
+
+    function bulkCaptionFocusedKey() {
+      const data = document.activeElement?.dataset;
+      return data?.bulkCaptionKey || data?.bulkAccept || data?.bulkReject || data?.bulkCaptionCard;
+    }
+
+    function focusBulkCaptionReview(key, advance = false) {
+      const queue = currentBulkCaptionQueue();
+      const view = bulkCaptionReviewView(queue, state.bulkCaptions.results);
+      const index = queue.findIndex(candidate => candidate.key === key);
+      const ordered = advance ? [...queue.slice(index + 1), ...queue.slice(0, index)] : queue.filter(candidate => candidate.key === key);
+      const next = ordered.find(candidate => state.bulkCaptions.results[candidate.key]?.status === "proposed" && view.visible.includes(candidate));
+      const target = next ? $("caption-proposal-" + next.key) : $("bulkCaptionReviewStatus");
+      target?.focus();
+    }
+
     function renderBulkCaptions() {
-      if (typeof managerDraftsChanged === "function") managerDraftsChanged();
       if (!state.data) return;
       const selection = selectedBulkCaptionCandidates();
       const queue = currentBulkCaptionQueue();
       const results = state.bulkCaptions.results;
+      const reviewView = bulkCaptionReviewView(queue, results);
+      if (typeof managerDraftsChanged === "function") managerDraftsChanged();
+      for (const button of $("bulkCaptionReviewFilters").querySelectorAll("[data-caption-review-filter]")) {
+        const filter = button.dataset.captionReviewFilter;
+        button.setAttribute("aria-pressed", String(filter === reviewView.filter));
+        button.classList.toggle("active", filter === reviewView.filter);
+        $("captionReviewCount-" + filter).textContent = reviewView.counts[filter];
+      }
+      const waiting = queue.length - reviewView.counts.review - reviewView.counts.failed - reviewView.counts.completed;
+      $("bulkCaptionReviewStatus").textContent = `${reviewView.visible.length} shown · ${reviewView.counts.review} need review · ${reviewView.counts.failed} failed · ${reviewView.counts.completed} completed${waiting ? ` · ${waiting} waiting or generating (see All)` : ""}. Save failures stay in Needs review; Retry failed retries generation only.`;
       const usingSavedQueue = state.bulkCaptions.queue !== null;
       const selectedLabel = `${state.bulkCaptions.scope} scope: ${selection.existingPhotoCount} unique existing photo(s), ${selection.candidates.length} eligible photo(s)`;
       const counts = queue.reduce((totals, candidate) => {
@@ -1738,7 +1792,8 @@
       const focused = document.activeElement;
       const focusedKey = focused?.dataset.bulkCaptionKey;
       const selectionRange = focusedKey ? [focused.selectionStart, focused.selectionEnd] : null;
-      $("bulkCaptionList").innerHTML = queue.map((candidate) => {
+      const focusedActionKey = bulkCaptionFocusedKey();
+      $("bulkCaptionList").innerHTML = reviewView.visible.map((candidate) => {
         const result = results[candidate.key] || {status: "ready"};
         const photo = candidate.photo;
         const media = `<img src="${thumbUrl(photo.sourceAssetPath)}" loading="lazy" alt="${escapeHtml(photo.path)}">`;
@@ -1762,13 +1817,13 @@
               <textarea id="caption-proposal-${escapeHtml(candidate.key)}" data-bulk-caption-key="${escapeHtml(candidate.key)}">${escapeHtml(result.caption || "")}</textarea>
             </div>
             <div class="card-actions">
-              <button class="btn secondary" type="button" data-bulk-accept="${escapeHtml(candidate.key)}">Accept Caption</button>
-              <button class="btn ghost" type="button" data-bulk-reject="${escapeHtml(candidate.key)}">Reject</button>
+              <button class="btn secondary" type="button" id="caption-accept-${escapeHtml(candidate.key)}" data-bulk-accept="${escapeHtml(candidate.key)}">Accept Caption</button>
+              <button class="btn ghost" type="button" id="caption-reject-${escapeHtml(candidate.key)}" data-bulk-reject="${escapeHtml(candidate.key)}">Reject</button>
             </div>
           `;
         }
         return `
-          <article class="bulk-caption-card">
+          <article class="bulk-caption-card" id="caption-card-${escapeHtml(candidate.key)}" data-bulk-caption-card="${escapeHtml(candidate.key)}" tabindex="-1" aria-label="${escapeHtml(photo.path)}">
             <div>${media}</div>
             <div class="bulk-caption-content">
               <div class="mini-title">${escapeHtml(photo.path)}</div>
@@ -1781,13 +1836,18 @@
             </div>
           </article>
         `;
-      }).join("");
+      }).join("") || `<div class="empty">${{review: "No captions need review right now. Check All for waiting photos or Failed for generation errors.", failed: "No generation failures. Save failures remain in Needs review.", completed: "No completed reviews yet. Accept or reject a proposal in Needs review."}[reviewView.filter] || "No captions in this view."}</div>`;
       if (focusedKey) {
         const replacement = $("caption-proposal-" + focusedKey);
         if (replacement) {
           replacement.focus({preventScroll: true});
           replacement.setSelectionRange(...selectionRange);
+        } else if (reviewView.visible.some(candidate => candidate.key === focusedKey)) {
+          $("caption-card-" + focusedKey)?.focus({preventScroll: true});
         }
+      } else if (focusedActionKey && reviewView.visible.some(candidate => candidate.key === focusedActionKey)) {
+        const replacement = (focused.id && $(focused.id)) || $("caption-card-" + focusedActionKey);
+        replacement?.focus({preventScroll: true});
       }
     }
 
@@ -1870,7 +1930,9 @@
         result.message = error.message || "Request failed";
         throw error;
       } finally {
+        const retainFocus = bulkCaptionFocusedKey() === key;
         renderBulkCaptions();
+        if (retainFocus) focusBulkCaptionReview(key, result.status === "accepted");
       }
       toast("Caption accepted and marked as AI-assisted.");
       await refreshManagerAfterSave();
@@ -1881,6 +1943,7 @@
       if (!result || result.status !== "proposed") return;
       state.bulkCaptions.results[key] = {status: "rejected"};
       renderBulkCaptions();
+      focusBulkCaptionReview(key, true);
     }
 
     function renderEntryOptions() {
@@ -3753,6 +3816,71 @@
       });
     }
 
+    function datasetExportPhotoIds(scope) {
+      if (scope === "selected") return [...(state.bulkEdit?.master || new Set())];
+      if (scope === "matching") return (state.data?.masterPhotos || []).filter(photo => typeof libraryPhotoMatches === "function" ? libraryPhotoMatches(photo) : masterPhotoMatchesSearch(photo, $("masterSearch").value.trim().toLowerCase())).map(photo => photo.id);
+      return [];
+    }
+
+    function datasetExportPayload() {
+      const scope = $("datasetExportScope")?.value || "all";
+      return {scope, photoIds: datasetExportPhotoIds(scope)};
+    }
+
+    function renderDatasetExportPreview(result) {
+      state.datasetExport.preview = result;
+      const excluded = result.excluded || [];
+      const labels = result.labelCounts || {};
+      const reasons = [...new Set(excluded.map(item => item.reason).filter(Boolean))];
+      $("datasetExportSummary").innerHTML = `<strong>${Number(result.eligible || 0)} eligible of ${Number(result.total || 0)}</strong>${Number(result.defaultLiveryCount || 0) ? ` · ${Number(result.defaultLiveryCount)} default livery` : ""}<details><summary>Label counts (${Object.keys(labels).length})</summary><ul>${Object.entries(labels).map(([key, value]) => `<li>${escapeHtml(key)}: ${escapeHtml(value)}</li>`).join("") || "<li>No label counts</li>"}</ul></details>${reasons.length ? `<details><summary>${excluded.length} excluded</summary><ul>${reasons.map(reason => `<li>${escapeHtml(reason)}</li>`).join("")}</ul></details>` : ""}`;
+      $("startDatasetExportBtn").disabled = !result.eligible || state.datasetExport.job?.status === "running";
+    }
+
+    async function previewDatasetExport() {
+      const button = $("previewDatasetExportBtn"); button.disabled = true; $("datasetExportSummary").textContent = "Checking eligibility…";
+      const payload = datasetExportPayload();
+      const requestKey = JSON.stringify(payload);
+      state.datasetExport.preview = null;
+      $("startDatasetExportBtn").disabled = true;
+      state.datasetExport.previewPayload = requestKey;
+      try { const result = await api("/api/dataset-export-preview", payload); if (state.datasetExport.previewPayload === requestKey && requestKey === JSON.stringify(datasetExportPayload())) renderDatasetExportPreview(result); }
+      catch (error) { $("datasetExportSummary").textContent = error.message; $("startDatasetExportBtn").disabled = true; }
+      finally { button.disabled = false; }
+    }
+
+    function renderDatasetExportJob(job) {
+      state.datasetExport.job = job;
+      const status = job?.status || "";
+      if (!job) { $("datasetExportJobStatus").textContent = ""; return; }
+      const progress = job.total ? ` (${Number(job.completed || 0)}/${Number(job.total)})` : "";
+      $("datasetExportJobStatus").innerHTML = `<strong>${escapeHtml(status)}${progress}</strong>${job.error ? ` · ${escapeHtml(job.error)}` : ""}${job.downloadUrl && status === "succeeded" ? ` · <a class="btn ghost" href="${escapeHtml(job.downloadUrl)}" download>Download ZIP</a>` : ""}`;
+      $("startDatasetExportBtn").disabled = status === "running" || !state.datasetExport.preview?.eligible;
+    }
+
+    async function pollDatasetExportJob(id) {
+      if (!id || state.datasetExport.polling) return;
+      clearTimeout(state.datasetExport.timer);
+      state.datasetExport.polling = true;
+      try {
+        const result = await api(`/api/dataset-export-jobs/${encodeURIComponent(id)}`); renderDatasetExportJob(result.job);
+        if (["running"].includes(result.job?.status)) state.datasetExport.timer = setTimeout(() => { state.datasetExport.polling = false; pollDatasetExportJob(id); }, 1000);
+      } catch (error) { $("datasetExportJobStatus").textContent = `Could not reconnect: ${error.message}. Use Refresh export status to retry.`; }
+      finally { state.datasetExport.polling = false; }
+    }
+
+    async function startDatasetExport() {
+      const button = $("startDatasetExportBtn"); button.disabled = true;
+      const payload = datasetExportPayload();
+      if (!state.datasetExport.preview || state.datasetExport.previewPayload !== JSON.stringify(payload)) { $("datasetExportJobStatus").textContent = "Preview this scope again before exporting."; button.disabled = true; return; }
+      try { const result = await api("/api/dataset-export-jobs", payload); renderDatasetExportJob(result.job); if (result.job?.id) pollDatasetExportJob(result.job.id); }
+      catch (error) { $("datasetExportJobStatus").textContent = error.message; button.disabled = false; }
+    }
+
+    function renderDatasetExport() {
+      const scope = $("datasetExportScope"); if (scope) scope.value = state.datasetExport.scope || "all";
+      const job = state.datasetExport.job; if (job) renderDatasetExportJob(job);
+    }
+
     async function clearBuildCache() {
       const button = $("clearBuildCacheBtn");
       const originalLabel = button.textContent;
@@ -3956,6 +4084,16 @@
       setAssetDrawer(name === "attach");
       renderActiveView();
       if (name === "build" && typeof reconnectManagerBuild === "function") reconnectManagerBuild();
+      if (name === "dataset-export") reconnectDatasetExport();
+    }
+
+    async function reconnectDatasetExport() {
+      try {
+        const result = await api("/api/dataset-export-jobs");
+        const active = result.activeJobId && (result.jobs || []).find(job => job.id === result.activeJobId);
+        const latest = active || (result.jobs || [])[0];
+        if (latest) { renderDatasetExportJob(latest); if (latest.status === "running") pollDatasetExportJob(latest.id); }
+      } catch (error) { $("datasetExportJobStatus").textContent = `Could not reconnect: ${error.message}. Use Refresh export status to retry.`; }
     }
 
     function toast(message) {
@@ -4197,6 +4335,10 @@
         const result = state.bulkCaptions.results[key];
         if (result?.status === "proposed") result.caption = event.target.value;
         if (typeof managerDraftsChanged === "function") managerDraftsChanged();
+      });
+      $("bulkCaptionReviewFilters").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-caption-review-filter]");
+        if (button) setBulkCaptionReviewFilter(button.dataset.captionReviewFilter);
       });
       $("entrySelect").addEventListener("change", () => {
         clearBulkSelection("tagged");
@@ -4522,7 +4664,10 @@
       $("bulkCaptionList").addEventListener("click", (event) => {
         const accept = event.target.closest("[data-bulk-accept]");
         const reject = event.target.closest("[data-bulk-reject]");
-        if (accept) acceptBulkCaption(accept.dataset.bulkAccept).catch((error) => toast(error.message));
+        if (accept) {
+          accept.focus({preventScroll: true});
+          acceptBulkCaption(accept.dataset.bulkAccept).catch((error) => toast(error.message));
+        }
         if (reject) rejectBulkCaption(reject.dataset.bulkReject);
       });
       $("bulkEventList").addEventListener("click", (event) => {
@@ -4682,6 +4827,16 @@
       document.querySelectorAll(".tab").forEach((button) => {
         button.addEventListener("click", () => setTab(button.dataset.tab));
       });
+      $("datasetExportScope")?.addEventListener("change", (event) => {
+        state.datasetExport.scope = event.target.value;
+        state.datasetExport.preview = null;
+        state.datasetExport.previewPayload = null;
+        $("startDatasetExportBtn").disabled = true;
+        $("datasetExportSummary").textContent = "Choose Preview to check eligibility.";
+      });
+      $("previewDatasetExportBtn")?.addEventListener("click", () => previewDatasetExport().catch(error => toast(error.message)));
+      $("reconnectDatasetExportBtn")?.addEventListener("click", reconnectDatasetExport);
+      $("startDatasetExportBtn")?.addEventListener("click", () => startDatasetExport().catch(error => toast(error.message)));
       document.addEventListener("keydown", (event) => {
         if (!event.defaultPrevented && event.key === "Escape" && state.assetsOpen && !$("managerAssetsDialog").open && !$("managerNavDialog").open && !$("assetPreviewModal").open && !$("utilityDrawer").open) {
           setAssetDrawer(false, true);

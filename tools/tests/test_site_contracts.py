@@ -345,6 +345,15 @@ class OfflineMediaExperienceContractTests(unittest.TestCase):
         self.assertIn("await copyText(payload.url)", share_handler.group(1))
         self.assertIn("data-field-guide-share", self.script)
 
+    def test_aircraft_mobile_preview_and_search_scope_are_discoverable(self) -> None:
+        pages = (ROOT / "tools" / "build_pages.py").read_text("utf-8")
+        self.assertIn("Search archive", pages)
+        self.assertIn("aircraft-photo-preview", self.script)
+        self.assertIn("Latest photos", self.script)
+        self.assertIn("Find aircraft, squadrons, locations, airshows, and photos.", self.script)
+        self.assertIn("Try F-15, RJNG, Gifu, or 2026", self.script)
+        self.assertIn(".aircraft-photo-preview", self.styles)
+
 
 def _css_rules() -> list[tuple[str, str]]:
     """Return (selector list, declarations) for every rule in styles.css.
@@ -571,6 +580,29 @@ class ConnectedFieldGuideContractTests(unittest.TestCase):
                 self.assertIn(contract, self.script)
         self.assertIn(".location-frame-rail", self.styles)
         self.assertRegex(self.styles, r"scroll-snap-type\s*:\s*x\s+proximity")
+
+    def test_aircraft_browser_is_inside_photo_hero(self) -> None:
+        detail = self.script.split("function renderAircraftDetail()", 1)[1].split(
+            "function renderAircraftSquadronSection", 1
+        )[0]
+        hero = detail.split("renderDetailHero({", 1)[1].split("})}", 1)[0]
+        self.assertIn("footer: `", hero)
+        self.assertIn('aria-labelledby="aircraftArchiveHeading"', hero)
+        self.assertIn("${archiveGroupPanel}", hero)
+        self.assertEqual(detail.count('id="aircraftArchiveHeading"'), 1)
+        self.assertNotIn("Archive browser</p>", detail)
+        switch = self.script.split("if (dexGroupButton) {", 1)[1].split("return;", 1)[0]
+        self.assertNotIn("scrollIntoView", switch)
+        self.assertIn("preventScroll: true", switch)
+        self.assertIn(".archive-field-guide-hero .squadron-grid", self.styles)
+
+    def test_location_and_squadron_heroes_include_archive_navigation(self) -> None:
+        for name, end in (("renderSquadronDetail", "renderLocationPage"), ("renderLocationPage", "renderFieldGuideBrowser")):
+            detail = self.script.split(f"function {name}()", 1)[1].split(f"function {end}", 1)[0]
+            self.assertIn("archive-field-guide-hero", detail)
+            self.assertIn("footer: renderFieldGuideBrowser", detail)
+        self.assertNotIn('<section class="location-profile-card"', self.script)
+        self.assertIn('id="${escapeAttr(`${galleryKey}-${group.key}`)}"', self.script)
 
     def test_aircraft_hero_and_squadron_rail_follow_archive_context(self) -> None:
         for contract in (

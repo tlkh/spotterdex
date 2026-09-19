@@ -2,6 +2,10 @@
 
 SpotterDex is a dependency-light static aircraft spotting field guide and aviation photography portfolio. It is built for GitHub Pages and served directly from the repository root.
 
+## Contributor documentation
+
+[AGENTS.md](AGENTS.md) is the concise entry point for repository constraints and task-specific references. Detailed contracts live in [catalog maintenance](docs/catalog-maintenance.md), [manager maintenance](docs/manager-maintenance.md), [public app maintenance](docs/public-app-maintenance.md), and [build and deployment](docs/build-and-deployment.md). Use [design.md](design.md) for visual changes and [documentation guidance](docs/documentation.md) when updating agent instructions. This README covers operating the project.
+
 ## Using the public web app
 
 The public site is a read-only field guide; catalog editing happens in the separate local manager below.
@@ -89,6 +93,7 @@ If system Python is missing Pillow or PyYAML and the project virtual environment
 | Catalog → Page write-ups | Edit optional Markdown for aircraft, squadron, and event pages. |
 | Review → Captions / Missing / Quality | Review caption suggestions, resolve missing metadata, or assess source images. |
 | Output → Build & verify | Build local output, inspect logs/changes, back up the database, and clean orphaned generated files. |
+| Output → Export dataset | Package labelled aircraft photographs for VLM prompt optimisation. |
 
 Aircraft, Units, and Locations use local **Details / Presentation** navigation rather than separate database and display-settings sidebar destinations. The manager remembers the active workspace for the browser session.
 
@@ -103,6 +108,16 @@ Aircraft, Units, and Locations use local **Details / Presentation** navigation r
 Successful catalog writes are transactional and refresh `content/spotterdex.sql`; they do not rebuild the public site. **All photos** keeps drafts by photo ID through search, pagination, navigation, and other photo saves. Each editor shows unsaved, saving, saved, or persistent error feedback; failed saves retain the draft. If a record disappears during refresh, its draft remains available for copying or discarding. Reload refreshes catalog data while retaining drafts. Photo, catalog form, write-up, event-story, and caption-review drafts are stored locally in this browser, keyed by repository. A fresh page asks **Restore drafts** or **Discard drafts**; restoration never starts caption generation or saves automatically. **Unsaved work** lists drafts for reopening or discarding, and browser departure warns while work remains. Browser storage can be unavailable or cleared, so it is recovery assistance rather than a catalog backup. Existing-record saves check the revision that the editor started with; conflicts show the saved record beside your proposal and require an explicit review and save. A successful save followed by a failed catalog refresh is reported separately. On narrow screens, the current-destination button opens grouped navigation; raw assets open in a modal panel. Both support Escape and focus restoration. Initial loading and refresh failures provide a persistent Retry catalog load action.
 
 A checked bulk field with a blank value can clear existing metadata, so review the selected fields and photo count before applying.
+
+### VLM dataset export
+
+**Output → Export dataset** creates a ZIP for the prompt-tuning project at `~/GitHub/vlm-prompt-optimisation`. The default scope is every eligible library photo; selected photos and the current library search result set can also be exported. A photo is eligible when it has exactly one aircraft/unit subject pair. Organisation units are included alongside squadrons.
+
+Each image receives four labels: aircraft type, country-qualified squadron or operator, nationality (the unit country), and livery. A blank livery is exported as `standard`. The preview reports eligible and excluded photos, exclusion reasons, label counts, and default-livery usage before the export starts.
+
+The downloaded ZIP contains `labels.csv`, orientation-corrected JPEGs under `images/`, `metadata.json`, `config.yaml`, and a README with loading instructions. Images are capped at 2048 pixels on the long edge and encoded at quality 90. The export is generated in a background job with reconnect-safe progress; it does not modify originals, the catalog, or the VLM project. Failed or interrupted jobs must be explicitly restarted, and the manager retains the three most recent completed exports in the ignored `.spotterdex-manager-exports/` directory. Use **Refresh export status** after a connection loss.
+
+The starter configuration uses offline mock providers; choose real providers in the VLM project before measuring recognition. It creates no session groups or preset splits: the VLM project groups exact duplicates and applies its 60/20/20 split with seed 42. Review rare-label coverage and near-duplicate leakage before interpreting evaluation results.
 
 Removing/detaching a photo removes its catalog record, not the original raw file, and can clear hero references. Generated derivatives may remain until a rebuild and orphan cleanup. Use **Backup Database** before substantial catalog maintenance.
 
@@ -315,8 +330,12 @@ Keep browser tooling/screenshots outside the repository. After public runtime, t
 
 ## Publishing
 
-A Manager build updates local files only. After validation and review, commit the intended changes and push to `origin main` for the normal GitHub Pages deployment. A successful push is the deployment handoff; confirm the Pages deployment completed before treating the live site as updated. `AGENTS.md` contains the full deployment checklist.
+A Manager build updates local files only. After validation and review, commit the intended changes and push to `origin main` for the normal GitHub Pages deployment. A successful push is the deployment handoff; confirm the Pages deployment completed before treating the live site as updated. [Build and deployment](docs/build-and-deployment.md#deployment) contains the full deployment checklist.
 
 Commit the canonical database and SQL snapshot together with generated `data/`, `share/`, `sitemap.xml`, `robots.txt`, `assets/generated/`, and `assets/logos/`, plus `service-worker.js` whenever the build restamps its cache versions. Never commit `raw_assets/`, `.spotterdex-manager-cache/`, `content/backups/`, or the ignored manager-local state files (`.spotterdex-manager-quality.json`, `.spotterdex-manager-quality-settings.json`, `.spotterdex-manager-build-settings.json`).
 
 Keep the site static and preserve visible OpenStreetMap attribution. Do not add map-tile prefetching, hidden attribution, a frontend framework, or a bundler.
+
+## Aircraft 3D reconstruction
+
+The isolated [aircraft-3d sub-project](aircraft-3d/README.md) provides a Codex skill, read-only photo intake, Blender MCP diagnostics, and Blender rendering/export helpers. Its first brief is an F-2A of the 8th Tactical Fighter Squadron. Working models and exports stay local under `aircraft-3d/work/`; the public site and catalog build do not consume them yet.

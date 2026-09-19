@@ -406,7 +406,7 @@
   function ensureGlobalSearch() {
     if (!document.getElementById("mobileGlobalSearchTrigger")) {
       document.body.insertAdjacentHTML("beforeend", `
-        <button class="mobile-global-search-trigger" id="mobileGlobalSearchTrigger" type="button" data-global-search-trigger aria-label="Search SpotterDex" title="Search SpotterDex" aria-keyshortcuts="Control+K Meta+K">
+        <button class="mobile-global-search-trigger" id="mobileGlobalSearchTrigger" type="button" data-global-search-trigger aria-label="Search the SpotterDex archive" title="Search the archive" aria-keyshortcuts="Control+K Meta+K">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <circle cx="11" cy="11" r="7"></circle>
             <path d="m16.5 16.5 4 4"></path>
@@ -422,7 +422,7 @@
             <header class="global-search-heading">
               <div>
                 <p class="eyebrow">Archive search</p>
-                <h2 id="globalSearchTitle">Search SpotterDex</h2>
+                <h2 id="globalSearchTitle">Search the archive</h2>
               </div>
               <button class="global-search-close" type="button" data-global-search-close aria-label="Close search" title="Close search">
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"></path></svg>
@@ -433,13 +433,13 @@
                 <circle cx="11" cy="11" r="7"></circle>
                 <path d="m16.5 16.5 4 4"></path>
               </svg>
-              <input id="globalSearchInput" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Aircraft, squadron, location, airshow, or photo" role="combobox" aria-autocomplete="list" aria-expanded="false">
+              <input id="globalSearchInput" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Try F-15, RJNG, Gifu, or 2026" role="combobox" aria-autocomplete="list" aria-expanded="false">
               <kbd aria-hidden="true">⌘ K</kbd>
             </label>
             <label class="global-search-category" for="globalSearchCategory">Category
               <select id="globalSearchCategory"><option value="">All categories</option>${SEARCH_KIND_ORDER.map((kind) => `<option value="${kind}">${SEARCH_KIND_LABELS[kind]}</option>`).join("")}</select>
             </label>
-            <p class="global-search-summary" id="globalSearchSummary" aria-live="polite">Search the entire SpotterDex.</p>
+            <p class="global-search-summary" id="globalSearchSummary" aria-live="polite">Find aircraft, squadrons, locations, airshows, and photos.</p>
             <div class="global-search-results" id="globalSearchResults" aria-label="Search results"></div>
           </section>
         </div>
@@ -1239,10 +1239,11 @@
     if (!normalizeText(query)) {
       state.searchResults = [];
       state.searchActiveIndex = -1;
-      els.globalSearchSummary.textContent = "Search the entire SpotterDex.";
+      els.globalSearchSummary.textContent = "Find aircraft, squadrons, locations, airshows, and photos.";
       els.globalSearchResults.innerHTML = `
         <div class="global-search-hint">
-          <small>Try an aircraft type, ICAO code, squadron, event, photo title, or date.</small>
+          <span>Search across the archive</span>
+          <small>Try “F-15”, “RJNG”, “Gifu”, or “2026”.</small>
         </div>
       `;
       els.globalSearchInput?.removeAttribute("aria-activedescendant");
@@ -1817,12 +1818,8 @@
           locationId: state.selectedAircraftLocationId
         });
       }
-      const targetId = dexGroupButton.dataset.dexGroupTarget;
-      if (targetId) {
-        window.requestAnimationFrame(() => {
-          document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
-        });
-      }
+      els.aircraftDetail.querySelector(`[data-dex-group="${state.dexGroupMode}"]`)
+        ?.focus({ preventScroll: true });
       return;
     }
 
@@ -4583,11 +4580,12 @@
         photo: hero,
         mark: logo,
         actions: renderFieldGuideActions("Squadron field guide"),
-        className: "squadron-field-guide-hero"
+        className: "squadron-field-guide-hero archive-field-guide-hero",
+        footer: renderFieldGuideBrowser(otherPhotos, "squadron-aircraft-types", squadronLevelPhotos.length ? [{ title: "Squadron photos", target: "squadronTaggedPhotos", count: squadronLevelPhotos.length }] : [])
       })}
       ${renderOfflineMediaCoverage()}
       ${renderPageWriteUp(squadron.writeUp, "About this squadron")}
-      <section class="detail-photo-section squadron-unit-archive squadron-specific-photo-section${otherPhotos.length ? " has-other-sections" : ""}">
+      ${squadronLevelPhotos.length ? `<section id="squadronTaggedPhotos" class="detail-photo-section squadron-unit-archive squadron-specific-photo-section${otherPhotos.length ? " has-other-sections" : ""}">
         <div class="detail-section-heading">
           <div>
             <p class="eyebrow">Aircraft types</p>
@@ -4598,7 +4596,7 @@
         ${squadronLevelPhotos.length
           ? renderDetailPhotoGrid(squadronLevelPhotos, "squadron", "squadron-level")
           : ""}
-      </section>
+      </section>` : ""}
       <section class="detail-photo-section">
         <div class="detail-section-heading">
           <div>
@@ -4641,30 +4639,19 @@
         backLabel: "World Map",
         eyebrow: locationKicker(pin),
         title: pin.name,
-        description: "",
+        description: [profileLabel, photos.length ? `${photos.length} photos` : ""].filter(Boolean).join(" · "),
         image: heroImage,
         alt: `${pin.name} hero photo`,
         photo: profile.heroPhoto,
         actions: renderFieldGuideActions("Location field guide"),
-        className: "location-field-guide-hero"
+        className: "location-field-guide-hero archive-field-guide-hero",
+        footer: renderFieldGuideBrowser(otherPhotos, "location-aircraft-types", locationPhotos.length ? [{ title: "Location photos", target: "locationTaggedPhotos", count: locationPhotos.length }] : [], identityMarks)
       })}
       ${renderOfflineMediaCoverage()}
-      <section class="location-profile-card" aria-label="Location profile">
-        <div class="location-profile-card-title">
-          <p class="eyebrow">Location profile</p>
-          <h2>${escapeHtml(profileLabel)}</h2>
-        </div>
-        <div class="location-profile-card-marks">
-          ${identityMarks}
-        </div>
-        <dl class="detail-overview-stats location-profile-card-stats" aria-label="Location statistics">
-          ${photos.length ? archiveStat("Photos", photos.length) : ""}
-        </dl>
-      </section>
       ${renderPageWriteUp(pin.writeUp, "About this location")}
       ${
         locationPhotos.length
-          ? `<section class="detail-photo-section location-specific-photo-section${otherPhotos.length ? " has-other-sections" : ""}">
+          ? `<section id="locationTaggedPhotos" class="detail-photo-section location-specific-photo-section${otherPhotos.length ? " has-other-sections" : ""}">
               ${renderDetailPhotoGrid(locationPhotos, "location", "location-tagged", { hidePhotoSubject: true })}
             </section>`
           : ""
@@ -4680,6 +4667,38 @@
       </section>
     `;
     scheduleOfflineMediaCoverageRefresh();
+  }
+
+  function renderFieldGuideBrowser(photos, galleryKey, extraGroups = [], marks = "") {
+    const groups = [
+      ...extraGroups,
+      ...aircraftTypePhotoGroups(photos).map((group) => ({
+        title: group.title,
+        target: `${galleryKey}-${group.key}`,
+        count: group.photos.length
+      }))
+    ];
+    if (!groups.length && !marks) return "";
+    return `
+      <section class="detail-overview-card aircraft-archive-browser" aria-label="Browse photos">
+        <div class="detail-overview-toolbar">
+          <div class="detail-overview-title"><h2>Browse photos</h2></div>
+          ${marks ? `<div class="field-guide-identity-marks">${marks}</div>` : ""}
+        </div>
+        <div class="aircraft-archive-results">
+          <div class="squadron-grid">
+            ${groups.map((group) => `
+              <button class="squadron-row aircraft-location-row is-clickable" type="button"
+                data-aircraft-photo-target="${escapeAttr(group.target)}"
+                aria-label="Show ${escapeAttr(group.title)}${group.title.endsWith("photos") ? "" : " photos"}">
+                <span class="aircraft-location-copy"><strong>${escapeHtml(group.title)}</strong><span>${group.count} photo${group.count === 1 ? "" : "s"}</span></span>
+                <span class="count-pill">${group.count}</span>
+              </button>
+            `).join("")}
+          </div>
+        </div>
+      </section>
+    `;
   }
 
   function renderFieldGuideActions(label) {
@@ -5350,14 +5369,11 @@
         alt: `${entry.typeName} hero photo`,
         photo: cover,
         actions: renderFieldGuideActions("Aircraft field guide"),
-        className: "aircraft-field-guide-hero"
-      })}
-      ${renderOfflineMediaCoverage()}
-      ${renderPageWriteUp(entry.writeUp, "About this aircraft")}
+        className: "aircraft-field-guide-hero archive-field-guide-hero",
+        footer: `
       <section class="detail-overview-card aircraft-archive-browser" aria-labelledby="aircraftArchiveHeading">
         <div class="detail-overview-toolbar">
           <div class="detail-overview-title">
-            <p class="eyebrow">Archive browser</p>
             <h2 id="aircraftArchiveHeading">Browse photos</h2>
           </div>
           <div class="segmented" role="radiogroup" aria-label="Organize aircraft photos">
@@ -5367,6 +5383,20 @@
         </div>
         ${archiveGroupPanel}
       </section>
+        `
+      })}
+      ${photos.length ? `
+        <section class="aircraft-photo-preview" aria-labelledby="aircraftPhotoPreviewHeading">
+          <div class="aircraft-photo-preview-heading">
+            <h2 id="aircraftPhotoPreviewHeading">Latest photos</h2>
+            <a href="#aircraftPhotoArchive">View all ${photos.length}</a>
+          </div>
+          ${renderProgressivePhotoGrid(photos.slice(0, 4), "dex", `dex-preview-${entry.id}`, "aircraft-photo-preview-grid")}
+        </section>
+      ` : ""}
+      ${renderOfflineMediaCoverage()}
+      ${renderPageWriteUp(entry.writeUp, "About this aircraft")}
+
 
       <section class="detail-photo-section" id="aircraftPhotoArchive">
         <span id="${state.dexGroupMode === "location" ? "aircraftLocationPhotos" : "aircraftUnitPhotos"}" class="aircraft-photo-anchor" aria-hidden="true"></span>
@@ -5685,7 +5715,7 @@
     return `
       <div class="aircraft-type-photo-groups${groups.length === 1 ? " is-single-group" : ""}">
         ${groups.map((group, index) => `
-          <section class="aircraft-type-photo-group">
+          <section class="aircraft-type-photo-group" id="${escapeAttr(`${galleryKey}-${group.key}`)}">
             <div class="group-header">
               <div>
                 ${group.eyebrow ? `<p class="eyebrow">${escapeHtml(group.eyebrow)}</p>` : ""}
@@ -5756,8 +5786,9 @@
 
   function renderPhotoCard(photo, context, options = {}) {
     const label = `${photoSubjectLabel(photo)} at ${photo.locationName}`;
+    const caption = `${photoCaptionLocation(photo)}, ${displayPhotoDate(photo)}`;
     return `
-      <button class="photo-card" type="button" data-photo-id="${escapeAttr(photo.id)}" data-photo-context="${escapeAttr(context)}" aria-label="Open ${escapeAttr(label)}">
+      <button class="photo-card has-location-date-caption" type="button" data-photo-id="${escapeAttr(photo.id)}" data-photo-context="${escapeAttr(context)}" aria-label="Open ${escapeAttr(label)}">
         ${renderResponsivePhotoImage(photo, label, {
           sizes: options.fullResolution
             ? "100vw"
@@ -5765,13 +5796,7 @@
           fullResolution: options.fullResolution === true
         })}
         <span class="photo-body">
-          ${options.hidePhotoSubject ? "" : `<strong>${escapeHtml(photoSubjectLabel(photo))}</strong>`}
-          ${photo.livery ? `<span class="photo-livery">${escapeHtml(photo.livery)}</span>` : ""}
-          <span class="photo-meta">
-            <span class="photo-context">${escapeHtml(photoContextLabel(photo))}</span>
-            <span class="photo-meta-separator" aria-hidden="true"> - </span>
-            <span class="photo-date">${escapeHtml(displayPhotoDate(photo))}</span>
-          </span>
+          <strong class="photo-location-date-caption">${escapeHtml(caption)}</strong>
         </span>
       </button>
     `;
@@ -7929,6 +7954,11 @@
 
   function photoContextLabel(photo) {
     return photo.squadronName || (photo.tagScope === "location" ? photo.locationName : photo.unitLabel || "Unassigned");
+  }
+
+  function photoCaptionLocation(photo) {
+    const pin = photo?.pinId ? state.pinById.get(String(photo.pinId)) : null;
+    return normalizeIcao(pin?.icao) || photo.locationName || "Unknown location";
   }
 
   function photoTagScopeLabel(tagScope) {
