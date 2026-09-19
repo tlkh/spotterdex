@@ -335,7 +335,3 @@ A Manager build updates local files only. After validation and review, commit th
 Commit the canonical database and SQL snapshot together with generated `data/`, `share/`, `sitemap.xml`, `robots.txt`, `assets/generated/`, and `assets/logos/`, plus `service-worker.js` whenever the build restamps its cache versions. Never commit `raw_assets/`, `.spotterdex-manager-cache/`, `content/backups/`, or the ignored manager-local state files (`.spotterdex-manager-quality.json`, `.spotterdex-manager-quality-settings.json`, `.spotterdex-manager-build-settings.json`).
 
 Keep the site static and preserve visible OpenStreetMap attribution. Do not add map-tile prefetching, hidden attribution, a frontend framework, or a bundler.
-
-## Aircraft 3D reconstruction
-
-The isolated [aircraft-3d sub-project](aircraft-3d/README.md) provides a Codex skill, read-only photo intake, Blender MCP diagnostics, and Blender rendering/export helpers. Its first brief is an F-2A of the 8th Tactical Fighter Squadron. Working models and exports stay local under `aircraft-3d/work/`; the public site and catalog build do not consume them yet.

@@ -15,7 +15,6 @@ This organization follows OpenAI's [Rethinking skills and prompts for GPT-6 Astr
 | Verification commands, CI expectations, publishing, and commit scope | [Build and deployment](build-and-deployment.md) |
 | User workflows and command walkthroughs | [Project README](../PROJECT_README.md) |
 | Visual design decisions | [Design system](../design.md) |
-| Aircraft reconstruction constraints and commands | [Scoped instructions](../aircraft-3d/AGENTS.md) and [README](../aircraft-3d/README.md) |
 | Completed implementation proposals | [Historical plans](../plans/README.md) |
 
 The maintenance guides preserve the detailed contracts formerly in the root `AGENTS.md`. Moving a contract does not relax it. Keep user-facing descriptions consistent with those contracts and update links when moving sections. Paths and shell commands in maintenance guides are relative to the repository root; Markdown links are relative to the containing document.

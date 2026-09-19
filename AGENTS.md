@@ -14,7 +14,6 @@ Read the relevant guide when working on that area; unrelated guides are not prer
 | Builds, verification, CI, commits, or deployment | [Build and deployment](docs/build-and-deployment.md) |
 | Visual design, typography, tokens, or motion | [Design system](design.md) |
 | Authoring commands and user-facing workflows | [Project README](PROJECT_README.md) |
-| Aircraft reconstruction under `aircraft-3d/` | [Scoped instructions](aircraft-3d/AGENTS.md) and [commands](aircraft-3d/README.md) |
 
 ## Repository boundaries
 
@@ -24,7 +23,7 @@ Read the relevant guide when working on that area; unrelated guides are not prer
 - The five top-level HTML pages come from `tools/build_pages.py` and `tools/page_templates/`. Service-worker cache versions are builder-stamped. Edit the sources and regenerate.
 - Public code is classic JavaScript with no frontend framework, bundler, or runtime database. Manager sources under `tools/manager/` and `tools/spotterdex_manager.py` are separate from the public runtime.
 - New styling uses `tokens.css` and the locked `design.md` system. Preserve semantic controls, keyboard access, responsive layouts, and visible OpenStreetMap attribution. Do not download offline map tiles or prefetch them.
-- Preserve unrelated worktree changes. Never stage ignored manager state, raw sources, backups, browser artifacts, or local 3D working assets.
+- Preserve unrelated worktree changes. Never stage ignored manager state, raw sources, backups, or browser artifacts.
 
 ## Completion and verification
 
