@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-16T14:10:38+00:00",
+  "generatedAt": "2026-09-21T12:38:48+00:00",
   "entities": {
     "countries": {
       "au": {
@@ -692,7 +692,7 @@
         "name": "No. 2 Squadron",
         "countryId": "au",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/au-no-2-squadron.png",
         "heroPhotoId": "2024-09-29-dsc09753-enhanced-nr",
         "writeUp": ""
       },
@@ -701,7 +701,7 @@
         "name": "No. 36 Squadron",
         "countryId": "au",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/au-36-squadron.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -728,7 +728,7 @@
         "name": "COMAC",
         "countryId": "china",
         "kind": "organisation",
-        "logo": "",
+        "logo": "assets/logos/china-comac.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -755,7 +755,7 @@
         "name": "Escadron de Chasse 1/4 Gascogne",
         "countryId": "fr",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/fr-escadron-de-chasse-1-4.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -782,7 +782,7 @@
         "name": "14\u00b0 Stormo",
         "countryId": "it",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/it-14-stormo.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -800,7 +800,7 @@
         "name": "46\u00aa Brigata Aerea",
         "countryId": "it",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/it-46-brigata-aerea.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -809,7 +809,7 @@
         "name": "6\u00b0 Stormo",
         "countryId": "it",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/it-6-stormo.png",
         "heroPhotoId": "2023-08-10-italy-f35-1",
         "writeUp": ""
       },
@@ -818,7 +818,7 @@
         "name": "8\u00b0 Gruppo",
         "countryId": "it",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/it-8-gruppo.png",
         "heroPhotoId": "2023-08-04-italy-kc767-3",
         "writeUp": ""
       },
@@ -827,7 +827,7 @@
         "name": "15th Brigade",
         "countryId": "jp",
         "kind": "organisation",
-        "logo": "",
+        "logo": "assets/logos/jp-15th-brigade.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -962,7 +962,7 @@
         "name": "51st Fleet Air Squadron",
         "countryId": "jp",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/jp-51st-fleet-air-squadron.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1025,7 +1025,7 @@
         "name": "Air Development Squadron 51 (VX-51)",
         "countryId": "jp",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/jp-vx-51.png",
         "heroPhotoId": "2023-09-09-up3c-2",
         "writeUp": ""
       },
@@ -1079,7 +1079,7 @@
         "name": "Air Transport Squadron 61",
         "countryId": "jp",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/jp-air-transport-squadron-61.png",
         "heroPhotoId": "2023-09-09-jmsdf-c130-2",
         "writeUp": ""
       },
@@ -1124,7 +1124,7 @@
         "name": "New Central Air Service",
         "countryId": "jp",
         "kind": "organisation",
-        "logo": "",
+        "logo": "assets/logos/jp-new-central-air-service.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1151,7 +1151,7 @@
         "name": "Black Eagles",
         "countryId": "kr",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/kr-black-eagles.png",
         "heroPhotoId": "2024-02-18-dsc05211-enhanced-nr",
         "writeUp": ""
       },
@@ -1169,7 +1169,7 @@
         "name": "Malaysia Airlines",
         "countryId": "my",
         "kind": "organisation",
-        "logo": "",
+        "logo": "assets/logos/my-malaysian-airlines.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1178,7 +1178,7 @@
         "name": "No. 5 Squadron",
         "countryId": "nz",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/nz-no-5-squadron.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1187,7 +1187,7 @@
         "name": "111 Squadron",
         "countryId": "sg",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/sg-111-squadron.png",
         "heroPhotoId": "2023-05-23-dsc09899-enhanced-nr",
         "writeUp": ""
       },
@@ -1214,7 +1214,7 @@
         "name": "121 Squadron",
         "countryId": "sg",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/sg-121-squadron.png",
         "heroPhotoId": "2023-07-17-dsc07416-enhanced-nr",
         "writeUp": ""
       },
@@ -1232,7 +1232,7 @@
         "name": "149 Squadron",
         "countryId": "sg",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/sg-149-squadron.png",
         "heroPhotoId": "2023-07-29-dsc08780-enhanced-nr",
         "writeUp": ""
       },
@@ -1277,7 +1277,7 @@
         "name": "Antonov Airlines",
         "countryId": "ukraine",
         "kind": "organisation",
-        "logo": "",
+        "logo": "assets/logos/ukraine-antonov-airlines.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1295,7 +1295,7 @@
         "name": "23rd Bomb Squadron",
         "countryId": "us",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/us-23rd-bomb-squadron.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1322,7 +1322,7 @@
         "name": "35th Fighter Wing",
         "countryId": "us",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/us-35th-fighter-wing.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1331,7 +1331,7 @@
         "name": "36th Airlift Squadron",
         "countryId": "us",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/us-36th-airlift-squadron.png",
         "heroPhotoId": "2023-11-29-dsc09870-enhanced-nr",
         "writeUp": ""
       },
@@ -1349,7 +1349,7 @@
         "name": "45th Reconnaissance Squadron",
         "countryId": "us",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/us-45th-reconnaissance-squadron.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1358,7 +1358,7 @@
         "name": "55th Wing",
         "countryId": "us",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/us-55th-wing.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1367,7 +1367,7 @@
         "name": "62nd Airlift Wing",
         "countryId": "us",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/us-62nd-airlift-wing.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1376,7 +1376,7 @@
         "name": "77th Air Refueling Squadron (77 ARS)",
         "countryId": "us",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/us-77th-air-refueling-squadron-77-ars.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1394,7 +1394,7 @@
         "name": "909th Air Refueling Squadron",
         "countryId": "us",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/us-909th-air-refueling-squadron.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1430,7 +1430,7 @@
         "name": "Fleet Logistics Support Squadron 51 (VR-51)",
         "countryId": "us",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/us-vr-51.png",
         "heroPhotoId": "2023-09-23-usn-clipper-2",
         "writeUp": ""
       },
@@ -1439,7 +1439,7 @@
         "name": "Fleet Logistics Support Squadron 57 (VR-57)",
         "countryId": "us",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/us-vr-57.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1448,7 +1448,7 @@
         "name": "Heavy Helicopter Squadron 464 (HMH-464)",
         "countryId": "us",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/us-hmh-464-heavy-helicopter-squadron.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1457,7 +1457,7 @@
         "name": "Helicopter Maritime Strike Squadron 51 (HSM-51)",
         "countryId": "us",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/us-hsm-51.png",
         "heroPhotoId": "2023-09-23-usn-seahawk-1",
         "writeUp": ""
       },
@@ -1493,7 +1493,7 @@
         "name": "Marine Medium Tiltrotor Squadron 265 (VMM-265)",
         "countryId": "us",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/us-marine-medium-tiltrotor-squadron-265-vmm-265.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1502,7 +1502,7 @@
         "name": "Metrea",
         "countryId": "us",
         "kind": "organisation",
-        "logo": "",
+        "logo": "assets/logos/us-metrea.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1511,7 +1511,7 @@
         "name": "Patrol Squadron 16 (VP-16)",
         "countryId": "us",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/us-patrol-squadron-16-vp-16.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1520,7 +1520,7 @@
         "name": "Patrol Squadron 30 (VP-30)",
         "countryId": "us",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/us-patrol-squadron-30-vp-30.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
@@ -1538,7 +1538,7 @@
         "name": "USAF Special Operations Command",
         "countryId": "us",
         "kind": "squadron",
-        "logo": "",
+        "logo": "assets/logos/us-usaf-special-operations-command.png",
         "heroPhotoId": "",
         "writeUp": ""
       },
