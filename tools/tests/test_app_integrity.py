@@ -207,6 +207,10 @@ class GeneratedPublicAssetTests(unittest.TestCase):
 
     def test_manifest_icons_and_sitemap_targets_exist(self) -> None:
         web_manifest = json.loads((ROOT / "manifest.webmanifest").read_text("utf-8"))
+        shortcuts = {shortcut["name"]: shortcut["url"] for shortcut in web_manifest.get("shortcuts", [])}
+        self.assertEqual(web_manifest["start_url"], "./index.html")
+        self.assertEqual(shortcuts.get("Home"), "./index.html")
+        self.assertEqual(shortcuts.get("World Map"), "./map.html")
         for icon in web_manifest["icons"]:
             self.assertTrue((ROOT / icon["src"]).is_file(), icon["src"])
         for shortcut in web_manifest.get("shortcuts", []):
@@ -218,6 +222,7 @@ class GeneratedPublicAssetTests(unittest.TestCase):
         locations = [node.text or "" for node in sitemap.findall("sm:url/sm:loc", namespace)]
         self.assertGreater(len(locations), len(PUBLIC_PAGES))
         site_prefix = "https://tlkh.github.io/spotterdex/"
+        self.assertIn(site_prefix + "map.html", locations)
         for location in locations:
             self.assertTrue(location.startswith(site_prefix), location)
             relative = location[len(site_prefix):]

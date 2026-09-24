@@ -36,7 +36,8 @@
     }
   ],
   "shortcuts": [
-    { "name": "World Map", "url": "./index.html", "icons": [{ "src": "assets/icons/spotterdex-app-icon-192.png", "sizes": "192x192" }] },
+    { "name": "Home", "url": "./index.html", "icons": [{ "src": "assets/icons/spotterdex-app-icon-192.png", "sizes": "192x192" }] },
+    { "name": "World Map", "url": "./map.html", "icons": [{ "src": "assets/icons/spotterdex-app-icon-192.png", "sizes": "192x192" }] },
     { "name": "Aircraft Dex", "url": "./aircraft-dex.html", "icons": [{ "src": "assets/icons/spotterdex-app-icon-192.png", "sizes": "192x192" }] },
     { "name": "Squadrons", "url": "./squadrons.html", "icons": [{ "src": "assets/icons/spotterdex-app-icon-192.png", "sizes": "192x192" }] }
   ]

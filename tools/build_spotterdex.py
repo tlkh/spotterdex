@@ -60,6 +60,7 @@ SITE_NAME = "SpotterDex"
 # Top-level pages included in the generated sitemap, with a relative importance hint.
 SITEMAP_TOP_PAGES = (
     ("", "1.0"),
+    ("map.html", "0.9"),
     ("aircraft-dex.html", "0.9"),
     ("squadrons.html", "0.9"),
     ("airshows.html", "0.8"),
@@ -1215,8 +1216,8 @@ def social_preview_document(record: Dict[str, Any], site_url: str, entity_id: st
         "aircraft": "aircraft-dex.html",
         "squadron": "squadrons.html",
         "airshow": "airshows.html",
-        "location": "index.html",
-        "photo": "index.html",
+        "location": "map.html",
+        "photo": "map.html",
     }.get(kind, "index.html")
     app_link = f"../../../{page_path}#{record['fragment']}"
     app_link_attr = html.escape(app_link, quote=True)

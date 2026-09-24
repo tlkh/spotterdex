@@ -4,7 +4,7 @@ Repository paths and commands below are relative to the repository root. See [ag
 
 ## Presentation layer
 
-The five top-level pages are **generated**, not hand-maintained. `tools/build_pages.py` owns the shared `<head>`, header, and navigation; `tools/page_templates/*.html` holds the per-page body. `build_pages()` runs at the end of every site build, so hand-edits to `index.html`, `aircraft-dex.html`, `squadrons.html`, `airshows.html`, or `stats.html` are silently reverted on the next rebuild. Change the generator or the template instead.
+The six top-level pages are **generated**, not hand-maintained. `tools/build_pages.py` owns the shared `<head>`, header, navigation, and homepage portfolio cards; `tools/page_templates/*.html` holds the per-page body. The homepage selection lives in `tools/homepage_selection.json` and its photo metadata comes from `data/spotterdex.json`. `build_pages()` runs at the end of every site build, so hand-edits to `index.html`, `map.html`, `aircraft-dex.html`, `squadrons.html`, `airshows.html`, or `stats.html` are silently reverted on the next rebuild. Change the generator, selection, or template instead.
 
 Two head details are load-bearing and are covered by tests in `tools/tests/test_site_contracts.py`:
 
@@ -13,7 +13,7 @@ Two head details are load-bearing and are covered by tests in `tools/tests/test_
 
 Styling is split between `tokens.css` (the semantic palette, spacing scale, and the three permitted eases) and `styles.css` (the page rules). `design.md` is the locked design system and describes the intended genre, palette, typography, motion, and mobile stance. `styles.css` still carries historical raw hex colours and `cubic-bezier()` curves; the ratchet test in `tools/tests/test_site_contracts.py` allows the current counts to fall but never rise, so new work must use tokens.
 
-The public runtime uses classic scripts, not modules or a bundler. `script.js` owns shared state, navigation/history, search, archive filtering/pagination, and the photo viewer. `map-page.js`, `airshows-page.js`, and `stats-page.js` contain route-only renderers and load immediately before `script.js` on their respective pages. Aircraft and squadron renderers remain shared. Guard map-only calls in shared resize/reconnect handlers: those functions do not exist on other pages. Keep the local manager's sources separate.
+The public runtime uses classic scripts, not modules or a bundler. `script.js` owns shared state, navigation/history, search, archive filtering/pagination, and the photo viewer. `map-page.js`, `airshows-page.js`, and `stats-page.js` contain route-only renderers and load immediately before `script.js` on `map.html`, `airshows.html`, and `stats.html` respectively. The homepage portfolio is generated into `index.html` and uses the shared viewer. Aircraft and squadron renderers remain shared. Guard map-only calls in shared resize/reconnect handlers: those functions do not exist on other pages. Keep the local manager's sources separate.
 
 `plans/` holds completed motion and layout improvement plans, kept for history; current source and this guide take precedence over historical proposals.
 
@@ -46,9 +46,10 @@ Rules:
 
 Deep links:
 
-- `index.html#location=<location-id>`
-- `index.html#location=<location-id>&detail=1`
-- `index.html#photo=<photo-id>`
+- `index.html#work=<photo-id>` opens a selected homepage photograph.
+- `map.html#location=<location-id>`
+- `map.html#location=<location-id>&detail=1`
+- `map.html#photo=<photo-id>`
 - `aircraft-dex.html#aircraft=<aircraft-id>`
 - `aircraft-dex.html#family=fighter|helicopter|light|medium|heavy`
 - `squadrons.html#squadron=<unit-id>`
@@ -57,7 +58,7 @@ Deep links:
 - `airshows.html#year=<YYYY>` (or `year=unknown`)
 - `stats.html#stats=summary|exif`
 
-Legacy URLs are intentionally unsupported after the clean-break v2 migration.
+Old `index.html#location=…` and `index.html#photo=…` links forward to the matching `map.html` route. Other legacy URLs are unsupported after the clean-break v2 migration.
 
 ## Public-app interaction maintenance
 

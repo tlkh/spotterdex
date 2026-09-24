@@ -10,6 +10,7 @@ from tools import build_pages
 from tools.build_spotterdex import (
     BuildWarningLog,
     latest_photo_date,
+    social_preview_document,
     stable_generated_at,
     stamp_service_worker,
     write_text_if_changed,
@@ -75,7 +76,7 @@ class GeneratedPageContractTests(unittest.TestCase):
 
     def test_route_only_scripts_load_before_the_shared_runtime(self) -> None:
         expected = {
-            "index.html": "map-page.js",
+            "map.html": "map-page.js",
             "airshows.html": "airshows-page.js",
             "stats.html": "stats-page.js",
         }
@@ -88,6 +89,71 @@ class GeneratedPageContractTests(unittest.TestCase):
                     self.assertLess(document.index(route_script), document.index("script.js"))
                 for other_script in set(expected.values()) - {route_script}:
                     self.assertNotIn(f'<script src="{other_script}" defer></script>', document)
+
+    def test_home_and_map_are_distinct_routes_with_map_assets_only_on_map(self) -> None:
+        home = build_pages.render_page("index.html", ROOT)
+        map_page = build_pages.render_page("map.html", ROOT)
+        self.assertIn('<body data-page-view="homeView">', home)
+        self.assertIn('<body data-page-view="mapView">', map_page)
+        self.assertIn('<script src="map-page.js" defer></script>', map_page)
+        self.assertNotIn('<script src="map-page.js" defer></script>', home)
+        self.assertNotIn("leaflet@", home)
+        self.assertIn("leaflet@", map_page)
+        self.assertIn('href="map.html"', home)
+        self.assertIn('href="index.html"', map_page)
+
+    def test_home_hero_links_to_map_and_aircraft_archive(self) -> None:
+        home = build_pages.render_page("index.html", ROOT)
+        hero = home.split('<div class="portfolio-hero">', 1)[1].split(
+            '<figure class="portfolio-photo portfolio-photo--hero">', 1
+        )[0]
+        self.assertIn('<nav class="portfolio-discover" aria-label="Explore the archive">', hero)
+        self.assertIn('<a href="map.html">World Map', hero)
+        self.assertIn('<a href="aircraft-dex.html">Aircraft Dex', hero)
+
+    def test_homepage_selection_renders_seven_valid_photo_links_and_catalog_metadata(self) -> None:
+        config = json.loads((ROOT / "tools" / "homepage_selection.json").read_text("utf-8"))
+        manifest = json.loads((ROOT / "data" / "spotterdex.json").read_text("utf-8"))
+        photos = manifest["entities"]["photos"]
+        home = build_pages.render_page("index.html", ROOT)
+        selected_ids = [config["hero"], *config["selected"]]
+        self.assertEqual(len(selected_ids), 7)
+        self.assertEqual(len(set(selected_ids)), 7)
+        self.assertEqual(home.count('data-work-photo="'), 7)
+        for photo_id in selected_ids:
+            with self.subTest(photo=photo_id):
+                self.assertIn(f'href="#work={photo_id}" data-work-photo="{photo_id}"', home)
+                self.assertIn(photos[photo_id]["image"], home)
+        hero = photos[config["hero"]]
+        self.assertIn(f'<meta property="og:image" content="https://tlkh.github.io/spotterdex/{hero["image"]}">', home)
+        self.assertIn(hero["caption"], home)
+
+    def test_homepage_selection_rejects_duplicate_and_missing_photo_ids(self) -> None:
+        manifest = json.loads((ROOT / "data" / "spotterdex.json").read_text("utf-8"))
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "tools").mkdir()
+            (root / "data").mkdir()
+            (root / "data" / "spotterdex.json").write_text(json.dumps(manifest), encoding="utf-8")
+            duplicate = {"hero": "hero-id", "selected": ["one", "two", "three", "four", "five", "hero-id"]}
+            config_path = root / "tools" / "homepage_selection.json"
+            config_path.write_text(json.dumps(duplicate), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "seven distinct"):
+                build_pages._read_portfolio(root)
+            missing = {"hero": "not-in-catalog", "selected": ["one", "two", "three", "four", "five", "six"]}
+            config_path.write_text(json.dumps(missing), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "missing from data/spotterdex.json"):
+                build_pages._read_portfolio(root)
+
+    def test_photo_and_location_share_pages_open_on_the_world_map(self) -> None:
+        cases = (
+            ({"kind": "photo", "title": "F-15J", "description": "Sunset pass", "image": "photo.jpg", "fragment": "photo=photo-id"}, "../../../map.html#photo=photo-id"),
+            ({"kind": "location", "title": "Gifu", "description": "Air base", "image": "photo.jpg", "fragment": "location=gifu&detail=1"}, "../../../map.html#location=gifu&amp;detail=1"),
+        )
+        for record, expected in cases:
+            with self.subTest(kind=record["kind"]):
+                page = social_preview_document(record, "https://tlkh.github.io/spotterdex/", "example")
+                self.assertIn(f'href="{expected}"', page)
 
     def test_route_renderers_are_not_shipped_in_the_shared_script(self) -> None:
         shared = (ROOT / "script.js").read_text("utf-8")
@@ -244,7 +310,7 @@ class MobileViewerLayoutContractTests(unittest.TestCase):
         )
 
     def test_mobile_map_header_groups_location_search_and_fit_controls(self) -> None:
-        document = build_pages.render_page("index.html", ROOT)
+        document = build_pages.render_page("map.html", ROOT)
         group = re.search(r'<div class="mobile-map-control-group">(.*?)</div>', document, re.DOTALL)
         self.assertIsNotNone(group)
         controls = group.group(1)
@@ -400,6 +466,7 @@ class ServiceWorkerContractTests(unittest.TestCase):
     def test_shell_caches_runtime_icons_and_route_scripts_not_install_artwork(self) -> None:
         paths = self._shell_paths()
         for runtime_asset in (
+            "map.html",
             "map-page.js",
             "stats-page.js",
             "airshows-page.js",

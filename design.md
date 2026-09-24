@@ -11,6 +11,10 @@ Atmospheric app UI with a technical, utilitarian voice.
 
 ## Macrostructure family
 
+- Home portfolio: cinematic, edge-to-edge photographic sequence — the
+  photographer's name, selected-work link, and discreet Map/Aircraft links sit
+  on the opening image, while section labels and minimal captions sit on the
+  selected work. Photography supplies the visual variety; the interface recedes.
 - Map: Workbench — map canvas with a persistent control rail.
 - Archive pages: Index-First — compact page lead followed by the working index.
 - Airshows: Long Document / timeline — chronology is the primary navigation.
@@ -52,10 +56,16 @@ targets, and safe-area-aware padding.
 - Animate transform and opacity; keep focus rings instant.
 - Reduced motion collapses spatial motion to an opacity-only transition of no
   more than 150ms.
+- The home overlay may enter once with a short opacity/translation cue; keep
+  photographs still while scrolling and limit link motion to fine-pointer hover.
 
 ## Mobile interaction stance
 
-- Five-item fixed bottom tab bar is the primary navigation.
+- Five-item fixed bottom tab bar is the primary navigation: Home, Map,
+  Aircraft, Airshows, and More. More gives direct access to Squadrons and Stats.
+- Home opens with Timothy Liu's name over a full-bleed photograph, followed by
+  a gapless single-column selected-work sequence. Selected photographs use the shared
+  viewer and preserve keyboard focus on return.
 - Collection views open with a compact title and inline totals; detail views use
   a contextual title/back bar. Do not add a second persistent collection title
   above the sticky working controls.

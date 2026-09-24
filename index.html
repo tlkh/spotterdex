@@ -8,30 +8,25 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="SpotterDex">
-    <title>SpotterDex</title>
-    <meta name="description" content="SpotterDex is an aircraft spotting logbook and aviation photography portfolio.">
+    <title>Timothy Liu | Aviation Photographer | SpotterDex</title>
+    <meta name="description" content="Aviation photography by Timothy Liu. Explore selected work and the SpotterDex archive.">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="SpotterDex">
     <meta property="og:locale" content="en_SG">
-    <meta property="og:title" content="SpotterDex - Timothy&#x27;s Logbook">
-    <meta property="og:description" content="An aircraft spotting logbook and aviation photography field guide.">
-    <meta property="og:image" content="https://tlkh.github.io/spotterdex/assets/generated/photos/location-hero-gifu-air-base.jpg">
-    <meta property="og:image:secure_url" content="https://tlkh.github.io/spotterdex/assets/generated/photos/location-hero-gifu-air-base.jpg">
-    <meta property="og:image:width" content="2560">
-    <meta property="og:image:height" content="1707">
-    <meta property="og:image:alt" content="Aircraft formation over Gifu Air Base in Japan">
+    <meta property="og:title" content="Timothy Liu | Aviation Photographer">
+    <meta property="og:description" content="Selected aviation photography by Timothy Liu, from air bases and airports across Asia.">
+    <meta property="og:image" content="https://tlkh.github.io/spotterdex/assets/generated/photos/2025-12-09-204-sunset.jpg">
+    <meta property="og:image:secure_url" content="https://tlkh.github.io/spotterdex/assets/generated/photos/2025-12-09-204-sunset.jpg">
+    <meta property="og:image:width" content="2048">
+    <meta property="og:image:height" content="1536">
+    <meta property="og:image:alt" content="Mitsubishi F-15J Eagle from the 204th Tactical Fighter Squadron landing at Naha Air Base in Okinawa, Japan at sunset">
     <meta property="og:url" content="https://tlkh.github.io/spotterdex/">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="SpotterDex - Timothy&#x27;s Logbook">
-    <meta name="twitter:description" content="An aircraft spotting logbook and aviation photography field guide.">
-    <meta name="twitter:image" content="https://tlkh.github.io/spotterdex/assets/generated/photos/location-hero-gifu-air-base.jpg">
-    <meta name="twitter:image:alt" content="Aircraft formation over Gifu Air Base in Japan">
+    <meta name="twitter:title" content="Timothy Liu | Aviation Photographer">
+    <meta name="twitter:description" content="Selected aviation photography by Timothy Liu, from air bases and airports across Asia.">
+    <meta name="twitter:image" content="https://tlkh.github.io/spotterdex/assets/generated/photos/2025-12-09-204-sunset.jpg">
+    <meta name="twitter:image:alt" content="Mitsubishi F-15J Eagle from the 204th Tactical Fighter Squadron landing at Naha Air Base in Okinawa, Japan at sunset">
     <link rel="canonical" href="https://tlkh.github.io/spotterdex/">
-    <link rel="preconnect" href="https://unpkg.com" crossorigin>
-    <link rel="preconnect" href="https://tiles.openfreemap.org" crossorigin>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" media="print" onload="this.media='all'">
-    <noscript><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""></noscript>
-    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css" media="print" onload="this.media='all'">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/spotterdex-favicon-32.png">
     <link rel="apple-touch-icon" sizes="180x180" type="image/png" href="assets/icons/spotterdex-apple-touch-icon-v4.png">
     <link rel="apple-touch-startup-image" href="assets/generated/startup/spotterdex-startup-320x568@2x-portrait.png?v1" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
@@ -82,134 +77,80 @@
     <link rel="stylesheet" href="tokens.css">
     <link rel="stylesheet" href="styles.css">
     <script src="data/spotterdex-core.js" defer></script>
-    <script src="map-page.js" defer></script>
     <script src="script.js" defer></script>
   </head>
-  <body data-page-view="mapView">
+  <body data-page-view="homeView">
     <a class="skip-link" href="#main">Skip to content</a>
 
     <header class="site-header">
-      <div class="brand">
-        <button class="brand-mark" id="fitPinsIconButton" type="button" aria-label="Fit all map locations" title="Fit all map locations">
-          <img src="assets/icons/spotterdex-ui-icon-64.png" alt="">
-        </button>
-        <a class="brand-copy" href="index.html" aria-label="SpotterDex home">
-          <span class="brand-title">SpotterDex</span>
-          <span class="brand-subtitle">Timothy's Logbook</span>
-        </a>
-      </div>
-
+      <a class="brand" href="index.html" aria-label="SpotterDex home">
+        <span class="brand-mark" aria-hidden="true"><img src="assets/icons/spotterdex-ui-icon-64.png" alt=""></span>
+        <span><span class="brand-title">SpotterDex</span><span class="brand-subtitle">Timothy's Logbook</span></span>
+      </a>
       <nav class="tab-nav" aria-label="Main views">
-        <a class="tab-button is-active" href="index.html" aria-current="page">World Map</a>
-        <a class="tab-button" href="aircraft-dex.html">Aircraft Dex</a>
-        <a class="tab-button" href="squadrons.html">Squadrons</a>
+        <a class="tab-button is-active" href="index.html" aria-current="page">Home</a>
+        <a class="tab-button" href="map.html">Map</a>
+        <a class="tab-button" href="aircraft-dex.html">Aircraft</a>
         <a class="tab-button" href="airshows.html">Airshows</a>
+        <a class="tab-button" href="squadrons.html">Squadrons</a>
         <a class="tab-button" href="stats.html">Stats</a>
       </nav>
-
       <div class="header-actions">
         <button class="header-global-search-trigger" type="button" data-global-search-trigger aria-label="Search the SpotterDex archive" title="Search the archive" aria-keyshortcuts="Control+K Meta+K"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="m16.5 16.5 4 4"></path></svg><span>Search archive</span><kbd aria-hidden="true">⌘K</kbd></button>
-        <button class="header-fit-button" type="button" id="fitPinsButton" aria-label="Fit all map locations" title="Fit all map locations">
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="globe-earth-land" d="M21.54 15H17a2 2 0 0 0-2 2v4.54"></path><path class="globe-earth-land" d="M7 3.34V5a3 3 0 0 0 3 3 2 2 0 0 1 2 2c0 1.1.9 2 2 2a2 2 0 0 0 2-2c0-1.1.9-2 2-2h3.17"></path><path class="globe-earth-land" d="M11 21.95V18a2 2 0 0 0-2-2 2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2H2.05"></path><circle class="globe-earth-outline" cx="12" cy="12" r="10"></circle></svg>
-        </button>
         <select class="nav-select" id="viewSelect" aria-label="Main view">
-          <option value="index.html" selected>World Map</option>
-          <option value="aircraft-dex.html">Aircraft Dex</option>
-          <option value="squadrons.html">Squadrons</option>
+          <option value="index.html" selected>Home</option>
+          <option value="map.html">Map</option>
+          <option value="aircraft-dex.html">Aircraft</option>
           <option value="airshows.html">Airshows</option>
+          <option value="squadrons.html">Squadrons</option>
           <option value="stats.html">Stats</option>
         </select>
       </div>
-
-      <div class="mobile-map-header" aria-label="Map location controls">
-        <button class="mobile-map-brand" type="button" id="mobileMapFitButton" aria-label="Fit all map locations" title="Fit all map locations">
-          <span class="mobile-map-location-mark" aria-hidden="true">
-            <img src="assets/icons/spotterdex-ui-icon-64.png" alt="">
-          </span>
-          <span class="mobile-map-brand-copy">
-            <strong>SpotterDex</strong>
-            <small>Timothy's Logbook</small>
-          </span>
-        </button>
-        <div class="mobile-map-control-group">
-          <button class="mobile-map-location-card" type="button" data-map-panel-toggle="locations" aria-controls="mapControlPanel" aria-expanded="false">
-            <span class="mobile-map-location-copy">
-              <span>Locations</span>
-              <strong id="mobileMapLocationTitle">Browse locations</strong>
-            </span>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg>
-          </button>
-          <button class="header-global-search-trigger" type="button" data-global-search-trigger aria-label="Search the SpotterDex archive" title="Search the archive" aria-keyshortcuts="Control+K Meta+K"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="m16.5 16.5 4 4"></path></svg><span>Search archive</span><kbd aria-hidden="true">⌘K</kbd></button>
-          <button class="header-fit-button mobile-map-fit-button" type="button" id="mobileMapHeaderFitButton" aria-label="Fit all map locations" title="Fit all map locations">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="globe-earth-land" d="M21.54 15H17a2 2 0 0 0-2 2v4.54"></path><path class="globe-earth-land" d="M7 3.34V5a3 3 0 0 0 3 3 2 2 0 0 1 2 2c0 1.1.9 2 2 2a2 2 0 0 0 2-2c0-1.1.9-2 2-2h3.17"></path><path class="globe-earth-land" d="M11 21.95V18a2 2 0 0 0-2-2 2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2H2.05"></path><circle class="globe-earth-outline" cx="12" cy="12" r="10"></circle></svg>
-          </button>
-        </div>
-      </div>
     </header>
 
-    <main class="app-shell" id="main">
-      <section class="view is-active" id="mapView" data-view>
-        <div class="workspace map-workspace">
-          <button class="mobile-map-photos-card" type="button" data-map-panel-toggle="results" aria-controls="mapResults" aria-expanded="false" aria-label="Open photos for the selected location" disabled>
-            <img id="mobileMapPhotoPreview" alt="" hidden>
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="3.5" y="5" width="17" height="14" rx="2"></rect>
-              <circle cx="9" cy="10" r="1.5"></circle>
-              <path d="m5.5 17 4.2-4 3.1 2.6 2.5-2.2 3.2 3.6"></path>
-            </svg>
-            <strong id="mobileMapPhotoCount">0</strong>
-            <span>Photos</span>
-            <small id="mobileMapPhotoLocation">No location selected</small>
-          </button>
-          <div class="mobile-map-location-nav" aria-label="Recent location navigation">
-            <button type="button" data-location-nav="older" aria-label="Older recent location" title="Older recent location" disabled>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m14.5 5-7 7 7 7"></path></svg>
-            </button>
-            <button type="button" data-location-nav="newer" aria-label="Newer recent location" title="Newer recent location" disabled>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9.5 5 7 7-7 7"></path></svg>
-            </button>
-          </div>
-          <button class="map-panel-toggle map-panel-toggle-locations" type="button" data-map-panel-toggle="locations" aria-controls="mapControlPanel" aria-expanded="false">Locations</button>
-          <button class="map-panel-toggle map-panel-toggle-results" type="button" data-map-panel-toggle="results" aria-controls="mapResults" aria-expanded="false">Photos</button>
-          <button class="map-panel-backdrop" type="button" data-map-panel-close aria-label="Close map panel"></button>
-          <div class="map-panel-coach" id="mapPanelCoach" role="status" hidden>
-            <p>Tap <strong>Locations</strong> to browse pins, or select a marker to open <strong>Photos</strong>.</p>
-            <button class="plain-button map-panel-coach-dismiss" type="button" id="mapPanelCoachDismiss">Got it</button>
-          </div>
-          <aside class="control-panel" id="mapControlPanel" aria-label="Locations and collection summary">
-            <div class="map-sheet-bar">
-              <button class="map-sheet-handle" type="button" data-sheet-handle="map" aria-label="Expand Locations panel" aria-expanded="false"></button>
-              <strong>Locations</strong>
-              <button class="map-sheet-close" type="button" data-map-panel-close aria-label="Close Locations panel">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
-              </button>
+    <main class="app-shell home-shell" id="main">
+      <section class="view is-active portfolio-home" id="homeView" data-view aria-labelledby="portfolioTitle">
+        <div class="portfolio-inner">
+          <div class="portfolio-hero">
+            <div class="portfolio-lead">
+              <div class="portfolio-title-block">
+                <h1 id="portfolioTitle">Timothy Liu</h1>
+                <p>Aviation photographer</p>
+              </div>
+              <div class="portfolio-hero-actions">
+                <a class="portfolio-enter" href="#selected-work">View selected work <span aria-hidden="true">↓</span></a>
+                <nav class="portfolio-discover" aria-label="Explore the archive">
+                  <a href="map.html">World Map <span aria-hidden="true">↗</span></a>
+                  <a href="aircraft-dex.html">Aircraft Dex <span aria-hidden="true">↗</span></a>
+                </nav>
+              </div>
             </div>
-            <div class="stat-grid" aria-label="Collection summary">
-              <div><span class="stat-value" id="aircraftCount">0</span><span class="stat-label">Aircraft types</span></div>
-              <div><span class="stat-value" id="photoCount">0</span><span class="stat-label">Photos</span></div>
-              <div><span class="stat-value" id="locationCount">0</span><span class="stat-label">Locations</span></div>
-            </div>
-            <label class="field-label" for="locationSearch">Find a location</label>
-            <input class="search-input" id="locationSearch" type="search" autocomplete="off" placeholder="Location, ICAO, aircraft or unit">
-            <div class="panel-heading">
-              <h2 id="locationListHeading">Recent Locations</h2>
-              <button class="plain-button" type="button" id="fitPinsPanelButton" aria-label="Fit all map locations">Fit All</button>
-            </div>
-            <div class="map-result-summary"><span id="locationResultCount">0 locations</span><button class="plain-button" id="clearLocationFilters" type="button" hidden>Clear filters</button></div>
-            <div class="location-list" id="locationList" aria-live="polite"></div>
-          </aside>
-          <div class="map-column">
-            <section class="map-stage" aria-label="World map with aircraft spotting pins">
-              <div class="world-map" id="worldMap" role="region" aria-label="Interactive world map of aircraft spotting locations" aria-describedby="mapKeyboardHelp"></div>
-              <p class="visually-hidden" id="mapKeyboardHelp">Use the location list to select a pin. Map controls support zooming and panning.</p>
-              <p class="map-fallback" id="mapFallback" hidden><span id="mapFallbackMessage">Map tiles require a connection. Cached locations remain available.</span><button class="plain-button" id="retryMapButton" type="button">Retry map</button><a href="aircraft-dex.html">Browse Aircraft Dex</a></p>
-            </section>
-            <section class="results-panel" id="mapResults" aria-live="polite"></section>
+<figure class="portfolio-photo portfolio-photo--hero"><a class="portfolio-photo-link" href="#work=2025-12-09-204-sunset" data-work-photo="2025-12-09-204-sunset" aria-label="View photograph: Mitsubishi F-15J Eagle from the 204th Tactical Fighter Squadron landing at Naha Air Base in Okinawa, Japan at sunset"><img src="assets/generated/photos/2025-12-09-204-sunset.jpg" sizes="100vw" width="2048" height="1536" alt="Mitsubishi F-15J Eagle from the 204th Tactical Fighter Squadron landing at Naha Air Base in Okinawa, Japan at sunset" loading="eager" fetchpriority="high" decoding="async"></a><figcaption><span class="portfolio-photo-caption">Mitsubishi F-15J Eagle</span><span class="portfolio-photo-meta">Naha Air Base · 2025</span></figcaption></figure>
           </div>
+
+          <section class="portfolio-selection" id="selected-work" aria-labelledby="selectedWorkTitle">
+            <div class="portfolio-section-heading">
+              <h2 id="selectedWorkTitle">Selected work</h2>
+            </div>
+            <div class="portfolio-work">
+<figure class="portfolio-photo portfolio-photo--selected"><a class="portfolio-photo-link" href="#work=2026-02-03-rsaf-apache-flare" data-work-photo="2026-02-03-rsaf-apache-flare" aria-label="View photograph: RSAF Apache from 120 SQN deploying flares at Singapore Airshow 2026."><img src="assets/generated/thumbs/2026-02-03-rsaf-apache-flare.jpg" srcset="assets/generated/thumbs/2026-02-03-rsaf-apache-flare.jpg 768w, assets/generated/photos/2026-02-03-rsaf-apache-flare.jpg 2048w" sizes="100vw" width="768" height="576" alt="RSAF Apache from 120 SQN deploying flares at Singapore Airshow 2026." loading="lazy" decoding="async"></a><figcaption><span class="portfolio-photo-caption">Boeing AH-64D Apache Longbow</span><span class="portfolio-photo-meta">Changi Exhibition Center · 2026</span></figcaption></figure>
+<figure class="portfolio-photo portfolio-photo--selected"><a class="portfolio-photo-link" href="#work=2025-11-30-trio-jasdf-8tfs" data-work-photo="2025-11-30-trio-jasdf-8tfs" aria-label="View photograph: Three Mitsubishi F-2A aircraft from the 8th Tactical Fighter Squadron fly in formation at Tsuiki Air Base."><img src="assets/generated/thumbs/2025-11-30-trio-jasdf-8tfs.jpg" srcset="assets/generated/thumbs/2025-11-30-trio-jasdf-8tfs.jpg 768w, assets/generated/photos/2025-11-30-trio-jasdf-8tfs.jpg 2048w" sizes="100vw" width="768" height="576" alt="Three Mitsubishi F-2A aircraft from the 8th Tactical Fighter Squadron fly in formation at Tsuiki Air Base." loading="lazy" decoding="async"></a><figcaption><span class="portfolio-photo-caption">Mitsubishi F-2A</span><span class="portfolio-photo-meta">Tsuiki Air Base · 2025</span></figcaption></figure>
+<figure class="portfolio-photo portfolio-photo--selected"><a class="portfolio-photo-link" href="#work=2024-05-30-dsc03647-enhanced-nr" data-work-photo="2024-05-30-dsc03647-enhanced-nr" aria-label="View photograph: E-4B landing in Singapore at night"><img src="assets/generated/thumbs/2024-05-30-dsc03647-enhanced-nr.jpg" srcset="assets/generated/thumbs/2024-05-30-dsc03647-enhanced-nr.jpg 768w, assets/generated/photos/2024-05-30-dsc03647-enhanced-nr.jpg 2048w" sizes="100vw" width="768" height="512" alt="E-4B landing in Singapore at night" loading="lazy" decoding="async"></a><figcaption><span class="portfolio-photo-caption">Boeing E-4B Nightwatch</span><span class="portfolio-photo-meta">Singapore · 2024</span></figcaption></figure>
+<figure class="portfolio-photo portfolio-photo--selected"><a class="portfolio-photo-link" href="#work=2024-08-21-dsc08019-enhanced-nr" data-work-photo="2024-08-21-dsc08019-enhanced-nr" aria-label="View photograph: 203 TFS 60th Anniversary Special Livery during an Airshow Rehearsal"><img src="assets/generated/thumbs/2024-08-21-dsc08019-enhanced-nr.jpg" srcset="assets/generated/thumbs/2024-08-21-dsc08019-enhanced-nr.jpg 768w, assets/generated/photos/2024-08-21-dsc08019-enhanced-nr.jpg 2048w" sizes="100vw" width="768" height="512" alt="203 TFS 60th Anniversary Special Livery during an Airshow Rehearsal" loading="lazy" decoding="async"></a><figcaption><span class="portfolio-photo-caption">Mitsubishi F-15J Eagle</span><span class="portfolio-photo-meta">Chitose Air Base · 2024</span></figcaption></figure>
+<figure class="portfolio-photo portfolio-photo--selected"><a class="portfolio-photo-link" href="#work=2025-04-17-n742ck" data-work-photo="2025-04-17-n742ck" aria-label="View photograph: Kalitta Air Boeing 747-400F N742CK taking off from Hong Kong International Airport"><img src="assets/generated/thumbs/2025-04-17-n742ck.jpg" srcset="assets/generated/thumbs/2025-04-17-n742ck.jpg 768w, assets/generated/photos/2025-04-17-n742ck.jpg 2048w" sizes="100vw" width="768" height="576" alt="Kalitta Air Boeing 747-400F N742CK taking off from Hong Kong International Airport" loading="lazy" decoding="async"></a><figcaption><span class="portfolio-photo-caption">Boeing 747-400(F)</span><span class="portfolio-photo-meta">Hong Kong International Airport · 2025</span></figcaption></figure>
+<figure class="portfolio-photo portfolio-photo--selected"><a class="portfolio-photo-link" href="#work=2023-05-23-dsc00126-enhanced-nr" data-work-photo="2023-05-23-dsc00126-enhanced-nr" aria-label="View photograph: RSAF A330 MRTT banking after take-off at sunset"><img src="assets/generated/thumbs/2023-05-23-dsc00126-enhanced-nr.jpg" srcset="assets/generated/thumbs/2023-05-23-dsc00126-enhanced-nr.jpg 768w, assets/generated/photos/2023-05-23-dsc00126-enhanced-nr.jpg 2048w" sizes="100vw" width="768" height="512" alt="RSAF A330 MRTT banking after take-off at sunset" loading="lazy" decoding="async"></a><figcaption><span class="portfolio-photo-caption">Airbus A330 MRTT</span><span class="portfolio-photo-meta">Singapore · 2023</span></figcaption></figure>
+            </div>
+          </section>
+
+          <nav class="portfolio-explore" aria-label="Explore SpotterDex">
+            <h2>Explore SpotterDex</h2>
+            <a href="map.html"><span>World Map</span><span aria-hidden="true">↗</span></a>
+            <a href="aircraft-dex.html"><span>Aircraft Dex</span><span aria-hidden="true">↗</span></a>
+            <a href="airshows.html"><span>Airshows</span><span aria-hidden="true">↗</span></a>
+          </nav>
+
+          <footer class="portfolio-footer"><span>Photography by Timothy Liu</span><span>SpotterDex</span></footer>
         </div>
-      </section>
-      <section class="view detail-view" id="locationDetailView" data-view hidden>
-        <article class="detail-page" id="locationDetail" aria-live="polite"></article>
       </section>
     </main>
   </body>

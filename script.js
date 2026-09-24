@@ -68,10 +68,12 @@
   let mobileShellEventsBound = false;
   let viewerEventsBound = false;
   let serviceWorkerEventsBound = false;
+  let mobileMoreReturnFocus = null;
   const motionControllers = new WeakMap();
   const PAGE_ROUTES = {
-    mapView: "index.html",
-    locationDetailView: "index.html",
+    homeView: "index.html",
+    mapView: "map.html",
+    locationDetailView: "map.html",
     dexView: "aircraft-dex.html",
     aircraftDetailView: "aircraft-dex.html",
     squadronsView: "squadrons.html",
@@ -204,7 +206,8 @@
     detailReturnContext: null,
     dexHeroSignature: "",
     lastHandledHistoryUrl: "",
-    isApplyingHash: false
+    isApplyingHash: false,
+    mobileMoreOpen: false
   };
 
   const els = {};
@@ -212,6 +215,7 @@
   document.addEventListener("DOMContentLoaded", init);
 
   async function init() {
+    if (redirectLegacyMapDeepLink()) return;
     ensureAppToast();
     ensureGlobalSearch();
     ensureAppUpdatePrompt();
@@ -303,7 +307,18 @@
   }
 
   function currentPageViewId() {
-    return document.body.dataset.pageView || document.querySelector("[data-view]")?.id || "mapView";
+    return document.body.dataset.pageView || document.querySelector("[data-view]")?.id || "homeView";
+  }
+
+  function redirectLegacyMapDeepLink() {
+    if (currentPageViewId() !== "homeView") return false;
+    const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    if (!params.has("location") && !params.has("photo")) return false;
+    const destination = new URL("map.html", document.baseURI);
+    destination.search = window.location.search;
+    destination.hash = window.location.hash;
+    window.location.replace(destination.href);
+    return true;
   }
 
   function pageRouteForView(viewId) {
@@ -500,12 +515,18 @@
     `);
     document.body.insertAdjacentHTML("beforeend", `
       <nav class="mobile-tab-bar" id="mobileTabBar" aria-label="Primary navigation">
-        ${mobileTabLink("mapView", "index.html", "Map", '<path class="globe-earth-land" d="M21.54 15H17a2 2 0 0 0-2 2v4.54"></path><path class="globe-earth-land" d="M7 3.34V5a3 3 0 0 0 3 3 2 2 0 0 1 2 2c0 1.1.9 2 2 2a2 2 0 0 0 2-2c0-1.1.9-2 2-2h3.17"></path><path class="globe-earth-land" d="M11 21.95V18a2 2 0 0 0-2-2 2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2H2.05"></path><circle class="globe-earth-outline" cx="12" cy="12" r="10"></circle>')}
+        ${mobileTabLink("homeView", "index.html", "Home", '<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"></path>')}
+        ${mobileTabLink("mapView", "map.html", "Map", '<circle cx="12" cy="12" r="10"></circle><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"></path>')}
         ${mobileTabLink("dexView", "aircraft-dex.html", "Aircraft", '<path d="M3 13.5 10 11V5.5a2 2 0 0 1 4 0V11l7 2.5v2l-7-.8V19l2 1v1l-4-1-4 1v-1l2-1v-4.3l-7 .8Z"></path>')}
         ${mobileTabLink("squadronsView", "squadrons.html", "Squadrons", '<circle cx="12" cy="10" r="8"></circle><path class="squadron-patch-compass" d="M12 3v4M4.5 10h3M16.5 10h3"></path><path class="squadron-patch-eagle" d="M12 10.5C10 7.8 7.8 6.8 5 7c.8 3 2.8 5 6 6l-1.8 3 2.8-1 2.8 1-1.8-3c3.2-1 5.2-3 6-6-2.8-.2-5 .8-7 3.5Z"></path><path d="M5 17.5 3.5 20 8 21l4-1 4 1 4.5-1-1.5-2.5"></path>')}
-        ${mobileTabLink("airshowsView", "airshows.html", "Airshows", '<path class="airshow-formation-trails" d="M12 9.2v9.2M7 15.2V22M17 15.2V22"></path><g class="airshow-formation-jets"><path transform="translate(12 5) scale(.68)" d="M0-4c.8 0 1.1.8 1.1 2v2l4.2 2v1.5l-4.2-.9v2l1.5 1v.9L0 5.8l-2.6.7v-.9l1.5-1v-2l-4.2.9V2l4.2-2v-2c0-1.2.3-2 1.1-2Z"></path><path transform="translate(7 11) scale(.68)" d="M0-4c.8 0 1.1.8 1.1 2v2l4.2 2v1.5l-4.2-.9v2l1.5 1v.9L0 5.8l-2.6.7v-.9l1.5-1v-2l-4.2.9V2l4.2-2v-2c0-1.2.3-2 1.1-2Z"></path><path transform="translate(17 11) scale(.68)" d="M0-4c.8 0 1.1.8 1.1 2v2l4.2 2v1.5l-4.2-.9v2l1.5 1v.9L0 5.8l-2.6.7v-.9l1.5-1v-2l-4.2.9V2l4.2-2v-2c0-1.2.3-2 1.1-2Z"></path></g>')}
-        ${mobileTabLink("statsView", "stats.html", "Stats", '<path d="M4 20V10h4v10M10 20V4h4v16M16 20v-7h4v7M3 20h18"></path>')}
+        <button class="mobile-more-button" id="mobileMoreButton" type="button" aria-haspopup="dialog" aria-controls="mobileMoreSheet" aria-expanded="false" data-mobile-tab-view="more"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="19" cy="12" r="1.5"></circle></svg><span>More</span></button>
       </nav>
+      <button class="mobile-more-backdrop" id="mobileMoreBackdrop" type="button" aria-label="Close menu" hidden></button>
+      <section class="mobile-more-sheet" id="mobileMoreSheet" role="dialog" aria-modal="true" aria-label="More SpotterDex pages" hidden>
+        <button class="mobile-more-close" id="mobileMoreClose" type="button" aria-label="Close menu">Close</button>
+        <a href="airshows.html" data-mobile-more-view="airshowsView">Airshows</a>
+        <a href="stats.html" data-mobile-more-view="statsView">Stats</a>
+      </section>
       <div class="mobile-install-prompt" id="mobileInstallPrompt" hidden>
         <img src="assets/icons/spotterdex-app-icon-192.png" alt="">
         <span><strong>Install SpotterDex</strong><small>Open it from your home screen.</small></span>
@@ -524,6 +545,96 @@
         <span>${label}</span>
       </a>
     `;
+  }
+
+  function handleMobileTabNavigation(event) {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button) return;
+    const link = event.currentTarget;
+    if (link.dataset.mobileTabView === "more") {
+      event.preventDefault();
+      openMobileMoreMenu();
+      return;
+    }
+    prepareMobileRouteNavigation(event, link);
+  }
+
+  function handleMobileMoreNavigation(event) {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button) return;
+    closeMobileMoreMenu({restoreFocus: false});
+    prepareMobileRouteNavigation(event, event.currentTarget);
+  }
+
+  function prepareMobileRouteNavigation(event, link) {
+    const targetView = link.dataset.mobileTabView || link.dataset.mobileMoreView;
+    if (!targetView) return;
+    const activeView = document.querySelector("[data-view].is-active")?.id || currentPageViewId();
+    if (navigationViewFor(activeView) === targetView) {
+      event.preventDefault();
+      if (activeView !== targetView) {
+        handleMobileContextBack();
+      } else {
+        window.scrollTo({top: 0, behavior: isReducedMotion() ? "auto" : "smooth"});
+      }
+      return;
+    }
+    saveCurrentSessionState();
+    const saved = readPageSessionState(targetView);
+    let destination = new URL(link.getAttribute("href"), document.baseURI);
+    if (saved?.url) {
+      try {
+        const savedUrl = new URL(saved.url);
+        const expectedPath = new URL(pageRouteForView(targetView), document.baseURI).pathname;
+        if (savedUrl.origin === window.location.origin && savedUrl.pathname === expectedPath) {
+          destination = savedUrl;
+        }
+      } catch (error) {
+        // Use the tab's root URL when saved session data is malformed.
+      }
+    }
+    link.href = destination.href;
+  }
+
+  function openMobileMoreMenu() {
+    if (!els.mobileMoreSheet || state.mobileMoreOpen) return;
+    mobileMoreReturnFocus = document.activeElement && typeof document.activeElement.focus === "function"
+      ? document.activeElement
+      : els.mobileMoreButton;
+    state.mobileMoreOpen = true;
+    els.mobileMoreSheet.hidden = false;
+    if (els.mobileMoreBackdrop) els.mobileMoreBackdrop.hidden = false;
+    els.mobileMoreButton?.setAttribute("aria-expanded", "true");
+    document.body.classList.add("is-mobile-more-open");
+    setMobileMoreBackgroundInert(true);
+    window.requestAnimationFrame(() => els.mobileMoreClose?.focus({preventScroll: true}));
+  }
+
+  function closeMobileMoreMenu(options = {}) {
+    if (!state.mobileMoreOpen && !els.mobileMoreSheet?.hidden) return;
+    state.mobileMoreOpen = false;
+    if (els.mobileMoreSheet) els.mobileMoreSheet.hidden = true;
+    if (els.mobileMoreBackdrop) els.mobileMoreBackdrop.hidden = true;
+    els.mobileMoreButton?.setAttribute("aria-expanded", "false");
+    document.body.classList.remove("is-mobile-more-open");
+    setMobileMoreBackgroundInert(false);
+    const returnFocus = mobileMoreReturnFocus;
+    mobileMoreReturnFocus = null;
+    if (options.restoreFocus !== false && returnFocus?.isConnected) {
+      returnFocus.focus({preventScroll: true});
+    }
+  }
+
+  function setMobileMoreBackgroundInert(isInert) {
+    [
+      els.siteHeader,
+      els.main,
+      els.mobileTabBar,
+      els.mobileGlobalSearchTrigger,
+      els.appUpdatePrompt,
+      els.mobileInstallPrompt,
+      els.iosInstallHint
+    ].forEach((element) => {
+      if (element) element.inert = Boolean(isInert);
+    });
   }
 
   function cacheElements() {
@@ -627,6 +738,11 @@
     els.mobileContextTitle = document.getElementById("mobileContextTitle");
     els.mobileTabBar = document.getElementById("mobileTabBar");
     els.mobileTabLinks = document.querySelectorAll("[data-mobile-tab-view]");
+    els.mobileMoreButton = document.getElementById("mobileMoreButton");
+    els.mobileMoreBackdrop = document.getElementById("mobileMoreBackdrop");
+    els.mobileMoreSheet = document.getElementById("mobileMoreSheet");
+    els.mobileMoreClose = document.getElementById("mobileMoreClose");
+    els.mobileMoreLinks = document.querySelectorAll("[data-mobile-more-view]");
     els.mobileConnectivity = document.getElementById("mobileConnectivity");
     els.mobileInstallPrompt = document.getElementById("mobileInstallPrompt");
     els.mobileInstallButton = document.getElementById("mobileInstallButton");
@@ -793,6 +909,9 @@
     els.mobileMapBrand?.addEventListener("click", () => fitMapToPins());
     els.mobileContextBack?.addEventListener("click", handleMobileContextBack);
     els.mobileTabLinks?.forEach((link) => link.addEventListener("click", handleMobileTabNavigation));
+    els.mobileMoreClose?.addEventListener("click", () => closeMobileMoreMenu());
+    els.mobileMoreBackdrop?.addEventListener("click", () => closeMobileMoreMenu());
+    els.mobileMoreLinks?.forEach((link) => link.addEventListener("click", handleMobileMoreNavigation));
     els.mobileInstallButton?.addEventListener("click", installSpotterDex);
     els.mobileInstallDismiss?.addEventListener("click", dismissInstallPrompt);
     els.mobileMapLocationNav?.addEventListener("click", (event) => {
@@ -1604,6 +1723,9 @@
         updateMapPanelState();
         updateMapPanelCoach();
       }
+      if (!window.matchMedia(MOBILE_MAP_MEDIA_QUERY).matches) {
+        closeMobileMoreMenu({restoreFocus: false});
+      }
       updateViewerInfoState();
       updateMobileAppChrome();
       cancelGesturesForGeometryChange();
@@ -1695,6 +1817,16 @@
   }
 
   function handleDocumentClick(event) {
+    const workPhoto = event.target.closest("[data-work-photo]");
+    if (workPhoto && currentPageViewId() === "homeView") {
+      const photoId = String(workPhoto.dataset.workPhoto || "");
+      if (photoId && state.photoById.has(photoId)) {
+        event.preventDefault();
+        openViewer(photoId, "portfolio");
+        return;
+      }
+    }
+
     if (event.target.closest("#viewerInfoButton")) {
       return;
     }
@@ -1981,6 +2113,15 @@
         const focusedResult = document.activeElement?.closest?.("[data-search-result-index]");
         const focusedIndex = focusedResult ? Number(focusedResult.dataset.searchResultIndex) : state.searchActiveIndex;
         activateGlobalSearchResult(focusedIndex);
+      }
+      return;
+    }
+    if (state.mobileMoreOpen) {
+      if (event.key === "Tab") {
+        trapDialogFocus(els.mobileMoreSheet, event);
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        closeMobileMoreMenu();
       }
       return;
     }
@@ -2438,41 +2579,6 @@
     window.requestAnimationFrame(() => window.requestAnimationFrame(() => window.scrollTo({ top: Number(snapshot.scrollY) || 0, behavior: "auto" })));
   }
 
-  function handleMobileTabNavigation(event) {
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button) {
-      return;
-    }
-    const link = event.currentTarget;
-    const targetView = link.dataset.mobileTabView;
-    if (!targetView) {
-      return;
-    }
-    const activeView = document.querySelector("[data-view].is-active")?.id || currentPageViewId();
-    if (navigationViewFor(activeView) === targetView) {
-      event.preventDefault();
-      if (activeView !== targetView) {
-        handleMobileContextBack();
-      } else {
-        window.scrollTo({ top: 0, behavior: isReducedMotion() ? "auto" : "smooth" });
-      }
-      return;
-    }
-    saveCurrentSessionState();
-    const saved = readPageSessionState(targetView);
-    let destination = new URL(link.getAttribute("href"), document.baseURI);
-    if (saved?.url) {
-      try {
-        const savedUrl = new URL(saved.url);
-        const expectedPath = new URL(pageRouteForView(targetView), document.baseURI).pathname;
-        if (savedUrl.origin === window.location.origin && savedUrl.pathname === expectedPath) {
-          destination = savedUrl;
-        }
-      } catch (error) {
-        // Use the tab's root URL when saved session data is malformed.
-      }
-    }
-    link.href = destination.href;
-  }
 
   function handleMobileContextBack() {
     const activeView = document.querySelector("[data-view].is-active")?.id;
@@ -2567,8 +2673,11 @@
       const labels = { mapView: "World Map", dexView: "Aircraft Dex", squadronsView: "Squadrons", airshowsView: "Airshows" };
       els.mobileContextBack.setAttribute("aria-label", `Back to ${labels[navigationView] || "collection"}`);
     }
+    const moreIsActive = navigationView === "squadronsView" || navigationView === "statsView";
     els.mobileTabLinks?.forEach((link) => {
-      const active = link.dataset.mobileTabView === navigationView;
+      const active = link.dataset.mobileTabView === "more"
+        ? moreIsActive
+        : link.dataset.mobileTabView === navigationView;
       link.classList.toggle("is-active", active);
       if (active) link.setAttribute("aria-current", "page");
       else link.removeAttribute("aria-current");
@@ -3761,11 +3870,15 @@
   function updateShareMetadata() {
     const activeView = document.querySelector("[data-view].is-active")?.id;
     const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-    const activePhoto = state.photoById?.get(hashParams.get("photo"));
+    const activePhoto = state.photoById?.get(hashParams.get("photo") || hashParams.get("work"));
     const pageDefaults = {
+      homeView: {
+        title: "Timothy Liu | Aviation Photographer",
+        description: "Aviation photography by Timothy Liu. Explore selected photographs and the SpotterDex archive."
+      },
       mapView: {
-        title: "SpotterDex - Timothy's Logbook",
-        description: "An aircraft spotting logbook and aviation photography field guide."
+        title: "World Map | SpotterDex",
+        description: "Explore aircraft photographs and spotting locations around the world."
       },
       dexView: {
         title: "Aircraft Dex | SpotterDex",
@@ -3784,14 +3897,22 @@
         description: "Explore collection totals and camera metadata from the SpotterDex archive."
       }
     };
-    const pageDefault = pageDefaults[currentPageViewId()] || pageDefaults.mapView;
+    const pageDefault = pageDefaults[currentPageViewId()] || pageDefaults.homeView;
     const defaultTitle = pageDefault.title;
     const defaultDescription = pageDefault.description;
-    const defaultImage = "assets/generated/photos/location-hero-gifu-air-base.jpg";
+    const portfolioHero = currentPageViewId() === "homeView"
+      ? state.photoById?.get(currentPortfolioPhotoIds()[0])
+      : null;
+    const defaultImage = portfolioHero?.image
+      || portfolioHero?.thumbnail
+      || (currentPageViewId() === "homeView" ? els.ogImage?.content : "")
+      || "assets/generated/photos/location-hero-gifu-air-base.jpg";
     let title = defaultTitle;
     let description = defaultDescription;
     let image = defaultImage;
-    let imageAlt = DEFAULT_SHARE_IMAGE_ALT;
+    let imageAlt = portfolioHero
+      ? `${photoSubjectLabel(portfolioHero)} photographed at ${portfolioHero.locationName}`
+      : DEFAULT_SHARE_IMAGE_ALT;
 
     if (activePhoto) {
       title = `${activePhoto.title || photoSubjectLabel(activePhoto)} | SpotterDex`;
@@ -3910,7 +4031,7 @@
 
   function shareUrlForCurrentState() {
     const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-    const photoId = params.get("photo");
+    const photoId = params.get("photo") || params.get("work");
     if (photoId && state.photoById.has(photoId)) {
       return shareUrlForEntity("photo", photoId);
     }
@@ -3950,7 +4071,9 @@
   }
 
   function updateDeepLinkForView(viewId) {
-    if (viewId === "mapView" && state.selectedPinId) {
+    if (viewId === "homeView") {
+      clearDeepLink();
+    } else if (viewId === "mapView" && state.selectedPinId) {
       updateDeepLink("location", state.selectedPinId);
     } else if (viewId === "locationDetailView" && state.selectedPinId) {
       updateLocationDetailLink(state.selectedPinId);
@@ -6464,6 +6587,8 @@
             ? currentLocationPhotoIds()
           : viewerContext === "airshow"
             ? currentAirshowPhotoIds()
+          : viewerContext === "portfolio"
+            ? currentPortfolioPhotoIds()
           : viewerContext === "photo"
             ? [photoId]
             : currentMapPhotoIds();
@@ -6501,8 +6626,9 @@
     });
 
     if (options.updateHash !== false) {
-      const wasPhotoRoute = new URLSearchParams(window.location.hash.replace(/^#/, "")).has("photo");
-      const changed = updateDeepLink("photo", photoId);
+      const hashKind = viewerPhotoHashKind(viewerContext);
+      const wasPhotoRoute = new URLSearchParams(window.location.hash.replace(/^#/, "")).has(hashKind);
+      const changed = updateDeepLink(hashKind, photoId);
       state.viewerHistoryPushed = Boolean(changed && !wasPhotoRoute);
     } else {
       state.viewerHistoryPushed = false;
@@ -6541,6 +6667,22 @@
   function currentAirshowPhotoIds() {
     const airshow = state.airshowById.get(state.selectedAirshowId);
     return airshow ? photosForAirshow(airshow).map((photo) => photo.id) : [];
+  }
+
+  function currentPortfolioPhotoIds() {
+    const photoIds = Array.from(document.querySelectorAll("[data-work-photo]"))
+      .map((element) => String(element.dataset.workPhoto || ""))
+      .filter((photoId) => photoId && state.photoById.has(photoId));
+    return Array.from(new Set(photoIds));
+  }
+
+  function viewerPhotoHashKind(context = state.activePhotoContext) {
+    return context === "portfolio" ? "work" : "photo";
+  }
+
+  function isViewerPhotoHashActive() {
+    const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    return params.has("photo") || params.has("work");
   }
 
   function openStatsPhotoSet(kind, value, label) {
@@ -6612,7 +6754,7 @@
     const returnStory = state.viewerReturnStory;
     const shouldUseHistory = options.useHistory !== false
       && state.viewerHistoryPushed
-      && new URLSearchParams(window.location.hash.replace(/^#/, "")).has("photo");
+      && isViewerPhotoHashActive();
     els.photoViewer.hidden = true;
     document.body.classList.remove("is-viewer-open");
     deactivateOverlayViewportSync();
@@ -6678,7 +6820,7 @@
     state.activePhotoIndex = (state.activePhotoIndex + offset + state.activePhotoIds.length) % state.activePhotoIds.length;
     resetViewerTransform();
     renderViewerPhoto();
-    updateDeepLink("photo", state.activePhotoIds[state.activePhotoIndex], { replace: true });
+    updateDeepLink(viewerPhotoHashKind(), state.activePhotoIds[state.activePhotoIndex], { replace: true });
   }
 
   function selectViewerPhoto(index) {
@@ -6688,7 +6830,7 @@
     state.activePhotoIndex = index;
     resetViewerTransform();
     renderViewerPhoto();
-    updateDeepLink("photo", state.activePhotoIds[state.activePhotoIndex], { replace: true });
+    updateDeepLink(viewerPhotoHashKind(), state.activePhotoIds[state.activePhotoIndex], { replace: true });
   }
 
   function renderViewerPhoto() {
@@ -7228,7 +7370,9 @@
     const replace = { replace: true };
     const pageViewId = currentPageViewId();
 
-    if (state.activePhotoContext === "dex" && state.selectedAircraftId) {
+    if (state.activePhotoContext === "portfolio") {
+      clearDeepLink(replace);
+    } else if (state.activePhotoContext === "dex" && state.selectedAircraftId) {
       updateAircraftDetailLink(state.selectedAircraftId, {
         ...replace,
         group: state.dexGroupMode,
@@ -7604,6 +7748,8 @@
     const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
     const pageViewId = currentPageViewId();
     const photoId = params.get("photo");
+    const workPhotoId = params.get("work");
+    const routedPhotoId = pageViewId === "homeView" ? workPhotoId : photoId;
     const squadronId = params.get("squadron");
     const airshowId = params.get("airshow");
     const locationId = params.get("location");
@@ -7628,15 +7774,22 @@
         state.airshowYearFilter = year;
         renderAirshowsPage();
       }
-      if (!photoId && isViewerOpen()) {
+      if (!routedPhotoId && isViewerOpen()) {
         closeViewer({ updateHash: false, useHistory: false });
       }
 
-      if (photoId) {
-        const photo = findPhoto(photoId);
+      if (routedPhotoId) {
+        const photo = findPhoto(routedPhotoId);
         if (photo) {
-          openPhotoDeepLink(photo, options);
-          state.viewerHistoryPushed = window.history.state?.spotterdexKind === "photo";
+          if (pageViewId === "homeView" && currentPortfolioPhotoIds().includes(photo.id)) {
+            openViewer(photo.id, "portfolio", {updateHash: false});
+            state.viewerHistoryPushed = window.history.state?.spotterdexKind === "work";
+          } else if (routedPhotoId === photoId) {
+            openPhotoDeepLink(photo, options);
+            state.viewerHistoryPushed = window.history.state?.spotterdexKind === "photo";
+          } else {
+            return false;
+          }
           return true;
         }
       }

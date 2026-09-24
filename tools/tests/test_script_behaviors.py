@@ -22,6 +22,29 @@ class ScriptBehaviorTests(unittest.TestCase):
         result = subprocess.run(["node", "-e", program], cwd=ROOT, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_mobile_navigation_places_squadrons_in_tabs_and_airshows_in_more(self):
+        self.run_behavior(["ensureMobileAppShell", "mobileTabLink"], r'''
+            const inserted = [];
+            global.MOBILE_MAP_MEDIA_QUERY = "(max-width: 700px)";
+            global.window = {matchMedia: () => ({matches: true})};
+            global.document = {
+                getElementById: () => null,
+                querySelector: () => ({insertAdjacentHTML: (_position, html) => inserted.push(html)}),
+                body: {insertAdjacentHTML: (_position, html) => inserted.push(html)}
+            };
+            global.cacheMobileElements = global.bindMobileShellEvents = () => {};
+            ensureMobileAppShell();
+            const markup = inserted.join("");
+            const tabs = markup.match(/<nav class="mobile-tab-bar"[\s\S]*?<\/nav>/)?.[0];
+            const more = markup.match(/<section class="mobile-more-sheet"[\s\S]*?<\/section>/)?.[0];
+            assert(tabs && more);
+            assert.match(tabs, /href="squadrons.html" data-mobile-tab-view="squadronsView"/);
+            assert.match(tabs, /class="squadron-patch-eagle"/);
+            assert.doesNotMatch(tabs, /href="airshows.html"/);
+            assert.match(more, /href="airshows.html" data-mobile-more-view="airshowsView"/);
+            assert.doesNotMatch(more, /href="squadrons.html"/);
+        ''')
+
     def test_field_guide_buttons_target_rendered_archive_groups(self):
         self.run_behavior(["renderFieldGuideBrowser", "renderAircraftTypePhotoGroups"], r'''
             global.escapeHtml = global.escapeAttr = value => String(value);
@@ -343,6 +366,8 @@ class ScriptBehaviorTests(unittest.TestCase):
             global.els = {};
             global.state = {renderedViews: new Set()};
             global.document = {querySelector() {return null;}};
+            global.MOBILE_MAP_MEDIA_QUERY = "(max-width: 1040px)";
+            global.window = {matchMedia: () => ({matches: true})};
             global.ensureMobileAppShell = global.updateMobileAppChrome = global.cancelGesturesForGeometryChange = global.syncMotionSurfaceGeometry = global.scheduleScrollEdgeUpdate = () => {};
             global.isViewerOpen = () => false;
             let viewerUpdates = 0;
@@ -377,6 +402,108 @@ class ScriptBehaviorTests(unittest.TestCase):
             assert.equal(updateDeepLink("year", ""), true);
             assert.equal(cleared, 2);
             assert.equal(updateDeepLink("country", "United States"), true);
+        ''')
+
+    def test_homepage_forwards_legacy_map_hashes_to_map_page(self):
+        self.run_behavior(["redirectLegacyMapDeepLink"], r'''
+            let destination = "";
+            global.currentPageViewId = () => "homeView";
+            global.document = {baseURI: "https://spotterdex.example/index.html"};
+            global.window = {
+                location: {
+                    hash: "#location=gifu&detail=1",
+                    search: "?source=share",
+                    replace(value) {destination = value;}
+                }
+            };
+            assert.equal(redirectLegacyMapDeepLink(), true);
+            assert.equal(destination, "https://spotterdex.example/map.html?source=share#location=gifu&detail=1");
+            destination = "";
+            window.location.hash = "#photo=example-photo";
+            assert.equal(redirectLegacyMapDeepLink(), true);
+            assert.equal(destination, "https://spotterdex.example/map.html?source=share#photo=example-photo");
+            destination = "";
+            window.location.hash = "#work=portfolio-photo";
+            assert.equal(redirectLegacyMapDeepLink(), false);
+            assert.equal(destination, "");
+        ''')
+
+    def test_portfolio_photo_order_and_work_deep_link(self):
+        self.run_behavior(["currentPortfolioPhotoIds", "applyDeepLinkFromHash"], r'''
+            const opened = [];
+            global.state = {photoById: new Map([["hero", {}], ["one", {}], ["two", {}]]), isApplyingHash: false};
+            global.document = {querySelectorAll: () => [
+                {dataset: {workPhoto: "hero"}},
+                {dataset: {workPhoto: "one"}},
+                {dataset: {workPhoto: "hero"}},
+                {dataset: {workPhoto: "missing"}},
+                {dataset: {workPhoto: "two"}}
+            ]};
+            global.window = {location: {hash: "#work=one"}, history: {state: null}};
+            global.currentPageViewId = () => "homeView";
+            global.normalizeAircraftDetailGroup = global.normalizeAircraftFamily = value => value || "";
+            global.isViewerOpen = () => false;
+            global.findPhoto = id => state.photoById.has(id) ? {id} : null;
+            global.openViewer = (...args) => opened.push(args);
+            assert.deepEqual(currentPortfolioPhotoIds(), ["hero", "one", "two"]);
+            assert.equal(applyDeepLinkFromHash({initial: true}), true);
+            assert.deepEqual(opened, [["one", "portfolio", {updateHash: false}]]);
+            assert.equal(state.viewerHistoryPushed, false);
+            assert.equal(state.isApplyingHash, false);
+        ''')
+
+    def test_portfolio_viewer_steps_with_work_hash_and_closes_cleanly(self):
+        self.run_behavior(["viewerPhotoHashKind", "stepPhoto", "isViewerPhotoHashActive", "updateDeepLinkForViewerContext"], r'''
+            global.state = {activePhotoContext: "portfolio", activePhotoIds: ["hero", "one"], activePhotoIndex: 0, photoById: new Map([["one", {}]])};
+            const links = [];
+            global.resetViewerTransform = global.renderViewerPhoto = () => {};
+            global.updateDeepLink = (...args) => links.push(args);
+            global.window = {location: {hash: "#work=one"}};
+            assert.equal(viewerPhotoHashKind(), "work");
+            stepPhoto(1);
+            assert.deepEqual(links, [["work", "one", {replace: true}]]);
+            assert.equal(isViewerPhotoHashActive(), true);
+            global.clearDeepLink = options => links.push(["clear", options]);
+            global.currentPageViewId = () => "homeView";
+            updateDeepLinkForViewerContext();
+            assert.deepEqual(links.at(-1), ["clear", {replace: true}]);
+        ''')
+
+    def test_more_sheet_contains_focus_and_restores_the_opener(self):
+        self.run_behavior(["openMobileMoreMenu", "closeMobileMoreMenu", "setMobileMoreBackgroundInert", "handleKeydown"], r'''
+            let returnedFocus = 0;
+            const classList = {add() {}, remove() {}};
+            const opener = {isConnected: true, focus() {returnedFocus++;}};
+            const makeElement = () => ({inert: false});
+            const keyEvents = [];
+            global.state = {mobileMoreOpen: false, searchComposing: false};
+            global.document = {activeElement: opener, body: {classList}};
+            global.window = {requestAnimationFrame: callback => callback()};
+            global.els = {
+                mobileMoreSheet: {hidden: true}, mobileMoreBackdrop: {hidden: true},
+                mobileMoreButton: {setAttribute(name, value) {this[name] = value;}},
+                mobileMoreClose: {focus() {keyEvents.push("menu focus");}},
+                siteHeader: makeElement(), main: makeElement(), mobileTabBar: makeElement()
+            };
+            global.isGlobalSearchOpen = () => false;
+            global.trapDialogFocus = (container, event) => {keyEvents.push([container, event.key]); event.preventDefault();};
+            openMobileMoreMenu();
+            assert.equal(state.mobileMoreOpen, true);
+            assert.equal(els.mobileMoreSheet.hidden, false);
+            assert.equal(els.mobileMoreBackdrop.hidden, false);
+            assert.equal(els.mobileMoreButton["aria-expanded"], "true");
+            assert.equal(els.main.inert, true);
+            assert.deepEqual(keyEvents, ["menu focus"]);
+            let prevented = 0;
+            handleKeydown({key: "Tab", preventDefault() {prevented++;}});
+            handleKeydown({key: "Escape", preventDefault() {prevented++;}});
+            assert.equal(prevented, 2);
+            assert.equal(state.mobileMoreOpen, false);
+            assert.equal(els.mobileMoreSheet.hidden, true);
+            assert.equal(els.mobileMoreBackdrop.hidden, true);
+            assert.equal(els.main.inert, false);
+            assert.equal(returnedFocus, 1);
+            assert.deepEqual(keyEvents[1], [els.mobileMoreSheet, "Tab"]);
         ''')
 
 

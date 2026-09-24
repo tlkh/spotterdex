@@ -1,7 +1,7 @@
 // Both version strings are rewritten by tools/build_spotterdex.py from a hash of
 // the shell assets and the image profile. Do not edit them by hand: a stale
 // version keeps returning visitors on the previously deployed shell.
-const SHELL_CACHE_VERSION = "spotterdex-shell-1cff0b667418b65a";
+const SHELL_CACHE_VERSION = "spotterdex-shell-0e0546e8e0df0b21";
 const MEDIA_CACHE_VERSION = "spotterdex-media-6648c110b6fce385";
 const SHELL_CACHE = `${SHELL_CACHE_VERSION}-shell`;
 const THUMB_CACHE = `${MEDIA_CACHE_VERSION}-thumbs`;
@@ -11,6 +11,7 @@ const PHOTO_LIMIT = 12;
 const SHELL_PATHS = [
   "./",
   "index.html",
+  "map.html",
   "aircraft-dex.html",
   "squadrons.html",
   "airshows.html",

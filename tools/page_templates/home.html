@@ -1,0 +1,40 @@
+    <main class="app-shell home-shell" id="main">
+      <section class="view is-active portfolio-home" id="homeView" data-view aria-labelledby="portfolioTitle">
+        <div class="portfolio-inner">
+          <div class="portfolio-hero">
+            <div class="portfolio-lead">
+              <div class="portfolio-title-block">
+                <h1 id="portfolioTitle">Timothy Liu</h1>
+                <p>Aviation photographer</p>
+              </div>
+              <div class="portfolio-hero-actions">
+                <a class="portfolio-enter" href="#selected-work">View selected work <span aria-hidden="true">↓</span></a>
+                <nav class="portfolio-discover" aria-label="Explore the archive">
+                  <a href="map.html">World Map <span aria-hidden="true">↗</span></a>
+                  <a href="aircraft-dex.html">Aircraft Dex <span aria-hidden="true">↗</span></a>
+                </nav>
+              </div>
+            </div>
+{{PORTFOLIO_HERO}}
+          </div>
+
+          <section class="portfolio-selection" id="selected-work" aria-labelledby="selectedWorkTitle">
+            <div class="portfolio-section-heading">
+              <h2 id="selectedWorkTitle">Selected work</h2>
+            </div>
+            <div class="portfolio-work">
+{{PORTFOLIO_WORK}}
+            </div>
+          </section>
+
+          <nav class="portfolio-explore" aria-label="Explore SpotterDex">
+            <h2>Explore SpotterDex</h2>
+            <a href="map.html"><span>World Map</span><span aria-hidden="true">↗</span></a>
+            <a href="aircraft-dex.html"><span>Aircraft Dex</span><span aria-hidden="true">↗</span></a>
+            <a href="airshows.html"><span>Airshows</span><span aria-hidden="true">↗</span></a>
+          </nav>
+
+          <footer class="portfolio-footer"><span>Photography by Timothy Liu</span><span>SpotterDex</span></footer>
+        </div>
+      </section>
+    </main>
